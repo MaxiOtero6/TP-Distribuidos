@@ -1,0 +1,7 @@
+log:
+  level: "INFO"
+
+data:
+  movies: ".data/movies_metadata.csv"
+  ratings: ".data/ratings.csv"
+  credits: ".data/credits.csv"
