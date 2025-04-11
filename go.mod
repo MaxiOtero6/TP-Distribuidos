@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/spf13/viper v1.20.1
+	google.golang.org/protobuf v1.36.1
 )
 
 require (
