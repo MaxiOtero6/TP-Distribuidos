@@ -2,6 +2,8 @@ package utils
 
 import (
 	"testing"
+
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
 func compareSlicesOrdered(s1, s2 []string) bool {
@@ -168,6 +170,167 @@ func TestParseLine(t *testing.T) {
 			t.Errorf("Expected %v, but got %v", expected, actual)
 		}
 	})
+
+	t.Run("asdas", func(t *testing.T) {
+		line := `False,"{'id': 10194, 'name': 'Toy Story Collection', 'poster_path': '/7G9915LfUQ2lVfwMEEhDsn3kT4B.jpg', 'backdrop_path': '/9FBwqcd9IRruEDUrTdcaafOMKUq.jpg'}",30000000,"[{'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'}, {'id': 10751, 'name': 'Family'}]",http://toystory.disney.com/toy-story,862,tt0114709,en,Toy Story,"Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",21.946943,/rhIRbceoE9lR4veEXuwCC2wARtG.jpg,"[{'name': 'Pixar Animation Studios', 'id': 3}]","[{'iso_3166_1': 'US', 'name': 'United States of America'}]",1995-10-30,373554033,81.0,"[{'iso_639_1': 'en', 'name': 'English'}]",Released,,Toy Story,False,7.7,5415`
+
+		t.Errorf("%v", parseLine(&line))
+	})
 }
 
+func compareMovie(t *testing.T, actual, expected *protocol.DataRow) {
+	if actual == nil || expected == nil {
+		t.Errorf("Expected non-nil values, but got actual: %v, expected: %v", actual, expected)
+		return
+	}
 
+	if actual.Data.(*protocol.DataRow_Movie).Movie.Id != expected.Data.(*protocol.DataRow_Movie).Movie.Id {
+		t.Errorf("Expected Id %s, but got %s",
+			expected.Data.(*protocol.DataRow_Movie).Movie.Id,
+			actual.Data.(*protocol.DataRow_Movie).Movie.Id,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Movie).Movie.Title != expected.Data.(*protocol.DataRow_Movie).Movie.Title {
+		t.Errorf("Expected Title %s, but got %s",
+			expected.Data.(*protocol.DataRow_Movie).Movie.Title,
+			actual.Data.(*protocol.DataRow_Movie).Movie.Title,
+		)
+	}
+
+	if !compareSlicesOrdered(actual.Data.(*protocol.DataRow_Movie).Movie.ProdCountries, expected.Data.(*protocol.DataRow_Movie).Movie.ProdCountries) {
+		t.Errorf("Expected ProdCountries %s, but got %s",
+			expected.Data.(*protocol.DataRow_Movie).Movie.ProdCountries[0],
+			actual.Data.(*protocol.DataRow_Movie).Movie.ProdCountries[0],
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Movie).Movie.Revenue != expected.Data.(*protocol.DataRow_Movie).Movie.Revenue {
+		t.Errorf("Expected Revenue %d, but got %d",
+			expected.Data.(*protocol.DataRow_Movie).Movie.Revenue,
+			actual.Data.(*protocol.DataRow_Movie).Movie.Revenue,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Movie).Movie.Budget != expected.Data.(*protocol.DataRow_Movie).Movie.Budget {
+		t.Errorf("Expected Budget %d, but got %d",
+			expected.Data.(*protocol.DataRow_Movie).Movie.Budget,
+			actual.Data.(*protocol.DataRow_Movie).Movie.Budget,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Movie).Movie.Overview != expected.Data.(*protocol.DataRow_Movie).Movie.Overview {
+		t.Errorf("Expected Overview %s, but got %s",
+			expected.Data.(*protocol.DataRow_Movie).Movie.Overview,
+			actual.Data.(*protocol.DataRow_Movie).Movie.Overview,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate != expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate {
+		t.Errorf("Expected ReleaseDate %s, but got %s",
+			expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate,
+			actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate,
+		)
+	}
+
+	if !compareSlicesOrdered(actual.Data.(*protocol.DataRow_Movie).Movie.Genres, expected.Data.(*protocol.DataRow_Movie).Movie.Genres) {
+		t.Errorf("Expected %d Genres, but got %d",
+			len(expected.Data.(*protocol.DataRow_Movie).Movie.Genres),
+			len(actual.Data.(*protocol.DataRow_Movie).Movie.Genres),
+		)
+	}
+}
+
+func TestParseMovie(t *testing.T) {
+
+	line := `False,"{'id': 10194, 'name': 'Toy Story Collection', 'poster_path': '/7G9915LfUQ2lVfwMEEhDsn3kT4B.jpg', 'backdrop_path': '/9FBwqcd9IRruEDUrTdcaafOMKUq.jpg'}",30000000,"[{'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'}, {'id': 10751, 'name': 'Family'}]",http://toystory.disney.com/toy-story,862,tt0114709,en,Toy Story,"Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",21.946943,/rhIRbceoE9lR4veEXuwCC2wARtG.jpg,"[{'name': 'Pixar Animation Studios', 'id': 3}]","[{'iso_3166_1': 'US', 'name': 'United States of America'}]",1995-10-30,373554033,81.0,"[{'iso_639_1': 'en', 'name': 'English'}]",Released,,Toy Story,False,7.7,5415`
+	fields := parseLine(&line)
+
+	t.Run("TestParseToyStoryMovie", func(t *testing.T) {
+		expected := []*protocol.DataRow{
+			{
+				Data: &protocol.DataRow_Movie{
+					Movie: &protocol.Movie{
+						Id:            "862",
+						ProdCountries: []string{"United States of America"},
+						Title:         "Toy Story",
+						Revenue:       373554033,
+						Budget:        30000000,
+						Overview:      "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+						ReleaseDate:   "1995-10-30",
+						Genres:        []string{"Animation", "Comedy", "Family"},
+					},
+				},
+			},
+		}
+
+		actual := parseMovie(fields)
+
+		if len(actual) != len(expected) {
+			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
+		}
+
+		for i := range actual {
+			compareMovie(t, actual[i], expected[i])
+		}
+	})
+
+	t.Run("TestParseMovieWithEmptyFields", func(t *testing.T) {
+		actual := parseMovie([]string{})
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseMovieWithWrongFieldsLength", func(t *testing.T) {
+		actual := parseMovie(fields[:10])
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseMovieWithNilFields", func(t *testing.T) {
+		actual := parseMovie(nil)
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericRevenueAndBudgetShouldBeZero", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+		expected := []*protocol.DataRow{
+			{
+				Data: &protocol.DataRow_Movie{
+					Movie: &protocol.Movie{
+						Id:            "862",
+						ProdCountries: []string{"United States of America"},
+						Title:         "Toy Story",
+						Revenue:       0,
+						Budget:        0,
+						Overview:      "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+						ReleaseDate:   "1995-10-30",
+						Genres:        []string{"Animation", "Comedy", "Family"},
+					},
+				},
+			},
+		}
+
+	
+		fields2[15] = "nonNumeric" //revenue
+		fields2[2] = "nonNumeric"  //budget
+
+		actual := parseMovie(fields2)
+
+		if len(actual) != len(expected) {
+			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
+		}
+
+		for i := range actual {
+			compareMovie(t, actual[i], expected[i])
+		}
+	})
+}
