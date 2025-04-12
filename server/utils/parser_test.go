@@ -170,12 +170,6 @@ func TestParseLine(t *testing.T) {
 			t.Errorf("Expected %v, but got %v", expected, actual)
 		}
 	})
-
-	t.Run("asdas", func(t *testing.T) {
-		line := `False,"{'id': 10194, 'name': 'Toy Story Collection', 'poster_path': '/7G9915LfUQ2lVfwMEEhDsn3kT4B.jpg', 'backdrop_path': '/9FBwqcd9IRruEDUrTdcaafOMKUq.jpg'}",30000000,"[{'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'}, {'id': 10751, 'name': 'Family'}]",http://toystory.disney.com/toy-story,862,tt0114709,en,Toy Story,"Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",21.946943,/rhIRbceoE9lR4veEXuwCC2wARtG.jpg,"[{'name': 'Pixar Animation Studios', 'id': 3}]","[{'iso_3166_1': 'US', 'name': 'United States of America'}]",1995-10-30,373554033,81.0,"[{'iso_639_1': 'en', 'name': 'English'}]",Released,,Toy Story,False,7.7,5415`
-
-		t.Errorf("%v", parseLine(&line))
-	})
 }
 
 func compareMovie(t *testing.T, actual, expected *protocol.DataRow) {
@@ -430,6 +424,98 @@ func TestParseRating(t *testing.T) {
 
 		for i := range actual {
 			compareRating(t, actual[i], expected[i])
+		}
+	})
+}
+
+func compareCredit(t *testing.T, actual, expected *protocol.DataRow) {
+	if actual == nil || expected == nil {
+		t.Errorf("Expected non-nil values, but got actual: %v, expected: %v", actual, expected)
+		return
+	}
+
+	if actual.Data.(*protocol.DataRow_Credit).Credit.MovieId != expected.Data.(*protocol.DataRow_Credit).Credit.MovieId {
+		t.Errorf("Expected MovieId %s, but got %s",
+			expected.Data.(*protocol.DataRow_Credit).Credit.MovieId,
+			actual.Data.(*protocol.DataRow_Credit).Credit.MovieId,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Credit).Credit.ActorId != expected.Data.(*protocol.DataRow_Credit).Credit.ActorId {
+		t.Errorf("Expected ActorId %s, but got %s",
+			expected.Data.(*protocol.DataRow_Credit).Credit.ActorId,
+			actual.Data.(*protocol.DataRow_Credit).Credit.ActorId,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Credit).Credit.Name != expected.Data.(*protocol.DataRow_Credit).Credit.Name {
+		t.Errorf("Expected Name %s, but got %s",
+			expected.Data.(*protocol.DataRow_Credit).Credit.Name,
+			actual.Data.(*protocol.DataRow_Credit).Credit.Name,
+		)
+	}
+}
+
+func TestParseCredits(t *testing.T) {
+	line := `"[{'cast_id': 14, 'character': 'Woody (voice)', 'credit_id': '52fe4284c3a36847f8024f95', 'gender': 2, 'id': 31, 'name': 'Tom Hanks', 'order': 0, 'profile_path': '/pQFoyx7rp09CJTAb932F2g8Nlho.jpg'}, {'cast_id': 15, 'character': 'Buzz Lightyear (voice)', 'credit_id': '52fe4284c3a36847f8024f99', 'gender': 2, 'id': 12898, 'name': 'Tim Allen', 'order': 1, 'profile_path': '/uX2xVf6pMmPepxnvFWyBtjexzgY.jpg'}]","[{'credit_id': '52fe4284c3a36847f8024f49', 'department': 'Directing', 'gender': 2, 'id': 7879, 'job': 'Director', 'name': 'John Lasseter', 'profile_path': '/7EdqiNbr4FRjIhKHyPPdFfEEEFG.jpg'}, {'credit_id': '52fe4284c3a36847f8024f4f', 'department': 'Writing', 'gender': 2, 'id': 12891, 'job': 'Screenplay', 'name': 'Joss Whedon', 'profile_path': '/dTiVsuaTVTeGmvkhcyJvKp2A5kr.jpg'}]",862`
+
+	fields := parseLine(&line)
+
+	t.Run("TestParseRating", func(t *testing.T) {
+		var expected []*protocol.DataRow
+
+		expected = append(expected, &protocol.DataRow{
+			Data: &protocol.DataRow_Credit{
+				Credit: &protocol.Credit{
+					MovieId: "862",
+					ActorId: "31",
+					Name:    "Tom Hanks",
+				},
+			},
+		})
+
+		expected = append(expected, &protocol.DataRow{
+			Data: &protocol.DataRow_Credit{
+				Credit: &protocol.Credit{
+					MovieId: "862",
+					ActorId: "12898",
+					Name:    "Tim Allen",
+				},
+			},
+		})
+
+		actual := parseCredit(fields)
+
+		if len(actual) != len(expected) {
+			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
+		}
+
+		for i := range actual {
+			compareCredit(t, actual[i], expected[i])
+		}
+	})
+
+	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
+		actual := parseCredit([]string{})
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
+		actual := parseCredit(fields[:1])
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
+		actual := parseCredit(nil)
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
 		}
 	})
 }
