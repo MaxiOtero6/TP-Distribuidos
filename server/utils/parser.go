@@ -89,7 +89,7 @@ func parseMovie(fields []string) []*protocol.DataRow {
 	prodCountries := mapJsonRegex(rawProdCountries, regex)
 	genres := mapJsonRegex(rawGenres, regex)
 
-	rawRevenue := fields[16]
+	rawRevenue := fields[15]
 	rawBudget := fields[2]
 
 	revenue, err := strconv.ParseUint(rawRevenue, 10, 64)
@@ -105,9 +105,9 @@ func parseMovie(fields []string) []*protocol.DataRow {
 	}
 
 	id := fields[5]
-	title := fields[21]
+	title := fields[20]
 	overview := fields[9]
-	releaseDate := fields[15]
+	releaseDate := fields[14]
 
 	return []*protocol.DataRow{
 		{
