@@ -26,7 +26,13 @@ func mapJsonRegex(json string, regex string) []string {
 
 // mapJsonRegexTuple maps a JSON string using a regex pattern and returns the first group of each match as a tuple.
 // It's the multiple item version of mapJsonRegex.
+// If items is 0, it returns an empty slice.
+// If items is greater than 0, it returns a slice of slices, where each inner slice contains the first 'items' groups of the match.
 func mapJsonRegexTuple(json string, regex string, items int) [][]string {
+	if items == 0 {
+		return [][]string{}
+	}
+
 	re := regexp.MustCompile(regex)
 	matches := re.FindAllStringSubmatch(json, -1)
 
