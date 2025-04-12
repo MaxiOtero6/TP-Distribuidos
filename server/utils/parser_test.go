@@ -6,6 +6,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
+const MOVIE_LINE = `False,"{'id': 10194, 'name': 'Toy Story Collection', 'poster_path': '/7G9915LfUQ2lVfwMEEhDsn3kT4B.jpg', 'backdrop_path': '/9FBwqcd9IRruEDUrTdcaafOMKUq.jpg'}",30000000,"[{'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'}, {'id': 10751, 'name': 'Family'}]",http://toystory.disney.com/toy-story,862,tt0114709,en,Toy Story,"Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",21.946943,/rhIRbceoE9lR4veEXuwCC2wARtG.jpg,"[{'name': 'Pixar Animation Studios', 'id': 3}]","[{'iso_3166_1': 'US', 'name': 'United States of America'}]",1995-10-30,373554033,81.0,"[{'iso_639_1': 'en', 'name': 'English'}]",Released,,Toy Story,False,7.7,5415`
+const RATING_LINE = `1,110,1.0,1425941529`
+const CREDIT_LINE = `"[{'cast_id': 14, 'character': 'Woody (voice)', 'credit_id': '52fe4284c3a36847f8024f95', 'gender': 2, 'id': 31, 'name': 'Tom Hanks', 'order': 0, 'profile_path': '/pQFoyx7rp09CJTAb932F2g8Nlho.jpg'}, {'cast_id': 15, 'character': 'Buzz Lightyear (voice)', 'credit_id': '52fe4284c3a36847f8024f99', 'gender': 2, 'id': 12898, 'name': 'Tim Allen', 'order': 1, 'profile_path': '/uX2xVf6pMmPepxnvFWyBtjexzgY.jpg'}]","[{'credit_id': '52fe4284c3a36847f8024f49', 'department': 'Directing', 'gender': 2, 'id': 7879, 'job': 'Director', 'name': 'John Lasseter', 'profile_path': '/7EdqiNbr4FRjIhKHyPPdFfEEEFG.jpg'}, {'credit_id': '52fe4284c3a36847f8024f4f', 'department': 'Writing', 'gender': 2, 'id': 12891, 'job': 'Screenplay', 'name': 'Joss Whedon', 'profile_path': '/dTiVsuaTVTeGmvkhcyJvKp2A5kr.jpg'}]",862`
+
 func compareSlicesOrdered(s1, s2 []string) bool {
 	if len(s1) != len(s2) {
 		return false
@@ -237,7 +241,7 @@ func compareMovie(t *testing.T, actual, expected *protocol.DataRow) {
 
 func TestParseMovie(t *testing.T) {
 
-	line := `False,"{'id': 10194, 'name': 'Toy Story Collection', 'poster_path': '/7G9915LfUQ2lVfwMEEhDsn3kT4B.jpg', 'backdrop_path': '/9FBwqcd9IRruEDUrTdcaafOMKUq.jpg'}",30000000,"[{'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'}, {'id': 10751, 'name': 'Family'}]",http://toystory.disney.com/toy-story,862,tt0114709,en,Toy Story,"Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",21.946943,/rhIRbceoE9lR4veEXuwCC2wARtG.jpg,"[{'name': 'Pixar Animation Studios', 'id': 3}]","[{'iso_3166_1': 'US', 'name': 'United States of America'}]",1995-10-30,373554033,81.0,"[{'iso_639_1': 'en', 'name': 'English'}]",Released,,Toy Story,False,7.7,5415`
+	line := MOVIE_LINE
 	fields := parseLine(&line)
 
 	t.Run("TestParseToyStoryMovie", func(t *testing.T) {
@@ -350,7 +354,7 @@ func compareRating(t *testing.T, actual, expected *protocol.DataRow) {
 }
 
 func TestParseRating(t *testing.T) {
-	line := `1,110,1.0,1425941529`
+	line := RATING_LINE
 	fields := parseLine(&line)
 
 	t.Run("TestParseRating", func(t *testing.T) {
@@ -457,8 +461,7 @@ func compareCredit(t *testing.T, actual, expected *protocol.DataRow) {
 }
 
 func TestParseCredits(t *testing.T) {
-	line := `"[{'cast_id': 14, 'character': 'Woody (voice)', 'credit_id': '52fe4284c3a36847f8024f95', 'gender': 2, 'id': 31, 'name': 'Tom Hanks', 'order': 0, 'profile_path': '/pQFoyx7rp09CJTAb932F2g8Nlho.jpg'}, {'cast_id': 15, 'character': 'Buzz Lightyear (voice)', 'credit_id': '52fe4284c3a36847f8024f99', 'gender': 2, 'id': 12898, 'name': 'Tim Allen', 'order': 1, 'profile_path': '/uX2xVf6pMmPepxnvFWyBtjexzgY.jpg'}]","[{'credit_id': '52fe4284c3a36847f8024f49', 'department': 'Directing', 'gender': 2, 'id': 7879, 'job': 'Director', 'name': 'John Lasseter', 'profile_path': '/7EdqiNbr4FRjIhKHyPPdFfEEEFG.jpg'}, {'credit_id': '52fe4284c3a36847f8024f4f', 'department': 'Writing', 'gender': 2, 'id': 12891, 'job': 'Screenplay', 'name': 'Joss Whedon', 'profile_path': '/dTiVsuaTVTeGmvkhcyJvKp2A5kr.jpg'}]",862`
-
+	line := CREDIT_LINE
 	fields := parseLine(&line)
 
 	t.Run("TestParseRating", func(t *testing.T) {
@@ -513,6 +516,91 @@ func TestParseCredits(t *testing.T) {
 
 	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
 		actual := parseCredit(nil)
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+}
+
+func TestParseRow(t *testing.T) {
+	t.Run("TestParseRowWithMovie", func(t *testing.T) {
+		line := MOVIE_LINE
+		actual, err := ParseRow(&line, protocol.FileType_MOVIES)
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if len(actual) != 1 {
+			t.Errorf("Expected 1 item, but got %d", len(actual))
+		}
+
+		if actual[0].Data.(*protocol.DataRow_Movie) == nil {
+			t.Errorf("Expected DataRow_Movie, but got %T", actual[0].Data)
+		}
+	})
+
+	t.Run("TestParseRowWithRating", func(t *testing.T) {
+		line := RATING_LINE
+
+		actual, err := ParseRow(&line, protocol.FileType_RATINGS)
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if len(actual) != 1 {
+			t.Errorf("Expected 1 item, but got %d", len(actual))
+		}
+
+		if actual[0].Data.(*protocol.DataRow_Rating) == nil {
+			t.Errorf("Expected DataRow_Movie, but got %T", actual[0].Data)
+		}
+	})
+
+	t.Run("TestParseRowWithCredits", func(t *testing.T) {
+		line := CREDIT_LINE
+
+		actual, err := ParseRow(&line, protocol.FileType_CREDITS)
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if len(actual) != 2 {
+			t.Errorf("Expected 2 item, but got %d", len(actual))
+		}
+
+		if actual[0].Data.(*protocol.DataRow_Credit) == nil {
+			t.Errorf("Expected DataRow_Movie, but got %T", actual[0].Data)
+		}
+
+		if actual[1].Data.(*protocol.DataRow_Credit) == nil {
+			t.Errorf("Expected DataRow_Movie, but got %T", actual[1].Data)
+		}
+	})
+
+	t.Run("TestParseEOFLine", func(t *testing.T) {
+		line := ""
+		actual, err := ParseRow(&line, protocol.FileType_EOF)
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRowWithInvalidFileType", func(t *testing.T) {
+		line := MOVIE_LINE
+		actual, err := ParseRow(&line, protocol.FileType(999))
+
+		if err == nil {
+			t.Errorf("Expected error, but got nil")
+		}
 
 		if actual != nil {
 			t.Errorf("Expected nil, but got %v", actual)
