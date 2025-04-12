@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "common/communication/protocol";
+
+import "proto/movie.proto";
+import "proto/credit.proto";
+import "proto/rating.proto";
+
+enum QueryStage {
+    UNASSIGNED = 0;
+
+}
+
+message DataRow {
+    oneof Data {
+        Movie movie = 2;
+        Credit credit = 3;
+        Rating rating = 4;
+    }
+}
+
+message Task {
+    QueryStage stage = 1;
+    repeated DataRow data = 2;
+}

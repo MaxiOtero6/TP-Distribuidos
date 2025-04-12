@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "common/communication/protocol";
+
+// from credits: id, actorid, name
+
+message Credit {
+    string movieId = 1;
+    string actorId = 2;
+    string name = 3;
+}
