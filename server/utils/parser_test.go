@@ -127,3 +127,47 @@ func TestMapJsonRegexTuple(t *testing.T) {
 		}
 	})
 }
+
+func TestParseLine(t *testing.T) {
+	t.Run("TestParseLineWithComma", func(t *testing.T) {
+		line := `1,"John, Doe",25`
+		expected := []string{"1", "John, Doe", "25"}
+		actual := parseLine(&line)
+
+		if !compareSlicesOrdered(expected, actual) {
+			t.Errorf("Expected %v, but got %v", expected, actual)
+		}
+	})
+
+	t.Run("TestParseLineWithQuotes", func(t *testing.T) {
+		line := `1,"John Doe, a great person",25`
+		expected := []string{"1", "John Doe, a great person", "25"}
+		actual := parseLine(&line)
+
+		if !compareSlicesOrdered(expected, actual) {
+			t.Errorf("Expected %v, but got %v", expected, actual)
+		}
+	})
+
+	t.Run("TestParseLineWithEmptyFields", func(t *testing.T) {
+		line := `1,"",`
+		expected := []string{"1", "", ""}
+		actual := parseLine(&line)
+
+		if !compareSlicesOrdered(expected, actual) {
+			t.Errorf("Expected %v, but got %v", expected, actual)
+		}
+	})
+
+	t.Run("TestParseLineWithJsonObjects", func(t *testing.T) {
+		line := `1,"{'id': 16, 'name': 'Animation'}",25`
+		expected := []string{"1", "{'id': 16, 'name': 'Animation'}", "25"}
+		actual := parseLine(&line)
+
+		if !compareSlicesOrdered(expected, actual) {
+			t.Errorf("Expected %v, but got %v", expected, actual)
+		}
+	})
+}
+
+
