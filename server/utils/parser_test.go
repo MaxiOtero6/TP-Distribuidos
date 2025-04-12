@@ -319,7 +319,6 @@ func TestParseMovie(t *testing.T) {
 			},
 		}
 
-	
 		fields2[15] = "nonNumeric" //revenue
 		fields2[2] = "nonNumeric"  //budget
 
@@ -331,6 +330,106 @@ func TestParseMovie(t *testing.T) {
 
 		for i := range actual {
 			compareMovie(t, actual[i], expected[i])
+		}
+	})
+}
+
+func compareRating(t *testing.T, actual, expected *protocol.DataRow) {
+	if actual == nil || expected == nil {
+		t.Errorf("Expected non-nil values, but got actual: %v, expected: %v", actual, expected)
+		return
+	}
+
+	if actual.Data.(*protocol.DataRow_Rating).Rating.MovieId != expected.Data.(*protocol.DataRow_Rating).Rating.MovieId {
+		t.Errorf("Expected MovieId %s, but got %s",
+			expected.Data.(*protocol.DataRow_Rating).Rating.MovieId,
+			actual.Data.(*protocol.DataRow_Rating).Rating.MovieId,
+		)
+	}
+
+	if actual.Data.(*protocol.DataRow_Rating).Rating.Rating != expected.Data.(*protocol.DataRow_Rating).Rating.Rating {
+		t.Errorf("Expected Rating %f, but got %f",
+			expected.Data.(*protocol.DataRow_Rating).Rating.Rating,
+			actual.Data.(*protocol.DataRow_Rating).Rating.Rating,
+		)
+	}
+}
+
+func TestParseRating(t *testing.T) {
+	line := `1,110,1.0,1425941529`
+	fields := parseLine(&line)
+
+	t.Run("TestParseRating", func(t *testing.T) {
+		expected := []*protocol.DataRow{
+			{
+				Data: &protocol.DataRow_Rating{
+					Rating: &protocol.Rating{
+						MovieId: "110",
+						Rating:  1.0,
+					},
+				},
+			},
+		}
+
+		actual := parseRating(fields)
+
+		if len(actual) != len(expected) {
+			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
+		}
+
+		for i := range actual {
+			compareRating(t, actual[i], expected[i])
+		}
+	})
+
+	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
+		actual := parseRating([]string{})
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
+		actual := parseRating(fields[:1])
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
+		actual := parseRating(nil)
+
+		if actual != nil {
+			t.Errorf("Expected nil, but got %v", actual)
+		}
+	})
+
+	t.Run("TestParseRatingWithWrongFormatFieldsNonNumericRatingShouldBeZero", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+		expected := []*protocol.DataRow{
+			{
+				Data: &protocol.DataRow_Rating{
+					Rating: &protocol.Rating{
+						MovieId: "110",
+						Rating:  0.0,
+					},
+				},
+			},
+		}
+
+		fields2[2] = "nonNumeric" //rating
+
+		actual := parseRating(fields2)
+
+		if len(actual) != len(expected) {
+			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
+		}
+
+		for i := range actual {
+			compareRating(t, actual[i], expected[i])
 		}
 	})
 }
