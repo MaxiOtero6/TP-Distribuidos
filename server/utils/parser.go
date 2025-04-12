@@ -76,12 +76,18 @@ func parseLine(line *string) (fields []string) {
 }
 
 // parseMovie parses a movie line and returns a slice of DataRow with one item.
+// fields is a slice of strings that contains the fields of the line.
+// fields length must be 24 and not nil.
 func parseMovie(fields []string) []*protocol.DataRow {
 	// adult,belongs_to_collection,budget,genres,homepage,
 	// id,imdb_id,original_language,original_title,overview,
 	// popularity,poster_path,production_companies,production_countries,release_date,
 	// revenue,runtime,spoken_languages,status,tagline,
 	// title,video,vote_average,vote_count
+	if fields == nil || len(fields) != 24 {
+		return nil
+	}
+
 	rawProdCountries := fields[13]
 	rawGenres := fields[3]
 
@@ -128,8 +134,14 @@ func parseMovie(fields []string) []*protocol.DataRow {
 }
 
 // parseRating parses a rating line and returns a slice of DataRow with one item.
+// fields is a slice of strings that contains the fields of the line.
+// fields length must be 4 and not nil.
 func parseRating(fields []string) []*protocol.DataRow {
 	//userId,movieId,rating,timestamp
+	if fields == nil || len(fields) != 4 {
+		return nil
+	}
+
 	rawRating := fields[2]
 
 	rating, err := strconv.ParseFloat(rawRating, 32)
@@ -152,8 +164,14 @@ func parseRating(fields []string) []*protocol.DataRow {
 
 // parseCredit parses a credit line and returns a slice of DataRow with many items as actors in the movie.
 // It returns a slice of DataRow with one item for each actor.
+// fields is a slice of strings that contains the fields of the line.
+// fields length must be 3 and not nil.
 func parseCredit(fields []string) []*protocol.DataRow {
 	// cast,crew,id
+	if fields == nil || len(fields) != 3 {
+		return nil
+	}
+
 	rawCast := fields[0]
 	regex := `'id': (\d+).*?'name': '([^']+)'`
 	cast := mapJsonRegexTuple(rawCast, regex, 2)
