@@ -38,6 +38,11 @@ type Task struct {
 	//	*Task_Lambda
 	//	*Task_Mu
 	//	*Task_Nu
+	//	*Task_Result1
+	//	*Task_Result2
+	//	*Task_Result3
+	//	*Task_Result4
+	//	*Task_Result5
 	Stage         isTask_Stage `protobuf_oneof:"Stage"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -197,6 +202,51 @@ func (x *Task) GetNu() *Nu {
 	return nil
 }
 
+func (x *Task) GetResult1() *Result1 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Result1); ok {
+			return x.Result1
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetResult2() *Result2 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Result2); ok {
+			return x.Result2
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetResult3() *Result3 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Result3); ok {
+			return x.Result3
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetResult4() *Result4 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Result4); ok {
+			return x.Result4
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetResult5() *Result5 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Result5); ok {
+			return x.Result5
+		}
+	}
+	return nil
+}
+
 type isTask_Stage interface {
 	isTask_Stage()
 }
@@ -253,6 +303,26 @@ type Task_Nu struct {
 	Nu *Nu `protobuf:"bytes,13,opt,name=nu,proto3,oneof"`
 }
 
+type Task_Result1 struct {
+	Result1 *Result1 `protobuf:"bytes,14,opt,name=result1,proto3,oneof"`
+}
+
+type Task_Result2 struct {
+	Result2 *Result2 `protobuf:"bytes,15,opt,name=result2,proto3,oneof"`
+}
+
+type Task_Result3 struct {
+	Result3 *Result3 `protobuf:"bytes,16,opt,name=result3,proto3,oneof"`
+}
+
+type Task_Result4 struct {
+	Result4 *Result4 `protobuf:"bytes,17,opt,name=result4,proto3,oneof"`
+}
+
+type Task_Result5 struct {
+	Result5 *Result5 `protobuf:"bytes,18,opt,name=result5,proto3,oneof"`
+}
+
 func (*Task_Alpha) isTask_Stage() {}
 
 func (*Task_Beta) isTask_Stage() {}
@@ -279,11 +349,21 @@ func (*Task_Mu) isTask_Stage() {}
 
 func (*Task_Nu) isTask_Stage() {}
 
+func (*Task_Result1) isTask_Stage() {}
+
+func (*Task_Result2) isTask_Stage() {}
+
+func (*Task_Result3) isTask_Stage() {}
+
+func (*Task_Result4) isTask_Stage() {}
+
+func (*Task_Result5) isTask_Stage() {}
+
 var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\"\x97\x03\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"\xd5\x04\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
@@ -298,7 +378,12 @@ const file_proto_task_proto_rawDesc = "" +
 	" \x01(\v2\x06.KappaH\x00R\x05kappa\x12!\n" +
 	"\x06lambda\x18\v \x01(\v2\a.LambdaH\x00R\x06lambda\x12\x15\n" +
 	"\x02mu\x18\f \x01(\v2\x03.MuH\x00R\x02mu\x12\x15\n" +
-	"\x02nu\x18\r \x01(\v2\x03.NuH\x00R\x02nuB\a\n" +
+	"\x02nu\x18\r \x01(\v2\x03.NuH\x00R\x02nu\x12$\n" +
+	"\aresult1\x18\x0e \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
+	"\aresult2\x18\x0f \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
+	"\aresult3\x18\x10 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
+	"\aresult4\x18\x11 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
+	"\aresult5\x18\x12 \x01(\v2\b.Result5H\x00R\aresult5B\a\n" +
 	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
@@ -329,6 +414,11 @@ var file_proto_task_proto_goTypes = []any{
 	(*Lambda)(nil),  // 11: Lambda
 	(*Mu)(nil),      // 12: Mu
 	(*Nu)(nil),      // 13: Nu
+	(*Result1)(nil), // 14: Result1
+	(*Result2)(nil), // 15: Result2
+	(*Result3)(nil), // 16: Result3
+	(*Result4)(nil), // 17: Result4
+	(*Result5)(nil), // 18: Result5
 }
 var file_proto_task_proto_depIdxs = []int32{
 	1,  // 0: Task.alpha:type_name -> Alpha
@@ -344,11 +434,16 @@ var file_proto_task_proto_depIdxs = []int32{
 	11, // 10: Task.lambda:type_name -> Lambda
 	12, // 11: Task.mu:type_name -> Mu
 	13, // 12: Task.nu:type_name -> Nu
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	14, // 13: Task.result1:type_name -> Result1
+	15, // 14: Task.result2:type_name -> Result2
+	16, // 15: Task.result3:type_name -> Result3
+	17, // 16: Task.result4:type_name -> Result4
+	18, // 17: Task.result5:type_name -> Result5
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }
@@ -369,6 +464,11 @@ func file_proto_task_proto_init() {
 	file_proto_stages_lambda_proto_init()
 	file_proto_stages_mu_proto_init()
 	file_proto_stages_nu_proto_init()
+	file_proto_stages_result1_proto_init()
+	file_proto_stages_result2_proto_init()
+	file_proto_stages_result3_proto_init()
+	file_proto_stages_result4_proto_init()
+	file_proto_stages_result5_proto_init()
 	file_proto_task_proto_msgTypes[0].OneofWrappers = []any{
 		(*Task_Alpha)(nil),
 		(*Task_Beta)(nil),
@@ -383,6 +483,11 @@ func file_proto_task_proto_init() {
 		(*Task_Lambda)(nil),
 		(*Task_Mu)(nil),
 		(*Task_Nu)(nil),
+		(*Task_Result1)(nil),
+		(*Task_Result2)(nil),
+		(*Task_Result3)(nil),
+		(*Task_Result4)(nil),
+		(*Task_Result5)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -15,6 +15,12 @@ import "proto/stages/kappa.proto";
 import "proto/stages/lambda.proto";
 import "proto/stages/mu.proto";
 import "proto/stages/nu.proto";
+import "proto/stages/result1.proto";
+import "proto/stages/result2.proto";
+import "proto/stages/result3.proto";
+import "proto/stages/result4.proto";
+import "proto/stages/result5.proto";
+
 
 message Task {
     oneof Stage {
@@ -31,5 +37,10 @@ message Task {
         Lambda lambda = 11;
         Mu mu = 12;
         Nu nu = 13;
+        Result1 result1 = 14;
+        Result2 result2 = 15;
+        Result3 result3 = 16;
+        Result4 result4 = 17;
+        Result5 result5 = 18;
     }
 }
