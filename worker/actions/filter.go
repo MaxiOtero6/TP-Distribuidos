@@ -31,16 +31,12 @@ The keys of the map are the stage names.
 The values are the tasks for each stage.
 
 This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return nil.
+It will simply return a map with empty data.
 */
 func (f *Filter) alphaStage(data []*protocol.Alpha_Data) map[string]*protocol.Task {
 	var betaData []*protocol.Beta_Data
 	var zetaData []*protocol.Zeta_Data
 	var iotaData []*protocol.Iota_Data
-
-	if data == nil {
-		return nil
-	}
 
 	for _, movie := range data {
 		if movie == nil {
@@ -117,14 +113,10 @@ The keys of the map are the stage names.
 The values are the tasks for each stage.
 
 This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return nil.
+It will simply return a map with empty data.
 */
 func (f *Filter) betaStage(data []*protocol.Beta_Data) map[string]*protocol.Task {
 	var res []*protocol.Result1_Data
-
-	if data == nil {
-		return nil
-	}
 
 	for _, movie := range data {
 		if movie == nil {
@@ -168,14 +160,10 @@ The keys of the map are the stage names.
 The values are the tasks for each stage.
 
 This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return nil.
+It will simply return a map with empty data.
 */
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data) map[string]*protocol.Task {
 	var res []*protocol.Delta_Data
-
-	if data == nil {
-		return nil
-	}
 
 	for _, movie := range data {
 		if movie == nil {
