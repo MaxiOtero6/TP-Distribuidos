@@ -157,7 +157,7 @@ func TestBetaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.betaStage(nil)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 stage")
 
 		res := result["result"].GetResult1().GetData()
 		assert.Len(t, res, 0, "Expected empty slice")

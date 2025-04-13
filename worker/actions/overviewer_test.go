@@ -34,7 +34,7 @@ func TestMuStage(t *testing.T) {
 		assert.Equal(t, true, result["nu"].GetNu().GetData()[0].GetSentiment())
 	})
 
-	t.Run("Process one valid Mu_Data", func(t *testing.T) {
+	t.Run("Process many valid Mu_Data", func(t *testing.T) {
 		data := []*protocol.Mu_Data{
 			{
 				Id:       "1",
