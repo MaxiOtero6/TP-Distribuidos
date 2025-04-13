@@ -21,197 +21,31 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type QueryStage int32
-
-const (
-	QueryStage_UNASSIGNED QueryStage = 0
-	QueryStage_ALPHA      QueryStage = 1
-	QueryStage_BETA       QueryStage = 2
-	QueryStage_GAMMA      QueryStage = 3
-	QueryStage_DELTA      QueryStage = 4
-	QueryStage_EPSILON    QueryStage = 5
-	QueryStage_ZETA       QueryStage = 6
-	QueryStage_ETA        QueryStage = 7
-	QueryStage_THETA      QueryStage = 8
-	QueryStage_IOTA       QueryStage = 9
-	QueryStage_KAPPA      QueryStage = 10
-	QueryStage_LAMBDA     QueryStage = 11
-	QueryStage_MU         QueryStage = 12
-	QueryStage_NU         QueryStage = 13
-)
-
-// Enum value maps for QueryStage.
-var (
-	QueryStage_name = map[int32]string{
-		0:  "UNASSIGNED",
-		1:  "ALPHA",
-		2:  "BETA",
-		3:  "GAMMA",
-		4:  "DELTA",
-		5:  "EPSILON",
-		6:  "ZETA",
-		7:  "ETA",
-		8:  "THETA",
-		9:  "IOTA",
-		10: "KAPPA",
-		11: "LAMBDA",
-		12: "MU",
-		13: "NU",
-	}
-	QueryStage_value = map[string]int32{
-		"UNASSIGNED": 0,
-		"ALPHA":      1,
-		"BETA":       2,
-		"GAMMA":      3,
-		"DELTA":      4,
-		"EPSILON":    5,
-		"ZETA":       6,
-		"ETA":        7,
-		"THETA":      8,
-		"IOTA":       9,
-		"KAPPA":      10,
-		"LAMBDA":     11,
-		"MU":         12,
-		"NU":         13,
-	}
-)
-
-func (x QueryStage) Enum() *QueryStage {
-	p := new(QueryStage)
-	*p = x
-	return p
-}
-
-func (x QueryStage) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (QueryStage) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_task_proto_enumTypes[0].Descriptor()
-}
-
-func (QueryStage) Type() protoreflect.EnumType {
-	return &file_proto_task_proto_enumTypes[0]
-}
-
-func (x QueryStage) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use QueryStage.Descriptor instead.
-func (QueryStage) EnumDescriptor() ([]byte, []int) {
-	return file_proto_task_proto_rawDescGZIP(), []int{0}
-}
-
-type DataRow struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Data:
-	//
-	//	*DataRow_Movie
-	//	*DataRow_Credit
-	//	*DataRow_Rating
-	Data          isDataRow_Data `protobuf_oneof:"Data"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DataRow) Reset() {
-	*x = DataRow{}
-	mi := &file_proto_task_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DataRow) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DataRow) ProtoMessage() {}
-
-func (x *DataRow) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_task_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DataRow.ProtoReflect.Descriptor instead.
-func (*DataRow) Descriptor() ([]byte, []int) {
-	return file_proto_task_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *DataRow) GetData() isDataRow_Data {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-func (x *DataRow) GetMovie() *Movie {
-	if x != nil {
-		if x, ok := x.Data.(*DataRow_Movie); ok {
-			return x.Movie
-		}
-	}
-	return nil
-}
-
-func (x *DataRow) GetCredit() *Credit {
-	if x != nil {
-		if x, ok := x.Data.(*DataRow_Credit); ok {
-			return x.Credit
-		}
-	}
-	return nil
-}
-
-func (x *DataRow) GetRating() *Rating {
-	if x != nil {
-		if x, ok := x.Data.(*DataRow_Rating); ok {
-			return x.Rating
-		}
-	}
-	return nil
-}
-
-type isDataRow_Data interface {
-	isDataRow_Data()
-}
-
-type DataRow_Movie struct {
-	Movie *Movie `protobuf:"bytes,2,opt,name=movie,proto3,oneof"`
-}
-
-type DataRow_Credit struct {
-	Credit *Credit `protobuf:"bytes,3,opt,name=credit,proto3,oneof"`
-}
-
-type DataRow_Rating struct {
-	Rating *Rating `protobuf:"bytes,4,opt,name=rating,proto3,oneof"`
-}
-
-func (*DataRow_Movie) isDataRow_Data() {}
-
-func (*DataRow_Credit) isDataRow_Data() {}
-
-func (*DataRow_Rating) isDataRow_Data() {}
-
 type Task struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stage         QueryStage             `protobuf:"varint,1,opt,name=stage,proto3,enum=QueryStage" json:"stage,omitempty"`
-	Data          []*DataRow             `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Stage:
+	//
+	//	*Task_Alpha
+	//	*Task_Beta
+	//	*Task_Gamma
+	//	*Task_Delta
+	//	*Task_Epsilon
+	//	*Task_Zeta
+	//	*Task_Eta
+	//	*Task_Theta
+	//	*Task_Iota
+	//	*Task_Kappa
+	//	*Task_Lambda
+	//	*Task_Mu
+	//	*Task_Nu
+	Stage         isTask_Stage `protobuf_oneof:"Stage"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
 	*x = Task{}
-	mi := &file_proto_task_proto_msgTypes[1]
+	mi := &file_proto_task_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -223,7 +57,7 @@ func (x *Task) String() string {
 func (*Task) ProtoMessage() {}
 
 func (x *Task) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_task_proto_msgTypes[1]
+	mi := &file_proto_task_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -236,55 +70,236 @@ func (x *Task) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Task.ProtoReflect.Descriptor instead.
 func (*Task) Descriptor() ([]byte, []int) {
-	return file_proto_task_proto_rawDescGZIP(), []int{1}
+	return file_proto_task_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Task) GetStage() QueryStage {
+func (x *Task) GetStage() isTask_Stage {
 	if x != nil {
 		return x.Stage
 	}
-	return QueryStage_UNASSIGNED
+	return nil
 }
 
-func (x *Task) GetData() []*DataRow {
+func (x *Task) GetAlpha() *Alpha {
 	if x != nil {
-		return x.Data
+		if x, ok := x.Stage.(*Task_Alpha); ok {
+			return x.Alpha
+		}
 	}
 	return nil
 }
+
+func (x *Task) GetBeta() *Beta {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Beta); ok {
+			return x.Beta
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetGamma() *Gamma {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Gamma); ok {
+			return x.Gamma
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetDelta() *Delta {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Delta); ok {
+			return x.Delta
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetEpsilon() *Epsilon {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Epsilon); ok {
+			return x.Epsilon
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetZeta() *Zeta {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Zeta); ok {
+			return x.Zeta
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetEta() *Eta {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Eta); ok {
+			return x.Eta
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetTheta() *Theta {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Theta); ok {
+			return x.Theta
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetIota() *Iota {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Iota); ok {
+			return x.Iota
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetKappa() *Kappa {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Kappa); ok {
+			return x.Kappa
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetLambda() *Lambda {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Lambda); ok {
+			return x.Lambda
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetMu() *Mu {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Mu); ok {
+			return x.Mu
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetNu() *Nu {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Nu); ok {
+			return x.Nu
+		}
+	}
+	return nil
+}
+
+type isTask_Stage interface {
+	isTask_Stage()
+}
+
+type Task_Alpha struct {
+	Alpha *Alpha `protobuf:"bytes,1,opt,name=alpha,proto3,oneof"`
+}
+
+type Task_Beta struct {
+	Beta *Beta `protobuf:"bytes,2,opt,name=beta,proto3,oneof"`
+}
+
+type Task_Gamma struct {
+	Gamma *Gamma `protobuf:"bytes,3,opt,name=gamma,proto3,oneof"`
+}
+
+type Task_Delta struct {
+	Delta *Delta `protobuf:"bytes,4,opt,name=delta,proto3,oneof"`
+}
+
+type Task_Epsilon struct {
+	Epsilon *Epsilon `protobuf:"bytes,5,opt,name=epsilon,proto3,oneof"`
+}
+
+type Task_Zeta struct {
+	Zeta *Zeta `protobuf:"bytes,6,opt,name=zeta,proto3,oneof"`
+}
+
+type Task_Eta struct {
+	Eta *Eta `protobuf:"bytes,7,opt,name=eta,proto3,oneof"`
+}
+
+type Task_Theta struct {
+	Theta *Theta `protobuf:"bytes,8,opt,name=theta,proto3,oneof"`
+}
+
+type Task_Iota struct {
+	Iota *Iota `protobuf:"bytes,9,opt,name=iota,proto3,oneof"`
+}
+
+type Task_Kappa struct {
+	Kappa *Kappa `protobuf:"bytes,10,opt,name=kappa,proto3,oneof"`
+}
+
+type Task_Lambda struct {
+	Lambda *Lambda `protobuf:"bytes,11,opt,name=lambda,proto3,oneof"`
+}
+
+type Task_Mu struct {
+	Mu *Mu `protobuf:"bytes,12,opt,name=mu,proto3,oneof"`
+}
+
+type Task_Nu struct {
+	Nu *Nu `protobuf:"bytes,13,opt,name=nu,proto3,oneof"`
+}
+
+func (*Task_Alpha) isTask_Stage() {}
+
+func (*Task_Beta) isTask_Stage() {}
+
+func (*Task_Gamma) isTask_Stage() {}
+
+func (*Task_Delta) isTask_Stage() {}
+
+func (*Task_Epsilon) isTask_Stage() {}
+
+func (*Task_Zeta) isTask_Stage() {}
+
+func (*Task_Eta) isTask_Stage() {}
+
+func (*Task_Theta) isTask_Stage() {}
+
+func (*Task_Iota) isTask_Stage() {}
+
+func (*Task_Kappa) isTask_Stage() {}
+
+func (*Task_Lambda) isTask_Stage() {}
+
+func (*Task_Mu) isTask_Stage() {}
+
+func (*Task_Nu) isTask_Stage() {}
 
 var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x11proto/movie.proto\x1a\x12proto/credit.proto\x1a\x12proto/rating.proto\"w\n" +
-	"\aDataRow\x12\x1e\n" +
-	"\x05movie\x18\x02 \x01(\v2\x06.MovieH\x00R\x05movie\x12!\n" +
-	"\x06credit\x18\x03 \x01(\v2\a.CreditH\x00R\x06credit\x12!\n" +
-	"\x06rating\x18\x04 \x01(\v2\a.RatingH\x00R\x06ratingB\x06\n" +
-	"\x04Data\"G\n" +
-	"\x04Task\x12!\n" +
-	"\x05stage\x18\x01 \x01(\x0e2\v.QueryStageR\x05stage\x12\x1c\n" +
-	"\x04data\x18\x02 \x03(\v2\b.DataRowR\x04data*\xa3\x01\n" +
-	"\n" +
-	"QueryStage\x12\x0e\n" +
-	"\n" +
-	"UNASSIGNED\x10\x00\x12\t\n" +
-	"\x05ALPHA\x10\x01\x12\b\n" +
-	"\x04BETA\x10\x02\x12\t\n" +
-	"\x05GAMMA\x10\x03\x12\t\n" +
-	"\x05DELTA\x10\x04\x12\v\n" +
-	"\aEPSILON\x10\x05\x12\b\n" +
-	"\x04ZETA\x10\x06\x12\a\n" +
-	"\x03ETA\x10\a\x12\t\n" +
-	"\x05THETA\x10\b\x12\b\n" +
-	"\x04IOTA\x10\t\x12\t\n" +
-	"\x05KAPPA\x10\n" +
-	"\x12\n" +
-	"\n" +
-	"\x06LAMBDA\x10\v\x12\x06\n" +
-	"\x02MU\x10\f\x12\x06\n" +
-	"\x02NU\x10\rB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\"\x97\x03\n" +
+	"\x04Task\x12\x1e\n" +
+	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
+	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
+	"\x05gamma\x18\x03 \x01(\v2\x06.GammaH\x00R\x05gamma\x12\x1e\n" +
+	"\x05delta\x18\x04 \x01(\v2\x06.DeltaH\x00R\x05delta\x12$\n" +
+	"\aepsilon\x18\x05 \x01(\v2\b.EpsilonH\x00R\aepsilon\x12\x1b\n" +
+	"\x04zeta\x18\x06 \x01(\v2\x05.ZetaH\x00R\x04zeta\x12\x18\n" +
+	"\x03eta\x18\a \x01(\v2\x04.EtaH\x00R\x03eta\x12\x1e\n" +
+	"\x05theta\x18\b \x01(\v2\x06.ThetaH\x00R\x05theta\x12\x1b\n" +
+	"\x04iota\x18\t \x01(\v2\x05.IotaH\x00R\x04iota\x12\x1e\n" +
+	"\x05kappa\x18\n" +
+	" \x01(\v2\x06.KappaH\x00R\x05kappa\x12!\n" +
+	"\x06lambda\x18\v \x01(\v2\a.LambdaH\x00R\x06lambda\x12\x15\n" +
+	"\x02mu\x18\f \x01(\v2\x03.MuH\x00R\x02mu\x12\x15\n" +
+	"\x02nu\x18\r \x01(\v2\x03.NuH\x00R\x02nuB\a\n" +
+	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_task_proto_rawDescOnce sync.Once
@@ -298,27 +313,42 @@ func file_proto_task_proto_rawDescGZIP() []byte {
 	return file_proto_task_proto_rawDescData
 }
 
-var file_proto_task_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_task_proto_goTypes = []any{
-	(QueryStage)(0), // 0: QueryStage
-	(*DataRow)(nil), // 1: DataRow
-	(*Task)(nil),    // 2: Task
-	(*Movie)(nil),   // 3: Movie
-	(*Credit)(nil),  // 4: Credit
-	(*Rating)(nil),  // 5: Rating
+	(*Task)(nil),    // 0: Task
+	(*Alpha)(nil),   // 1: Alpha
+	(*Beta)(nil),    // 2: Beta
+	(*Gamma)(nil),   // 3: Gamma
+	(*Delta)(nil),   // 4: Delta
+	(*Epsilon)(nil), // 5: Epsilon
+	(*Zeta)(nil),    // 6: Zeta
+	(*Eta)(nil),     // 7: Eta
+	(*Theta)(nil),   // 8: Theta
+	(*Iota)(nil),    // 9: Iota
+	(*Kappa)(nil),   // 10: Kappa
+	(*Lambda)(nil),  // 11: Lambda
+	(*Mu)(nil),      // 12: Mu
+	(*Nu)(nil),      // 13: Nu
 }
 var file_proto_task_proto_depIdxs = []int32{
-	3, // 0: DataRow.movie:type_name -> Movie
-	4, // 1: DataRow.credit:type_name -> Credit
-	5, // 2: DataRow.rating:type_name -> Rating
-	0, // 3: Task.stage:type_name -> QueryStage
-	1, // 4: Task.data:type_name -> DataRow
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	1,  // 0: Task.alpha:type_name -> Alpha
+	2,  // 1: Task.beta:type_name -> Beta
+	3,  // 2: Task.gamma:type_name -> Gamma
+	4,  // 3: Task.delta:type_name -> Delta
+	5,  // 4: Task.epsilon:type_name -> Epsilon
+	6,  // 5: Task.zeta:type_name -> Zeta
+	7,  // 6: Task.eta:type_name -> Eta
+	8,  // 7: Task.theta:type_name -> Theta
+	9,  // 8: Task.iota:type_name -> Iota
+	10, // 9: Task.kappa:type_name -> Kappa
+	11, // 10: Task.lambda:type_name -> Lambda
+	12, // 11: Task.mu:type_name -> Mu
+	13, // 12: Task.nu:type_name -> Nu
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }
@@ -326,27 +356,46 @@ func file_proto_task_proto_init() {
 	if File_proto_task_proto != nil {
 		return
 	}
-	file_proto_movie_proto_init()
-	file_proto_credit_proto_init()
-	file_proto_rating_proto_init()
+	file_proto_stages_alpha_proto_init()
+	file_proto_stages_beta_proto_init()
+	file_proto_stages_gamma_proto_init()
+	file_proto_stages_delta_proto_init()
+	file_proto_stages_epsilon_proto_init()
+	file_proto_stages_zeta_proto_init()
+	file_proto_stages_eta_proto_init()
+	file_proto_stages_theta_proto_init()
+	file_proto_stages_iota_proto_init()
+	file_proto_stages_kappa_proto_init()
+	file_proto_stages_lambda_proto_init()
+	file_proto_stages_mu_proto_init()
+	file_proto_stages_nu_proto_init()
 	file_proto_task_proto_msgTypes[0].OneofWrappers = []any{
-		(*DataRow_Movie)(nil),
-		(*DataRow_Credit)(nil),
-		(*DataRow_Rating)(nil),
+		(*Task_Alpha)(nil),
+		(*Task_Beta)(nil),
+		(*Task_Gamma)(nil),
+		(*Task_Delta)(nil),
+		(*Task_Epsilon)(nil),
+		(*Task_Zeta)(nil),
+		(*Task_Eta)(nil),
+		(*Task_Theta)(nil),
+		(*Task_Iota)(nil),
+		(*Task_Kappa)(nil),
+		(*Task_Lambda)(nil),
+		(*Task_Mu)(nil),
+		(*Task_Nu)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_task_proto_rawDesc), len(file_proto_task_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   2,
+			NumEnums:      0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_task_proto_goTypes,
 		DependencyIndexes: file_proto_task_proto_depIdxs,
-		EnumInfos:         file_proto_task_proto_enumTypes,
 		MessageInfos:      file_proto_task_proto_msgTypes,
 	}.Build()
 	File_proto_task_proto = out.File
