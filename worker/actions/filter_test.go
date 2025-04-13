@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAlphaStage(t *testing.T) {
@@ -11,48 +12,30 @@ func TestAlphaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.alphaStage(nil)
-
-		if len(result) != 3 {
-			t.Errorf("Expected 3 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 3, "Expected 3 stages")
 
 		beta := result["beta"].GetBeta().GetData()
-		if len(beta) != 0 {
-			t.Errorf("Expected empty slice, got %v", beta)
-		}
+		assert.Len(t, beta, 0, "Expected empty slice")
 
 		iotaData := result["iota"].GetIota().GetData()
-		if len(iotaData) != 0 {
-			t.Errorf("Expected empty slice, got %v", iotaData)
-		}
+		assert.Len(t, iotaData, 0, "Expected empty slice")
 
 		zeta := result["zeta"].GetZeta().GetData()
-		if len(zeta) != 0 {
-			t.Errorf("Expected empty slice, got %v", zeta)
-		}
+		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.alphaStage([]*protocol.Alpha_Data{})
-
-		if len(result) != 3 {
-			t.Errorf("Expected 3 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 3, "Expected 3 stages")
 
 		beta := result["beta"].GetBeta().GetData()
-		if len(beta) != 0 {
-			t.Errorf("Expected empty slice, got %v", beta)
-		}
+		assert.Len(t, beta, 0, "Expected empty slice")
 
 		iotaData := result["iota"].GetIota().GetData()
-		if len(iotaData) != 0 {
-			t.Errorf("Expected empty slice, got %v", iotaData)
-		}
+		assert.Len(t, iotaData, 0, "Expected empty slice")
 
 		zeta := result["zeta"].GetZeta().GetData()
-		if len(zeta) != 0 {
-			t.Errorf("Expected empty slice, got %v", zeta)
-		}
+		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with valid data", func(t *testing.T) {
@@ -62,81 +45,71 @@ func TestAlphaStage(t *testing.T) {
 				Title:         "Movie 1",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Drama"},
 			},
 			{
 				Id:            "2",
 				Title:         "Movie 2",
 				ReleaseYear:   1999,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Thriller"},
 			},
 			{
 				Id:            "3",
 				Title:         "Movie 3",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Spain"},
+				Genres:        []string{"Action", "Comedy"},
 			},
 			{
 				Id:            "4",
 				Title:         "Movie 4",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Spain", "Argentina"},
+				Genres:        []string{"Romantic"},
 			},
 			{
 				Id:            "5",
 				Title:         "Movie 5",
 				ReleaseYear:   2005,
 				ProdCountries: nil,
+				Genres:        []string{"Action", "Drama"},
 			},
 			nil,
 		}
 
 		result := filter.alphaStage(data)
-
-		if len(result) != 3 {
-			t.Errorf("Expected 3 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 3, "Expected 3 stages")
 
 		betaData := result["beta"].GetBeta().GetData()
-		if len(betaData) != 2 {
-			t.Errorf("Expected 2 movies, got %d", len(betaData))
-			return
-		}
+		assert.Len(t, betaData, 2, "Expected 2 movies")
 
-		if betaData[0].GetId() != "1" {
-			t.Errorf("Expected movie ID 1, got %s", betaData[0].GetId())
-		}
+		assert.Equal(t, "1", betaData[0].GetId(), "Expected movie ID 1")
+		assert.Equal(t, "Movie 1", betaData[0].GetTitle(), "Expected movie title 'Movie 1'")
+		assert.Equal(t, uint32(2005), betaData[0].GetReleaseYear(), "Expected release year 2005")
+		assert.Equal(t, []string{"Argentina"}, betaData[0].GetProdCountries(), "Expected production countries 'Argentina'")
+		assert.Equal(t, []string{"Action", "Drama"}, betaData[0].GetGenres(), "Expected genres 'Action', 'Drama'")
 
-		if betaData[1].GetId() != "4" {
-			t.Errorf("Expected movie ID 4, got %s", betaData[1].GetId())
-		}
+		assert.Equal(t, "4", betaData[1].GetId(), "Expected movie ID 4")
+		assert.Equal(t, "Movie 4", betaData[1].GetTitle(), "Expected movie title 'Movie 4'")
+		assert.Equal(t, uint32(2005), betaData[1].GetReleaseYear(), "Expected release year 2005")
+		assert.Equal(t, []string{"Spain", "Argentina"}, betaData[1].GetProdCountries(), "Expected production countries 'Spain', 'Argentina'")
+		assert.Equal(t, []string{"Romantic"}, betaData[1].GetGenres(), "Expected genres 'Romantic'")
 
 		iotaData := result["iota"].GetIota().GetData()
-		if len(iotaData) != 2 {
-			t.Errorf("Expected 2 movies, got %d", len(iotaData))
-			return
-		}
+		assert.Len(t, iotaData, 2, "Expected 2 movies")
 
-		if iotaData[0].GetMovie().GetId() != "1" {
-			t.Errorf("Expected movie ID 1, got %s", iotaData[0].GetMovie().GetId())
-		}
-
-		if iotaData[1].GetMovie().GetId() != "4" {
-			t.Errorf("Expected movie ID 4, got %s", iotaData[1].GetMovie().GetId())
-		}
+		assert.Equal(t, "1", iotaData[0].GetMovie().GetId(), "Expected movie ID 1")
+		assert.Equal(t, "4", iotaData[1].GetMovie().GetId(), "Expected movie ID 4")
 
 		zetaData := result["zeta"].GetZeta().GetData()
-		if len(zetaData) != 2 {
-			t.Errorf("Expected 2 movies, got %d", len(zetaData))
-			return
-		}
+		assert.Len(t, zetaData, 2, "Expected 2 movies")
 
-		if zetaData[0].GetMovie().GetId() != "1" {
-			t.Errorf("Expected movie ID 1, got %s", zetaData[0].GetMovie().GetId())
-		}
+		assert.Equal(t, "1", zetaData[0].GetMovie().GetId(), "Expected movie ID 1")
+		assert.Equal(t, "Movie 1", zetaData[0].GetMovie().GetTitle(), "Expected movie title 'Movie 1'")
 
-		if zetaData[1].GetMovie().GetId() != "4" {
-			t.Errorf("Expected movie ID 4, got %s", zetaData[1].GetMovie().GetId())
-		}
+		assert.Equal(t, "4", zetaData[1].GetMovie().GetId(), "Expected movie ID 4")
+		assert.Equal(t, "Movie 4", zetaData[1].GetMovie().GetTitle(), "Expected movie title 'Movie 4'")
 	})
 
 	t.Run("Test with all movies filtered out", func(t *testing.T) {
@@ -146,42 +119,36 @@ func TestAlphaStage(t *testing.T) {
 				Title:         "Movie 1",
 				ReleaseYear:   1990,
 				ProdCountries: []string{"USA"},
+				Genres:        []string{"Action", "Drama"},
 			},
 			{
 				Id:            "2",
 				Title:         "Movie 2",
 				ReleaseYear:   1995,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Thriller"},
 			},
 			{
 				Id:            "3",
 				Title:         "Movie 3",
 				ReleaseYear:   2005,
 				ProdCountries: nil,
+				Genres:        []string{"Action", "Comedy"},
 			},
 			nil,
 		}
 
 		result := filter.alphaStage(data)
-
-		if len(result) != 3 {
-			t.Errorf("Expected 3 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 3, "Expected 3 stages")
 
 		beta := result["beta"].GetBeta().GetData()
-		if len(beta) != 0 {
-			t.Errorf("Expected empty slice, got %v", beta)
-		}
+		assert.Len(t, beta, 0, "Expected empty slice")
 
 		iotaData := result["iota"].GetIota().GetData()
-		if len(iotaData) != 0 {
-			t.Errorf("Expected empty slice, got %v", iotaData)
-		}
+		assert.Len(t, iotaData, 0, "Expected empty slice")
 
 		zeta := result["zeta"].GetZeta().GetData()
-		if len(zeta) != 0 {
-			t.Errorf("Expected empty slice, got %v", zeta)
-		}
+		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 }
 
@@ -190,28 +157,18 @@ func TestBetaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.betaStage(nil)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stage")
 
 		res := result["result"].GetResult1().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.betaStage([]*protocol.Beta_Data{})
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["result"].GetResult1().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with valid data", func(t *testing.T) {
@@ -221,54 +178,52 @@ func TestBetaStage(t *testing.T) {
 				Title:         "Movie 1",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Drama"},
 			},
 			{
 				Id:            "2",
 				Title:         "Movie 2",
 				ReleaseYear:   1999,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Thriller"},
 			},
 			{
 				Id:            "3",
 				Title:         "Movie 3",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Spain"},
+				Genres:        []string{"Action", "Comedy"},
 			},
 			{
 				Id:            "4",
 				Title:         "Movie 4",
 				ReleaseYear:   2005,
 				ProdCountries: []string{"Spain", "Argentina"},
+				Genres:        []string{"Romantic"},
 			},
 			{
 				Id:            "5",
 				Title:         "Movie 5",
 				ReleaseYear:   2005,
 				ProdCountries: nil,
+				Genres:        []string{"Action", "Drama"},
 			},
 			nil,
 		}
 
 		result := filter.betaStage(data)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["result"].GetResult1().GetData()
+		assert.Len(t, res, 2, "Expected 2 movies")
 
-		if len(res) != 2 {
-			t.Errorf("Expected 1 movie, got %d", len(res))
-			return
-		}
+		assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
+		assert.Equal(t, "Movie 3", res[0].GetTitle(), "Expected movie title 'Movie 3'")
+		assert.Equal(t, []string{"Action", "Comedy"}, res[0].GetGenres(), "Expected genres 'Action', 'Comedy'")
 
-		if res[0].GetId() != "3" {
-			t.Errorf("Expected movie ID 3, got %s", res[0].GetId())
-		}
-
-		if res[1].GetId() != "4" {
-			t.Errorf("Expected movie ID 4, got %s", res[1].GetId())
-		}
+		assert.Equal(t, "4", res[1].GetId(), "Expected movie ID 4")
+		assert.Equal(t, "Movie 4", res[1].GetTitle(), "Expected movie title 'Movie 4'")
+		assert.Equal(t, []string{"Romantic"}, res[1].GetGenres(), "Expected genres 'Romantic'")
 	})
 
 	t.Run("Test with all movies filtered out", func(t *testing.T) {
@@ -278,32 +233,30 @@ func TestBetaStage(t *testing.T) {
 				Title:         "Movie 1",
 				ReleaseYear:   1990,
 				ProdCountries: []string{"USA"},
+				Genres:        []string{"Action", "Drama"},
 			},
 			{
 				Id:            "2",
 				Title:         "Movie 2",
 				ReleaseYear:   2020,
 				ProdCountries: []string{"Argentina"},
+				Genres:        []string{"Action", "Thriller"},
 			},
 			{
 				Id:            "3",
 				Title:         "Movie 3",
 				ReleaseYear:   2005,
 				ProdCountries: nil,
+				Genres:        []string{"Action", "Comedy"},
 			},
 			nil,
 		}
 
 		result := filter.betaStage(data)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["result"].GetResult1().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Empty(t, res, "Expected empty slice")
 	})
 }
 
@@ -312,28 +265,18 @@ func TestGammaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.gammaStage(nil)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["delta"].GetDelta().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Empty(t, res, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.gammaStage([]*protocol.Gamma_Data{})
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["delta"].GetDelta().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Empty(t, res, "Expected empty slice")
 	})
 
 	t.Run("Test with valid data", func(t *testing.T) {
@@ -367,25 +310,18 @@ func TestGammaStage(t *testing.T) {
 		}
 
 		result := filter.gammaStage(data)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["delta"].GetDelta().GetData()
+		assert.Len(t, res, 2, "Expected 2 movies")
 
-		if len(res) != 2 {
-			t.Errorf("Expected 2 movie, got %d", len(res))
-			return
-		}
+		assert.Equal(t, "1", res[0].GetId(), "Expected movie ID 1")
+		assert.Equal(t, uint64(2005), res[0].GetBudget(), "Expected movie budget 2005")
+		assert.Equal(t, "Argentina", res[0].GetProdCountry(), "Expected production country 'Argentina'")
 
-		if res[0].GetId() != "1" {
-			t.Errorf("Expected movie ID 1, got %s", res[0].GetId())
-		}
-
-		if res[1].GetId() != "3" {
-			t.Errorf("Expected movie ID 3, got %s", res[1].GetId())
-		}
+		assert.Equal(t, "3", res[1].GetId(), "Expected movie ID 3")
+		assert.Equal(t, uint64(2005), res[1].GetBudget(), "Expected movie budget 2005")
+		assert.Equal(t, "Spain", res[1].GetProdCountry(), "Expected production country 'Spain'")
 	})
 
 	t.Run("Test with all movies filtered out", func(t *testing.T) {
@@ -409,15 +345,10 @@ func TestGammaStage(t *testing.T) {
 		}
 
 		result := filter.gammaStage(data)
-
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 
 		res := result["delta"].GetDelta().GetData()
-		if len(res) != 0 {
-			t.Errorf("Expected empty slice, got %v", res)
-		}
+		assert.Empty(t, res, "Expected empty slice")
 	})
 }
 
@@ -433,13 +364,9 @@ func TestExecute(t *testing.T) {
 		}
 
 		result, err := filter.Execute(task)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
+		assert.NoError(t, err, "Expected no error, got %v", err)
 
-		if len(result) != 3 {
-			t.Errorf("Expected 3 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 3, "Expected 3 stages")
 	})
 
 	t.Run("Test with Beta stage", func(t *testing.T) {
@@ -453,13 +380,9 @@ func TestExecute(t *testing.T) {
 		}
 
 		result, err := filter.Execute(task)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
+		assert.NoError(t, err, "Expected no error, got %v", err)
 
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 	})
 
 	t.Run("Test with Gamma stage", func(t *testing.T) {
@@ -473,13 +396,9 @@ func TestExecute(t *testing.T) {
 		}
 
 		result, err := filter.Execute(task)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
+		assert.NoError(t, err, "Expected no error, got %v", err)
 
-		if len(result) != 1 {
-			t.Errorf("Expected 1 stages, got %d", len(result))
-		}
+		assert.Len(t, result, 1, "Expected 1 stages")
 	})
 
 	t.Run("Test with invalid stage", func(t *testing.T) {
@@ -489,12 +408,8 @@ func TestExecute(t *testing.T) {
 		}
 
 		result, err := filter.Execute(task)
-		if err == nil {
-			t.Errorf("Expected error, got nil")
-		}
+		assert.Error(t, err, "Expected error, got nil")
 
-		if result != nil {
-			t.Errorf("Expected nil result, got %v", result)
-		}
+		assert.Nil(t, result, "Expected nil result, got %v", result)
 	})
 }
