@@ -98,7 +98,7 @@ func TestAlphaStage(t *testing.T) {
 
 		betaData := result["beta"].GetBeta().GetData()
 		if len(betaData) != 2 {
-			t.Errorf("Expected 1 movie, got %d", len(betaData))
+			t.Errorf("Expected 2 movies, got %d", len(betaData))
 			return
 		}
 
@@ -112,7 +112,7 @@ func TestAlphaStage(t *testing.T) {
 
 		iotaData := result["iota"].GetIota().GetData()
 		if len(iotaData) != 2 {
-			t.Errorf("Expected 1 movie, got %d", len(iotaData))
+			t.Errorf("Expected 2 movies, got %d", len(iotaData))
 			return
 		}
 
@@ -126,7 +126,7 @@ func TestAlphaStage(t *testing.T) {
 
 		zetaData := result["zeta"].GetZeta().GetData()
 		if len(zetaData) != 2 {
-			t.Errorf("Expected 1 movie, got %d", len(zetaData))
+			t.Errorf("Expected 2 movies, got %d", len(zetaData))
 			return
 		}
 
