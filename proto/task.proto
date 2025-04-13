@@ -8,7 +8,19 @@ import "proto/rating.proto";
 
 enum QueryStage {
     UNASSIGNED = 0;
-
+    ALPHA = 1;
+    BETA = 2;
+    GAMMA = 3;
+    DELTA = 4;
+    EPSILON = 5;
+    ZETA = 6;
+    ETA = 7;
+    THETA = 8;
+    IOTA = 9;
+    KAPPA = 10;
+    LAMBDA = 11;
+    MU = 12;
+    NU = 13;
 }
 
 message DataRow {

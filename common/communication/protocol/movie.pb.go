@@ -29,7 +29,7 @@ type Movie struct {
 	Revenue       uint64                 `protobuf:"varint,4,opt,name=revenue,proto3" json:"revenue,omitempty"`
 	Budget        uint64                 `protobuf:"varint,5,opt,name=budget,proto3" json:"budget,omitempty"`
 	Overview      string                 `protobuf:"bytes,6,opt,name=overview,proto3" json:"overview,omitempty"`
-	ReleaseDate   string                 `protobuf:"bytes,7,opt,name=release_date,json=releaseDate,proto3" json:"release_date,omitempty"`
+	ReleaseYear   uint32                 `protobuf:"varint,7,opt,name=release_year,json=releaseYear,proto3" json:"release_year,omitempty"`
 	Genres        []string               `protobuf:"bytes,8,rep,name=genres,proto3" json:"genres,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -107,11 +107,11 @@ func (x *Movie) GetOverview() string {
 	return ""
 }
 
-func (x *Movie) GetReleaseDate() string {
+func (x *Movie) GetReleaseYear() uint32 {
 	if x != nil {
-		return x.ReleaseDate
+		return x.ReleaseYear
 	}
-	return ""
+	return 0
 }
 
 func (x *Movie) GetGenres() []string {
@@ -133,7 +133,7 @@ const file_proto_movie_proto_rawDesc = "" +
 	"\arevenue\x18\x04 \x01(\x04R\arevenue\x12\x16\n" +
 	"\x06budget\x18\x05 \x01(\x04R\x06budget\x12\x1a\n" +
 	"\boverview\x18\x06 \x01(\tR\boverview\x12!\n" +
-	"\frelease_date\x18\a \x01(\tR\vreleaseDate\x12\x16\n" +
+	"\frelease_year\x18\a \x01(\rR\vreleaseYear\x12\x16\n" +
 	"\x06genres\x18\b \x03(\tR\x06genresB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (

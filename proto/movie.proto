@@ -11,6 +11,6 @@ message Movie {
     uint64 revenue = 4;
     uint64 budget = 5;
     string overview = 6;
-    string release_date = 7;
+    uint32 release_year = 7;
     repeated string genres = 8;
 }

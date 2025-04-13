@@ -25,15 +25,54 @@ type QueryStage int32
 
 const (
 	QueryStage_UNASSIGNED QueryStage = 0
+	QueryStage_ALPHA      QueryStage = 1
+	QueryStage_BETA       QueryStage = 2
+	QueryStage_GAMMA      QueryStage = 3
+	QueryStage_DELTA      QueryStage = 4
+	QueryStage_EPSILON    QueryStage = 5
+	QueryStage_ZETA       QueryStage = 6
+	QueryStage_ETA        QueryStage = 7
+	QueryStage_THETA      QueryStage = 8
+	QueryStage_IOTA       QueryStage = 9
+	QueryStage_KAPPA      QueryStage = 10
+	QueryStage_LAMBDA     QueryStage = 11
+	QueryStage_MU         QueryStage = 12
+	QueryStage_NU         QueryStage = 13
 )
 
 // Enum value maps for QueryStage.
 var (
 	QueryStage_name = map[int32]string{
-		0: "UNASSIGNED",
+		0:  "UNASSIGNED",
+		1:  "ALPHA",
+		2:  "BETA",
+		3:  "GAMMA",
+		4:  "DELTA",
+		5:  "EPSILON",
+		6:  "ZETA",
+		7:  "ETA",
+		8:  "THETA",
+		9:  "IOTA",
+		10: "KAPPA",
+		11: "LAMBDA",
+		12: "MU",
+		13: "NU",
 	}
 	QueryStage_value = map[string]int32{
 		"UNASSIGNED": 0,
+		"ALPHA":      1,
+		"BETA":       2,
+		"GAMMA":      3,
+		"DELTA":      4,
+		"EPSILON":    5,
+		"ZETA":       6,
+		"ETA":        7,
+		"THETA":      8,
+		"IOTA":       9,
+		"KAPPA":      10,
+		"LAMBDA":     11,
+		"MU":         12,
+		"NU":         13,
 	}
 )
 
@@ -226,11 +265,26 @@ const file_proto_task_proto_rawDesc = "" +
 	"\x04Data\"G\n" +
 	"\x04Task\x12!\n" +
 	"\x05stage\x18\x01 \x01(\x0e2\v.QueryStageR\x05stage\x12\x1c\n" +
-	"\x04data\x18\x02 \x03(\v2\b.DataRowR\x04data*\x1c\n" +
+	"\x04data\x18\x02 \x03(\v2\b.DataRowR\x04data*\xa3\x01\n" +
 	"\n" +
 	"QueryStage\x12\x0e\n" +
 	"\n" +
-	"UNASSIGNED\x10\x00B\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"UNASSIGNED\x10\x00\x12\t\n" +
+	"\x05ALPHA\x10\x01\x12\b\n" +
+	"\x04BETA\x10\x02\x12\t\n" +
+	"\x05GAMMA\x10\x03\x12\t\n" +
+	"\x05DELTA\x10\x04\x12\v\n" +
+	"\aEPSILON\x10\x05\x12\b\n" +
+	"\x04ZETA\x10\x06\x12\a\n" +
+	"\x03ETA\x10\a\x12\t\n" +
+	"\x05THETA\x10\b\x12\b\n" +
+	"\x04IOTA\x10\t\x12\t\n" +
+	"\x05KAPPA\x10\n" +
+	"\x12\n" +
+	"\n" +
+	"\x06LAMBDA\x10\v\x12\x06\n" +
+	"\x02MU\x10\f\x12\x06\n" +
+	"\x02NU\x10\rB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_task_proto_rawDescOnce sync.Once

@@ -224,10 +224,10 @@ func compareMovie(t *testing.T, actual, expected *protocol.DataRow) {
 		)
 	}
 
-	if actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate != expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate {
-		t.Errorf("Expected ReleaseDate %s, but got %s",
-			expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate,
-			actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseDate,
+	if actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseYear != expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseYear {
+		t.Errorf("Expected ReleaseYear %d, but got %d",
+			expected.Data.(*protocol.DataRow_Movie).Movie.ReleaseYear,
+			actual.Data.(*protocol.DataRow_Movie).Movie.ReleaseYear,
 		)
 	}
 
@@ -255,7 +255,7 @@ func TestParseMovie(t *testing.T) {
 						Revenue:       373554033,
 						Budget:        30000000,
 						Overview:      "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
-						ReleaseDate:   "1995-10-30",
+						ReleaseYear:   1995,
 						Genres:        []string{"Animation", "Comedy", "Family"},
 					},
 				},
@@ -297,7 +297,7 @@ func TestParseMovie(t *testing.T) {
 		}
 	})
 
-	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericRevenueAndBudgetShouldBeZero", func(t *testing.T) {
+	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericRevenueAndBudgetShouldBeZeroReleaseYearShouldBe1900", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
 		expected := []*protocol.DataRow{
@@ -310,7 +310,7 @@ func TestParseMovie(t *testing.T) {
 						Revenue:       0,
 						Budget:        0,
 						Overview:      "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
-						ReleaseDate:   "1995-10-30",
+						ReleaseYear:   1900,
 						Genres:        []string{"Animation", "Comedy", "Family"},
 					},
 				},
@@ -319,6 +319,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[15] = "nonNumeric" //revenue
 		fields2[2] = "nonNumeric"  //budget
+		fields2[14] = "nonNumeric" //release date
 
 		actual := parseMovie(fields2)
 

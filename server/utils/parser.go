@@ -110,10 +110,17 @@ func parseMovie(fields []string) []*protocol.DataRow {
 		revenue = 0
 	}
 
+	rawReleaseDate := fields[14]
+	rawReleaseYear := strings.Split(rawReleaseDate, "-")[0]
+	releaseYear, err := strconv.ParseUint(rawReleaseYear, 10, 32)
+
+	if err != nil {
+		releaseYear = 1900
+	}
+
 	id := fields[5]
 	title := fields[20]
 	overview := fields[9]
-	releaseDate := fields[14]
 
 	return []*protocol.DataRow{
 		{
@@ -125,7 +132,7 @@ func parseMovie(fields []string) []*protocol.DataRow {
 					Revenue:       revenue,
 					Budget:        budget,
 					Overview:      overview,
-					ReleaseDate:   releaseDate,
+					ReleaseYear:   uint32(releaseYear),
 					Genres:        genres,
 				},
 			},
