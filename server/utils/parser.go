@@ -1,12 +1,11 @@
 package utils
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/model"
 )
 
 // mapJsonRegex maps a JSON string using a regex pattern and returns the first group of each match.
@@ -78,7 +77,7 @@ func parseLine(line *string) (fields []string) {
 // parseMovie parses a movie line and returns a slice of DataRow with one item.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 24 and not nil.
-func parseMovie(fields []string) []*protocol.DataRow {
+func parseMovie(fields []string) []*model.Movie {
 	// adult,belongs_to_collection,budget,genres,homepage,
 	// id,imdb_id,original_language,original_title,overview,
 	// popularity,poster_path,production_companies,production_countries,release_date,
@@ -110,25 +109,28 @@ func parseMovie(fields []string) []*protocol.DataRow {
 		revenue = 0
 	}
 
+	rawReleaseDate := fields[14]
+	rawReleaseYear := strings.Split(rawReleaseDate, "-")[0]
+	releaseYear, err := strconv.ParseUint(rawReleaseYear, 10, 32)
+
+	if err != nil {
+		releaseYear = 1900
+	}
+
 	id := fields[5]
 	title := fields[20]
 	overview := fields[9]
-	releaseDate := fields[14]
 
-	return []*protocol.DataRow{
+	return []*model.Movie{
 		{
-			Data: &protocol.DataRow_Movie{
-				Movie: &protocol.Movie{
-					Id:            id,
-					ProdCountries: prodCountries,
-					Title:         title,
-					Revenue:       revenue,
-					Budget:        budget,
-					Overview:      overview,
-					ReleaseDate:   releaseDate,
-					Genres:        genres,
-				},
-			},
+			Id:            id,
+			ProdCountries: prodCountries,
+			Title:         title,
+			Revenue:       revenue,
+			Budget:        budget,
+			Overview:      overview,
+			ReleaseYear:   uint32(releaseYear),
+			Genres:        genres,
 		},
 	}
 }
@@ -136,7 +138,7 @@ func parseMovie(fields []string) []*protocol.DataRow {
 // parseRating parses a rating line and returns a slice of DataRow with one item.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 4 and not nil.
-func parseRating(fields []string) []*protocol.DataRow {
+func parseRating(fields []string) []*model.Rating {
 	//userId,movieId,rating,timestamp
 	if fields == nil || len(fields) != 4 {
 		return nil
@@ -150,14 +152,10 @@ func parseRating(fields []string) []*protocol.DataRow {
 		rating = 0.0
 	}
 
-	return []*protocol.DataRow{
+	return []*model.Rating{
 		{
-			Data: &protocol.DataRow_Rating{
-				Rating: &protocol.Rating{
-					MovieId: fields[1],
-					Rating:  float32(rating),
-				},
-			},
+			MovieId: fields[1],
+			Rating:  float32(rating),
 		},
 	}
 }
@@ -166,7 +164,7 @@ func parseRating(fields []string) []*protocol.DataRow {
 // It returns a slice of DataRow with one item for each actor.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 3 and not nil.
-func parseCredit(fields []string) []*protocol.DataRow {
+func parseCredit(fields []string) []*model.Actor {
 	// cast,crew,id
 	if fields == nil || len(fields) != 3 {
 		return nil
@@ -176,21 +174,17 @@ func parseCredit(fields []string) []*protocol.DataRow {
 	regex := `'id': (\d+).*?'name': '([^']+)'`
 	cast := mapJsonRegexTuple(rawCast, regex, 2)
 
-	var ret []*protocol.DataRow
+	var ret []*model.Actor
 
 	for _, actor := range cast {
 		id := actor[0]
 		name := actor[1]
 
 		ret = append(ret,
-			&protocol.DataRow{
-				Data: &protocol.DataRow_Credit{
-					Credit: &protocol.Credit{
-						MovieId: fields[2],
-						ActorId: id,
-						Name:    name,
-					},
-				},
+			&model.Actor{
+				MovieId: fields[2],
+				Id:      id,
+				Name:    name,
 			},
 		)
 	}
@@ -198,19 +192,19 @@ func parseCredit(fields []string) []*protocol.DataRow {
 	return ret
 }
 
-func ParseRow(row *string, fileType protocol.FileType) ([]*protocol.DataRow, error) {
-	fields := parseLine(row)
+// func ParseRow(row *string, fileType protocol.FileType) (any, error) {
+// 	fields := parseLine(row)
 
-	switch fileType {
-	case protocol.FileType_MOVIES:
-		return parseMovie(fields), nil
-	case protocol.FileType_CREDITS:
-		return parseCredit(fields), nil
-	case protocol.FileType_RATINGS:
-		return parseRating(fields), nil
-	case protocol.FileType_EOF: //TODO
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("unknown file type: %s", fileType)
-	}
-}
+// 	switch fileType {
+// 	case protocol.FileType_MOVIES:
+// 		return parseMovie(fields), nil
+// 	case protocol.FileType_CREDITS:
+// 		return parseCredit(fields), nil
+// 	case protocol.FileType_RATINGS:
+// 		return parseRating(fields), nil
+// 	case protocol.FileType_EOF: //TODO
+// 		return nil, nil
+// 	default:
+// 		return nil, fmt.Errorf("unknown file type: %s", fileType)
+// 	}
+// }
