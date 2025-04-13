@@ -1,3 +1,10 @@
+# github.com/cdipaolo/goml v0.0.0-20220715001353-00e0c845ae1c
+## explicit; go 1.17
+github.com/cdipaolo/goml/base
+github.com/cdipaolo/goml/text
+# github.com/cdipaolo/sentiment v0.0.0-20200617002423-c697f64e7f10
+## explicit
+github.com/cdipaolo/sentiment
 # github.com/fsnotify/fsnotify v1.8.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
