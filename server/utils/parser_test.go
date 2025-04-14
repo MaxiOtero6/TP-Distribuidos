@@ -261,7 +261,7 @@ func TestParseRating(t *testing.T) {
 	line := RATING_LINE
 	fields := parseLine(&line)
 
-	t.Run("TestParseCredit", func(t *testing.T) {
+	t.Run("TestParseRating", func(t *testing.T) {
 		expected := []*model.Rating{
 			{
 				MovieId: "110",
