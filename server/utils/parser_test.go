@@ -200,6 +200,61 @@ func TestParseMovie(t *testing.T) {
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsEmptyProdCountries", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[13] = "" //prod countries
+
+		actual := parseMovie(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsEmptyGenres", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[3] = "" //genres
+
+		actual := parseMovie(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsEmptyId", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[5] = "" //id
+
+		actual := parseMovie(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsEmptyTitle", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[20] = "" //title
+
+		actual := parseMovie(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsEmptyOverview", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[9] = "" //overview
+
+		actual := parseMovie(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
+	})
 }
 
 func TestParseRating(t *testing.T) {
@@ -247,6 +302,17 @@ func TestParseRating(t *testing.T) {
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
+
+	t.Run("TestParseRatingWithWrongFormatFieldsEmptyMovieId", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[1] = "" //movieId
+
+		actual := parseRating(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
+	})
 }
 
 func TestParseCredits(t *testing.T) {
@@ -289,6 +355,51 @@ func TestParseCredits(t *testing.T) {
 		actual := parseCredit(nil)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
+	})
+
+	t.Run("TestParseRatingWithWrongFormatFieldsEmptyMovieId", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[2] = "" //movieId
+
+		actual := parseCredit(fields2)
+
+		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
+	})
+
+	t.Run("TestParseRatingWithWrongFormatFieldsEmptyId", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[0] = `"[{'id': , 'name': 'Tom Hanks'}, {'id': 12898, 'name': 'Tim Allen'}]"` //id
+		expected := []*model.Actor{{
+			MovieId: "862",
+			Id:      "12898",
+			Name:    "Tim Allen",
+		}}
+
+		actual := parseCredit(fields2)
+
+		assert.Len(t, actual, 1, "Expected one item, but got %v", len(actual))
+		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
+	})
+
+	t.Run("TestParseRatingWithWrongFormatFieldsEmptyName", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[0] = `"[{'id': 31, 'name': 'Tom Hanks'}, {'id': 12898, 'name': }]"` //name
+		expected := []*model.Actor{{
+			MovieId: "862",
+			Id:      "31",
+			Name:    "Tom Hanks",
+		}}
+
+		actual := parseCredit(fields2)
+
+		assert.Len(t, actual, 1, "Expected one item, but got %v", len(actual))
+		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
 	})
 }
 
