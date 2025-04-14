@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "common/communication/protocol";
+option go_package = "common/communication/client-comm/protocol";
 
 enum FileType {
     MOVIES = 0;
@@ -9,6 +9,15 @@ enum FileType {
     EOF = 3;
 }
 
+enum MessageResponseType {
+    UNKNOWN = 0;
+    BATCH_RESPONSE = 1;
+    REQUEST_RESPONSE = 2;
+    ERROR = 3;
+
+}
+
+
 message Batch {
     message Row {
         string data = 1;
@@ -16,4 +25,29 @@ message Batch {
 
     FileType type = 1;
     repeated Row data = 2;
+}
+
+message GenericMessageResponse {
+    MessageResponseType type = 1; 
+    bytes payload = 2;  
+}
+
+
+message BatchResponse {
+
+    string message = 2;
+}
+
+message RequestResponse{
+
+    enum RequestType {
+        QUERY_1 = 0;
+        QUERY_2 = 1;
+        QUERY_3 = 2;
+        QUERY_4 = 3;
+        QUERY_5 = 4;
+    }
+
+    RequestType type = 1;
+    string message = 2;
 }

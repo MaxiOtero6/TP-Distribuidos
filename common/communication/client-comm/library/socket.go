@@ -29,13 +29,21 @@ func Connect(address string) (*Socket, error) {
 	return clientSocket, nil
 }
 
-func (s *Socket) Read() (string, error) {
-	message, err := s.reader.ReadString(COMMUNICATION_DELIMITER)
+func (s *Socket) Read() (*protocol.GenericMessageResponse, error) {
+	message, err := s.reader.ReadBytes(COMMUNICATION_DELIMITER)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return message[:len(message)-1], nil
+	message = message[:len(message)-1]
+
+	var genericMessage protocol.GenericMessageResponse
+	err = proto.Unmarshal(message, &genericMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	return &genericMessage, nil
 }
 
 func (s *Socket) Write(message *protocol.Batch) error {
