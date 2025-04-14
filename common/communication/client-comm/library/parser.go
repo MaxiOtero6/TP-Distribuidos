@@ -60,16 +60,22 @@ func (p *Parser) LoadNewFile(filename string) error {
 	return nil
 }
 
-func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.Batch, error) {
-	batch := &protocol.Batch{
-		Type: fileType,
-		Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, error) {
+	sendMessage := &protocol.SendMessage{
+		Message: &protocol.SendMessage_Batch{
+			Batch: &protocol.Batch{
+				Type: fileType,
+				Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+			},
+		},
 	}
+
+	batch := sendMessage.GetBatch()
 	totalSize := 0
 
 	if p.leftoverLine != "" {
 		if totalSize+len(p.leftoverLine) > p.maxSize {
-			return batch, nil
+			return sendMessage, nil
 		}
 
 		batch.Data = append(batch.Data, &protocol.Batch_Row{Data: p.leftoverLine})
@@ -82,7 +88,7 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.Batch, error) 
 		if err != nil {
 			if err == io.EOF {
 				if len(batch.Data) > 0 {
-					return batch, nil
+					return sendMessage, nil
 				}
 
 			}
@@ -98,5 +104,5 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.Batch, error) 
 		totalSize += len(line)
 	}
 
-	return batch, nil
+	return sendMessage, nil
 }
