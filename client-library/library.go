@@ -79,11 +79,8 @@ func (l *Library) ProcessData() error {
 
 	err = l.fetchServerResults()
 	if err != nil {
-		log.Errorf("action: sendConsultRequestMessage | result: fail | error: %v", err)
+		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 	}
-
-	// Consult response
-
 	return nil
 }
 
@@ -109,6 +106,13 @@ func (l *Library) sendAllBathcs() error {
 			if err := l.socket.Write(batch); err != nil {
 				return err
 			}
+
+			err = l.waitForSuccessServerResponse()
+			if err != nil {
+				log.Criticalf("action: batch_send | result: fail | amount: %v", len(batch.GetBatch().Data))
+				return err
+			}
+
 		}
 
 		// Eliminar el archivo procesado de la lista
@@ -128,17 +132,8 @@ func (l *Library) sendSync() error {
 		return err
 	}
 
-	response, err := l.socket.Read()
-	if err != nil {
+	if err := l.waitForSuccessServerResponse(); err != nil {
 		return err
-	}
-
-	switch resp := response.GetMessage().(type) {
-	case *protocol.ResponseMessage_SyncAck:
-		l.clientId = resp.SyncAck.ClientId
-		log.Errorf("action: sendSync | result: success | clientId: %v", l.clientId)
-	default:
-		log.Errorf("action: sendSync | result: fail | error: Unexpected response type received")
 	}
 
 	return nil
@@ -250,6 +245,13 @@ func (l *Library) connectToServer() error {
 	return nil
 }
 
+func (l *Library) disconnectFromServer() {
+	if l.socket != nil {
+		l.socket.Close()
+	}
+	l.socket = nil
+}
+
 func (l *Library) waitForServerResponse() (*protocol.ResponseMessage, error) {
 	response, err := l.socket.Read()
 
@@ -260,11 +262,31 @@ func (l *Library) waitForServerResponse() (*protocol.ResponseMessage, error) {
 	return response, nil
 }
 
-func (l *Library) disconnectFromServer() {
-	if l.socket != nil {
-		l.socket.Close()
+func (l *Library) waitForSuccessServerResponse() error {
+	response, err := l.waitForServerResponse()
+	if err != nil {
+		return err
 	}
-	l.socket = nil
+	switch resp := response.GetMessage().(type) {
+	case *protocol.ResponseMessage_BatchAck:
+		if resp.BatchAck.Status == protocol.MessageStatus_SUCCESS {
+			log.Infof("action: receiveBatchAckResponse | result: success | response: %v", resp.BatchAck.Status)
+
+		} else {
+			log.Errorf("action: receiveBatchAckResponse | result: fail | error: %v", resp.BatchAck.Status)
+			return fmt.Errorf("server response was not succes")
+		}
+
+	case *protocol.ResponseMessage_SyncAck:
+		l.clientId = resp.SyncAck.ClientId
+		log.Infof("action: receiveSyncAckResponse | result: success | clientId: %v", l.clientId)
+
+	default:
+		log.Errorf("action: receiveResponse | result: fail | error: Unexpected response type received")
+		return fmt.Errorf("unexpected response type received")
+	}
+
+	return nil
 }
 
 func (l *Library) sendResultMessage() error {
