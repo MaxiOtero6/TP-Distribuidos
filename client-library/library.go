@@ -3,6 +3,7 @@ package library
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/client-library/utils"
 	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm"
@@ -14,13 +15,21 @@ const MOVIES_FILE = "movies_head_10k.csv"
 const RATINGS_FILE = "ratings_head_10k.csv"
 const CREDITS_FILE = "credits_head_10k.csv"
 
+const DELAY_MULTIPLIER = 2
+const MAX_DELAY = 64 // max retries = 6
+const QUERIES_AMOUNT = 5
+
 var log = logging.MustGetLogger("log")
 
 type Library struct {
-	parser    *utils.Parser
-	socket    *client_communication.Socket
-	fileNames []string
-	clientId  string
+	parser        *utils.Parser
+	socket        *client_communication.Socket
+	fileNames     []string
+	clientId      string
+	ServerAddress string
+	sleepTime     time.Duration
+	running       bool
+	responseCount int
 }
 
 func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (*Library, error) {
@@ -40,10 +49,14 @@ func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (
 	}
 
 	return &Library{
-		parser:    parser,
-		socket:    socket,
-		fileNames: fileNames,
-		clientId:  "",
+		parser:        parser,
+		socket:        socket,
+		fileNames:     fileNames,
+		clientId:      "",
+		ServerAddress: address,
+		sleepTime:     1,
+		running:       true,
+		responseCount: 0,
 	}, nil
 }
 
@@ -57,6 +70,16 @@ func (l *Library) ProcessData() error {
 	err = l.sendAllBathcs()
 	if err != nil {
 		log.Errorf("action: newMethod | result: fail | error: %v", err)
+	}
+
+	err = l.sendFinishMessage()
+	if err != nil {
+		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
+	}
+
+	err = l.fetchServerResults()
+	if err != nil {
+		log.Errorf("action: sendConsultRequestMessage | result: fail | error: %v", err)
 	}
 
 	// Consult response
@@ -97,7 +120,7 @@ func (l *Library) sendAllBathcs() error {
 func (l *Library) sendSync() error {
 	syncMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Sync{
-			Sync: &protocol.SyncMessage{},
+			Sync: &protocol.Sync{},
 		},
 	}
 
@@ -118,6 +141,143 @@ func (l *Library) sendSync() error {
 		log.Errorf("action: sendSync | result: fail | error: Unexpected response type received")
 	}
 
+	return nil
+}
+
+func (l *Library) sendFinishMessage() error {
+	finishMessage := &protocol.SendMessage{
+		Message: &protocol.SendMessage_Finish{
+			Finish: &protocol.Finish{
+				ClientId: l.clientId,
+			},
+		},
+	}
+	if err := l.socket.Write(finishMessage); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (l *Library) fetchServerResults() error {
+	for l.running {
+		if l.sleepTime > MAX_DELAY {
+			return fmt.Errorf("timeout")
+		}
+
+		if l.socket == nil {
+			if err := l.connectToServer(); err != nil {
+				return err
+			}
+		}
+
+		err := l.sendResultMessage()
+		if err != nil {
+			return err
+		}
+
+		done, response, err := l.waitForAllResultsServerResponse()
+
+		if err != nil {
+			return err
+		}
+
+		l.processRequestResponseMessage(response)
+
+		if !done {
+			l.disconnectFromServer()
+			// Exponential backoff
+			l.sleepTime *= DELAY_MULTIPLIER
+			time.Sleep(l.sleepTime * time.Second)
+			continue
+		}
+		break
+	}
+
+	return nil
+}
+
+func (l *Library) processRequestResponseMessage(message []*protocol.Request_Query) {
+	if len(message) == 0 {
+		log.Infof("action: processResultMessage | result: fail | error: empty response")
+		return
+	}
+	for _, query := range message {
+		log.Infof("action:  | result: success | query number : %v | response: %v", query.Type, query.Message)
+	}
+}
+
+func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query, error) {
+	response, err := l.waitForServerResponse()
+	if err != nil {
+		return false, nil, err
+	}
+
+	switch resp := response.GetMessage().(type) {
+	case *protocol.ResponseMessage_Request:
+		if resp.Request.Status == protocol.MessageStatus_SUCCESS {
+			return true, resp.Request.Responses, nil
+		} else if resp.Request.Status == protocol.MessageStatus_PENDING {
+			return false, nil, nil
+		}
+	}
+	return false, nil, fmt.Errorf("unexpected response type received")
+
+}
+
+func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Query, error) {
+	done, responses, err := l.waitForResultServerResponse()
+	if err != nil {
+		return false, nil, err
+	}
+	if done {
+		l.responseCount++
+		if l.responseCount == QUERIES_AMOUNT {
+			l.running = false
+		}
+	}
+	return done, responses, nil
+
+}
+
+func (l *Library) connectToServer() error {
+	var err error
+	l.socket, err = client_communication.Connect(l.ServerAddress)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *Library) waitForServerResponse() (*protocol.ResponseMessage, error) {
+	response, err := l.socket.Read()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (l *Library) disconnectFromServer() {
+	if l.socket != nil {
+		l.socket.Close()
+	}
+	l.socket = nil
+}
+
+func (l *Library) sendResultMessage() error {
+	consultMessage := &protocol.SendMessage{
+		Message: &protocol.SendMessage_Result{
+			Result: &protocol.Result{
+				ClientId: l.clientId,
+			},
+		},
+	}
+	if err := l.socket.Write(consultMessage); err != nil {
+		return err
+	}
 	return nil
 }
 
