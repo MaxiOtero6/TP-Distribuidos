@@ -9,7 +9,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm/protocol"
 )
 
-const maxSize = 8192 // 8KB
+const MAX_SIZE = 8192 // 8KB
 
 type Parser struct {
 	files        []string
@@ -77,7 +77,7 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.Batch, error) 
 		p.leftoverLine = ""
 	}
 
-	for i := 0; i < p.maxBatch; i++ {
+	for range p.maxBatch {
 		line, err := p.bufReader.ReadString(COMMUNICATION_DELIMITER)
 		if err != nil {
 			if err == io.EOF {
@@ -85,10 +85,6 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.Batch, error) 
 					return batch, nil
 				}
 
-				if err != nil {
-					return nil, err
-				}
-				continue
 			}
 			return nil, err
 		}

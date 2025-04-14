@@ -14,7 +14,7 @@ const CREDITS_FILE = "credits_head_10k.csv"
 type Library struct {
 	parser    *Parser
 	socket    *Socket
-	fileNames []string // Lista de nombres de archivos que Library administra
+	fileNames []string
 }
 
 func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (*Library, error) {
@@ -49,7 +49,6 @@ func (l *Library) ProcessData() error {
 			return err
 		}
 
-		// Procesar y enviar los datos del archivo actual
 		for {
 			batch, err := l.parser.ReadBatch(fileType)
 			if err != nil {
@@ -67,6 +66,7 @@ func (l *Library) ProcessData() error {
 		// Eliminar el archivo procesado de la lista
 		l.fileNames = l.fileNames[1:]
 	}
+
 	return nil
 }
 
