@@ -272,55 +272,63 @@ func TestParseMovie(t *testing.T) {
 	t.Run("TestParseMovieWithEmptyFields", func(t *testing.T) {
 		actual := parseMovie([]string{})
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", len(actual))
 		}
 	})
 
 	t.Run("TestParseMovieWithWrongFieldsLength", func(t *testing.T) {
 		actual := parseMovie(fields[:10])
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", len(actual))
 		}
 	})
 
 	t.Run("TestParseMovieWithNilFields", func(t *testing.T) {
 		actual := parseMovie(nil)
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", len(actual))
 		}
 	})
 
-	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericRevenueAndBudgetShouldBeZeroReleaseYearShouldBe1900", func(t *testing.T) {
+	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericRevenue", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
-		expected := []*model.Movie{
-			{
-				Id:            "862",
-				ProdCountries: []string{"United States of America"},
-				Title:         "Toy Story",
-				Revenue:       0,
-				Budget:        0,
-				Overview:      "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
-				ReleaseYear:   1900,
-				Genres:        []string{"Animation", "Comedy", "Family"},
-			},
-		}
 
 		fields2[15] = "nonNumeric" //revenue
-		fields2[2] = "nonNumeric"  //budget
+
+		actual := parseMovie(fields2)
+
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %d", len(actual))
+		}
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericBudget", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
+		fields2[2] = "nonNumeric" //budget
+
+		actual := parseMovie(fields2)
+
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %d", len(actual))
+		}
+	})
+
+	t.Run("TestParseMovieWithWrongFormatFieldsNonNumericReleaseYear", func(t *testing.T) {
+		var fields2 []string = make([]string, len(fields))
+		copy(fields2, fields)
+
 		fields2[14] = "nonNumeric" //release date
 
 		actual := parseMovie(fields2)
 
-		if len(actual) != len(expected) {
-			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
-		}
-
-		for i := range actual {
-			compareMovie(t, actual[i], expected[i])
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %d", len(actual))
 		}
 	})
 }
@@ -372,47 +380,37 @@ func TestParseRating(t *testing.T) {
 	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
 		actual := parseRating([]string{})
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", actual)
 		}
 	})
 
 	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
 		actual := parseRating(fields[:1])
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", actual)
 		}
 	})
 
 	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
 		actual := parseRating(nil)
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", actual)
 		}
 	})
 
-	t.Run("TestParseRatingWithWrongFormatFieldsNonNumericRatingShouldBeZero", func(t *testing.T) {
+	t.Run("TestParseRatingWithWrongFormatFieldsNonNumericRating", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
-		expected := []*model.Rating{
-			{
-				MovieId: "110",
-				Rating:  0.0,
-			},
-		}
 
 		fields2[2] = "nonNumeric" //rating
 
 		actual := parseRating(fields2)
 
-		if len(actual) != len(expected) {
-			t.Errorf("Expected %d items, but got %d", len(expected), len(actual))
-		}
-
-		for i := range actual {
-			compareRating(t, actual[i], expected[i])
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %d", len(actual))
 		}
 	})
 }
@@ -478,24 +476,24 @@ func TestParseCredits(t *testing.T) {
 	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
 		actual := parseCredit([]string{})
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected zero items, but got %v", len(actual))
 		}
 	})
 
 	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
 		actual := parseCredit(fields[:1])
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected  zero items, but got %v", len(actual))
 		}
 	})
 
 	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
 		actual := parseCredit(nil)
 
-		if actual != nil {
-			t.Errorf("Expected nil, but got %v", actual)
+		if len(actual) != 0 {
+			t.Errorf("Expected  zero items, but got %v", len(actual))
 		}
 	})
 }

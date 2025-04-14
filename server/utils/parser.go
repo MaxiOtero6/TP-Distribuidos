@@ -84,7 +84,7 @@ func parseMovie(fields []string) []*model.Movie {
 	// revenue,runtime,spoken_languages,status,tagline,
 	// title,video,vote_average,vote_count
 	if fields == nil || len(fields) != 24 {
-		return nil
+		return []*model.Movie{}
 	}
 
 	rawProdCountries := fields[13]
@@ -100,13 +100,13 @@ func parseMovie(fields []string) []*model.Movie {
 	revenue, err := strconv.ParseUint(rawRevenue, 10, 64)
 
 	if err != nil {
-		revenue = 0
+		return []*model.Movie{}
 	}
 
 	budget, err := strconv.ParseUint(rawBudget, 10, 64)
 
 	if err != nil {
-		revenue = 0
+		return []*model.Movie{}
 	}
 
 	rawReleaseDate := fields[14]
@@ -114,7 +114,7 @@ func parseMovie(fields []string) []*model.Movie {
 	releaseYear, err := strconv.ParseUint(rawReleaseYear, 10, 32)
 
 	if err != nil {
-		releaseYear = 1900
+		return []*model.Movie{}
 	}
 
 	id := fields[5]
@@ -141,7 +141,7 @@ func parseMovie(fields []string) []*model.Movie {
 func parseRating(fields []string) []*model.Rating {
 	//userId,movieId,rating,timestamp
 	if fields == nil || len(fields) != 4 {
-		return nil
+		return []*model.Rating{}
 	}
 
 	rawRating := fields[2]
@@ -149,7 +149,7 @@ func parseRating(fields []string) []*model.Rating {
 	rating, err := strconv.ParseFloat(rawRating, 32)
 
 	if err != nil {
-		rating = 0.0
+		return []*model.Rating{}
 	}
 
 	return []*model.Rating{
@@ -167,7 +167,7 @@ func parseRating(fields []string) []*model.Rating {
 func parseCredit(fields []string) []*model.Actor {
 	// cast,crew,id
 	if fields == nil || len(fields) != 3 {
-		return nil
+		return []*model.Actor{}
 	}
 
 	rawCast := fields[0]
