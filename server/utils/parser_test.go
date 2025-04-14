@@ -147,7 +147,7 @@ func TestParseMovie(t *testing.T) {
 
 		actual := parseMovie(fields)
 
-		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
+		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
 
 	t.Run("TestParseMovieWithEmptyFields", func(t *testing.T) {
@@ -261,7 +261,7 @@ func TestParseRating(t *testing.T) {
 	line := RATING_LINE
 	fields := parseLine(&line)
 
-	t.Run("TestParseRating", func(t *testing.T) {
+	t.Run("TestParseCredit", func(t *testing.T) {
 		expected := []*model.Rating{
 			{
 				MovieId: "110",
@@ -271,22 +271,22 @@ func TestParseRating(t *testing.T) {
 
 		actual := parseRating(fields)
 
-		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
+		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
 
-	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
+	t.Run("TestParseCreditWithEmptyFields", func(t *testing.T) {
 		actual := parseRating([]string{})
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
-	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
+	t.Run("TestParseCreditWithWrongFieldsLength", func(t *testing.T) {
 		actual := parseRating(fields[:1])
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
-	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
+	t.Run("TestParseCreditWithNilFields", func(t *testing.T) {
 		actual := parseRating(nil)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
@@ -303,7 +303,7 @@ func TestParseRating(t *testing.T) {
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
-	t.Run("TestParseRatingWithWrongFormatFieldsEmptyMovieId", func(t *testing.T) {
+	t.Run("TestParseCreditWithWrongFormatFieldsEmptyMovieId", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
 
@@ -319,7 +319,7 @@ func TestParseCredits(t *testing.T) {
 	line := CREDIT_LINE
 	fields := parseLine(&line)
 
-	t.Run("TestParseRating", func(t *testing.T) {
+	t.Run("TestParseCredit", func(t *testing.T) {
 		var expected []*model.Actor
 
 		expected = append(expected, &model.Actor{
@@ -368,7 +368,7 @@ func TestParseCredits(t *testing.T) {
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
-	t.Run("TestParseRatingWithWrongFormatFieldsEmptyId", func(t *testing.T) {
+	t.Run("TestParseCreditWithWrongFormatFieldsEmptyId", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
 
@@ -385,7 +385,7 @@ func TestParseCredits(t *testing.T) {
 		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
 	})
 
-	t.Run("TestParseRatingWithWrongFormatFieldsEmptyName", func(t *testing.T) {
+	t.Run("TestParseCreditWithWrongFormatFieldsEmptyName", func(t *testing.T) {
 		var fields2 []string = make([]string, len(fields))
 		copy(fields2, fields)
 
