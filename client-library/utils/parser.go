@@ -19,10 +19,9 @@ type Parser struct {
 	maxBatch     int
 	bufReader    *bufio.Reader
 	leftoverLine string
-	maxSize      int
 }
 
-func NewParser(maxBatch int, maxSize int, filename string) (*Parser, error) {
+func NewParser(maxBatch int, filename string) (*Parser, error) {
 	if filename == "" {
 		return nil, fmt.Errorf("no file provided")
 	}
@@ -39,7 +38,6 @@ func NewParser(maxBatch int, maxSize int, filename string) (*Parser, error) {
 		maxBatch:     maxBatch,
 		bufReader:    bufio.NewReader(file),
 		leftoverLine: "",
-		maxSize:      maxSize,
 	}, nil
 }
 
@@ -75,7 +73,7 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, e
 	totalSize := 0
 
 	if p.leftoverLine != "" {
-		if totalSize+len(p.leftoverLine) > p.maxSize {
+		if totalSize+len(p.leftoverLine) > MAX_SIZE {
 			return sendMessage, nil
 		}
 
@@ -96,7 +94,7 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, e
 			return nil, err
 		}
 
-		if totalSize+len(line) > p.maxSize {
+		if totalSize+len(line) > MAX_SIZE {
 			p.leftoverLine = line
 			break
 		}
@@ -106,4 +104,11 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, e
 	}
 
 	return sendMessage, nil
+}
+
+func (p *Parser) Close() {
+	if p.currentFile != nil {
+		p.currentFile.Close()
+		p.currentFile = nil
+	}
 }

@@ -1,6 +1,7 @@
 package library
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -21,6 +22,8 @@ const QUERIES_AMOUNT = 5
 
 var log = logging.MustGetLogger("log")
 
+var ErrSignalReceived = errors.New("signal received")
+
 type Library struct {
 	parser        *utils.Parser
 	socket        *client_communication.Socket
@@ -30,15 +33,16 @@ type Library struct {
 	sleepTime     time.Duration
 	running       bool
 	responseCount int
+	done          chan bool
 }
 
-func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (*Library, error) {
+func NewLibrary(fileNames []string, maxBatch int, address string) (*Library, error) {
 	if len(fileNames) == 0 {
 		err := fmt.Errorf("no files provided")
 		return nil, err
 	}
 
-	parser, err := utils.NewParser(maxBatch, maxSize, fileNames[0]) // Inicializar con el primer archivo
+	parser, err := utils.NewParser(maxBatch, fileNames[0])
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +61,20 @@ func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (
 		sleepTime:     1,
 		running:       true,
 		responseCount: 0,
+		done:          make(chan bool, 1),
 	}, nil
 }
 
-func (l *Library) ProcessData() error {
+func (l *Library) isDone() bool {
+	select {
+	case <-l.done:
+		return true
+	default:
+	}
+	return false
+}
+
+func (l *Library) ProcessData() {
 
 	err := l.sendSync()
 	if err != nil {
@@ -81,7 +95,6 @@ func (l *Library) ProcessData() error {
 	if err != nil {
 		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 	}
-	return nil
 }
 
 func (l *Library) sendAllBathcs() error {
@@ -122,6 +135,12 @@ func (l *Library) sendAllBathcs() error {
 }
 
 func (l *Library) sendSync() error {
+
+	done := l.isDone()
+	if done {
+		return ErrSignalReceived
+	}
+
 	syncMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Sync{
 			Sync: &protocol.Sync{},
@@ -140,6 +159,11 @@ func (l *Library) sendSync() error {
 }
 
 func (l *Library) sendFinishMessage() error {
+	done := l.isDone()
+	if done {
+		return ErrSignalReceived
+	}
+
 	finishMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Finish{
 			Finish: &protocol.Finish{
@@ -154,7 +178,13 @@ func (l *Library) sendFinishMessage() error {
 }
 
 func (l *Library) fetchServerResults() error {
+
 	for l.running {
+		done := l.isDone()
+		if done {
+			return ErrSignalReceived
+		}
+
 		if l.sleepTime > MAX_DELAY {
 			return fmt.Errorf("timeout")
 		}
@@ -248,6 +278,7 @@ func (l *Library) connectToServer() error {
 func (l *Library) disconnectFromServer() {
 	if l.socket != nil {
 		l.socket.Close()
+		log.Infof("action: disconnectFromServer | result: success | address: %v", l.ServerAddress)
 	}
 	l.socket = nil
 }
@@ -315,4 +346,11 @@ func (l *Library) mapFileNameToFileType(fileName string) protocol.FileType {
 	}
 
 	return fileType
+}
+
+func (l *Library) Stop() {
+	close(l.done)
+	l.disconnectFromServer()
+	l.parser.Close()
+	l.running = false
 }

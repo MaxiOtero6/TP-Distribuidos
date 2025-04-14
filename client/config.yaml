@@ -5,3 +5,12 @@ data:
   movies: ".data/movies_metadata.csv"
   ratings: ".data/ratings.csv"
   credits: ".data/credits.csv"
+
+server:
+  address: "server:12345"
+
+batch:
+  maxAmount: 10
+
+
+
