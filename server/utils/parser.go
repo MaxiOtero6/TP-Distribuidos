@@ -94,6 +94,10 @@ func parseMovie(fields []string) []*model.Movie {
 	prodCountries := mapJsonRegex(rawProdCountries, regex)
 	genres := mapJsonRegex(rawGenres, regex)
 
+	if len(prodCountries) == 0 || len(genres) == 0 {
+		return []*model.Movie{}
+	}
+
 	rawRevenue := fields[15]
 	rawBudget := fields[2]
 
@@ -120,6 +124,10 @@ func parseMovie(fields []string) []*model.Movie {
 	id := fields[5]
 	title := fields[20]
 	overview := fields[9]
+
+	if len(id) == 0 || len(title) == 0 || len(overview) == 0 {
+		return []*model.Movie{}
+	}
 
 	return []*model.Movie{
 		{
@@ -152,9 +160,15 @@ func parseRating(fields []string) []*model.Rating {
 		return []*model.Rating{}
 	}
 
+	movieId := fields[1]
+
+	if len(movieId) == 0 {
+		return []*model.Rating{}
+	}
+
 	return []*model.Rating{
 		{
-			MovieId: fields[1],
+			MovieId: movieId,
 			Rating:  float32(rating),
 		},
 	}
@@ -179,10 +193,15 @@ func parseCredit(fields []string) []*model.Actor {
 	for _, actor := range cast {
 		id := actor[0]
 		name := actor[1]
+		movieId := fields[2]
+		
+		if len(id) == 0 || len(name) == 0 || len(movieId) == 0 {
+			continue
+		}
 
 		ret = append(ret,
 			&model.Actor{
-				MovieId: fields[2],
+				MovieId: movieId,
 				Id:      id,
 				Name:    name,
 			},
