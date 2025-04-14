@@ -1,4 +1,4 @@
-package library
+package client_communication
 
 import (
 	"bufio"

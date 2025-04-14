@@ -1,4 +1,4 @@
-package library
+package utils
 
 import (
 	"bufio"
@@ -10,6 +10,7 @@ import (
 )
 
 const MAX_SIZE = 8192 // 8KB
+const COMMUNICATION_DELIMITER = '\n'
 
 type Parser struct {
 	files        []string

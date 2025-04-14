@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/client-library/utils"
+	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm/protocol"
 	"github.com/op/go-logging"
 )
@@ -15,8 +17,8 @@ const CREDITS_FILE = "credits_head_10k.csv"
 var log = logging.MustGetLogger("log")
 
 type Library struct {
-	parser    *Parser
-	socket    *Socket
+	parser    *utils.Parser
+	socket    *client_communication.Socket
 	fileNames []string
 	clientId  string
 }
@@ -27,12 +29,12 @@ func NewLibrary(maxBatch int, maxSize int, fileNames []string, address string) (
 		return nil, err
 	}
 
-	parser, err := NewParser(maxBatch, maxSize, fileNames[0]) // Inicializar con el primer archivo
+	parser, err := utils.NewParser(maxBatch, maxSize, fileNames[0]) // Inicializar con el primer archivo
 	if err != nil {
 		return nil, err
 	}
 
-	socket, err := Connect(address)
+	socket, err := client_communication.Connect(address)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +58,8 @@ func (l *Library) ProcessData() error {
 	if err != nil {
 		log.Errorf("action: newMethod | result: fail | error: %v", err)
 	}
+
+	// Consult response
 
 	return nil
 }
