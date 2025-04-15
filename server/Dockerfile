@@ -6,10 +6,10 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY ./client ./client
+COPY ./server ./server
 COPY ./common ./common
 
-RUN go build -o client.bin ./client
+RUN go build -o server.bin ./server
 
 
 
@@ -17,6 +17,6 @@ FROM busybox:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/client.bin ./
+COPY --from=builder /app/server.bin ./
 
-ENTRYPOINT [ "./client.bin" ]
+ENTRYPOINT [ "./server.bin" ]
