@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"net"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
 	"google.golang.org/protobuf/proto"
 )
 

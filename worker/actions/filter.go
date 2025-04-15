@@ -5,7 +5,7 @@ import (
 
 	"slices"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 )
 
 // Filter is a struct that implements the Action interface.

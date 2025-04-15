@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
 )
 
 const MAX_SIZE = 8192 // 8KB
