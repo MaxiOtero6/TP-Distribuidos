@@ -13,9 +13,7 @@ const MAX_SIZE = 8192 // 8KB
 const COMMUNICATION_DELIMITER = '\n'
 
 type Parser struct {
-	files        []string
-	currentFile  *os.File
-	currentIndex int
+	file         *os.File
 	maxBatch     int
 	bufReader    *bufio.Reader
 	leftoverLine string
@@ -32,31 +30,11 @@ func NewParser(maxBatch int, filename string) (*Parser, error) {
 	}
 
 	return &Parser{
-		files:        []string{filename},
-		currentFile:  file,
-		currentIndex: 0,
+		file:         file,
 		maxBatch:     maxBatch,
 		bufReader:    bufio.NewReader(file),
 		leftoverLine: "",
 	}, nil
-}
-
-func (p *Parser) LoadNewFile(filename string) error {
-	if p.currentFile != nil {
-		p.currentFile.Close()
-	}
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
-	p.files = []string{filename}
-	p.currentFile = file
-	p.bufReader = bufio.NewReader(file)
-	p.leftoverLine = ""
-	p.currentIndex = 0
-	return nil
 }
 
 func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, error) {
@@ -107,8 +85,8 @@ func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, e
 }
 
 func (p *Parser) Close() {
-	if p.currentFile != nil {
-		p.currentFile.Close()
-		p.currentFile = nil
+	if p.file != nil {
+		p.file.Close()
+		p.file = nil
 	}
 }
