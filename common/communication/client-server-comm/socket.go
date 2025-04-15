@@ -60,7 +60,7 @@ func (s *Socket) Accept() (*Socket, error) {
 	return clientSocket, nil
 }
 
-func (s *Socket) Read() (*protocol.ServerClientMessage, error) {
+func (s *Socket) Read() (*protocol.Message, error) {
 	message, err := s.reader.ReadBytes(COMMUNICATION_DELIMITER)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (s *Socket) Read() (*protocol.ServerClientMessage, error) {
 
 	message = message[:len(message)-1]
 
-	var responseMessage protocol.ServerClientMessage
+	var responseMessage protocol.Message
 	err = proto.Unmarshal(message, &responseMessage)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *Socket) Read() (*protocol.ServerClientMessage, error) {
 	return &responseMessage, nil
 }
 
-func (s *Socket) Write(message *protocol.ClientServerMessage) error {
+func (s *Socket) Write(message *protocol.Message) error {
 	message_bytes, err := proto.Marshal(message)
 	if err != nil {
 		return err

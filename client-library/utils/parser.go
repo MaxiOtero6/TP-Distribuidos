@@ -39,22 +39,27 @@ func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Pars
 	}, nil
 }
 
-func (p *Parser) ReadBatch() (*protocol.ClientServerMessage, error) {
-	clientServerMessage := &protocol.ClientServerMessage{
-		Message: &protocol.ClientServerMessage_Batch{
-			Batch: &protocol.Batch{
-				Type: p.fileType,
-				Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+func (p *Parser) ReadBatch() (*protocol.Message, error) {
+
+	batchMessage := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_Batch{
+					Batch: &protocol.Batch{
+						Type: p.fileType,
+						Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+					},
+				},
 			},
 		},
 	}
 
-	batch := clientServerMessage.GetBatch()
+	batch := batchMessage.GetMessage().(*protocol.Message_ClientServerMessage).ClientServerMessage.GetMessage().(*protocol.ClientServerMessage_Batch).Batch
 	totalSize := 0
 
 	if p.leftoverLine != "" {
 		if totalSize+len(p.leftoverLine) > MAX_SIZE {
-			return clientServerMessage, nil
+			return batchMessage, nil
 		}
 
 		batch.Data = append(batch.Data, &protocol.Batch_Row{Data: p.leftoverLine})
@@ -67,7 +72,7 @@ func (p *Parser) ReadBatch() (*protocol.ClientServerMessage, error) {
 		if err != nil {
 			if err == io.EOF {
 				if len(batch.Data) > 0 {
-					return clientServerMessage, nil
+					return batchMessage, nil
 				}
 
 			}
@@ -83,7 +88,7 @@ func (p *Parser) ReadBatch() (*protocol.ClientServerMessage, error) {
 		totalSize += len(line)
 	}
 
-	return clientServerMessage, nil
+	return batchMessage, nil
 }
 
 func (p *Parser) Close() {

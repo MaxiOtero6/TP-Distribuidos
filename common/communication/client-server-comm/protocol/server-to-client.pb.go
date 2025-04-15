@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.30.2
-// source: proto/messages/server-client-messages.proto
+// source: proto/client-server-messages/server-to-client.proto
 
 package protocol
 
@@ -54,11 +54,11 @@ func (x MessageStatus) String() string {
 }
 
 func (MessageStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_messages_server_client_messages_proto_enumTypes[0].Descriptor()
+	return file_proto_client_server_messages_server_to_client_proto_enumTypes[0].Descriptor()
 }
 
 func (MessageStatus) Type() protoreflect.EnumType {
-	return &file_proto_messages_server_client_messages_proto_enumTypes[0]
+	return &file_proto_client_server_messages_server_to_client_proto_enumTypes[0]
 }
 
 func (x MessageStatus) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x MessageStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MessageStatus.Descriptor instead.
 func (MessageStatus) EnumDescriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{0}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{0}
 }
 
 type Request_Query_QueryType int32
@@ -109,11 +109,11 @@ func (x Request_Query_QueryType) String() string {
 }
 
 func (Request_Query_QueryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_messages_server_client_messages_proto_enumTypes[1].Descriptor()
+	return file_proto_client_server_messages_server_to_client_proto_enumTypes[1].Descriptor()
 }
 
 func (Request_Query_QueryType) Type() protoreflect.EnumType {
-	return &file_proto_messages_server_client_messages_proto_enumTypes[1]
+	return &file_proto_client_server_messages_server_to_client_proto_enumTypes[1]
 }
 
 func (x Request_Query_QueryType) Number() protoreflect.EnumNumber {
@@ -122,7 +122,7 @@ func (x Request_Query_QueryType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Request_Query_QueryType.Descriptor instead.
 func (Request_Query_QueryType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{2, 0, 0}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2, 0, 0}
 }
 
 type BatchAck struct {
@@ -135,7 +135,7 @@ type BatchAck struct {
 
 func (x *BatchAck) Reset() {
 	*x = BatchAck{}
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[0]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -147,7 +147,7 @@ func (x *BatchAck) String() string {
 func (*BatchAck) ProtoMessage() {}
 
 func (x *BatchAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[0]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -160,7 +160,7 @@ func (x *BatchAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchAck.ProtoReflect.Descriptor instead.
 func (*BatchAck) Descriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{0}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BatchAck) GetBatchId() string {
@@ -186,7 +186,7 @@ type SyncAck struct {
 
 func (x *SyncAck) Reset() {
 	*x = SyncAck{}
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[1]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +198,7 @@ func (x *SyncAck) String() string {
 func (*SyncAck) ProtoMessage() {}
 
 func (x *SyncAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[1]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,7 +211,7 @@ func (x *SyncAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncAck.ProtoReflect.Descriptor instead.
 func (*SyncAck) Descriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{1}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SyncAck) GetClientId() string {
@@ -231,7 +231,7 @@ type Request struct {
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -243,7 +243,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -256,7 +256,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{2}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Request) GetStatus() MessageStatus {
@@ -287,7 +287,7 @@ type ServerClientMessage struct {
 
 func (x *ServerClientMessage) Reset() {
 	*x = ServerClientMessage{}
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -299,7 +299,7 @@ func (x *ServerClientMessage) String() string {
 func (*ServerClientMessage) ProtoMessage() {}
 
 func (x *ServerClientMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -312,7 +312,7 @@ func (x *ServerClientMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerClientMessage.ProtoReflect.Descriptor instead.
 func (*ServerClientMessage) Descriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{3}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ServerClientMessage) GetMessage() isServerClientMessage_Message {
@@ -381,7 +381,7 @@ type Request_Query struct {
 
 func (x *Request_Query) Reset() {
 	*x = Request_Query{}
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +393,7 @@ func (x *Request_Query) String() string {
 func (*Request_Query) ProtoMessage() {}
 
 func (x *Request_Query) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_messages_server_client_messages_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +406,7 @@ func (x *Request_Query) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request_Query.ProtoReflect.Descriptor instead.
 func (*Request_Query) Descriptor() ([]byte, []int) {
-	return file_proto_messages_server_client_messages_proto_rawDescGZIP(), []int{2, 0}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *Request_Query) GetType() Request_Query_QueryType {
@@ -423,11 +423,11 @@ func (x *Request_Query) GetMessage() string {
 	return ""
 }
 
-var File_proto_messages_server_client_messages_proto protoreflect.FileDescriptor
+var File_proto_client_server_messages_server_to_client_proto protoreflect.FileDescriptor
 
-const file_proto_messages_server_client_messages_proto_rawDesc = "" +
+const file_proto_client_server_messages_server_to_client_proto_rawDesc = "" +
 	"\n" +
-	"+proto/messages/server-client-messages.proto\"M\n" +
+	"3proto/client-server-messages/server-to-client.proto\"M\n" +
 	"\bBatchAck\x12\x19\n" +
 	"\bbatch_id\x18\x01 \x01(\tR\abatchId\x12&\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x0e.MessageStatusR\x06status\"&\n" +
@@ -456,20 +456,20 @@ const file_proto_messages_server_client_messages_proto_rawDesc = "" +
 	"\aPENDING\x10\x02B2Z0common/communication/client-server-comm/protocolb\x06proto3"
 
 var (
-	file_proto_messages_server_client_messages_proto_rawDescOnce sync.Once
-	file_proto_messages_server_client_messages_proto_rawDescData []byte
+	file_proto_client_server_messages_server_to_client_proto_rawDescOnce sync.Once
+	file_proto_client_server_messages_server_to_client_proto_rawDescData []byte
 )
 
-func file_proto_messages_server_client_messages_proto_rawDescGZIP() []byte {
-	file_proto_messages_server_client_messages_proto_rawDescOnce.Do(func() {
-		file_proto_messages_server_client_messages_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_messages_server_client_messages_proto_rawDesc), len(file_proto_messages_server_client_messages_proto_rawDesc)))
+func file_proto_client_server_messages_server_to_client_proto_rawDescGZIP() []byte {
+	file_proto_client_server_messages_server_to_client_proto_rawDescOnce.Do(func() {
+		file_proto_client_server_messages_server_to_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_client_server_messages_server_to_client_proto_rawDesc), len(file_proto_client_server_messages_server_to_client_proto_rawDesc)))
 	})
-	return file_proto_messages_server_client_messages_proto_rawDescData
+	return file_proto_client_server_messages_server_to_client_proto_rawDescData
 }
 
-var file_proto_messages_server_client_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_messages_server_client_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_proto_messages_server_client_messages_proto_goTypes = []any{
+var file_proto_client_server_messages_server_to_client_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_client_server_messages_server_to_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_client_server_messages_server_to_client_proto_goTypes = []any{
 	(MessageStatus)(0),           // 0: MessageStatus
 	(Request_Query_QueryType)(0), // 1: Request.Query.QueryType
 	(*BatchAck)(nil),             // 2: BatchAck
@@ -478,7 +478,7 @@ var file_proto_messages_server_client_messages_proto_goTypes = []any{
 	(*ServerClientMessage)(nil),  // 5: ServerClientMessage
 	(*Request_Query)(nil),        // 6: Request.Query
 }
-var file_proto_messages_server_client_messages_proto_depIdxs = []int32{
+var file_proto_client_server_messages_server_to_client_proto_depIdxs = []int32{
 	0, // 0: BatchAck.status:type_name -> MessageStatus
 	0, // 1: Request.status:type_name -> MessageStatus
 	6, // 2: Request.responses:type_name -> Request.Query
@@ -493,12 +493,12 @@ var file_proto_messages_server_client_messages_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_proto_messages_server_client_messages_proto_init() }
-func file_proto_messages_server_client_messages_proto_init() {
-	if File_proto_messages_server_client_messages_proto != nil {
+func init() { file_proto_client_server_messages_server_to_client_proto_init() }
+func file_proto_client_server_messages_server_to_client_proto_init() {
+	if File_proto_client_server_messages_server_to_client_proto != nil {
 		return
 	}
-	file_proto_messages_server_client_messages_proto_msgTypes[3].OneofWrappers = []any{
+	file_proto_client_server_messages_server_to_client_proto_msgTypes[3].OneofWrappers = []any{
 		(*ServerClientMessage_BatchAck)(nil),
 		(*ServerClientMessage_SyncAck)(nil),
 		(*ServerClientMessage_Request)(nil),
@@ -507,18 +507,18 @@ func file_proto_messages_server_client_messages_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_messages_server_client_messages_proto_rawDesc), len(file_proto_messages_server_client_messages_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_client_server_messages_server_to_client_proto_rawDesc), len(file_proto_client_server_messages_server_to_client_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_messages_server_client_messages_proto_goTypes,
-		DependencyIndexes: file_proto_messages_server_client_messages_proto_depIdxs,
-		EnumInfos:         file_proto_messages_server_client_messages_proto_enumTypes,
-		MessageInfos:      file_proto_messages_server_client_messages_proto_msgTypes,
+		GoTypes:           file_proto_client_server_messages_server_to_client_proto_goTypes,
+		DependencyIndexes: file_proto_client_server_messages_server_to_client_proto_depIdxs,
+		EnumInfos:         file_proto_client_server_messages_server_to_client_proto_enumTypes,
+		MessageInfos:      file_proto_client_server_messages_server_to_client_proto_msgTypes,
 	}.Build()
-	File_proto_messages_server_client_messages_proto = out.File
-	file_proto_messages_server_client_messages_proto_goTypes = nil
-	file_proto_messages_server_client_messages_proto_depIdxs = nil
+	File_proto_client_server_messages_server_to_client_proto = out.File
+	file_proto_client_server_messages_server_to_client_proto_goTypes = nil
+	file_proto_client_server_messages_server_to_client_proto_depIdxs = nil
 }

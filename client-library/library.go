@@ -140,7 +140,7 @@ func (l *Library) sendAllBatchs() error {
 
 		err = l.waitForSuccessServerResponse()
 		if err != nil {
-			log.Criticalf("action: batch_send | result: fail | amount: %v", len(batch.GetBatch().Data))
+			log.Criticalf("action: batch_send | result: fail")
 			return err
 		}
 
@@ -156,9 +156,13 @@ func (l *Library) sendSync() error {
 		return ErrSignalReceived
 	}
 
-	syncMessage := &protocol.ClientServerMessage{
-		Message: &protocol.ClientServerMessage_Sync{
-			Sync: &protocol.Sync{},
+	syncMessage := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_Sync{
+					Sync: &protocol.Sync{},
+				},
+			},
 		},
 	}
 
@@ -179,13 +183,18 @@ func (l *Library) sendFinishMessage() error {
 		return ErrSignalReceived
 	}
 
-	finishMessage := &protocol.ClientServerMessage{
-		Message: &protocol.ClientServerMessage_Finish{
-			Finish: &protocol.Finish{
-				ClientId: l.config.ClientId,
+	finishMessage := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_Finish{
+					Finish: &protocol.Finish{
+						ClientId: l.config.ClientId,
+					},
+				},
 			},
 		},
 	}
+
 	if err := l.socket.Write(finishMessage); err != nil {
 		return err
 	}
@@ -300,12 +309,17 @@ func (l *Library) disconnectFromServer() {
 
 func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error) {
 	response, err := l.socket.Read()
-
 	if err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	// Verificar que el mensaje recibido sea del tipo esperado
+	serverClientMessage, ok := response.GetMessage().(*protocol.Message_ServerClientMessage)
+	if !ok {
+		return nil, fmt.Errorf("unexpected message type: expected ServerClientMessage")
+	}
+
+	return serverClientMessage.ServerClientMessage, nil
 }
 
 func (l *Library) waitForSuccessServerResponse() error {
@@ -313,6 +327,7 @@ func (l *Library) waitForSuccessServerResponse() error {
 	if err != nil {
 		return err
 	}
+
 	switch resp := response.GetMessage().(type) {
 	case *protocol.ServerClientMessage_BatchAck:
 		if resp.BatchAck.Status == protocol.MessageStatus_SUCCESS {
@@ -336,10 +351,14 @@ func (l *Library) waitForSuccessServerResponse() error {
 }
 
 func (l *Library) sendResultMessage() error {
-	consultMessage := &protocol.ClientServerMessage{
-		Message: &protocol.ClientServerMessage_Result{
-			Result: &protocol.Result{
-				ClientId: l.config.ClientId,
+	consultMessage := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_Result{
+					Result: &protocol.Result{
+						ClientId: l.config.ClientId,
+					},
+				},
 			},
 		},
 	}
