@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "common/communication/client-comm/protocol";
+option go_package = "common/communication/client-server-comm/protocol";
 
 
 enum MessageStatus {
@@ -38,7 +38,7 @@ message Request {
 }
 
 
-message ResponseMessage{
+message ServerClientMessage{
     oneof message {
         BatchAck batch_ack = 1;
         SyncAck sync_ack = 2;

@@ -156,8 +156,8 @@ func (l *Library) sendSync() error {
 		return ErrSignalReceived
 	}
 
-	syncMessage := &protocol.SendMessage{
-		Message: &protocol.SendMessage_Sync{
+	syncMessage := &protocol.ClientServerMessage{
+		Message: &protocol.ClientServerMessage_Sync{
 			Sync: &protocol.Sync{},
 		},
 	}
@@ -179,8 +179,8 @@ func (l *Library) sendFinishMessage() error {
 		return ErrSignalReceived
 	}
 
-	finishMessage := &protocol.SendMessage{
-		Message: &protocol.SendMessage_Finish{
+	finishMessage := &protocol.ClientServerMessage{
+		Message: &protocol.ClientServerMessage_Finish{
 			Finish: &protocol.Finish{
 				ClientId: l.config.ClientId,
 			},
@@ -253,7 +253,7 @@ func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query
 	}
 
 	switch resp := response.GetMessage().(type) {
-	case *protocol.ResponseMessage_Request:
+	case *protocol.ServerClientMessage_Request:
 		if resp.Request.Status == protocol.MessageStatus_SUCCESS {
 			return true, resp.Request.Responses, nil
 		} else if resp.Request.Status == protocol.MessageStatus_PENDING {
@@ -298,7 +298,7 @@ func (l *Library) disconnectFromServer() {
 	l.socket = nil
 }
 
-func (l *Library) waitForServerResponse() (*protocol.ResponseMessage, error) {
+func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error) {
 	response, err := l.socket.Read()
 
 	if err != nil {
@@ -314,7 +314,7 @@ func (l *Library) waitForSuccessServerResponse() error {
 		return err
 	}
 	switch resp := response.GetMessage().(type) {
-	case *protocol.ResponseMessage_BatchAck:
+	case *protocol.ServerClientMessage_BatchAck:
 		if resp.BatchAck.Status == protocol.MessageStatus_SUCCESS {
 			log.Infof("action: receiveBatchAckResponse | result: success | response: %v", resp.BatchAck.Status)
 
@@ -323,7 +323,7 @@ func (l *Library) waitForSuccessServerResponse() error {
 			return fmt.Errorf("server response was not succes")
 		}
 
-	case *protocol.ResponseMessage_SyncAck:
+	case *protocol.ServerClientMessage_SyncAck:
 		l.config.ClientId = resp.SyncAck.ClientId
 		log.Infof("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
 
@@ -336,8 +336,8 @@ func (l *Library) waitForSuccessServerResponse() error {
 }
 
 func (l *Library) sendResultMessage() error {
-	consultMessage := &protocol.SendMessage{
-		Message: &protocol.SendMessage_Result{
+	consultMessage := &protocol.ClientServerMessage{
+		Message: &protocol.ClientServerMessage_Result{
 			Result: &protocol.Result{
 				ClientId: l.config.ClientId,
 			},

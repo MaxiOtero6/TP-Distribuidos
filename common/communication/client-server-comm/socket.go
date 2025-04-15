@@ -1,4 +1,4 @@
-package client_communication
+package client_server_communication
 
 import (
 	"bufio"
@@ -11,12 +11,43 @@ import (
 const COMMUNICATION_DELIMITER = '\n'
 
 type Socket struct {
-	conn   net.Conn
-	reader *bufio.Reader
+	conn     net.Conn
+	reader   *bufio.Reader
+	listener net.Listener
 }
 
 func Connect(address string) (*Socket, error) {
 	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	clientSocket := &Socket{
+		conn:     conn,
+		reader:   bufio.NewReader(conn),
+		listener: nil,
+	}
+
+	return clientSocket, nil
+}
+
+func CreateServerSocket(address string) (*Socket, error) {
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	serverSocket := &Socket{
+		conn:     nil,
+		reader:   nil,
+		listener: listener,
+	}
+
+	return serverSocket, nil
+}
+
+func (s *Socket) Accept() (*Socket, error) {
+	conn, err := s.listener.Accept()
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +60,7 @@ func Connect(address string) (*Socket, error) {
 	return clientSocket, nil
 }
 
-func (s *Socket) Read() (*protocol.ResponseMessage, error) {
+func (s *Socket) Read() (*protocol.ServerClientMessage, error) {
 	message, err := s.reader.ReadBytes(COMMUNICATION_DELIMITER)
 	if err != nil {
 		return nil, err
@@ -37,7 +68,7 @@ func (s *Socket) Read() (*protocol.ResponseMessage, error) {
 
 	message = message[:len(message)-1]
 
-	var responseMessage protocol.ResponseMessage
+	var responseMessage protocol.ServerClientMessage
 	err = proto.Unmarshal(message, &responseMessage)
 	if err != nil {
 		return nil, err
@@ -46,7 +77,7 @@ func (s *Socket) Read() (*protocol.ResponseMessage, error) {
 	return &responseMessage, nil
 }
 
-func (s *Socket) Write(message *protocol.SendMessage) error {
+func (s *Socket) Write(message *protocol.ClientServerMessage) error {
 	message_bytes, err := proto.Marshal(message)
 	if err != nil {
 		return err

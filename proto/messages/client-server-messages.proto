@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "common/communication/client-comm/protocol";
+option go_package = "common/communication/client-server-comm/protocol";
 
 enum FileType {
     MOVIES = 0;
@@ -30,7 +30,7 @@ message Batch {
     repeated Row data = 2;
 }
 
-message SendMessage{
+message ClientServerMessage{
     oneof message {
         Batch batch = 1;
         Sync sync = 2;
