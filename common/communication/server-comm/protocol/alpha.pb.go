@@ -153,7 +153,7 @@ const file_proto_stages_alpha_proto_rawDesc = "" +
 	"\x0eprod_countries\x18\x02 \x03(\tR\rprodCountries\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12!\n" +
 	"\frelease_year\x18\x04 \x01(\rR\vreleaseYear\x12\x16\n" +
-	"\x06genres\x18\x05 \x03(\tR\x06genresB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x06genres\x18\x05 \x03(\tR\x06genresB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_alpha_proto_rawDescOnce sync.Once

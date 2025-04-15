@@ -135,7 +135,7 @@ const file_proto_stages_eta_proto_rawDesc = "" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06rating\x18\x03 \x01(\x02R\x06ratingB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x06rating\x18\x03 \x01(\x02R\x06ratingB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_eta_proto_rawDescOnce sync.Once

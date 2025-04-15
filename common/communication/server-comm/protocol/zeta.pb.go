@@ -268,7 +268,7 @@ const file_proto_stages_zeta_proto_rawDesc = "" +
 	"\x06Rating\x12\x18\n" +
 	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x16\n" +
 	"\x06rating\x18\x02 \x01(\x02R\x06ratingB\x06\n" +
-	"\x04dataB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x04dataB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_zeta_proto_rawDescOnce sync.Once

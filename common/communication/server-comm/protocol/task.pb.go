@@ -384,7 +384,7 @@ const file_proto_task_proto_rawDesc = "" +
 	"\aresult3\x18\x10 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
 	"\aresult4\x18\x11 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
 	"\aresult5\x18\x12 \x01(\v2\b.Result5H\x00R\aresult5B\a\n" +
-	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x05StageB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_task_proto_rawDescOnce sync.Once

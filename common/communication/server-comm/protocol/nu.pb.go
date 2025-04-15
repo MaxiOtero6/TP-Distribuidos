@@ -153,7 +153,7 @@ const file_proto_stages_nu_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
 	"\arevenue\x18\x03 \x01(\x04R\arevenue\x12\x16\n" +
 	"\x06budget\x18\x04 \x01(\x04R\x06budget\x12\x1c\n" +
-	"\tsentiment\x18\x05 \x01(\bR\tsentimentB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\tsentiment\x18\x05 \x01(\bR\tsentimentB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_nu_proto_rawDescOnce sync.Once
