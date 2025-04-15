@@ -24,40 +24,37 @@ var log = logging.MustGetLogger("log")
 
 var ErrSignalReceived = errors.New("signal received")
 
+type ClientConfig struct {
+	ServerAddress string
+	MaxAmount     int
+	ClientId      string
+}
+
 type Library struct {
-	parser        *utils.Parser
 	socket        *client_communication.Socket
 	fileNames     []string
-	clientId      string
-	ServerAddress string
 	sleepTime     time.Duration
 	running       bool
 	responseCount int
 	done          chan bool
+	config        ClientConfig
 }
 
-func NewLibrary(fileNames []string, maxBatch int, address string) (*Library, error) {
+func NewLibrary(fileNames []string, config ClientConfig) (*Library, error) {
 	if len(fileNames) == 0 {
 		err := fmt.Errorf("no files provided")
 		return nil, err
 	}
 
-	parser, err := utils.NewParser(maxBatch, fileNames[0])
-	if err != nil {
-		return nil, err
-	}
-
-	socket, err := client_communication.Connect(address)
+	socket, err := client_communication.Connect(config.ServerAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Library{
-		parser:        parser,
 		socket:        socket,
 		fileNames:     fileNames,
-		clientId:      "",
-		ServerAddress: address,
+		config:        config,
 		sleepTime:     1,
 		running:       true,
 		responseCount: 0,
@@ -81,7 +78,7 @@ func (l *Library) ProcessData() {
 		log.Errorf("action: sendSync | result: fail | error: %v", err)
 	}
 
-	err = l.sendAllBathcs()
+	err = l.sendAllFiles()
 	if err != nil {
 		log.Errorf("action: newMethod | result: fail | error: %v", err)
 	}
@@ -97,41 +94,59 @@ func (l *Library) ProcessData() {
 	}
 }
 
-func (l *Library) sendAllBathcs() error {
+func (l *Library) sendAllFiles() error {
 	for len(l.fileNames) > 0 {
 
-		currentFile := l.fileNames[0]
-		fileType := l.mapFileNameToFileType(currentFile)
-
-		if err := l.parser.LoadNewFile(currentFile); err != nil {
+		err := l.sendAllBatchs()
+		if err != nil {
 			return err
-		}
-
-		for {
-			batch, err := l.parser.ReadBatch(fileType)
-			if err != nil {
-				if err == io.EOF {
-					//TODO
-					break
-				}
-				return err
-			}
-			if err := l.socket.Write(batch); err != nil {
-				return err
-			}
-
-			err = l.waitForSuccessServerResponse()
-			if err != nil {
-				log.Criticalf("action: batch_send | result: fail | amount: %v", len(batch.GetBatch().Data))
-				return err
-			}
-
 		}
 
 		// Eliminar el archivo procesado de la lista
 		l.fileNames = l.fileNames[1:]
 	}
 	return nil
+}
+
+func (l *Library) sendAllBatchs() error {
+
+	fileType := l.mapFileNameToFileType(l.fileNames[0])
+
+	parser, err := utils.NewParser(l.config.MaxAmount, l.fileNames[0])
+	if err != nil {
+		return err
+	}
+
+	defer parser.Close()
+
+	for {
+
+		done := l.isDone()
+		if done {
+			return ErrSignalReceived
+		}
+
+		batch, err := parser.ReadBatch(fileType)
+		if err != nil {
+			if err == io.EOF {
+				//TODO
+				break
+			}
+			return err
+		}
+		if err := l.socket.Write(batch); err != nil {
+			return err
+		}
+
+		err = l.waitForSuccessServerResponse()
+		if err != nil {
+			log.Criticalf("action: batch_send | result: fail | amount: %v", len(batch.GetBatch().Data))
+			return err
+		}
+
+	}
+	return nil
+
 }
 
 func (l *Library) sendSync() error {
@@ -167,7 +182,7 @@ func (l *Library) sendFinishMessage() error {
 	finishMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Finish{
 			Finish: &protocol.Finish{
-				ClientId: l.clientId,
+				ClientId: l.config.ClientId,
 			},
 		},
 	}
@@ -266,7 +281,7 @@ func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Q
 
 func (l *Library) connectToServer() error {
 	var err error
-	l.socket, err = client_communication.Connect(l.ServerAddress)
+	l.socket, err = client_communication.Connect(l.config.ServerAddress)
 
 	if err != nil {
 		return err
@@ -278,7 +293,7 @@ func (l *Library) connectToServer() error {
 func (l *Library) disconnectFromServer() {
 	if l.socket != nil {
 		l.socket.Close()
-		log.Infof("action: disconnectFromServer | result: success | address: %v", l.ServerAddress)
+		log.Infof("action: disconnectFromServer | result: success | address: %v", l.config.ServerAddress)
 	}
 	l.socket = nil
 }
@@ -309,8 +324,8 @@ func (l *Library) waitForSuccessServerResponse() error {
 		}
 
 	case *protocol.ResponseMessage_SyncAck:
-		l.clientId = resp.SyncAck.ClientId
-		log.Infof("action: receiveSyncAckResponse | result: success | clientId: %v", l.clientId)
+		l.config.ClientId = resp.SyncAck.ClientId
+		log.Infof("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
 
 	default:
 		log.Errorf("action: receiveResponse | result: fail | error: Unexpected response type received")
@@ -324,7 +339,7 @@ func (l *Library) sendResultMessage() error {
 	consultMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Result{
 			Result: &protocol.Result{
-				ClientId: l.clientId,
+				ClientId: l.config.ClientId,
 			},
 		},
 	}
@@ -351,6 +366,5 @@ func (l *Library) mapFileNameToFileType(fileName string) protocol.FileType {
 func (l *Library) Stop() {
 	close(l.done)
 	l.disconnectFromServer()
-	l.parser.Close()
 	l.running = false
 }
