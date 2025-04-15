@@ -49,7 +49,7 @@ func mapJsonRegexTuple(json string, regex string, items int) [][]string {
 // It handles quoted fields and commas inside quotes.
 // It also handles empty fields.
 // It returns a slice of strings containing the fields.
-func parseLine(line *string) (fields []string) {
+func ParseLine(line *string) (fields []string) {
 	var currentField strings.Builder
 	inField := false
 
@@ -74,10 +74,10 @@ func parseLine(line *string) (fields []string) {
 	return fields
 }
 
-// parseMovie parses a movie line and returns a slice of DataRow with one item.
+// ParseMovie parses a movie line and returns a slice of DataRow with one item.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 24 and not nil.
-func parseMovie(fields []string) []*model.Movie {
+func ParseMovie(fields []string) []*model.Movie {
 	// adult,belongs_to_collection,budget,genres,homepage,
 	// id,imdb_id,original_language,original_title,overview,
 	// popularity,poster_path,production_companies,production_countries,release_date,
@@ -143,10 +143,10 @@ func parseMovie(fields []string) []*model.Movie {
 	}
 }
 
-// parseRating parses a rating line and returns a slice of DataRow with one item.
+// ParseRating parses a rating line and returns a slice of DataRow with one item.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 4 and not nil.
-func parseRating(fields []string) []*model.Rating {
+func ParseRating(fields []string) []*model.Rating {
 	//userId,movieId,rating,timestamp
 	if fields == nil || len(fields) != 4 {
 		return []*model.Rating{}
@@ -174,11 +174,11 @@ func parseRating(fields []string) []*model.Rating {
 	}
 }
 
-// parseCredit parses a credit line and returns a slice of DataRow with many items as actors in the movie.
+// ParseCredit parses a credit line and returns a slice of DataRow with many items as actors in the movie.
 // It returns a slice of DataRow with one item for each actor.
 // fields is a slice of strings that contains the fields of the line.
 // fields length must be 3 and not nil.
-func parseCredit(fields []string) []*model.Actor {
+func ParseCredit(fields []string) []*model.Actor {
 	// cast,crew,id
 	if fields == nil || len(fields) != 3 {
 		return []*model.Actor{}
@@ -194,7 +194,7 @@ func parseCredit(fields []string) []*model.Actor {
 		id := actor[0]
 		name := actor[1]
 		movieId := fields[2]
-		
+
 		if len(id) == 0 || len(name) == 0 || len(movieId) == 0 {
 			continue
 		}
