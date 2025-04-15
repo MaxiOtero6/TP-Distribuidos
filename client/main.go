@@ -92,18 +92,15 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	fileNames := []string{
-		v.GetString("data.movies"),
-		v.GetString("data.ratings"),
-		v.GetString("data.credits"),
-	}
-
 	clientConfig := library.ClientConfig{
-		ServerAddress: v.GetString("server.address"),
-		MaxAmount:     v.GetInt("batch.maxAmount"),
+		ServerAddress:   v.GetString("server.address"),
+		MaxAmount:       v.GetInt("batch.maxAmount"),
+		MoviesFilePath:  v.GetString("data.movies"),
+		RatingsFilePath: v.GetString("data.ratings"),
+		CreditsFilePath: v.GetString("data.credits"),
 	}
 
-	clientLibrary, err := library.NewLibrary(fileNames, clientConfig)
+	clientLibrary, err := library.NewLibrary(clientConfig)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}

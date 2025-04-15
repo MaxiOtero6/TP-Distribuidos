@@ -12,10 +12,6 @@ import (
 	"github.com/op/go-logging"
 )
 
-const MOVIES_FILE = "movies_head_10k.csv"
-const RATINGS_FILE = "ratings_head_10k.csv"
-const CREDITS_FILE = "credits_head_10k.csv"
-
 const DELAY_MULTIPLIER = 2
 const MAX_DELAY = 64 // max retries = 6
 const QUERIES_AMOUNT = 5
@@ -25,9 +21,12 @@ var log = logging.MustGetLogger("log")
 var ErrSignalReceived = errors.New("signal received")
 
 type ClientConfig struct {
-	ServerAddress string
-	MaxAmount     int
-	ClientId      string
+	ServerAddress   string
+	MaxAmount       int
+	MoviesFilePath  string
+	RatingsFilePath string
+	CreditsFilePath string
+	ClientId        string
 }
 
 type Library struct {
@@ -40,11 +39,7 @@ type Library struct {
 	config        ClientConfig
 }
 
-func NewLibrary(fileNames []string, config ClientConfig) (*Library, error) {
-	if len(fileNames) == 0 {
-		err := fmt.Errorf("no files provided")
-		return nil, err
-	}
+func NewLibrary(config ClientConfig) (*Library, error) {
 
 	socket, err := client_communication.Connect(config.ServerAddress)
 	if err != nil {
@@ -53,7 +48,6 @@ func NewLibrary(fileNames []string, config ClientConfig) (*Library, error) {
 
 	return &Library{
 		socket:        socket,
-		fileNames:     fileNames,
 		config:        config,
 		sleepTime:     1,
 		running:       true,
@@ -95,24 +89,25 @@ func (l *Library) ProcessData() {
 }
 
 func (l *Library) sendAllFiles() error {
-	for len(l.fileNames) > 0 {
-
-		err := l.sendAllBatchs()
-		if err != nil {
-			return err
-		}
-
-		// Eliminar el archivo procesado de la lista
-		l.fileNames = l.fileNames[1:]
+	err := l.sendMoviesFile()
+	if err != nil {
+		return err
 	}
+	err = l.sendCreditsFile()
+	if err != nil {
+		return err
+	}
+	err = l.sendRatingsFile()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (l *Library) sendAllBatchs() error {
+func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
-	fileType := l.mapFileNameToFileType(l.fileNames[0])
-
-	parser, err := utils.NewParser(l.config.MaxAmount, l.fileNames[0], fileType)
+	parser, err := utils.NewParser(l.config.MaxAmount, filename, fileType)
 	if err != nil {
 		return err
 	}
@@ -147,6 +142,28 @@ func (l *Library) sendAllBatchs() error {
 	}
 	return nil
 
+}
+
+func (l *Library) sendMoviesFile() error {
+	err := l.sendFile(l.config.MoviesFilePath, protocol.FileType_MOVIES)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (l *Library) sendRatingsFile() error {
+	err := l.sendFile(l.config.RatingsFilePath, protocol.FileType_RATINGS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (l *Library) sendCreditsFile() error {
+	err := l.sendFile(l.config.CreditsFilePath, protocol.FileType_CREDITS)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (l *Library) sendSync() error {
@@ -366,20 +383,6 @@ func (l *Library) sendResultMessage() error {
 		return err
 	}
 	return nil
-}
-
-func (l *Library) mapFileNameToFileType(fileName string) protocol.FileType {
-	var fileType protocol.FileType
-
-	if fileName == MOVIES_FILE {
-		fileType = protocol.FileType_MOVIES
-	} else if fileName == RATINGS_FILE {
-		fileType = protocol.FileType_RATINGS
-	} else if fileName == CREDITS_FILE {
-		fileType = protocol.FileType_CREDITS
-	}
-
-	return fileType
 }
 
 func (l *Library) Stop() {
