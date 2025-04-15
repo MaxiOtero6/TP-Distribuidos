@@ -14,12 +14,13 @@ const COMMUNICATION_DELIMITER = '\n'
 
 type Parser struct {
 	file         *os.File
+	fileType     protocol.FileType
 	maxBatch     int
 	bufReader    *bufio.Reader
 	leftoverLine string
 }
 
-func NewParser(maxBatch int, filename string) (*Parser, error) {
+func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Parser, error) {
 	if filename == "" {
 		return nil, fmt.Errorf("no file provided")
 	}
@@ -31,17 +32,18 @@ func NewParser(maxBatch int, filename string) (*Parser, error) {
 
 	return &Parser{
 		file:         file,
+		fileType:     fileType,
 		maxBatch:     maxBatch,
 		bufReader:    bufio.NewReader(file),
 		leftoverLine: "",
 	}, nil
 }
 
-func (p *Parser) ReadBatch(fileType protocol.FileType) (*protocol.SendMessage, error) {
+func (p *Parser) ReadBatch() (*protocol.SendMessage, error) {
 	sendMessage := &protocol.SendMessage{
 		Message: &protocol.SendMessage_Batch{
 			Batch: &protocol.Batch{
-				Type: fileType,
+				Type: p.fileType,
 				Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
 			},
 		},

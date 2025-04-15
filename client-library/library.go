@@ -112,7 +112,7 @@ func (l *Library) sendAllBatchs() error {
 
 	fileType := l.mapFileNameToFileType(l.fileNames[0])
 
-	parser, err := utils.NewParser(l.config.MaxAmount, l.fileNames[0])
+	parser, err := utils.NewParser(l.config.MaxAmount, l.fileNames[0], fileType)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (l *Library) sendAllBatchs() error {
 			return ErrSignalReceived
 		}
 
-		batch, err := parser.ReadBatch(fileType)
+		batch, err := parser.ReadBatch()
 		if err != nil {
 			if err == io.EOF {
 				//TODO
