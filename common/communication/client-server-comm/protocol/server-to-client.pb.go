@@ -25,7 +25,7 @@ type MessageStatus int32
 
 const (
 	MessageStatus_SUCCESS MessageStatus = 0
-	MessageStatus_ERROR   MessageStatus = 1
+	MessageStatus_FAIL    MessageStatus = 1
 	MessageStatus_PENDING MessageStatus = 2
 )
 
@@ -33,12 +33,12 @@ const (
 var (
 	MessageStatus_name = map[int32]string{
 		0: "SUCCESS",
-		1: "ERROR",
+		1: "FAIL",
 		2: "PENDING",
 	}
 	MessageStatus_value = map[string]int32{
 		"SUCCESS": 0,
-		"ERROR":   1,
+		"FAIL":    1,
 		"PENDING": 2,
 	}
 )
@@ -449,10 +449,10 @@ const file_proto_client_server_messages_server_to_client_proto_rawDesc = "" +
 	"\tbatch_ack\x18\x01 \x01(\v2\t.BatchAckH\x00R\bbatchAck\x12%\n" +
 	"\bsync_ack\x18\x02 \x01(\v2\b.SyncAckH\x00R\asyncAck\x12$\n" +
 	"\arequest\x18\x03 \x01(\v2\b.RequestH\x00R\arequestB\t\n" +
-	"\amessage*4\n" +
+	"\amessage*3\n" +
 	"\rMessageStatus\x12\v\n" +
-	"\aSUCCESS\x10\x00\x12\t\n" +
-	"\x05ERROR\x10\x01\x12\v\n" +
+	"\aSUCCESS\x10\x00\x12\b\n" +
+	"\x04FAIL\x10\x01\x12\v\n" +
 	"\aPENDING\x10\x02B2Z0common/communication/client-server-comm/protocolb\x06proto3"
 
 var (

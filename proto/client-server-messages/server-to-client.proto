@@ -5,7 +5,7 @@ option go_package = "common/communication/client-server-comm/protocol";
 
 enum MessageStatus {
     SUCCESS = 0;
-    ERROR = 1;
+    FAIL = 1;
     PENDING = 2;
 }
 

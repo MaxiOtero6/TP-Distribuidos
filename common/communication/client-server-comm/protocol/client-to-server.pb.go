@@ -75,7 +75,6 @@ func (FileType) EnumDescriptor() ([]byte, []int) {
 
 type Sync struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -108,13 +107,6 @@ func (x *Sync) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Sync.ProtoReflect.Descriptor instead.
 func (*Sync) Descriptor() ([]byte, []int) {
 	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Sync) GetClientId() string {
-	if x != nil {
-		return x.ClientId
-	}
-	return ""
 }
 
 type Finish struct {
@@ -419,9 +411,8 @@ var File_proto_client_server_messages_client_to_server_proto protoreflect.FileDe
 
 const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\n" +
-	"3proto/client-server-messages/client-to-server.proto\"#\n" +
-	"\x04Sync\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"%\n" +
+	"3proto/client-server-messages/client-to-server.proto\"\x06\n" +
+	"\x04Sync\"%\n" +
 	"\x06Finish\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"%\n" +
 	"\x06Result\x12\x1b\n" +

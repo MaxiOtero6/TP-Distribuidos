@@ -9,9 +9,7 @@ enum FileType {
     EOF = 3;
 }
 
-message Sync {
-    string client_id = 1;
-}
+message Sync {}
 
 message Finish {
     string client_id = 1;
