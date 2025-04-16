@@ -1,3 +1,3 @@
 #!/bin/bash
 
-protoc --go_out=./ ./proto/*/*.proto ./proto/*.proto
+protoc --go_out=../ ../proto/*/*.proto ../proto/*.proto

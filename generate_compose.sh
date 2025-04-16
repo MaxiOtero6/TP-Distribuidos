@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <output_file_name> <number_of_clients>"
+    echo "Usage: $0 <path_to_instances_configuration> <path_to_output_docker_compose>"
     exit 1
 fi
 
-python3 generate_compose.py $1 $2
+python3 infra/generate_compose.py $1 $2
 
-echo "Generated docker compose file $1"
+echo "Generated docker compose file $2"
