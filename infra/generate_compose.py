@@ -53,8 +53,15 @@ class ServiceType(Enum):
             case ServiceType.RABIT_MQ:
                 return Service(
                     container_name="rabbitmq",
-                    image="rabbitmq:latest",
+                    image="rabbitmq:4-management",
                     networks=[MOVIES_NETWORK_NAME],
+                    ports={
+                        "15672": "15672",
+                        "5672": "5672",
+                    },
+                    volumes={
+                        "rabbit": "/var/lib/rabbitmq",
+                    },
                 )
             case (
                 ServiceType.FILTER
@@ -64,37 +71,52 @@ class ServiceType(Enum):
                 | ServiceType.MAP
                 | ServiceType.REDUCE
             ):
-                worker_name = self.value.split("_", 1)[0]
+                worker_name = self.value.split("_", 1)[0].lower()
                 return Service(
                     container_name=f"{worker_name}_{id}",
                     image=f"{worker_name}:latest",
                     environment={"WORKER_ID": str(id)},
                     networks=[MOVIES_NETWORK_NAME],
+                    depends_on=["rabbitmq"],
                 )
 
 
 class DockerCompose:
     name: str
-    services: List["Service"]
-    networks: List["Network"]
+    services: Optional[List["Service"]]
+    networks: Optional[List["Network"]]
+    volumes: Optional[List["Volume"]]
 
     def __init__(
-        self, name: str, services: List["Service"], networks: List["Network"]
+        self,
+        name: str,
+        services: Optional[List["Service"]] = None,
+        networks: Optional[List["Network"]] = None,
+        volumes: Optional[List["Volume"]] = None,
     ) -> None:
         self.name: str = name
-        self.services: List[Service] = services
-        self.networks: List[Network] = networks
+        self.services: List[Service] = services if services is not None else []
+        self.networks: List[Network] = networks if networks is not None else []
+        self.volumes: List[Volume] = volumes if volumes is not None else []
 
     def __str__(self) -> str:
         lines: List[str] = []
         lines.append(f"name: {self.name}")
-        lines.append("services:")
-        for service in self.services:
-            lines.append(str(service))
 
-        lines.append("networks:")
-        for network in self.networks:
-            lines.append(str(network))
+        if self.services:
+            lines.append("services:")
+            for service in self.services:
+                lines.append(str(service))
+
+        if self.networks:
+            lines.append("networks:")
+            for network in self.networks:
+                lines.append(str(network))
+
+        if self.volumes:
+            lines.append("volumes:")
+            for volume in self.volumes:
+                lines.append(str(volume))
 
         return "\n".join(lines) + "\n"
 
@@ -117,6 +139,7 @@ class Service:
         environment: Optional[Dict[str, str]] = None,
         networks: Optional[List[str]] = None,
         depends_on: Optional[List[str]] = None,
+        ports: Optional[Dict[str, str]] = None,
         volumes: Optional[Dict[str, str]] = None,
         indent_level: int = 1,
     ) -> None:
@@ -126,6 +149,7 @@ class Service:
         self.environment: Optional[Dict[str, str]] = environment
         self.networks: Optional[List[str]] = networks
         self.depends_on: Optional[List[str]] = depends_on
+        self.ports: Optional[Dict[str, str]] = ports
         self.volumes: Optional[Dict[str, str]] = volumes
         self.indent_level: int = indent_level
 
@@ -153,6 +177,11 @@ class Service:
             for dep in self.depends_on:
                 lines.append(indent(f"- {dep}", level + 2))
 
+        if self.ports:
+            lines.append(indent("ports:", level + 1))
+            for key, value in self.ports.items():
+                lines.append(indent(f"- {key}:{value}", level + 2))
+
         if self.volumes:
             lines.append(indent("volumes:", level + 1))
             for key, value in self.volumes.items():
@@ -174,6 +203,23 @@ class Network:
 
         lines: List[str] = []
         lines.append(indent(f"{self.network_name}:", level))
+
+        return "\n".join(lines) + "\n"
+
+
+class Volume:
+    volume_name: str
+    indent_level: int
+
+    def __init__(self, volume_name: str, indent_level: int = 1) -> None:
+        self.volume_name: str = volume_name
+        self.indent_level: int = indent_level
+
+    def __str__(self) -> str:
+        level: int = self.indent_level
+
+        lines: List[str] = []
+        lines.append(indent(f"{self.volume_name}:", level))
 
         return "\n".join(lines) + "\n"
 
@@ -223,10 +269,18 @@ def generate_docker_compose(
         )
     ]
 
+    volumes_dict: Dict[str, Volume] = {
+        name: Volume(volume_name=name)
+        for service in services
+        if service.volumes
+        for name in service.volumes.keys()
+        if name and not name.startswith((".", "/"))  # only named volumes
+    }
+
+    volumes: List[Volume] = list(volumes_dict.values())
+
     docker_compose = DockerCompose(
-        name=NAME,
-        services=services,
-        networks=networks,
+        name=NAME, services=services, networks=networks, volumes=volumes
     )
 
     return docker_compose
