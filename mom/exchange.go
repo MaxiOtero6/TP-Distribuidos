@@ -8,12 +8,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// ctx is a wrapper around context.Context to manage the lifecycle of the exchange
+// exchangeContext is a wrapper around context.Context to manage the lifecycle of the exchange
 // and its associated context.
 // The context is used to set a timeout for operations on the exchange.
 // The cancel function is used to release resources and stop operations when the exchange
 // is no longer needed.
-type ctx struct {
+type exchangeContext struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -27,7 +27,7 @@ type ctx struct {
 // The args field can be used to pass additional arguments to the exchange declaration.
 type exchange struct {
 	channel     *amqp.Channel
-	context     ctx
+	context     exchangeContext
 	name        string
 	kind        string
 	durable     bool
@@ -47,7 +47,7 @@ type exchange struct {
 func newExchange(ch *amqp.Channel, name string, kind string) *exchange {
 	ex := &exchange{
 		channel:     ch,
-		context:     ctx{},
+		context:     exchangeContext{},
 		name:        name,
 		kind:        kind,
 		durable:     true,
@@ -95,7 +95,7 @@ func (e *exchange) publish(routingKey string, body []byte) {
 		},
 	)
 
-	failOnError(err, fmt.Sprintf("Failed to publish a message to exchange '%v'", e.name))
+	failOnError(err, fmt.Sprintf("Failed to publish a message to exchange '%v' with routing key '%v': %v", e.name, routingKey, err))
 }
 
 // close releases the resources associated with the exchange.
