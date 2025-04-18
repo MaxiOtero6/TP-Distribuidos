@@ -118,12 +118,12 @@ func (r *RabbitMQ) BindQueue(queueName string, exchangeName string, routingKey s
 // It also closes all the queues and exchanges.
 // If an error occurs while closing the connection or channel, it is logged.
 func (r *RabbitMQ) Close() {
-	if err := r.conn.Close(); err != nil {
-		log.Errorf("Failed to close the RabbitMQ connection: '%v'", err)
-	}
-
 	if err := r.ch.Close(); err != nil {
 		log.Errorf("Failed to close the RabbitMQ channel: '%v'", err)
+	}
+
+	if err := r.conn.Close(); err != nil {
+		log.Errorf("Failed to close the RabbitMQ connection: '%v'", err)
 	}
 
 	for _, queue := range r.queues {
