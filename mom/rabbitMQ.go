@@ -51,6 +51,8 @@ func (r *RabbitMQ) NewExchange(name string, kind string) {
 		if ex.kind != kind {
 			log.Errorf("Exchange '%s' already exists with a different kind", name)
 		}
+
+		return
 	}
 
 	r.exchanges[name] = newExchange(r.ch, name, kind)
@@ -92,6 +94,10 @@ func (r *RabbitMQ) BindQueue(queueName string, exchangeName string, routingKey s
 func (r *RabbitMQ) Close() {
 	r.conn.Close()
 	r.ch.Close()
+
+	for _, queue := range r.queues {
+		queue.close()
+	}
 
 	for _, exchange := range r.exchanges {
 		exchange.close()

@@ -2,9 +2,6 @@ package mom
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -72,19 +69,13 @@ func (q *queue) consume() <-chan amqp.Delivery {
 
 	failOnError(err, fmt.Sprintf("Failed to register a consumer: '%v'", q.amqpName))
 
-	go func() {
-		signalChan := make(chan os.Signal, 1)
-		signal.Notify(signalChan, syscall.SIGTERM)
-		<-signalChan
-
-		log.Infof("Received SIGTERM signal, cancelling consumer '%v'", q.name)
-
-		if err := q.channel.Cancel(q.amqpName, false); err != nil {
-			log.Errorf("Failed to cancel the consumer '%v': '%v'", q.name, err)
-		} else {
-			log.Infof("Consumer '%v' cancelled gracefully ", q.name)
-		}
-	}()
-
 	return msgs
+}
+
+func (q *queue) close() {
+	if err := q.channel.Cancel(q.amqpName, false); err != nil {
+		log.Errorf("Failed to cancel the consumer '%v': '%v'", q.name, err)
+	} else {
+		log.Infof("Consumer '%v' cancelled gracefully ", q.name)
+	}
 }
