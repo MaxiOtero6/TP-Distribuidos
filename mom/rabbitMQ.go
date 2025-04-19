@@ -44,6 +44,28 @@ func NewRabbitMQ() *RabbitMQ {
 	}
 }
 
+// InitConfig initializes the RabbitMQ configuration with the specified exchanges and queues.
+// It creates the exchanges and queues based on the provided configuration.
+// The exchanges and queues are defined as slices of maps, where each map contains the name and type of the exchange or queue.
+func (r *RabbitMQ) InitConfig(
+	exchanges []map[string]string,
+	queues []map[string]string,
+	binds []map[string]string,
+	workerId string,
+) {
+	for _, exchange := range exchanges {
+		r.NewExchange(exchange["name"], exchange["kind"])
+	}
+
+	for _, queue := range queues {
+		r.NewQueue(queue["name"])
+	}
+
+	for _, bind := range binds {
+		r.BindQueue(bind["queue"], bind["exchange"], workerId)
+	}
+}
+
 // NewQueue creates a new RabbitMQ queue with the specified name.
 // If a queue with the same name already exists, an error is logged and the function returns.
 func (r *RabbitMQ) NewQueue(name string) {
@@ -53,6 +75,7 @@ func (r *RabbitMQ) NewQueue(name string) {
 	}
 
 	r.queues[name] = newQueue(r.ch, name)
+	log.Infof("Queue '%s' created", name)
 }
 
 // NewExchange creates a new RabbitMQ exchange with the specified name and type.
@@ -69,6 +92,7 @@ func (r *RabbitMQ) NewExchange(name string, kind string) {
 	}
 
 	r.exchanges[name] = newExchange(r.ch, name, kind)
+	log.Infof("Exchange '%s' of kind '%s' created", name, kind)
 }
 
 // Publish publishes a message to the specified exchange with the given routing key.
@@ -84,6 +108,7 @@ func (r *RabbitMQ) Publish(exchangeName string, routingKey string, body []byte) 
 	}
 
 	ex.publish(routingKey, body)
+	log.Debugf("Message published to exchange '%s' with routing key '%s'", exchangeName, routingKey)
 }
 
 // Consume consumes messages from the specified queue.
@@ -97,7 +122,10 @@ func (r *RabbitMQ) Consume(queueName string) <-chan amqp.Delivery {
 		return nil
 	}
 
-	return q.consume()
+	ret := q.consume()
+	log.Infof("Consumer created for queue '%s'", queueName)
+
+	return ret
 }
 
 // BindQueue binds the specified queue to the specified exchange with the given routing key.
@@ -112,25 +140,26 @@ func (r *RabbitMQ) BindQueue(queueName string, exchangeName string, routingKey s
 	}
 
 	q.bind(exchangeName, routingKey)
+	log.Infof("Queue '%s' bound to exchange '%s' with routing key '%s'", queueName, exchangeName, routingKey)
 }
 
 // Close closes the RabbitMQ connection and channel.
 // It also closes all the queues and exchanges.
 // If an error occurs while closing the connection or channel, it is logged.
 func (r *RabbitMQ) Close() {
-	if err := r.ch.Close(); err != nil {
-		log.Errorf("Failed to close the RabbitMQ channel: '%v'", err)
-	}
-
-	if err := r.conn.Close(); err != nil {
-		log.Errorf("Failed to close the RabbitMQ connection: '%v'", err)
-	}
-
 	for _, queue := range r.queues {
 		queue.close()
 	}
 
 	for _, exchange := range r.exchanges {
 		exchange.close()
+	}
+
+	if err := r.ch.Close(); err != nil {
+		log.Errorf("Failed to close the RabbitMQ channel: '%v'", err)
+	}
+
+	if err := r.conn.Close(); err != nil {
+		log.Errorf("Failed to close the RabbitMQ connection: '%v'", err)
 	}
 }
