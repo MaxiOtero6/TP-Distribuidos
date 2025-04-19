@@ -9,6 +9,8 @@ var log = logging.MustGetLogger("log")
 
 const URL = "amqp://guest:guest@rabbitmq:5672/"
 
+type ConsumerChan <-chan amqp.Delivery
+
 // failOnError checks if an error occurred and logs it.
 // If an error occurred, it logs the error message and panics.
 func failOnError(err error, msg string) {
@@ -116,7 +118,7 @@ func (r *RabbitMQ) Publish(exchangeName string, routingKey string, body []byte) 
 // Consume consumes messages from the specified queue.
 // It returns a channel that receives messages from the queue.
 // If the queue does not exist, an error is logged and the function returns nil.
-func (r *RabbitMQ) Consume(queueName string) <-chan amqp.Delivery {
+func (r *RabbitMQ) Consume(queueName string) ConsumerChan {
 	q, ok := r.queues[queueName]
 
 	if !ok {
