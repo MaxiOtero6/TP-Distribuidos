@@ -1,6 +1,7 @@
-port: 8080 
+
+address: "server:12345"
 log:
-  level: "INFO" 
+  level: "debug" 
 #timeout: 30 
 
 
