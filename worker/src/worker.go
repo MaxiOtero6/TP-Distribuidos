@@ -17,10 +17,10 @@ type Worker struct {
 	done     chan os.Signal
 }
 
-func NewWorker(id string, workerType string, signalChan chan os.Signal) *Worker {
+func NewWorker(id string, workerType string, workerCount int, signalChan chan os.Signal) *Worker {
 	rabbitMQ := mom.NewRabbitMQ()
 
-	action := actions.NewAction(workerType)
+	action := actions.NewAction(workerType, workerCount)
 
 	return &Worker{
 		WorkerId: id,

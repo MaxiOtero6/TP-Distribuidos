@@ -8,33 +8,43 @@ import (
 )
 
 func TestAlphaStage(t *testing.T) {
-	filter := &Filter{}
+	filter := NewFilter(TEST_WORKER_COUNT)
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.alphaStage(nil)
-		assert.Len(t, result, 3, "Expected 3 stages")
+		assert.Len(t, result, 2, "Expected 2 exchanges")
+		assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[FILTER_EXCHANGE][BETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE], 2, "Expected 2 stages")
+		assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-		beta := result["beta"].GetBeta().GetData()
+		beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result["iota"].GetIota().GetData()
+		iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result["zeta"].GetZeta().GetData()
+		zeta := result[JOIN_EXCHANGE][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.alphaStage([]*protocol.Alpha_Data{})
-		assert.Len(t, result, 3, "Expected 3 stages")
+		assert.Len(t, result, 2, "Expected 2 exchanges")
+		assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[FILTER_EXCHANGE][BETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE], 2, "Expected 2 stages")
+		assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-		beta := result["beta"].GetBeta().GetData()
+		beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result["iota"].GetIota().GetData()
+		iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result["zeta"].GetZeta().GetData()
+		zeta := result[JOIN_EXCHANGE][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
@@ -79,9 +89,14 @@ func TestAlphaStage(t *testing.T) {
 		}
 
 		result := filter.alphaStage(data)
-		assert.Len(t, result, 3, "Expected 3 stages")
+		assert.Len(t, result, 2, "Expected 2 exchanges")
+		assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[FILTER_EXCHANGE][BETA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE], 2, "Expected 2 stages")
+		assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 1, "Expected 1 destination ID")
 
-		betaData := result["beta"].GetBeta().GetData()
+		betaData := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 		assert.Len(t, betaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", betaData[0].GetId(), "Expected movie ID 1")
@@ -96,13 +111,13 @@ func TestAlphaStage(t *testing.T) {
 		assert.Equal(t, []string{"Spain", "Argentina"}, betaData[1].GetProdCountries(), "Expected production countries 'Spain', 'Argentina'")
 		assert.Equal(t, []string{"Romantic"}, betaData[1].GetGenres(), "Expected genres 'Romantic'")
 
-		iotaData := result["iota"].GetIota().GetData()
+		iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", iotaData[0].GetMovie().GetId(), "Expected movie ID 1")
 		assert.Equal(t, "4", iotaData[1].GetMovie().GetId(), "Expected movie ID 4")
 
-		zetaData := result["zeta"].GetZeta().GetData()
+		zetaData := result[JOIN_EXCHANGE][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zetaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", zetaData[0].GetMovie().GetId(), "Expected movie ID 1")
@@ -139,15 +154,20 @@ func TestAlphaStage(t *testing.T) {
 		}
 
 		result := filter.alphaStage(data)
-		assert.Len(t, result, 3, "Expected 3 stages")
+		assert.Len(t, result, 2, "Expected 2 exchanges")
+		assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[FILTER_EXCHANGE][BETA_STAGE], 0, "Expected 1 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE], 2, "Expected 2 stages")
+		assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 1 destination ID")
+		assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 1 destination ID")
 
-		beta := result["beta"].GetBeta().GetData()
+		beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result["iota"].GetIota().GetData()
+		iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result["zeta"].GetZeta().GetData()
+		zeta := result[JOIN_EXCHANGE][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 }
@@ -157,17 +177,21 @@ func TestBetaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.betaStage(nil)
-		assert.Len(t, result, 1, "Expected 1 stage")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["result"].GetResult1().GetData()
+		res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
 		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.betaStage([]*protocol.Beta_Data{})
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["result"].GetResult1().GetData()
+		res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
 		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
@@ -212,9 +236,11 @@ func TestBetaStage(t *testing.T) {
 		}
 
 		result := filter.betaStage(data)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 1, "Expected 1 destination ID")
 
-		res := result["result"].GetResult1().GetData()
+		res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
 		assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
@@ -253,9 +279,11 @@ func TestBetaStage(t *testing.T) {
 		}
 
 		result := filter.betaStage(data)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["result"].GetResult1().GetData()
+		res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 }
@@ -265,17 +293,21 @@ func TestGammaStage(t *testing.T) {
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.gammaStage(nil)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["delta"].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := filter.gammaStage([]*protocol.Gamma_Data{})
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["delta"].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
@@ -310,9 +342,11 @@ func TestGammaStage(t *testing.T) {
 		}
 
 		result := filter.gammaStage(data)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 1, "Expected 1 destination ID")
 
-		res := result["delta"].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", res[0].GetId(), "Expected movie ID 1")
@@ -345,9 +379,11 @@ func TestGammaStage(t *testing.T) {
 		}
 
 		result := filter.gammaStage(data)
-		assert.Len(t, result, 1, "Expected 1 stages")
+		assert.Len(t, result, 1, "Expected 1 exchange")
+		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
 
-		res := result["delta"].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 }
@@ -363,10 +399,8 @@ func TestExecute(t *testing.T) {
 			},
 		}
 
-		result, err := filter.Execute(task)
+		_, err := filter.Execute(task)
 		assert.NoError(t, err, "Expected no error, got %v", err)
-
-		assert.Len(t, result, 3, "Expected 3 stages")
 	})
 
 	t.Run("Test with Beta stage", func(t *testing.T) {
@@ -379,10 +413,8 @@ func TestExecute(t *testing.T) {
 			},
 		}
 
-		result, err := filter.Execute(task)
+		_, err := filter.Execute(task)
 		assert.NoError(t, err, "Expected no error, got %v", err)
-
-		assert.Len(t, result, 1, "Expected 1 stages")
 	})
 
 	t.Run("Test with Gamma stage", func(t *testing.T) {
@@ -395,10 +427,8 @@ func TestExecute(t *testing.T) {
 			},
 		}
 
-		result, err := filter.Execute(task)
+		_, err := filter.Execute(task)
 		assert.NoError(t, err, "Expected no error, got %v", err)
-
-		assert.Len(t, result, 1, "Expected 1 stages")
 	})
 
 	t.Run("Test with invalid stage", func(t *testing.T) {

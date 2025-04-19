@@ -71,13 +71,14 @@ func InitLogger(logLevel string) error {
 
 func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	workerType := v.GetString("type")
+	workerCount := v.GetInt("workers.count")
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	w := worker.NewWorker(v.GetString("id"), workerType, signalChan)
+	w := worker.NewWorker(v.GetString("id"), workerType, workerCount, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

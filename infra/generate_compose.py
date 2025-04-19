@@ -34,7 +34,7 @@ class ServiceType(Enum):
     MAP = "MAPPER"
     REDUCE = "REDUCER"
 
-    def to_service(self, id: int) -> "Service":
+    def to_service(self, id: int, workers_count: int) -> "Service":
         match self:
             case ServiceType.SERVER:
                 return Service(
@@ -42,7 +42,8 @@ class ServiceType(Enum):
                     image="server:latest",
                     environment={
                         "SERVER_PORT": str(8080 + id),
-                        "SERVER_ID": str(id)
+                        "SERVER_ID": str(id),
+                        "SERVER_WORKERS_COUNT": str(workers_count),
                     },
                     networks=[
                         MOVIES_NETWORK_NAME
@@ -89,6 +90,7 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
+                        "WORKER_WORKERS_COUNT": str(workers_count),
                     },
                     networks=[
                         MOVIES_NETWORK_NAME
@@ -277,11 +279,29 @@ def read_instances(file_path: str) -> Dict["ServiceType", int]:
     return instances_per_service
 
 
+def count_workers(instances_per_service: Dict[ServiceType, int]) -> int:
+    count: int = 0
+    for service_type, c in instances_per_service.items():
+        if service_type in {
+            ServiceType.FILTER,
+            ServiceType.JOINER,
+            ServiceType.TOP,
+            ServiceType.OVERVIEW,
+            ServiceType.MAP,
+            ServiceType.REDUCE,
+        }:
+            count += c
+
+    return count
+
+
 def generate_docker_compose(
     instances_per_service: Dict[ServiceType, int],
 ) -> DockerCompose:
+    workers_count: int = count_workers(instances_per_service)
+
     services: List[Service] = [
-        service_type.to_service(id)
+        service_type.to_service(id, workers_count)
         for service_type, count in instances_per_service.items()
         for id in range(count)
     ]
