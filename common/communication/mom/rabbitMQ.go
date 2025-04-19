@@ -47,11 +47,13 @@ func NewRabbitMQ() *RabbitMQ {
 // InitConfig initializes the RabbitMQ configuration with the specified exchanges and queues.
 // It creates the exchanges and queues based on the provided configuration.
 // The exchanges and queues are defined as slices of maps, where each map contains the name and type of the exchange or queue.
+// The binds parameter specifies the binding between the queue and exchange.
+// The routingKey is used as the routing key for the binding.
 func (r *RabbitMQ) InitConfig(
 	exchanges []map[string]string,
 	queues []map[string]string,
 	binds []map[string]string,
-	workerId string,
+	routingKey string,
 ) {
 	for _, exchange := range exchanges {
 		r.NewExchange(exchange["name"], exchange["kind"])
@@ -62,7 +64,7 @@ func (r *RabbitMQ) InitConfig(
 	}
 
 	for _, bind := range binds {
-		r.BindQueue(bind["queue"], bind["exchange"], workerId)
+		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
 	}
 }
 
