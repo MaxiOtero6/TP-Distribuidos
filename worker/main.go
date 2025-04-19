@@ -101,4 +101,6 @@ func main() {
 
 	w := initWorker(v, signalChan)
 	w.Run()
+
+	close(signalChan)
 }
