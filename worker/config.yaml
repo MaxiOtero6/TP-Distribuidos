@@ -70,7 +70,7 @@ rabbitmq:
                 kind: "direct"
             mapExchange:
                 name: "mapExchange"
-                kind: "direct"
+                kind: "fanout"
         queues:
             joinQueue:
                 name: ""
