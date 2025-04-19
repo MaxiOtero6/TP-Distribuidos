@@ -2,7 +2,7 @@ log:
     level: "INFO"
 
 rabbitmq:
-    filter:
+    FILTER:
         exchanges:
             filterExchange:
                 name: "filterExchange"
@@ -29,7 +29,7 @@ rabbitmq:
                 exchange: "filterExchange"
                 queue: "filterQueue"
 
-    overviewer:
+    OVERVIEWER:
         exchanges:
             overviewExchange:
                 name: "overviewExchange"
@@ -46,7 +46,7 @@ rabbitmq:
                 exchange: "overviewExchange"
                 queue: "overviewQueue"
 
-    mapper:
+    MAPPER:
         exchanges:
             mapExchange:
                 name: "mapExchange"
@@ -63,7 +63,7 @@ rabbitmq:
                 exchange: "mapExchange"
                 queue: "mapQueue"
 
-    joiner:
+    JOINER:
         exchanges:
             joinExchange:
                 name: "joinExchange"
@@ -80,7 +80,7 @@ rabbitmq:
                 exchange: "joinExchange"
                 queue: ""
 
-    reducer:
+    REDUCER:
         exchanges:
             reduceExchange:
                 name: "reduceExchange"
@@ -99,7 +99,7 @@ rabbitmq:
                 exchange: "reduceExchange"
                 queue: ""
 
-    topper:
+    TOPPER:
         exchanges:
             topExchange:
                 name: "topExchange"

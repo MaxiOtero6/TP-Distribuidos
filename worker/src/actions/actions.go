@@ -14,20 +14,33 @@ type Action interface {
 	Execute(task *protocol.Task) (map[string]*protocol.Task, error)
 }
 
+type ActionType string
+
+const (
+	FilterAction     ActionType = "FILTER"
+	OverviewerAction ActionType = "OVERVIEWER"
+	MapperAction     ActionType = "MAPPER"
+	JoinerAction     ActionType = "JOINER"
+	ReducerAction    ActionType = "REDUCER"
+	TopperAction     ActionType = "TOPPER"
+)
+
 func NewAction(workerType string) Action {
-	switch workerType {
-	case "filter":
+	kind := ActionType(workerType)
+
+	switch kind {
+	case FilterAction:
 		return &Filter{}
-	case "overviewer":
+	case OverviewerAction:
 		return NewOverviewer()
-		// case "mapper":
-		// 	return
-		// case "joiner":
-		// 	return
-		// case "reducer":
-		// 	return
-		// case "topper":
-		// 	return
+	case MapperAction:
+		return nil
+	case JoinerAction:
+		return nil
+	case ReducerAction:
+		return nil
+	case TopperAction:
+		return nil
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil
