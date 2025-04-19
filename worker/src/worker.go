@@ -12,6 +12,7 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+// Worker is a struct that represents a worker that consumes tasks from a message queue and executes them
 type Worker struct {
 	WorkerId    string
 	rabbitMQ    *mom.RabbitMQ
@@ -20,20 +21,29 @@ type Worker struct {
 	consumeChan mom.ConsumerChan
 }
 
+// NewWorker creates a new worker with the given id, type, and workerCount
+// and initializes RabbitMQ and action structs
+// It also takes a signal channel to handle SIGTERM signal
 func NewWorker(id string, workerType string, workerCount int, signalChan chan os.Signal) *Worker {
 	rabbitMQ := mom.NewRabbitMQ()
 
 	action := actions.NewAction(workerType, workerCount)
 
 	return &Worker{
-		WorkerId: id,
-		rabbitMQ: rabbitMQ,
-		action:   action,
-		done:     signalChan,
+		WorkerId:    id,
+		rabbitMQ:    rabbitMQ,
+		action:      action,
+		done:        signalChan,
 		consumeChan: nil,
 	}
 }
 
+// InitConfig initializes the worker with the given exchanges, queues, and binds
+// It expects to load one bind from the config file
+// If the number of binds is not equal to 1, it panics
+// It also initializes the RabbitMQ with the given exchanges, queues, and binds
+// and sets the consume channel to the queue specified in the bind
+// The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
 	if len(binds) != 1 {
 		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
@@ -43,11 +53,20 @@ func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]s
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
 }
 
+// Run starts the worker and listens for messages on the consume channel
+// It unmarshals the task from the message body and executes it using the action struct
+// It also sends the subTasks to the RabbitMQ for each exchange and routing key
+// If the task fails to unmarshal or execute, it logs the error and continues to the next message
+// It also acknowledges the message after processing it
+// The worker will run until it receives a signal on the done channel
+// After that, it will close the RabbitMQ connection
+// and exit
+// It panics if the consume channel is nil
 func (w *Worker) Run() {
 	if w.consumeChan == nil {
 		log.Panicf("Consume channel is nil, did you call InitConfig?")
 	}
-	
+
 	defer w.Shutdown()
 
 	for w.isRunning() {
@@ -75,6 +94,9 @@ func (w *Worker) Run() {
 	}
 }
 
+// sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
+// It marshals the task to a byte array and publishes it to the RabbitMQ
+// It logs the task, exchange, and routing key for debugging purposes
 func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
 	for exchange, stage := range subTasks {
 		for _, value := range stage {
@@ -94,10 +116,16 @@ func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
 	}
 }
 
+// Shutdown closes the RabbitMQ connection
+// It is safe to call this method multiple times
 func (w *Worker) Shutdown() {
 	w.rabbitMQ.Close()
 }
 
+// isRunning checks if the worker is still running
+// It returns true if the worker is running, false otherwise
+// It uses a non-blocking select statement to check if the done channel is closed
+// If the done channel is closed, it means the worker has received a signal to stop
 func (w *Worker) isRunning() bool {
 	select {
 	case <-w.done:
