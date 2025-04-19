@@ -24,8 +24,11 @@ func NewOverviewer(workerCount int) *Overviewer {
 	}
 }
 
-func (o *Overviewer) muStage(data []*protocol.Mu_Data) map[string]*protocol.Task {
-	var nuData []*protocol.Nu_Data
+func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
+	tasks = make(Tasks)
+	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][NU_STAGE] = make(map[string]*protocol.Task)
+	nuData := make(map[string][]*protocol.Nu_Data)
 
 	for _, movie := range data {
 		if movie == nil {
@@ -36,7 +39,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) map[string]*protocol.Task
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData = append(nuData, &protocol.Nu_Data{
+		nuData[BROADCAST_ID] = append(nuData[BROADCAST_ID], &protocol.Nu_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -45,18 +48,20 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) map[string]*protocol.Task
 		})
 	}
 
-	return map[string]*protocol.Task{
-		"nu": {
+	for id, data := range nuData {
+		tasks[MAP_EXCHANGE][NU_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Nu{
 				Nu: &protocol.Nu{
-					Data: nuData,
+					Data: data,
 				},
 			},
-		},
+		}
 	}
+
+	return tasks
 }
 
-func (o *Overviewer) Execute(task *protocol.Task) (map[string]*protocol.Task, error) {
+func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
 
 	switch v := stage.(type) {
