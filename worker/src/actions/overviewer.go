@@ -69,6 +69,6 @@ func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
 		data := v.Mu.GetData()
 		return o.muStage(data), nil
 	default:
-		return nil, fmt.Errorf("invalid query stage")
+		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }

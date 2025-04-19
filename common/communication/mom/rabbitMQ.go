@@ -9,6 +9,8 @@ var log = logging.MustGetLogger("log")
 
 const URL = "amqp://guest:guest@rabbitmq:5672/"
 
+type ConsumerChan <-chan amqp.Delivery
+
 // failOnError checks if an error occurred and logs it.
 // If an error occurred, it logs the error message and panics.
 func failOnError(err error, msg string) {
@@ -47,11 +49,13 @@ func NewRabbitMQ() *RabbitMQ {
 // InitConfig initializes the RabbitMQ configuration with the specified exchanges and queues.
 // It creates the exchanges and queues based on the provided configuration.
 // The exchanges and queues are defined as slices of maps, where each map contains the name and type of the exchange or queue.
+// The binds parameter specifies the binding between the queue and exchange.
+// The routingKey is used as the routing key for the binding.
 func (r *RabbitMQ) InitConfig(
 	exchanges []map[string]string,
 	queues []map[string]string,
 	binds []map[string]string,
-	workerId string,
+	routingKey string,
 ) {
 	for _, exchange := range exchanges {
 		r.NewExchange(exchange["name"], exchange["kind"])
@@ -62,7 +66,7 @@ func (r *RabbitMQ) InitConfig(
 	}
 
 	for _, bind := range binds {
-		r.BindQueue(bind["queue"], bind["exchange"], workerId)
+		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
 	}
 }
 
@@ -114,7 +118,7 @@ func (r *RabbitMQ) Publish(exchangeName string, routingKey string, body []byte) 
 // Consume consumes messages from the specified queue.
 // It returns a channel that receives messages from the queue.
 // If the queue does not exist, an error is logged and the function returns nil.
-func (r *RabbitMQ) Consume(queueName string) <-chan amqp.Delivery {
+func (r *RabbitMQ) Consume(queueName string) ConsumerChan {
 	q, ok := r.queues[queueName]
 
 	if !ok {

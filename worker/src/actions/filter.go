@@ -275,6 +275,6 @@ func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
 		data := v.Gamma.GetData()
 		return f.gammaStage(data), nil
 	default:
-		return nil, fmt.Errorf("invalid query stage")
+		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }
