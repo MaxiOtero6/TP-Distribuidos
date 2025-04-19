@@ -99,5 +99,6 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	initWorker(v, signalChan)
+	w := initWorker(v, signalChan)
+	w.Run()
 }
