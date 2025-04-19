@@ -45,7 +45,6 @@ func (s *Server) acceptConnections() {
 
 func (s *Server) handleMessage(clientSocket *client_server_communication.Socket, message *protocol.Message) error {
 	clientServerMessage, ok := message.GetMessage().(*protocol.Message_ClientServerMessage)
-	log.Infof("Received message: %v", clientServerMessage)
 
 	if !ok {
 		return fmt.Errorf("unexpected message type: expected ServerClientMessage")
@@ -86,7 +85,6 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 func (s *Server) handleConnectionMessage(clientSocket *client_server_communication.Socket, syncMessage *protocol.Sync) {
 	clientID := generateUniqueID()
 
-	// Enviar el ID al cliente
 	idMessage := &protocol.Message{
 		Message: &protocol.Message_ServerClientMessage{
 			ServerClientMessage: &protocol.ServerClientMessage{
@@ -110,11 +108,6 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 	log.Infof("Client connected with ID: %s", clientID)
 }
 func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
-	// Process the batch message
-	// Tengo que recibir el batch
-	// lo tengo que validar
-	// para poder validarlo lo que tengo que hacer es en primero ver si el tipo de file es el esperado
-	// y además quiero saber si
 
 	err := s.validateBatchType(batchMessage)
 	if err != nil {
