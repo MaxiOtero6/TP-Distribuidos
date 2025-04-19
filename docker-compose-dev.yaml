@@ -1,0 +1,27 @@
+name: tp
+services:
+  server:
+    container_name: server
+    image: server:latest
+    volumes:
+      - ./server/config.yaml:/app/config.yaml
+      - ./.data/:/data
+    networks:
+      - testing_net
+
+  client:
+    container_name: client 
+    image: client:latest
+    volumes:
+      - ./client/config.yaml:/app/config.yaml
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+networks:
+  testing_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24
