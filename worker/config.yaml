@@ -1,0 +1,117 @@
+log:
+    level: "INFO"
+
+rabbitmq:
+    filter:
+        exchanges:
+            filterExchange:
+                name: "filterExchange"
+                kind: "fanout"
+
+            joinExchange:
+                name: "joinExchange"
+                kind: "direct"
+
+            mapExchange:
+                name: "mapExchange"
+                kind: "fanout"
+
+            resultExchange:
+                name: "resultExchange"
+                kind: "direct"
+
+        queues:
+            filterQueue:
+                name: "filterQueue"
+
+        binds:
+            filterQueue:
+                exchange: "filterExchange"
+                queue: "filterQueue"
+
+    overviewer:
+        exchanges:
+            overviewExchange:
+                name: "overviewExchange"
+                kind: "fanout"
+            mapExchange:
+                name: "mapExchange"
+                kind: "fanout"
+        queues:
+            overviewQueue:
+                name: "overviewQueue"
+
+        binds:
+            overviewQueue:
+                exchange: "overviewExchange"
+                queue: "overviewQueue"
+
+    mapper:
+        exchanges:
+            mapExchange:
+                name: "mapExchange"
+                kind: "fanout"
+            reduceExchange:
+                name: "reduceExchange"
+                kind: "direct"
+        queues:
+            mapQueue:
+                name: "mapQueue"
+
+        binds:
+            mapQueue:
+                exchange: "mapExchange"
+                queue: "mapQueue"
+
+    joiner:
+        exchanges:
+            joinExchange:
+                name: "joinExchange"
+                kind: "direct"
+            mapExchange:
+                name: "mapExchange"
+                kind: "direct"
+        queues:
+            joinQueue:
+                name: ""
+
+        binds:
+            joinQueue:
+                exchange: "joinExchange"
+                queue: ""
+
+    reducer:
+        exchanges:
+            reduceExchange:
+                name: "reduceExchange"
+                kind: "direct"
+            resultExchange:
+                name: "resultExchange"
+                kind: "direct"
+            topExchange:
+                name: "topExchange"
+                kind: "direct"
+        queues:
+            reduceQueue:
+                name: ""
+        binds:
+            reduceQueue:
+                exchange: "reduceExchange"
+                queue: ""
+
+    topper:
+        exchanges:
+            topExchange:
+                name: "topExchange"
+                kind: "direct"
+            resultExchange:
+                name: "resultExchange"
+                kind: "direct"
+        queues:
+            topQueue:
+                name: ""
+
+        binds:
+            topQueue:
+                exchange: "topExchange"
+                queue: ""
