@@ -11,15 +11,15 @@ type Overviewer struct {
 	model sentiment.Models
 }
 
-func NewOverviewer() (*Overviewer, error) {
+func NewOverviewer() *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
-		return nil, err
+		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
 	return &Overviewer{
 		model: model,
-	}, nil
+	}
 }
 
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) map[string]*protocol.Task {
