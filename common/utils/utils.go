@@ -2,9 +2,21 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/spf13/viper"
 )
+
+func GetWorkerIdFromHash(workersCount int, itemIdStr string) (hash string, err error) {
+	itemId, err := strconv.Atoi(itemIdStr)
+
+	if err != nil {
+		return
+	}
+
+	hash = fmt.Sprint(itemId % workersCount)
+	return
+}
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
 	var ret []map[string]string
