@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+
+	"github.com/spf13/viper"
 )
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
@@ -28,4 +30,32 @@ func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, err
 	}
 
 	return ret, nil
+}
+
+func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]string, queues []map[string]string, binds []map[string]string, err error) {
+	exchanges, err = ViperGetSliceMapStringString(
+		v.GetStringMap("rabbitmq." + nodeType + ".exchanges"),
+	)
+
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to parse exchanges: %s", err)
+	}
+
+	queues, err = ViperGetSliceMapStringString(
+		v.GetStringMap("rabbitmq." + nodeType + ".queues"),
+	)
+
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Failed to parse queues: %s", err)
+	}
+
+	binds, err = ViperGetSliceMapStringString(
+		v.GetStringMap("rabbitmq." + nodeType + ".binds"),
+	)
+
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Failed to parse binds: %s", err)
+	}
+
+	return exchanges, queues, binds, nil
 }
