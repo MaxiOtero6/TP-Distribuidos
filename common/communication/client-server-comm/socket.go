@@ -100,8 +100,6 @@ func (s *Socket) Read() (*protocol.Message, error) {
 
 func (s *Socket) Write(message *protocol.Message) error {
 
-	log.Info("Writing message to socket")
-	log.Infof("Message: %v", message)
 	message_bytes, err := proto.Marshal(message)
 	if err != nil {
 		return err
