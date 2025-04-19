@@ -11,12 +11,20 @@ import (
 // Filter is a struct that implements the Action interface.
 // It filters movies based on certain criteria.
 // It is used in the worker to filter movies in the pipeline.
-type Filter struct{}
+type Filter struct {
+	workerCount int
+}
 
-const ARGENTINA_COUNTRY = "Argentina"
-const SPAIN_COUNTRY = "Spain"
-const MOVIE_YEAR_2000 = 2000
-const MOVIE_YEAR_2010 = 2010
+func NewFilter(workerCount int) *Filter {
+	return &Filter{
+		workerCount: workerCount,
+	}
+}
+
+const ARGENTINA_COUNTRY string = "Argentina"
+const SPAIN_COUNTRY string = "Spain"
+const MOVIE_YEAR_2000 uint32 = 2000
+const MOVIE_YEAR_2010 uint32 = 2010
 
 /*
 alphaStage filters movies based on the following criteria:

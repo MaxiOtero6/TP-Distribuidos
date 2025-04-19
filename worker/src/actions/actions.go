@@ -43,14 +43,14 @@ const (
 	TopperAction     ActionType = "TOPPER"
 )
 
-func NewAction(workerType string) Action {
+func NewAction(workerType string, workerCount int) Action {
 	kind := ActionType(workerType)
 
 	switch kind {
 	case FilterAction:
-		return &Filter{}
+		return NewFilter(workerCount)
 	case OverviewerAction:
-		return NewOverviewer()
+		return NewOverviewer(workerCount)
 	case MapperAction:
 		return nil
 	case JoinerAction:

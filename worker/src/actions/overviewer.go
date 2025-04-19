@@ -8,17 +8,19 @@ import (
 )
 
 type Overviewer struct {
-	model sentiment.Models
+	model       sentiment.Models
+	workerCount int
 }
 
-func NewOverviewer() *Overviewer {
+func NewOverviewer(workerCount int) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
 	return &Overviewer{
-		model: model,
+		model:       model,
+		workerCount: workerCount,
 	}
 }
 
