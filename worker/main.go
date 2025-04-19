@@ -80,7 +80,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	w := worker.NewWorker(v.GetString("id"), workerType, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
-	log.Infof("Worker %d ready", w.WorkerId)
+	log.Infof("Worker %v ready", w.WorkerId)
 
 	return w
 }
