@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"time"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
@@ -38,6 +37,7 @@ func (s *Server) acceptConnections() {
 		if err != nil {
 			break
 		}
+		log.Infof("Client connected")
 
 		s.handleConnection(clientSocket)
 	}
@@ -45,6 +45,8 @@ func (s *Server) acceptConnections() {
 
 func (s *Server) handleMessage(clientSocket *client_server_communication.Socket, message *protocol.Message) error {
 	clientServerMessage, ok := message.GetMessage().(*protocol.Message_ClientServerMessage)
+	log.Infof("Received message: %v", clientServerMessage)
+
 	if !ok {
 		return fmt.Errorf("unexpected message type: expected ServerClientMessage")
 
@@ -249,7 +251,7 @@ func (s *Server) validateBatchType(batchMessage *protocol.Batch) error {
 }
 
 func generateUniqueID() string {
-	return fmt.Sprintf("client-%d", time.Now().UnixNano())
+	return "1"
 }
 
 func (s *Server) getClientID() string {

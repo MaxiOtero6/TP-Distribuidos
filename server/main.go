@@ -90,8 +90,8 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	port := v.GetString("port")
-	server, err := common.NewServer(port)
+	address := v.GetString("address")
+	server, err := common.NewServer(address)
 	if err != nil {
 		log.Criticalf("Failed to initialize server: %s", err)
 		os.Exit(1)

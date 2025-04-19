@@ -96,7 +96,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithComma", func(t *testing.T) {
 		line := `1,"John, Doe",25`
 		expected := []string{"1", "John, Doe", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -104,7 +104,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithQuotes", func(t *testing.T) {
 		line := `1,"John Doe, a great person",25`
 		expected := []string{"1", "John Doe, a great person", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -112,7 +112,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithEmptyFields", func(t *testing.T) {
 		line := `1,"",`
 		expected := []string{"1", "", ""}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -120,7 +120,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithJsonObjects", func(t *testing.T) {
 		line := `1,"{'id': 16, 'name': 'Animation'}",25`
 		expected := []string{"1", "{'id': 16, 'name': 'Animation'}", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -129,7 +129,7 @@ func TestParseLine(t *testing.T) {
 func TestParseMovie(t *testing.T) {
 
 	line := MOVIE_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseToyStoryMovie", func(t *testing.T) {
 		expected := []*model.Movie{
@@ -259,7 +259,7 @@ func TestParseMovie(t *testing.T) {
 
 func TestParseRating(t *testing.T) {
 	line := RATING_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseRating", func(t *testing.T) {
 		expected := []*model.Rating{
@@ -317,7 +317,7 @@ func TestParseRating(t *testing.T) {
 
 func TestParseCredits(t *testing.T) {
 	line := CREDIT_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseCredit", func(t *testing.T) {
 		var expected []*model.Actor

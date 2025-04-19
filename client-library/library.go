@@ -74,7 +74,7 @@ func (l *Library) ProcessData() {
 
 	err = l.sendAllFiles()
 	if err != nil {
-		log.Errorf("action: newMethod | result: fail | error: %v", err)
+		log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
 	}
 
 	err = l.sendFinishMessage()
@@ -93,6 +93,7 @@ func (l *Library) sendAllFiles() error {
 	if err != nil {
 		return err
 	}
+
 	err = l.sendCreditsFile()
 	if err != nil {
 		return err
@@ -124,7 +125,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 		batch, err := parser.ReadBatch()
 		if err != nil {
 			if err == io.EOF {
-				//TODO
+				log.Infof("End of file reached for: %s", filename) // Log end of file
 				break
 			}
 			return err
