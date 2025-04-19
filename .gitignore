@@ -26,3 +26,7 @@ go.work.sum
 
 # ignore large datasets
 .data
+
+# ignore generated docker-compose files (use generate_compose instead)
+docker-compose*.yml
+docker-compose*.yaml
