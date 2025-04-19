@@ -26,7 +26,7 @@ class WorkerType(Enum):
 class ServiceType(Enum):
     SERVER = "SERVER"
     CLIENT = "CLIENT"
-    RABIT_MQ = "RABBITMQ"
+    RABBIT_MQ = "RABBITMQ"
     FILTER = "FILTER"
     JOINER = "JOINER"
     TOP = "TOP"
@@ -40,21 +40,32 @@ class ServiceType(Enum):
                 return Service(
                     container_name=f"server_{id}",
                     image="server:latest",
-                    environment={"SERVER_PORT": str(8080 + id), "SERVER_ID": str(id)},
-                    networks=[MOVIES_NETWORK_NAME],
+                    environment={
+                        "SERVER_PORT": str(8080 + id),
+                        "SERVER_ID": str(id)
+                    },
+                    networks=[
+                        MOVIES_NETWORK_NAME
+                    ],
                 )
             case ServiceType.CLIENT:
                 return Service(
                     container_name=f"client_{id}",
                     image="client:latest",
-                    environment={"CLIENT_ID": str(id)},
-                    networks=[MOVIES_NETWORK_NAME],
+                    environment={
+                        "CLIENT_ID": str(id)
+                    },
+                    networks=[
+                        MOVIES_NETWORK_NAME
+                    ],
                 )
-            case ServiceType.RABIT_MQ:
+            case ServiceType.RABBIT_MQ:
                 return Service(
                     container_name="rabbitmq",
                     image="rabbitmq:4-management",
-                    networks=[MOVIES_NETWORK_NAME],
+                    networks=[
+                        MOVIES_NETWORK_NAME
+                    ],
                     ports={
                         "15672": "15672",
                         "5672": "5672",
@@ -75,9 +86,15 @@ class ServiceType(Enum):
                 return Service(
                     container_name=f"{worker_name}_{id}",
                     image=f"{worker_name}:latest",
-                    environment={"WORKER_ID": str(id)},
-                    networks=[MOVIES_NETWORK_NAME],
-                    depends_on=["rabbitmq"],
+                    environment={
+                        "WORKER_ID": str(id)
+                    },
+                    networks=[
+                        MOVIES_NETWORK_NAME
+                    ],
+                    depends_on=[
+                        "rabbitmq"
+                    ],
                 )
 
 
@@ -95,9 +112,9 @@ class DockerCompose:
         volumes: Optional[List["Volume"]] = None,
     ) -> None:
         self.name: str = name
-        self.services: List[Service] = services if services is not None else []
-        self.networks: List[Network] = networks if networks is not None else []
-        self.volumes: List[Volume] = volumes if volumes is not None else []
+        self.services = services if services is not None else []
+        self.networks = networks if networks is not None else []
+        self.volumes = volumes if volumes is not None else []
 
     def __str__(self) -> str:
         lines: List[str] = []
@@ -157,7 +174,9 @@ class Service:
         level: int = self.indent_level
         lines: List[str] = []
         lines.append(indent(f"{self.container_name}:", level))
-        lines.append(indent(f"container_name: {self.container_name}", level + 1))
+        lines.append(
+            indent(f"container_name: {self.container_name}", level + 1)
+        )
         lines.append(indent(f"image: {self.image}", level + 1))
         if self.entrypoint:
             lines.append(indent(f"entrypoint: {self.entrypoint}", level + 1))
@@ -229,7 +248,7 @@ def get_args() -> Tuple[str, str]:
         return sys.argv[1], sys.argv[2]
     except IndexError:
         print(
-            "Usage: python3 generate_ocmpose.py <path_to_instances_configuration> <path_to_output_docker_compose>"
+            "Usage: python3 generate_compose.py <path_to_instances_configuration> <path_to_output_docker_compose>"
         )
         sys.exit(1)
 
@@ -294,7 +313,9 @@ def write_to_file(output_file: str, compose: DockerCompose) -> None:
 def main() -> None:
     n_instances_path, output_file_path = get_args()
     instances_per_service = read_instances(n_instances_path)
-    docker_compose: DockerCompose = generate_docker_compose(instances_per_service)
+    docker_compose: DockerCompose = generate_docker_compose(
+        instances_per_service
+    )
     write_to_file(output_file_path, docker_compose)
 
 
