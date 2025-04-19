@@ -70,21 +70,25 @@ func (l *Library) ProcessData() {
 	err := l.sendSync()
 	if err != nil {
 		log.Errorf("action: sendSync | result: fail | error: %v", err)
+		return
 	}
 
 	err = l.sendAllFiles()
 	if err != nil {
 		log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
+		return
 	}
 
 	err = l.sendFinishMessage()
 	if err != nil {
 		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
+		return
 	}
 
 	err = l.fetchServerResults()
 	if err != nil {
 		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
+		return
 	}
 }
 
