@@ -69,29 +69,40 @@ func (w *Worker) Run() {
 
 	defer w.Shutdown()
 
-	for w.isRunning() {
-		message := <-w.consumeChan
-		taskRaw := message.Body
+outer:
+	for {
+		select {
+		case <-w.done:
+			log.Infof("Worker %s received SIGTERM", w.WorkerId)
+			break outer
 
-		task := &protocol.Task{}
+		case message := <-w.consumeChan:
+			taskRaw := message.Body
 
-		err := proto.Unmarshal(taskRaw, task)
+			task := &protocol.Task{}
 
-		if err != nil {
-			log.Errorf("Failed to unmarshal task: %s", err)
-			continue
+			err := proto.Unmarshal(taskRaw, task)
+
+			if err != nil {
+				log.Errorf("Failed to unmarshal task: %s", err)
+				continue
+			}
+
+			log.Debugf("Task %T received from queue", task.GetStage())
+
+			subTasks, err := w.action.Execute(task)
+
+			if err != nil {
+				log.Errorf("Failed to execute task: %s", err)
+				continue
+			}
+
+			w.sendSubTasks(subTasks)
+			message.Ack(false)
 		}
-
-		subTasks, err := w.action.Execute(task)
-
-		if err != nil {
-			log.Errorf("Failed to execute task: %s", err)
-			continue
-		}
-
-		w.sendSubTasks(subTasks)
-		message.Ack(false)
 	}
+
+	log.Infof("Worker stop running gracefully")
 }
 
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
@@ -110,7 +121,8 @@ func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
 				}
 
 				w.rabbitMQ.Publish(exchange, routingKey, taskRaw)
-				log.Debugf("Task %s sent to exchange %s with routing key %s", task, exchange, routingKey)
+				log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
+				//log.Debugf("Task value: %v", task)
 			}
 		}
 	}
@@ -120,17 +132,4 @@ func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
 // It is safe to call this method multiple times
 func (w *Worker) Shutdown() {
 	w.rabbitMQ.Close()
-}
-
-// isRunning checks if the worker is still running
-// It returns true if the worker is running, false otherwise
-// It uses a non-blocking select statement to check if the done channel is closed
-// If the done channel is closed, it means the worker has received a signal to stop
-func (w *Worker) isRunning() bool {
-	select {
-	case <-w.done:
-		return false
-	default:
-		return true
-	}
 }
