@@ -201,7 +201,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
 }
 
 /*
-betaStage filters movies based on the following criteria:
+gammaStage filters movies based on the following criteria:
 The movie must be produced in only one country.
 
 This function is nil-safe, meaning it will not panic if the input is nil.
