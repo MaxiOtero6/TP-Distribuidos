@@ -29,10 +29,10 @@ class ServiceType(Enum):
     RABBIT_MQ = "RABBITMQ"
     FILTER = "FILTER"
     JOINER = "JOINER"
-    TOP = "TOP"
-    OVERVIEW = "SENTIMENT"
-    MAP = "MAP"
-    REDUCE = "REDUCE"
+    TOP = "TOPPER"
+    OVERVIEW = "OVERVIEWER"
+    MAP = "MAPPER"
+    REDUCE = "REDUCER"
 
     def to_service(self, id: int) -> "Service":
         match self:
@@ -85,9 +85,10 @@ class ServiceType(Enum):
                 worker_name = self.value.split("_", 1)[0].lower()
                 return Service(
                     container_name=f"{worker_name}_{id}",
-                    image=f"{worker_name}:latest",
+                    image="worker:latest",
                     environment={
-                        "WORKER_ID": str(id)
+                        "WORKER_ID": str(id),
+                        "WORKER_TYPE": self.value,
                     },
                     networks=[
                         MOVIES_NETWORK_NAME
@@ -95,6 +96,9 @@ class ServiceType(Enum):
                     depends_on=[
                         "rabbitmq"
                     ],
+                    volumes={
+                        "./worker/config.yaml": "/app/config.yaml"
+                    }
                 )
 
 

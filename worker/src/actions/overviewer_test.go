@@ -9,7 +9,7 @@ import (
 )
 
 func TestMuStage(t *testing.T) {
-	overviewer, _ := NewOverviewer()
+	overviewer := NewOverviewer()
 
 	t.Run("Process one valid Mu_Data", func(t *testing.T) {
 		data := []*protocol.Mu_Data{
@@ -91,7 +91,7 @@ func TestMuStage(t *testing.T) {
 
 func TestExecuteOverview(t *testing.T) {
 	t.Run("Valid Mu stage", func(t *testing.T) {
-		overviewer, _ := NewOverviewer()
+		overviewer := NewOverviewer()
 		task := &protocol.Task{
 			Stage: &protocol.Task_Mu{
 				Mu: &protocol.Mu{
@@ -115,7 +115,7 @@ func TestExecuteOverview(t *testing.T) {
 	})
 
 	t.Run("Invalid stage type", func(t *testing.T) {
-		overviewer, _ := NewOverviewer()
+		overviewer := NewOverviewer()
 		task := &protocol.Task{
 			Stage: &protocol.Task_Nu{},
 		}
