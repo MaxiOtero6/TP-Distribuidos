@@ -4,27 +4,28 @@ import (
 	"fmt"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/cdipaolo/sentiment"
 )
 
 // Overviewer is a struct that implements the Action interface.
 type Overviewer struct {
-	model       sentiment.Models
-	workerCount int
+	model         sentiment.Models
+	clusterConfig *model.WorkerClusterConfig
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(workerCount int) *Overviewer {
+func NewOverviewer(clusterConfig *model.WorkerClusterConfig) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
 	return &Overviewer{
-		model:       model,
-		workerCount: workerCount,
+		model:         model,
+		clusterConfig: clusterConfig,
 	}
 }
 

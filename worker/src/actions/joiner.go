@@ -4,17 +4,18 @@ import (
 	"fmt"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 // Joiner is a struct that implements the Action interface.
 type Joiner struct {
-	workerCount int
+	clusterConfig *model.WorkerClusterConfig
 }
 
 // NewJoiner creates a new Joiner instance.
-func NewJoiner(workerCount int) *Joiner {
+func NewJoiner(clusterConfig *model.WorkerClusterConfig) *Joiner {
 	return &Joiner{
-		workerCount: workerCount,
+		clusterConfig: clusterConfig,
 	}
 }
 

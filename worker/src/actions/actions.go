@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/op/go-logging"
 )
 
@@ -75,22 +76,22 @@ const (
 )
 
 // NewAction creates a new action based on the worker type.
-func NewAction(workerType string, workerCount int) Action {
+func NewAction(workerType string, clusterConfig *model.WorkerClusterConfig) Action {
 	kind := ActionType(workerType)
 
 	switch kind {
 	case FilterAction:
-		return NewFilter(workerCount)
+		return NewFilter(clusterConfig)
 	case OverviewerAction:
-		return NewOverviewer(workerCount)
+		return NewOverviewer(clusterConfig)
 	case MapperAction:
-		return NewMapper(workerCount)
+		return NewMapper(clusterConfig)
 	case JoinerAction:
-		return NewJoiner(workerCount)
+		return NewJoiner(clusterConfig)
 	case ReducerAction:
-		return NewReducer(workerCount)
+		return NewReducer(clusterConfig)
 	case TopperAction:
-		return NewTopper(workerCount)
+		return NewTopper(clusterConfig)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	worker "github.com/MaxiOtero6/TP-Distribuidos/worker/src"
 	"github.com/op/go-logging"
@@ -71,14 +72,23 @@ func InitLogger(logLevel string) error {
 
 func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	workerType := v.GetString("type")
-	workerCount := v.GetInt("workers.count")
+
+	clusterConfig := &model.WorkerClusterConfig{
+		FilterCount:   v.GetInt("filter.count"),
+		OverviewCount: v.GetInt("overview.count"),
+		MapCount:      v.GetInt("map.count"),
+		JoinCount:     v.GetInt("join.count"),
+		ReduceCount:   v.GetInt("reduce.count"),
+		TopCount:      v.GetInt("top.count"),
+	}
+
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	w := worker.NewWorker(v.GetString("id"), workerType, workerCount, signalChan)
+	w := worker.NewWorker(v.GetString("id"), workerType, clusterConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)
