@@ -9,7 +9,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
-	server "github.com/MaxiOtero6/TP-Distribuidos/server/src"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/server"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
