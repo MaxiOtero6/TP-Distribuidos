@@ -4,18 +4,19 @@ import (
 	"fmt"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
-	workerCount int
+	clusterConfig *model.WorkerClusterConfig
 }
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
-func NewReducer(workerCount int) *Reducer {
+func NewReducer(clusterConfig *model.WorkerClusterConfig) *Reducer {
 	return &Reducer{
-		workerCount: workerCount,
+		clusterConfig: clusterConfig,
 	}
 }
 

@@ -6,10 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 func TestMuStage(t *testing.T) {
-	overviewer := NewOverviewer(TEST_WORKER_COUNT)
+	overviewer := NewOverviewer(&model.WorkerClusterConfig{})
 	t.Run("Process one valid Mu_Data", func(t *testing.T) {
 		data := []*protocol.Mu_Data{
 			{
@@ -94,7 +95,7 @@ func TestMuStage(t *testing.T) {
 
 func TestExecuteOverview(t *testing.T) {
 	t.Run("Valid Mu stage", func(t *testing.T) {
-		overviewer := NewOverviewer(TEST_WORKER_COUNT)
+		overviewer := NewOverviewer(&model.WorkerClusterConfig{})
 		task := &protocol.Task{
 			Stage: &protocol.Task_Mu{
 				Mu: &protocol.Mu{
@@ -119,7 +120,7 @@ func TestExecuteOverview(t *testing.T) {
 	})
 
 	t.Run("Invalid stage type", func(t *testing.T) {
-		overviewer := NewOverviewer(TEST_WORKER_COUNT)
+		overviewer := NewOverviewer(&model.WorkerClusterConfig{})
 		task := &protocol.Task{
 			Stage: &protocol.Task_Nu_1{},
 		}

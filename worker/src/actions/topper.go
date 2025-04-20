@@ -4,18 +4,19 @@ import (
 	"fmt"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 // Topper is a struct that implements the Action interface.
 type Topper struct {
-	workerCount int
+	clusterConfig *model.WorkerClusterConfig
 }
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(workerCount int) *Topper {
+func NewTopper(clusterConfig *model.WorkerClusterConfig) *Topper {
 	return &Topper{
-		workerCount: workerCount,
+		clusterConfig: clusterConfig,
 	}
 }
 

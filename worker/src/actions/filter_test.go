@@ -4,11 +4,16 @@ import (
 	"testing"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAlphaStage(t *testing.T) {
-	filter := NewFilter(TEST_WORKER_COUNT)
+	clusterConfig := &model.WorkerClusterConfig{
+		JoinCount: 1,
+	}
+
+	filter := NewFilter(clusterConfig)
 
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := filter.alphaStage(nil)

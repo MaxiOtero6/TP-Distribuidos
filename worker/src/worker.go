@@ -5,6 +5,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/proto"
@@ -24,10 +25,10 @@ type Worker struct {
 // NewWorker creates a new worker with the given id, type, and workerCount
 // and initializes RabbitMQ and action structs
 // It also takes a signal channel to handle SIGTERM signal
-func NewWorker(id string, workerType string, workerCount int, signalChan chan os.Signal) *Worker {
+func NewWorker(id string, workerType string, clusterConfig *model.WorkerClusterConfig, signalChan chan os.Signal) *Worker {
 	rabbitMQ := mom.NewRabbitMQ()
 
-	action := actions.NewAction(workerType, workerCount)
+	action := actions.NewAction(workerType, clusterConfig)
 
 	return &Worker{
 		WorkerId:    id,

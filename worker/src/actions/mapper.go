@@ -4,18 +4,19 @@ import (
 	"fmt"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 // Mapper is a struct that implements the Action interface.
 type Mapper struct {
-	workerCount int
+	clusterConfig *model.WorkerClusterConfig
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(workerCount int) *Mapper {
+func NewMapper(clusterConfig *model.WorkerClusterConfig) *Mapper {
 	return &Mapper{
-		workerCount: workerCount,
+		clusterConfig: clusterConfig,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
@@ -13,12 +14,12 @@ import (
 // It filters movies based on certain criteria.
 // It is used in the worker to filter movies in the pipeline.
 type Filter struct {
-	workerCount int
+	clusterConfig *model.WorkerClusterConfig
 }
 
-func NewFilter(workerCount int) *Filter {
+func NewFilter(clusterConfig *model.WorkerClusterConfig) *Filter {
 	return &Filter{
-		workerCount: workerCount,
+		clusterConfig: clusterConfig,
 	}
 }
 
@@ -87,7 +88,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		idHash, err := utils.GetWorkerIdFromHash(f.workerCount, movie.GetId())
+		idHash, err := utils.GetWorkerIdFromHash(f.clusterConfig.JoinCount, movie.GetId())
 
 		if err != nil {
 			continue
