@@ -36,9 +36,11 @@ Return example
 	}
 */
 func (j *Joiner) zetaStage(data []*protocol.Zeta_Data) (tasks Tasks) {
+	MAP_EXCHANGE := j.infraConfig.GetMapExchange()
+
 	tasks = make(Tasks)
-	tasks[j.infraConfig.GetMapExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[j.infraConfig.GetMapExchange()][ETA_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][ETA_STAGE_1] = make(map[string]*protocol.Task)
 	eta1Data := make(map[string][]*protocol.Eta_1_Data)
 
 	log.Panicf("Joiner: Zeta stage not implemented yet %v", data)
@@ -50,7 +52,7 @@ func (j *Joiner) zetaStage(data []*protocol.Zeta_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range eta1Data {
-		tasks[j.infraConfig.GetMapExchange()][ETA_STAGE_1][id] = &protocol.Task{
+		tasks[MAP_EXCHANGE][ETA_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Eta_1{
 				Eta_1: &protocol.Eta_1{
 					Data: data,
@@ -79,9 +81,11 @@ Return example
 	}
 */
 func (j *Joiner) iotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
+	MAP_EXCHANGE := j.infraConfig.GetMapExchange()
+
 	tasks = make(Tasks)
-	tasks[j.infraConfig.GetMapExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[j.infraConfig.GetMapExchange()][KAPPA_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][KAPPA_STAGE_1] = make(map[string]*protocol.Task)
 	kappa1Data := make(map[string][]*protocol.Kappa_1_Data)
 
 	log.Panicf("Joiner: Iota stage not implemented yet %v", data)
@@ -93,7 +97,7 @@ func (j *Joiner) iotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range kappa1Data {
-		tasks[j.infraConfig.GetMapExchange()][KAPPA_STAGE_1][id] = &protocol.Task{
+		tasks[MAP_EXCHANGE][KAPPA_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Kappa_1{
 				Kappa_1: &protocol.Kappa_1{
 					Data: data,

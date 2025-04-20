@@ -56,12 +56,17 @@ Return example
 	}
 */
 func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
+	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
+	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+	JOIN_COUNT := f.infraConfig.GetJoinCount()
+
 	tasks = make(Tasks)
-	tasks[f.infraConfig.GetFilterExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[f.infraConfig.GetJoinExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[f.infraConfig.GetFilterExchange()][BETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[f.infraConfig.GetJoinExchange()][ZETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[f.infraConfig.GetJoinExchange()][IOTA_STAGE] = make(map[string]*protocol.Task)
+	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[FILTER_EXCHANGE][BETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][ZETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][IOTA_STAGE] = make(map[string]*protocol.Task)
 
 	betaData := make(map[string][]*protocol.Beta_Data)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
@@ -80,7 +85,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			continue
 		}
 
-		betaData[f.infraConfig.GetBroadcastID()] = append(betaData[f.infraConfig.GetBroadcastID()], &protocol.Beta_Data{
+		betaData[BROADCAST_ID] = append(betaData[BROADCAST_ID], &protocol.Beta_Data{
 			Id:            movie.GetId(),
 			Title:         movie.GetTitle(),
 			ReleaseYear:   movie.GetReleaseYear(),
@@ -88,7 +93,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		idHash, err := utils.GetWorkerIdFromHash(f.infraConfig.GetJoinCount(), movie.GetId())
+		idHash, err := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
 
 		if err != nil {
 			continue
@@ -113,7 +118,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 	}
 
 	for id, data := range betaData {
-		tasks[f.infraConfig.GetFilterExchange()][BETA_STAGE][id] = &protocol.Task{
+		tasks[FILTER_EXCHANGE][BETA_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Beta{
 				Beta: &protocol.Beta{
 					Data: data,
@@ -123,7 +128,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 	}
 
 	for id, data := range zetaData {
-		tasks[f.infraConfig.GetJoinExchange()][ZETA_STAGE][id] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][ZETA_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
 					Data: data,
@@ -133,7 +138,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 	}
 
 	for id, data := range iotaData {
-		tasks[f.infraConfig.GetJoinExchange()][IOTA_STAGE][id] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][IOTA_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
 					Data: data,
@@ -163,9 +168,12 @@ Return example
 	}
 */
 func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
-	tasks[f.infraConfig.GetResultExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[f.infraConfig.GetResultExchange()][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	resData := make(map[string][]*protocol.Result1_Data)
 
 	for _, movie := range data {
@@ -181,7 +189,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
 			continue
 		}
 
-		resData[f.infraConfig.GetBroadcastID()] = append(resData[f.infraConfig.GetBroadcastID()], &protocol.Result1_Data{
+		resData[BROADCAST_ID] = append(resData[BROADCAST_ID], &protocol.Result1_Data{
 			Id:     movie.GetId(),
 			Title:  movie.GetTitle(),
 			Genres: movie.GetGenres(),
@@ -189,7 +197,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
 	}
 
 	for id, data := range resData {
-		tasks[f.infraConfig.GetResultExchange()][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Result1{
 				Result1: &protocol.Result1{
 					Data: data,
@@ -219,9 +227,12 @@ Return example
 	}
 */
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
+	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
-	tasks[f.infraConfig.GetMapExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[f.infraConfig.GetMapExchange()][DELTA_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)
 	deltaData := make(map[string][]*protocol.Delta_1_Data)
 
 	for _, movie := range data {
@@ -239,7 +250,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 			continue
 		}
 
-		deltaData[f.infraConfig.GetBroadcastID()] = append(deltaData[f.infraConfig.GetBroadcastID()], &protocol.Delta_1_Data{
+		deltaData[BROADCAST_ID] = append(deltaData[BROADCAST_ID], &protocol.Delta_1_Data{
 			Id:          movie.GetId(),
 			ProdCountry: countries[0],
 			Budget:      movie.GetBudget(),
@@ -247,7 +258,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	}
 
 	for id, data := range deltaData {
-		tasks[f.infraConfig.GetMapExchange()][DELTA_STAGE_1][id] = &protocol.Task{
+		tasks[MAP_EXCHANGE][DELTA_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{
 					Data: data,

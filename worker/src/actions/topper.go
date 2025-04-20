@@ -37,9 +37,11 @@ Return example
 	}
 */
 func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
-	tasks[t.infraConfig.GetResultExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result2Data := make(map[string][]*protocol.Result2_Data)
 
 	log.Panicf("Topper: Epsilon stage not implemented yet %v", data)
@@ -51,7 +53,7 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range result2Data {
-		tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Result2{
 				Result2: &protocol.Result2{
 					Data: data,
@@ -80,9 +82,11 @@ Return example
 	}
 */
 func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
-	tasks[t.infraConfig.GetResultExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
 
 	log.Panicf("Topper: Theta stage not implemented yet %v", data)
@@ -94,7 +98,7 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range result3Data {
-		tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Result3{
 				Result3: &protocol.Result3{
 					Data: data,
@@ -123,9 +127,11 @@ Return example
 	}
 */
 func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
-	tasks[t.infraConfig.GetResultExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
 
 	log.Panicf("Topper: Lambda stage not implemented yet %v", data)
@@ -137,7 +143,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range result4Data {
-		tasks[t.infraConfig.GetResultExchange()][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Result4{
 				Result4: &protocol.Result4{
 					Data: data,

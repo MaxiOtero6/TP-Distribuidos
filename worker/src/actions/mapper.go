@@ -38,9 +38,11 @@ Return example
 	}
 */
 func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
-	tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[m.infraConfig.GetReduceExchange()][DELTA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][DELTA_STAGE_2] = make(map[string]*protocol.Task)
 	delta2Data := make(map[string][]*protocol.Delta_2_Data)
 
 	log.Panicf("Mapper: Delta_1 stage not implemented yet %v", data)
@@ -52,7 +54,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range delta2Data {
-		tasks[m.infraConfig.GetReduceExchange()][DELTA_STAGE_2][id] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][id] = &protocol.Task{
 			Stage: &protocol.Task_Delta_2{
 				Delta_2: &protocol.Delta_2{
 					Data: data,
@@ -82,9 +84,11 @@ Return example
 	}
 */
 func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
-	tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[m.infraConfig.GetReduceExchange()][ETA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][ETA_STAGE_2] = make(map[string]*protocol.Task)
 	eta2Data := make(map[string][]*protocol.Eta_2_Data)
 
 	log.Panicf("Mapper: Eta_1 stage not implemented yet %v", data)
@@ -96,7 +100,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range eta2Data {
-		tasks[m.infraConfig.GetReduceExchange()][ETA_STAGE_2][id] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][ETA_STAGE_2][id] = &protocol.Task{
 			Stage: &protocol.Task_Eta_2{
 				Eta_2: &protocol.Eta_2{
 					Data: data,
@@ -126,9 +130,11 @@ Return example
 	}
 */
 func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
-	tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[m.infraConfig.GetReduceExchange()][KAPPA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2] = make(map[string]*protocol.Task)
 	kappa2Data := make(map[string][]*protocol.Kappa_2_Data)
 
 	log.Panicf("Mapper: Kappa_1 stage not implemented yet %v", data)
@@ -140,7 +146,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range kappa2Data {
-		tasks[m.infraConfig.GetReduceExchange()][KAPPA_STAGE_2][id] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][id] = &protocol.Task{
 			Stage: &protocol.Task_Kappa_2{
 				Kappa_2: &protocol.Kappa_2{
 					Data: data,
@@ -170,9 +176,11 @@ Return example
 	}
 */
 func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
-	tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[m.infraConfig.GetReduceExchange()][NU_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][NU_STAGE_2] = make(map[string]*protocol.Task)
 	nu2Data := make(map[string][]*protocol.Nu_2_Data)
 
 	log.Panicf("Mapper: Nu_1 stage not implemented yet %v", data)
@@ -184,7 +192,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range nu2Data {
-		tasks[m.infraConfig.GetReduceExchange()][NU_STAGE_2][id] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][NU_STAGE_2][id] = &protocol.Task{
 			Stage: &protocol.Task_Nu_2{
 				Nu_2: &protocol.Nu_2{
 					Data: data,

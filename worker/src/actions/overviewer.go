@@ -47,9 +47,12 @@ Return example
 	}
 */
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
+	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
+	BROADCAST_ID := o.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
-	tasks[o.infraConfig.GetMapExchange()] = make(map[string]map[string]*protocol.Task)
-	tasks[o.infraConfig.GetMapExchange()][NU_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)
 	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
@@ -61,7 +64,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[o.infraConfig.GetBroadcastID()] = append(nuData[o.infraConfig.GetBroadcastID()], &protocol.Nu_1_Data{
+		nuData[BROADCAST_ID] = append(nuData[BROADCAST_ID], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -71,7 +74,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	}
 
 	for id, data := range nuData {
-		tasks[o.infraConfig.GetMapExchange()][NU_STAGE_1][id] = &protocol.Task{
+		tasks[MAP_EXCHANGE][NU_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
 					Data: data,

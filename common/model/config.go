@@ -73,7 +73,7 @@ func (i *InfraConfig) GetTopCount() int {
 	return i.workers.TopCount
 }
 
-func (i *InfraConfig) GetTotalworkers() int {
+func (i *InfraConfig) GetTotalWorkers() int {
 	return i.workers.TotalWorkers()
 }
 
