@@ -4,6 +4,7 @@ import (
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/google/uuid"
 	"github.com/op/go-logging"
 )
 
@@ -84,7 +85,7 @@ func (s *Server) acceptConnections() {
 }
 
 func generateUniqueID() string {
-	return "1"
+	return uuid.NewString()
 }
 
 func (s *Server) getClientID() string {
