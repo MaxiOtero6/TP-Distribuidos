@@ -53,6 +53,9 @@ class ServiceType(Enum):
                     networks=[
                         MOVIES_NETWORK_NAME
                     ],
+                    volumes={
+                        "./server/config.yaml": "/app/config.yaml"
+                    }
                 )
             case ServiceType.CLIENT:
                 return Service(
@@ -64,6 +67,9 @@ class ServiceType(Enum):
                     networks=[
                         MOVIES_NETWORK_NAME
                     ],
+                    volumes={
+                        "./client/config.yaml": "/app/config.yaml"
+                    }
                 )
             case ServiceType.RABBIT_MQ:
                 return Service(
