@@ -54,7 +54,8 @@ class ServiceType(Enum):
                         MOVIES_NETWORK_NAME
                     ],
                     volumes={
-                        "./server/config.yaml": "/app/config.yaml"
+                        "./server/config.yaml": "/app/config.yaml",
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml"
                     }
                 )
             case ServiceType.CLIENT:
@@ -115,7 +116,8 @@ class ServiceType(Enum):
                         "rabbitmq"
                     ],
                     volumes={
-                        "./worker/config.yaml": "/app/config.yaml"
+                        "./worker/config.yaml": "/app/config.yaml",
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml"
                     }
                 )
 
