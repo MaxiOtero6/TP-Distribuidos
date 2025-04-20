@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/server/src"
+	server "github.com/MaxiOtero6/TP-Distribuidos/server/src"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -68,7 +68,7 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func handleSigterm(signalChan chan os.Signal, server *common.Server) {
+func handleSigterm(signalChan chan os.Signal, server *server.Server) {
 	s := <-signalChan
 	server.Stop()
 
@@ -91,14 +91,14 @@ func main() {
 	}
 
 	address := v.GetString("address")
-	server, err := common.NewServer(address)
+	s, err := server.NewServer(address)
 	if err != nil {
 		log.Criticalf("Failed to initialize server: %s", err)
 		os.Exit(1)
 	}
 
-	go handleSigterm(signalChan, server)
+	go handleSigterm(signalChan, s)
 
-	server.Run()
-	server.Stop()
+	s.Run()
+	s.Stop()
 }
