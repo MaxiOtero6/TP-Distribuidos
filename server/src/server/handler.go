@@ -12,7 +12,6 @@ func (s *Server) handleMessage(clientSocket *client_server_communication.Socket,
 
 	if !ok {
 		return fmt.Errorf("unexpected message type: expected ServerClientMessage")
-
 	}
 
 	switch msg := clientServerMessage.ClientServerMessage.GetMessage().(type) {
@@ -71,11 +70,22 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 
 	log.Infof("Client connected with ID: %s", clientID)
 }
+
 func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
 
-	err := s.validateBatchType(batchMessage)
-	if err != nil {
-		log.Errorf("Invalid batch type: %v", err)
+	switch batchMessage.Type {
+	case protocol.FileType_MOVIES:
+		movies := s.processMoviesBatch(batchMessage)
+		s.sendMoviesRabbit(movies)
+	case protocol.FileType_CREDITS:
+		actors := s.processCreditsBatch(batchMessage)
+		s.sendActorsRabbit(actors)
+	case protocol.FileType_RATINGS:
+		ratings := s.processRatingsBatch(batchMessage)
+		s.sendRatingsRabbit(ratings)
+	default:
+		log.Errorf("Invalid batch type: %v", batchMessage.Type)
+
 		ackMessage := &protocol.Message{
 			Message: &protocol.Message_ServerClientMessage{
 				ServerClientMessage: &protocol.ServerClientMessage{
@@ -87,24 +97,12 @@ func (s *Server) handleBatchMessage(clientSocket *client_server_communication.So
 				},
 			},
 		}
+
 		if err := clientSocket.Write(ackMessage); err != nil {
 			log.Errorf("Error sending batch acknowledgment: %v", err)
 			return err
 		}
 	}
-
-	// Parse the batch message based on its type
-
-	if batchMessage.Type == protocol.FileType_MOVIES {
-		s.processMovieBatch(batchMessage)
-		//TODO valite erro, in case of error send ack with error
-	} else if batchMessage.Type == protocol.FileType_CREDITS {
-		s.processCreditBatch(batchMessage)
-	} else if batchMessage.Type == protocol.FileType_RATINGS {
-		s.processRatingsBatch(batchMessage)
-	}
-
-	// TODO Take a decesion about what to do with the batch and send it with rabbit
 
 	log.Infof("Received batch message with type: %v", batchMessage.Type)
 
