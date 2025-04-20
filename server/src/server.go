@@ -46,7 +46,7 @@ func NewServer(id string, address string, clusterConfig *common_model.WorkerClus
 // InitConfig initializes the server with the given exchanges, queues, and binds
 func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
 	if len(binds) != 1 {
-		log.Panicf("For servers is expected to load one bind to the results queue, got %d", len(binds))
+		log.Panicf("Expected exactly one binding to the results queue for servers, but got %d", len(binds))
 	}
 
 	// Do not bind the server to a queue without some clientId as routing key
