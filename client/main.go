@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	library "github.com/MaxiOtero6/TP-Distribuidos/client-library"
+	library "github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )

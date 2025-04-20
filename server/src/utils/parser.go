@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/server/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 )
 
 // mapJsonRegex maps a JSON string using a regex pattern and returns the first group of each match.

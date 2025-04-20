@@ -5,8 +5,8 @@ import (
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"
 	"github.com/op/go-logging"
 )
 
