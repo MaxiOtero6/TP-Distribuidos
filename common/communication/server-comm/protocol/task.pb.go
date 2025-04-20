@@ -28,16 +28,20 @@ type Task struct {
 	//	*Task_Alpha
 	//	*Task_Beta
 	//	*Task_Gamma
-	//	*Task_Delta
+	//	*Task_Delta_1
+	//	*Task_Delta_2
 	//	*Task_Epsilon
 	//	*Task_Zeta
-	//	*Task_Eta
+	//	*Task_Eta_1
+	//	*Task_Eta_2
 	//	*Task_Theta
 	//	*Task_Iota
-	//	*Task_Kappa
+	//	*Task_Kappa_1
+	//	*Task_Kappa_2
 	//	*Task_Lambda
 	//	*Task_Mu
-	//	*Task_Nu
+	//	*Task_Nu_1
+	//	*Task_Nu_2
 	//	*Task_Result1
 	//	*Task_Result2
 	//	*Task_Result3
@@ -112,10 +116,19 @@ func (x *Task) GetGamma() *Gamma {
 	return nil
 }
 
-func (x *Task) GetDelta() *Delta {
+func (x *Task) GetDelta_1() *Delta_1 {
 	if x != nil {
-		if x, ok := x.Stage.(*Task_Delta); ok {
-			return x.Delta
+		if x, ok := x.Stage.(*Task_Delta_1); ok {
+			return x.Delta_1
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetDelta_2() *Delta_2 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Delta_2); ok {
+			return x.Delta_2
 		}
 	}
 	return nil
@@ -139,10 +152,19 @@ func (x *Task) GetZeta() *Zeta {
 	return nil
 }
 
-func (x *Task) GetEta() *Eta {
+func (x *Task) GetEta_1() *Eta_1 {
 	if x != nil {
-		if x, ok := x.Stage.(*Task_Eta); ok {
-			return x.Eta
+		if x, ok := x.Stage.(*Task_Eta_1); ok {
+			return x.Eta_1
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetEta_2() *Eta_2 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Eta_2); ok {
+			return x.Eta_2
 		}
 	}
 	return nil
@@ -166,10 +188,19 @@ func (x *Task) GetIota() *Iota {
 	return nil
 }
 
-func (x *Task) GetKappa() *Kappa {
+func (x *Task) GetKappa_1() *Kappa_1 {
 	if x != nil {
-		if x, ok := x.Stage.(*Task_Kappa); ok {
-			return x.Kappa
+		if x, ok := x.Stage.(*Task_Kappa_1); ok {
+			return x.Kappa_1
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetKappa_2() *Kappa_2 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Kappa_2); ok {
+			return x.Kappa_2
 		}
 	}
 	return nil
@@ -193,10 +224,19 @@ func (x *Task) GetMu() *Mu {
 	return nil
 }
 
-func (x *Task) GetNu() *Nu {
+func (x *Task) GetNu_1() *Nu_1 {
 	if x != nil {
-		if x, ok := x.Stage.(*Task_Nu); ok {
-			return x.Nu
+		if x, ok := x.Stage.(*Task_Nu_1); ok {
+			return x.Nu_1
+		}
+	}
+	return nil
+}
+
+func (x *Task) GetNu_2() *Nu_2 {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_Nu_2); ok {
+			return x.Nu_2
 		}
 	}
 	return nil
@@ -263,64 +303,80 @@ type Task_Gamma struct {
 	Gamma *Gamma `protobuf:"bytes,3,opt,name=gamma,proto3,oneof"`
 }
 
-type Task_Delta struct {
-	Delta *Delta `protobuf:"bytes,4,opt,name=delta,proto3,oneof"`
+type Task_Delta_1 struct {
+	Delta_1 *Delta_1 `protobuf:"bytes,4,opt,name=delta_1,json=delta1,proto3,oneof"`
+}
+
+type Task_Delta_2 struct {
+	Delta_2 *Delta_2 `protobuf:"bytes,5,opt,name=delta_2,json=delta2,proto3,oneof"`
 }
 
 type Task_Epsilon struct {
-	Epsilon *Epsilon `protobuf:"bytes,5,opt,name=epsilon,proto3,oneof"`
+	Epsilon *Epsilon `protobuf:"bytes,6,opt,name=epsilon,proto3,oneof"`
 }
 
 type Task_Zeta struct {
-	Zeta *Zeta `protobuf:"bytes,6,opt,name=zeta,proto3,oneof"`
+	Zeta *Zeta `protobuf:"bytes,7,opt,name=zeta,proto3,oneof"`
 }
 
-type Task_Eta struct {
-	Eta *Eta `protobuf:"bytes,7,opt,name=eta,proto3,oneof"`
+type Task_Eta_1 struct {
+	Eta_1 *Eta_1 `protobuf:"bytes,8,opt,name=eta_1,json=eta1,proto3,oneof"`
+}
+
+type Task_Eta_2 struct {
+	Eta_2 *Eta_2 `protobuf:"bytes,9,opt,name=eta_2,json=eta2,proto3,oneof"`
 }
 
 type Task_Theta struct {
-	Theta *Theta `protobuf:"bytes,8,opt,name=theta,proto3,oneof"`
+	Theta *Theta `protobuf:"bytes,10,opt,name=theta,proto3,oneof"`
 }
 
 type Task_Iota struct {
-	Iota *Iota `protobuf:"bytes,9,opt,name=iota,proto3,oneof"`
+	Iota *Iota `protobuf:"bytes,11,opt,name=iota,proto3,oneof"`
 }
 
-type Task_Kappa struct {
-	Kappa *Kappa `protobuf:"bytes,10,opt,name=kappa,proto3,oneof"`
+type Task_Kappa_1 struct {
+	Kappa_1 *Kappa_1 `protobuf:"bytes,12,opt,name=kappa_1,json=kappa1,proto3,oneof"`
+}
+
+type Task_Kappa_2 struct {
+	Kappa_2 *Kappa_2 `protobuf:"bytes,13,opt,name=kappa_2,json=kappa2,proto3,oneof"`
 }
 
 type Task_Lambda struct {
-	Lambda *Lambda `protobuf:"bytes,11,opt,name=lambda,proto3,oneof"`
+	Lambda *Lambda `protobuf:"bytes,14,opt,name=lambda,proto3,oneof"`
 }
 
 type Task_Mu struct {
-	Mu *Mu `protobuf:"bytes,12,opt,name=mu,proto3,oneof"`
+	Mu *Mu `protobuf:"bytes,15,opt,name=mu,proto3,oneof"`
 }
 
-type Task_Nu struct {
-	Nu *Nu `protobuf:"bytes,13,opt,name=nu,proto3,oneof"`
+type Task_Nu_1 struct {
+	Nu_1 *Nu_1 `protobuf:"bytes,16,opt,name=nu_1,json=nu1,proto3,oneof"`
+}
+
+type Task_Nu_2 struct {
+	Nu_2 *Nu_2 `protobuf:"bytes,17,opt,name=nu_2,json=nu2,proto3,oneof"`
 }
 
 type Task_Result1 struct {
-	Result1 *Result1 `protobuf:"bytes,14,opt,name=result1,proto3,oneof"`
+	Result1 *Result1 `protobuf:"bytes,18,opt,name=result1,proto3,oneof"`
 }
 
 type Task_Result2 struct {
-	Result2 *Result2 `protobuf:"bytes,15,opt,name=result2,proto3,oneof"`
+	Result2 *Result2 `protobuf:"bytes,19,opt,name=result2,proto3,oneof"`
 }
 
 type Task_Result3 struct {
-	Result3 *Result3 `protobuf:"bytes,16,opt,name=result3,proto3,oneof"`
+	Result3 *Result3 `protobuf:"bytes,20,opt,name=result3,proto3,oneof"`
 }
 
 type Task_Result4 struct {
-	Result4 *Result4 `protobuf:"bytes,17,opt,name=result4,proto3,oneof"`
+	Result4 *Result4 `protobuf:"bytes,21,opt,name=result4,proto3,oneof"`
 }
 
 type Task_Result5 struct {
-	Result5 *Result5 `protobuf:"bytes,18,opt,name=result5,proto3,oneof"`
+	Result5 *Result5 `protobuf:"bytes,22,opt,name=result5,proto3,oneof"`
 }
 
 func (*Task_Alpha) isTask_Stage() {}
@@ -329,25 +385,33 @@ func (*Task_Beta) isTask_Stage() {}
 
 func (*Task_Gamma) isTask_Stage() {}
 
-func (*Task_Delta) isTask_Stage() {}
+func (*Task_Delta_1) isTask_Stage() {}
+
+func (*Task_Delta_2) isTask_Stage() {}
 
 func (*Task_Epsilon) isTask_Stage() {}
 
 func (*Task_Zeta) isTask_Stage() {}
 
-func (*Task_Eta) isTask_Stage() {}
+func (*Task_Eta_1) isTask_Stage() {}
+
+func (*Task_Eta_2) isTask_Stage() {}
 
 func (*Task_Theta) isTask_Stage() {}
 
 func (*Task_Iota) isTask_Stage() {}
 
-func (*Task_Kappa) isTask_Stage() {}
+func (*Task_Kappa_1) isTask_Stage() {}
+
+func (*Task_Kappa_2) isTask_Stage() {}
 
 func (*Task_Lambda) isTask_Stage() {}
 
 func (*Task_Mu) isTask_Stage() {}
 
-func (*Task_Nu) isTask_Stage() {}
+func (*Task_Nu_1) isTask_Stage() {}
+
+func (*Task_Nu_2) isTask_Stage() {}
 
 func (*Task_Result1) isTask_Stage() {}
 
@@ -363,27 +427,31 @@ var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"\xd5\x04\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"\xee\x05\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
-	"\x05gamma\x18\x03 \x01(\v2\x06.GammaH\x00R\x05gamma\x12\x1e\n" +
-	"\x05delta\x18\x04 \x01(\v2\x06.DeltaH\x00R\x05delta\x12$\n" +
-	"\aepsilon\x18\x05 \x01(\v2\b.EpsilonH\x00R\aepsilon\x12\x1b\n" +
-	"\x04zeta\x18\x06 \x01(\v2\x05.ZetaH\x00R\x04zeta\x12\x18\n" +
-	"\x03eta\x18\a \x01(\v2\x04.EtaH\x00R\x03eta\x12\x1e\n" +
-	"\x05theta\x18\b \x01(\v2\x06.ThetaH\x00R\x05theta\x12\x1b\n" +
-	"\x04iota\x18\t \x01(\v2\x05.IotaH\x00R\x04iota\x12\x1e\n" +
-	"\x05kappa\x18\n" +
-	" \x01(\v2\x06.KappaH\x00R\x05kappa\x12!\n" +
-	"\x06lambda\x18\v \x01(\v2\a.LambdaH\x00R\x06lambda\x12\x15\n" +
-	"\x02mu\x18\f \x01(\v2\x03.MuH\x00R\x02mu\x12\x15\n" +
-	"\x02nu\x18\r \x01(\v2\x03.NuH\x00R\x02nu\x12$\n" +
-	"\aresult1\x18\x0e \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
-	"\aresult2\x18\x0f \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
-	"\aresult3\x18\x10 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
-	"\aresult4\x18\x11 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
-	"\aresult5\x18\x12 \x01(\v2\b.Result5H\x00R\aresult5B\a\n" +
+	"\x05gamma\x18\x03 \x01(\v2\x06.GammaH\x00R\x05gamma\x12#\n" +
+	"\adelta_1\x18\x04 \x01(\v2\b.Delta_1H\x00R\x06delta1\x12#\n" +
+	"\adelta_2\x18\x05 \x01(\v2\b.Delta_2H\x00R\x06delta2\x12$\n" +
+	"\aepsilon\x18\x06 \x01(\v2\b.EpsilonH\x00R\aepsilon\x12\x1b\n" +
+	"\x04zeta\x18\a \x01(\v2\x05.ZetaH\x00R\x04zeta\x12\x1d\n" +
+	"\x05eta_1\x18\b \x01(\v2\x06.Eta_1H\x00R\x04eta1\x12\x1d\n" +
+	"\x05eta_2\x18\t \x01(\v2\x06.Eta_2H\x00R\x04eta2\x12\x1e\n" +
+	"\x05theta\x18\n" +
+	" \x01(\v2\x06.ThetaH\x00R\x05theta\x12\x1b\n" +
+	"\x04iota\x18\v \x01(\v2\x05.IotaH\x00R\x04iota\x12#\n" +
+	"\akappa_1\x18\f \x01(\v2\b.Kappa_1H\x00R\x06kappa1\x12#\n" +
+	"\akappa_2\x18\r \x01(\v2\b.Kappa_2H\x00R\x06kappa2\x12!\n" +
+	"\x06lambda\x18\x0e \x01(\v2\a.LambdaH\x00R\x06lambda\x12\x15\n" +
+	"\x02mu\x18\x0f \x01(\v2\x03.MuH\x00R\x02mu\x12\x1a\n" +
+	"\x04nu_1\x18\x10 \x01(\v2\x05.Nu_1H\x00R\x03nu1\x12\x1a\n" +
+	"\x04nu_2\x18\x11 \x01(\v2\x05.Nu_2H\x00R\x03nu2\x12$\n" +
+	"\aresult1\x18\x12 \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
+	"\aresult2\x18\x13 \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
+	"\aresult3\x18\x14 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
+	"\aresult4\x18\x15 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
+	"\aresult5\x18\x16 \x01(\v2\b.Result5H\x00R\aresult5B\a\n" +
 	"\x05StageB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
@@ -404,46 +472,54 @@ var file_proto_task_proto_goTypes = []any{
 	(*Alpha)(nil),   // 1: Alpha
 	(*Beta)(nil),    // 2: Beta
 	(*Gamma)(nil),   // 3: Gamma
-	(*Delta)(nil),   // 4: Delta
-	(*Epsilon)(nil), // 5: Epsilon
-	(*Zeta)(nil),    // 6: Zeta
-	(*Eta)(nil),     // 7: Eta
-	(*Theta)(nil),   // 8: Theta
-	(*Iota)(nil),    // 9: Iota
-	(*Kappa)(nil),   // 10: Kappa
-	(*Lambda)(nil),  // 11: Lambda
-	(*Mu)(nil),      // 12: Mu
-	(*Nu)(nil),      // 13: Nu
-	(*Result1)(nil), // 14: Result1
-	(*Result2)(nil), // 15: Result2
-	(*Result3)(nil), // 16: Result3
-	(*Result4)(nil), // 17: Result4
-	(*Result5)(nil), // 18: Result5
+	(*Delta_1)(nil), // 4: Delta_1
+	(*Delta_2)(nil), // 5: Delta_2
+	(*Epsilon)(nil), // 6: Epsilon
+	(*Zeta)(nil),    // 7: Zeta
+	(*Eta_1)(nil),   // 8: Eta_1
+	(*Eta_2)(nil),   // 9: Eta_2
+	(*Theta)(nil),   // 10: Theta
+	(*Iota)(nil),    // 11: Iota
+	(*Kappa_1)(nil), // 12: Kappa_1
+	(*Kappa_2)(nil), // 13: Kappa_2
+	(*Lambda)(nil),  // 14: Lambda
+	(*Mu)(nil),      // 15: Mu
+	(*Nu_1)(nil),    // 16: Nu_1
+	(*Nu_2)(nil),    // 17: Nu_2
+	(*Result1)(nil), // 18: Result1
+	(*Result2)(nil), // 19: Result2
+	(*Result3)(nil), // 20: Result3
+	(*Result4)(nil), // 21: Result4
+	(*Result5)(nil), // 22: Result5
 }
 var file_proto_task_proto_depIdxs = []int32{
 	1,  // 0: Task.alpha:type_name -> Alpha
 	2,  // 1: Task.beta:type_name -> Beta
 	3,  // 2: Task.gamma:type_name -> Gamma
-	4,  // 3: Task.delta:type_name -> Delta
-	5,  // 4: Task.epsilon:type_name -> Epsilon
-	6,  // 5: Task.zeta:type_name -> Zeta
-	7,  // 6: Task.eta:type_name -> Eta
-	8,  // 7: Task.theta:type_name -> Theta
-	9,  // 8: Task.iota:type_name -> Iota
-	10, // 9: Task.kappa:type_name -> Kappa
-	11, // 10: Task.lambda:type_name -> Lambda
-	12, // 11: Task.mu:type_name -> Mu
-	13, // 12: Task.nu:type_name -> Nu
-	14, // 13: Task.result1:type_name -> Result1
-	15, // 14: Task.result2:type_name -> Result2
-	16, // 15: Task.result3:type_name -> Result3
-	17, // 16: Task.result4:type_name -> Result4
-	18, // 17: Task.result5:type_name -> Result5
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	4,  // 3: Task.delta_1:type_name -> Delta_1
+	5,  // 4: Task.delta_2:type_name -> Delta_2
+	6,  // 5: Task.epsilon:type_name -> Epsilon
+	7,  // 6: Task.zeta:type_name -> Zeta
+	8,  // 7: Task.eta_1:type_name -> Eta_1
+	9,  // 8: Task.eta_2:type_name -> Eta_2
+	10, // 9: Task.theta:type_name -> Theta
+	11, // 10: Task.iota:type_name -> Iota
+	12, // 11: Task.kappa_1:type_name -> Kappa_1
+	13, // 12: Task.kappa_2:type_name -> Kappa_2
+	14, // 13: Task.lambda:type_name -> Lambda
+	15, // 14: Task.mu:type_name -> Mu
+	16, // 15: Task.nu_1:type_name -> Nu_1
+	17, // 16: Task.nu_2:type_name -> Nu_2
+	18, // 17: Task.result1:type_name -> Result1
+	19, // 18: Task.result2:type_name -> Result2
+	20, // 19: Task.result3:type_name -> Result3
+	21, // 20: Task.result4:type_name -> Result4
+	22, // 21: Task.result5:type_name -> Result5
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }
@@ -473,16 +549,20 @@ func file_proto_task_proto_init() {
 		(*Task_Alpha)(nil),
 		(*Task_Beta)(nil),
 		(*Task_Gamma)(nil),
-		(*Task_Delta)(nil),
+		(*Task_Delta_1)(nil),
+		(*Task_Delta_2)(nil),
 		(*Task_Epsilon)(nil),
 		(*Task_Zeta)(nil),
-		(*Task_Eta)(nil),
+		(*Task_Eta_1)(nil),
+		(*Task_Eta_2)(nil),
 		(*Task_Theta)(nil),
 		(*Task_Iota)(nil),
-		(*Task_Kappa)(nil),
+		(*Task_Kappa_1)(nil),
+		(*Task_Kappa_2)(nil),
 		(*Task_Lambda)(nil),
 		(*Task_Mu)(nil),
-		(*Task_Nu)(nil),
+		(*Task_Nu_1)(nil),
+		(*Task_Nu_2)(nil),
 		(*Task_Result1)(nil),
 		(*Task_Result2)(nil),
 		(*Task_Result3)(nil),

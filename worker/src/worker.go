@@ -108,6 +108,8 @@ outer:
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
 // It marshals the task to a byte array and publishes it to the RabbitMQ
 // It logs the task, exchange, and routing key for debugging purposes
+// This function is nil-safe, meaning it will not panic if the input is nil
+// It will simply return without doing anything
 func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
 	for exchange, stage := range subTasks {
 		for _, value := range stage {

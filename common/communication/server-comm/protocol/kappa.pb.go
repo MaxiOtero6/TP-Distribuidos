@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Kappa struct {
+type Kappa_1 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          []*Kappa_Data          `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data          []*Kappa_1_Data        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Kappa) Reset() {
-	*x = Kappa{}
+func (x *Kappa_1) Reset() {
+	*x = Kappa_1{}
 	mi := &file_proto_stages_kappa_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Kappa) String() string {
+func (x *Kappa_1) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Kappa) ProtoMessage() {}
+func (*Kappa_1) ProtoMessage() {}
 
-func (x *Kappa) ProtoReflect() protoreflect.Message {
+func (x *Kappa_1) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_stages_kappa_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,19 +53,63 @@ func (x *Kappa) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Kappa.ProtoReflect.Descriptor instead.
-func (*Kappa) Descriptor() ([]byte, []int) {
+// Deprecated: Use Kappa_1.ProtoReflect.Descriptor instead.
+func (*Kappa_1) Descriptor() ([]byte, []int) {
 	return file_proto_stages_kappa_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Kappa) GetData() []*Kappa_Data {
+func (x *Kappa_1) GetData() []*Kappa_1_Data {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type Kappa_Data struct {
+type Kappa_2 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []*Kappa_2_Data        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Kappa_2) Reset() {
+	*x = Kappa_2{}
+	mi := &file_proto_stages_kappa_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Kappa_2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Kappa_2) ProtoMessage() {}
+
+func (x *Kappa_2) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_kappa_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Kappa_2.ProtoReflect.Descriptor instead.
+func (*Kappa_2) Descriptor() ([]byte, []int) {
+	return file_proto_stages_kappa_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Kappa_2) GetData() []*Kappa_2_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type Kappa_1_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	ActorId       string                 `protobuf:"bytes,2,opt,name=actorId,proto3" json:"actorId,omitempty"`
@@ -74,21 +118,21 @@ type Kappa_Data struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Kappa_Data) Reset() {
-	*x = Kappa_Data{}
-	mi := &file_proto_stages_kappa_proto_msgTypes[1]
+func (x *Kappa_1_Data) Reset() {
+	*x = Kappa_1_Data{}
+	mi := &file_proto_stages_kappa_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Kappa_Data) String() string {
+func (x *Kappa_1_Data) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Kappa_Data) ProtoMessage() {}
+func (*Kappa_1_Data) ProtoMessage() {}
 
-func (x *Kappa_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_kappa_proto_msgTypes[1]
+func (x *Kappa_1_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_kappa_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,43 +143,109 @@ func (x *Kappa_Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Kappa_Data.ProtoReflect.Descriptor instead.
-func (*Kappa_Data) Descriptor() ([]byte, []int) {
+// Deprecated: Use Kappa_1_Data.ProtoReflect.Descriptor instead.
+func (*Kappa_1_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_kappa_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Kappa_Data) GetMovieId() string {
+func (x *Kappa_1_Data) GetMovieId() string {
 	if x != nil {
 		return x.MovieId
 	}
 	return ""
 }
 
-func (x *Kappa_Data) GetActorId() string {
+func (x *Kappa_1_Data) GetActorId() string {
 	if x != nil {
 		return x.ActorId
 	}
 	return ""
 }
 
-func (x *Kappa_Data) GetActorName() string {
+func (x *Kappa_1_Data) GetActorName() string {
 	if x != nil {
 		return x.ActorName
 	}
 	return ""
 }
 
+type Kappa_2_Data struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	ActorId               string                 `protobuf:"bytes,1,opt,name=actorId,proto3" json:"actorId,omitempty"`
+	ActorName             string                 `protobuf:"bytes,2,opt,name=actorName,proto3" json:"actorName,omitempty"`
+	PartialParticipations uint32                 `protobuf:"varint,3,opt,name=partial_participations,json=partialParticipations,proto3" json:"partial_participations,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *Kappa_2_Data) Reset() {
+	*x = Kappa_2_Data{}
+	mi := &file_proto_stages_kappa_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Kappa_2_Data) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Kappa_2_Data) ProtoMessage() {}
+
+func (x *Kappa_2_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_kappa_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Kappa_2_Data.ProtoReflect.Descriptor instead.
+func (*Kappa_2_Data) Descriptor() ([]byte, []int) {
+	return file_proto_stages_kappa_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *Kappa_2_Data) GetActorId() string {
+	if x != nil {
+		return x.ActorId
+	}
+	return ""
+}
+
+func (x *Kappa_2_Data) GetActorName() string {
+	if x != nil {
+		return x.ActorName
+	}
+	return ""
+}
+
+func (x *Kappa_2_Data) GetPartialParticipations() uint32 {
+	if x != nil {
+		return x.PartialParticipations
+	}
+	return 0
+}
+
 var File_proto_stages_kappa_proto protoreflect.FileDescriptor
 
 const file_proto_stages_kappa_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/stages/kappa.proto\"\x82\x01\n" +
-	"\x05Kappa\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.Kappa.DataR\x04data\x1aX\n" +
+	"\x18proto/stages/kappa.proto\"\x86\x01\n" +
+	"\aKappa_1\x12!\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Kappa_1.DataR\x04data\x1aX\n" +
 	"\x04Data\x12\x18\n" +
 	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x18\n" +
 	"\aactorId\x18\x02 \x01(\tR\aactorId\x12\x1c\n" +
-	"\tactorName\x18\x03 \x01(\tR\tactorNameB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\tactorName\x18\x03 \x01(\tR\tactorName\"\xa3\x01\n" +
+	"\aKappa_2\x12!\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Kappa_2.DataR\x04data\x1au\n" +
+	"\x04Data\x12\x18\n" +
+	"\aactorId\x18\x01 \x01(\tR\aactorId\x12\x1c\n" +
+	"\tactorName\x18\x02 \x01(\tR\tactorName\x125\n" +
+	"\x16partial_participations\x18\x03 \x01(\rR\x15partialParticipationsB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_kappa_proto_rawDescOnce sync.Once
@@ -149,18 +259,21 @@ func file_proto_stages_kappa_proto_rawDescGZIP() []byte {
 	return file_proto_stages_kappa_proto_rawDescData
 }
 
-var file_proto_stages_kappa_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_stages_kappa_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_stages_kappa_proto_goTypes = []any{
-	(*Kappa)(nil),      // 0: Kappa
-	(*Kappa_Data)(nil), // 1: Kappa.Data
+	(*Kappa_1)(nil),      // 0: Kappa_1
+	(*Kappa_2)(nil),      // 1: Kappa_2
+	(*Kappa_1_Data)(nil), // 2: Kappa_1.Data
+	(*Kappa_2_Data)(nil), // 3: Kappa_2.Data
 }
 var file_proto_stages_kappa_proto_depIdxs = []int32{
-	1, // 0: Kappa.data:type_name -> Kappa.Data
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: Kappa_1.data:type_name -> Kappa_1.Data
+	3, // 1: Kappa_2.data:type_name -> Kappa_2.Data
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_stages_kappa_proto_init() }
@@ -174,7 +287,7 @@ func file_proto_stages_kappa_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_kappa_proto_rawDesc), len(file_proto_stages_kappa_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

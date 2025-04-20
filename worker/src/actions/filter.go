@@ -211,7 +211,7 @@ Return example
 
 	{
 		"mapExchange": {
-			"delta": {
+			"delta_1": {
 				"": Task
 			}
 		},
@@ -220,8 +220,8 @@ Return example
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][DELTA_STAGE] = make(map[string]*protocol.Task)
-	deltaData := make(map[string][]*protocol.Delta_Data)
+	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)
+	deltaData := make(map[string][]*protocol.Delta_1_Data)
 
 	for _, movie := range data {
 		if movie == nil {
@@ -238,7 +238,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 			continue
 		}
 
-		deltaData[BROADCAST_ID] = append(deltaData[BROADCAST_ID], &protocol.Delta_Data{
+		deltaData[BROADCAST_ID] = append(deltaData[BROADCAST_ID], &protocol.Delta_1_Data{
 			Id:          movie.GetId(),
 			ProdCountry: countries[0],
 			Budget:      movie.GetBudget(),
@@ -246,9 +246,9 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	}
 
 	for id, data := range deltaData {
-		tasks[MAP_EXCHANGE][DELTA_STAGE][id] = &protocol.Task{
-			Stage: &protocol.Task_Delta{
-				Delta: &protocol.Delta{
+		tasks[MAP_EXCHANGE][DELTA_STAGE_1][id] = &protocol.Task{
+			Stage: &protocol.Task_Delta_1{
+				Delta_1: &protocol.Delta_1{
 					Data: data,
 				},
 			},
