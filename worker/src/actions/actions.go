@@ -17,15 +17,6 @@ type Action interface {
 	Execute(task *protocol.Task) (Tasks, error)
 }
 
-// Exchanges
-const FILTER_EXCHANGE string = "filterExchange"
-const OVERVIEWER_EXCHANGE string = "overviewExchange"
-const MAP_EXCHANGE string = "mapExchange"
-const JOIN_EXCHANGE string = "joinExchange"
-const REDUCE_EXCHANGE string = "reduceExchange"
-const TOP_EXCHANGE string = "topExchange"
-const RESULT_EXCHANGE string = "resultExchange"
-
 // Query 1
 const ALPHA_STAGE string = "alpha"
 const BETA_STAGE string = "beta"
@@ -56,9 +47,6 @@ const NU_STAGE_2 string = "nu_2"
 // Results
 const RESULT_STAGE string = "result"
 
-// Hardcoded routing key. Other routing keys are workers IDs.
-const BROADCAST_ID string = ""
-
 // Consts for tests
 const TEST_WORKER_COUNT int = 1
 const TEST_WORKER_ID string = "0"
@@ -76,22 +64,22 @@ const (
 )
 
 // NewAction creates a new action based on the worker type.
-func NewAction(workerType string, clusterConfig *model.WorkerClusterConfig) Action {
+func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 	kind := ActionType(workerType)
 
 	switch kind {
 	case FilterAction:
-		return NewFilter(clusterConfig)
+		return NewFilter(infraConfig)
 	case OverviewerAction:
-		return NewOverviewer(clusterConfig)
+		return NewOverviewer(infraConfig)
 	case MapperAction:
-		return NewMapper(clusterConfig)
+		return NewMapper(infraConfig)
 	case JoinerAction:
-		return NewJoiner(clusterConfig)
+		return NewJoiner(infraConfig)
 	case ReducerAction:
-		return NewReducer(clusterConfig)
+		return NewReducer(infraConfig)
 	case TopperAction:
-		return NewTopper(clusterConfig)
+		return NewTopper(infraConfig)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil

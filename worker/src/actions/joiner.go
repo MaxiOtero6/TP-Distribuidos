@@ -9,13 +9,13 @@ import (
 
 // Joiner is a struct that implements the Action interface.
 type Joiner struct {
-	clusterConfig *model.WorkerClusterConfig
+	infraConfig *model.InfraConfig
 }
 
 // NewJoiner creates a new Joiner instance.
-func NewJoiner(clusterConfig *model.WorkerClusterConfig) *Joiner {
+func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return &Joiner{
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -36,6 +36,8 @@ Return example
 	}
 */
 func (j *Joiner) zetaStage(data []*protocol.Zeta_Data) (tasks Tasks) {
+	MAP_EXCHANGE := j.infraConfig.GetMapExchange()
+
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[MAP_EXCHANGE][ETA_STAGE_1] = make(map[string]*protocol.Task)
@@ -79,6 +81,8 @@ Return example
 	}
 */
 func (j *Joiner) iotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
+	MAP_EXCHANGE := j.infraConfig.GetMapExchange()
+
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[MAP_EXCHANGE][KAPPA_STAGE_1] = make(map[string]*protocol.Task)

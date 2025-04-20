@@ -44,7 +44,19 @@ func InitConfig() (*viper.Viper, error) {
 	// return an error in that case
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
-		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
+		fmt.Printf("Configuration could not be read from config file. Using env variables instead\n")
+	}
+
+	rabbitConfig := viper.New()
+	rabbitConfig.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	rabbitConfig.SetConfigFile("./rabbitConfig.yaml")
+	if err := rabbitConfig.ReadInConfig(); err != nil {
+		fmt.Printf("Rabbit configuration could not be read.\n")
+	}
+
+	// Merge the rabbit-specific config with the main config
+	if err := v.MergeConfigMap(rabbitConfig.AllSettings()); err != nil {
+		return nil, fmt.Errorf("failed to merge rabbit-specific config: %w", err)
 	}
 
 	return v, nil
@@ -94,13 +106,28 @@ func initServer(v *viper.Viper) *server.Server {
 		TopCount:      v.GetInt("top.count"),
 	}
 
+	rabbitConfig := &model.RabbitConfig{
+		FilterExchange:   v.GetString("consts.filterExchange"),
+		OverviewExchange: v.GetString("consts.overviewExchange"),
+		MapExchange:      v.GetString("consts.mapExchange"),
+		JoinExchange:     v.GetString("consts.joinExchange"),
+		ReduceExchange:   v.GetString("consts.reduceExchange"),
+		TopExchange:      v.GetString("consts.topExchange"),
+		ResultExchange:   v.GetString("consts.resultExchange"),
+		BroadcastID:      v.GetString("consts.broadcastId"),
+	}
+
+	infraConfig := model.NewInfraConfig(clusterConfig, rabbitConfig)
+
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
+
 	exchanges, queues, binds, err := utils.GetRabbitConfig(NODE_TYPE, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	s, err := server.NewServer(id, address, clusterConfig)
+	s, err := server.NewServer(id, address, infraConfig)
 
 	if err != nil {
 		log.Panicf("Failed to initialize server: %s", err)

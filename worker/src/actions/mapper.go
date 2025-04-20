@@ -9,14 +9,14 @@ import (
 
 // Mapper is a struct that implements the Action interface.
 type Mapper struct {
-	clusterConfig *model.WorkerClusterConfig
+	infraConfig *model.InfraConfig
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(clusterConfig *model.WorkerClusterConfig) *Mapper {
+func NewMapper(infraConfig *model.InfraConfig) *Mapper {
 	return &Mapper{
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -38,6 +38,8 @@ Return example
 	}
 */
 func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][DELTA_STAGE_2] = make(map[string]*protocol.Task)
@@ -82,6 +84,8 @@ Return example
 	}
 */
 func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][ETA_STAGE_2] = make(map[string]*protocol.Task)
@@ -126,6 +130,8 @@ Return example
 	}
 */
 func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2] = make(map[string]*protocol.Task)
@@ -170,6 +176,8 @@ Return example
 	}
 */
 func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
+	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][NU_STAGE_2] = make(map[string]*protocol.Task)

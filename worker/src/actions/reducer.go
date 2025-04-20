@@ -9,14 +9,14 @@ import (
 
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
-	clusterConfig *model.WorkerClusterConfig
+	infraConfig *model.InfraConfig
 }
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
-func NewReducer(clusterConfig *model.WorkerClusterConfig) *Reducer {
+func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return &Reducer{
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -38,6 +38,8 @@ Return example
 	}
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+
 	tasks = make(Tasks)
 	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
@@ -82,6 +84,8 @@ Return example
 	}
 */
 func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+
 	tasks = make(Tasks)
 	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[TOP_EXCHANGE][THETA_STAGE] = make(map[string]*protocol.Task)
@@ -126,6 +130,8 @@ Return example
 	}
 */
 func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+
 	tasks = make(Tasks)
 	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[TOP_EXCHANGE][LAMBDA_STAGE] = make(map[string]*protocol.Task)
@@ -169,6 +175,8 @@ Return example
 	}
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)

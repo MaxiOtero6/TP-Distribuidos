@@ -45,6 +45,18 @@ func InitConfig() (*viper.Viper, error) {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
 	}
 
+	rabbitConfig := viper.New()
+	rabbitConfig.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	rabbitConfig.SetConfigFile("./rabbitConfig.yaml")
+	if err := rabbitConfig.ReadInConfig(); err != nil {
+		fmt.Printf("Rabbit configuration could not be read.\n")
+	}
+
+	// Merge the rabbit-specific config with the main config
+	if err := v.MergeConfigMap(rabbitConfig.AllSettings()); err != nil {
+		return nil, fmt.Errorf("failed to merge rabbit-specific config: %w", err)
+	}
+
 	return v, nil
 }
 
@@ -82,13 +94,28 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		TopCount:      v.GetInt("top.count"),
 	}
 
+	rabbitConfig := &model.RabbitConfig{
+		FilterExchange:   v.GetString("consts.filterExchange"),
+		OverviewExchange: v.GetString("consts.overviewExchange"),
+		MapExchange:      v.GetString("consts.mapExchange"),
+		JoinExchange:     v.GetString("consts.joinExchange"),
+		ReduceExchange:   v.GetString("consts.reduceExchange"),
+		TopExchange:      v.GetString("consts.topExchange"),
+		ResultExchange:   v.GetString("consts.resultExchange"),
+		BroadcastID:      v.GetString("consts.broadcastId"),
+	}
+
+	infraConfig := model.NewInfraConfig(clusterConfig, rabbitConfig)
+
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
+
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	w := worker.NewWorker(v.GetString("id"), workerType, clusterConfig, signalChan)
+	w := worker.NewWorker(v.GetString("id"), workerType, infraConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

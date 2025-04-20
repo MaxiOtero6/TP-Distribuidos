@@ -14,12 +14,12 @@ import (
 // It filters movies based on certain criteria.
 // It is used in the worker to filter movies in the pipeline.
 type Filter struct {
-	clusterConfig *model.WorkerClusterConfig
+	infraConfig *model.InfraConfig
 }
 
-func NewFilter(clusterConfig *model.WorkerClusterConfig) *Filter {
+func NewFilter(infraConfig *model.InfraConfig) *Filter {
 	return &Filter{
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -56,6 +56,11 @@ Return example
 	}
 */
 func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
+	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
+	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+	JOIN_COUNT := f.infraConfig.GetJoinCount()
+
 	tasks = make(Tasks)
 	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[JOIN_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -88,7 +93,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		idHash, err := utils.GetWorkerIdFromHash(f.clusterConfig.JoinCount, movie.GetId())
+		idHash, err := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
 
 		if err != nil {
 			continue
@@ -163,6 +168,9 @@ Return example
 	}
 */
 func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -219,6 +227,9 @@ Return example
 	}
 */
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
+	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
+	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)

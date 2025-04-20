@@ -10,22 +10,22 @@ import (
 
 // Overviewer is a struct that implements the Action interface.
 type Overviewer struct {
-	model         sentiment.Models
-	clusterConfig *model.WorkerClusterConfig
+	model       sentiment.Models
+	infraConfig *model.InfraConfig
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(clusterConfig *model.WorkerClusterConfig) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
 	return &Overviewer{
-		model:         model,
-		clusterConfig: clusterConfig,
+		model:       model,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -47,6 +47,9 @@ Return example
 	}
 */
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
+	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
+	BROADCAST_ID := o.infraConfig.GetBroadcastID()
+
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)

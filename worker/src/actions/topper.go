@@ -9,14 +9,14 @@ import (
 
 // Topper is a struct that implements the Action interface.
 type Topper struct {
-	clusterConfig *model.WorkerClusterConfig
+	infraConfig *model.InfraConfig
 }
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(clusterConfig *model.WorkerClusterConfig) *Topper {
+func NewTopper(infraConfig *model.InfraConfig) *Topper {
 	return &Topper{
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -37,6 +37,8 @@ Return example
 	}
 */
 func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -80,6 +82,8 @@ Return example
 	}
 */
 func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -123,6 +127,8 @@ Return example
 	}
 */
 func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
