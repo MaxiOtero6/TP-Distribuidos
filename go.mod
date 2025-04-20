@@ -4,6 +4,7 @@ go 1.24.2
 
 require (
 	github.com/cdipaolo/sentiment v0.0.0-20200617002423-c697f64e7f10
+	github.com/google/uuid v1.6.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
