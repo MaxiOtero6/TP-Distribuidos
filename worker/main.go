@@ -94,13 +94,31 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		TopCount:      v.GetInt("top.count"),
 	}
 
+	rabbitConfig := &model.RabbitConfig{
+		FilterExchange:   v.GetString("consts.filterExchange"),
+		OverviewExchange: v.GetString("consts.overviewExchange"),
+		MapExchange:      v.GetString("consts.mapExchange"),
+		JoinExchange:     v.GetString("consts.joinExchange"),
+		ReduceExchange:   v.GetString("consts.reduceExchange"),
+		TopExchange:      v.GetString("consts.topExchange"),
+		ResultExchange:   v.GetString("consts.resultExchange"),
+		BroadcastID:      v.GetString("consts.broadcastId"),
+	}
+
+	infraConfig := &model.InfraConfig{
+		Workers: clusterConfig,
+		Rabbit:  rabbitConfig,
+	}
+
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.Workers, infraConfig.Rabbit)
+
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	w := worker.NewWorker(v.GetString("id"), workerType, clusterConfig, signalChan)
+	w := worker.NewWorker(v.GetString("id"), workerType, infraConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

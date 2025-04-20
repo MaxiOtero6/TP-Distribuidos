@@ -10,14 +10,14 @@ import (
 
 // Overviewer is a struct that implements the Action interface.
 type Overviewer struct {
-	model         sentiment.Models
-	clusterConfig *model.WorkerClusterConfig
+	model       sentiment.Models
+	infraConfig *model.InfraConfig
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(clusterConfig *model.WorkerClusterConfig) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
@@ -25,7 +25,7 @@ func NewOverviewer(clusterConfig *model.WorkerClusterConfig) *Overviewer {
 
 	return &Overviewer{
 		model:         model,
-		clusterConfig: clusterConfig,
+		infraConfig: infraConfig,
 	}
 }
 
@@ -48,8 +48,8 @@ Return example
 */
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[o.infraConfig.Rabbit.MapExchange] = make(map[string]map[string]*protocol.Task)
+	tasks[o.infraConfig.Rabbit.MapExchange][NU_STAGE_1] = make(map[string]*protocol.Task)
 	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
@@ -61,7 +61,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[BROADCAST_ID] = append(nuData[BROADCAST_ID], &protocol.Nu_1_Data{
+		nuData[o.infraConfig.Rabbit.BroadcastID] = append(nuData[o.infraConfig.Rabbit.BroadcastID], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -71,7 +71,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	}
 
 	for id, data := range nuData {
-		tasks[MAP_EXCHANGE][NU_STAGE_1][id] = &protocol.Task{
+		tasks[o.infraConfig.Rabbit.MapExchange][NU_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
 					Data: data,

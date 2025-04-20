@@ -106,13 +106,31 @@ func initServer(v *viper.Viper) *server.Server {
 		TopCount:      v.GetInt("top.count"),
 	}
 
+	rabbitConfig := &model.RabbitConfig{
+		FilterExchange:   v.GetString("consts.filterExchange"),
+		OverviewExchange: v.GetString("consts.overviewExchange"),
+		MapExchange:      v.GetString("consts.mapExchange"),
+		JoinExchange:     v.GetString("consts.joinExchange"),
+		ReduceExchange:   v.GetString("consts.reduceExchange"),
+		TopExchange:      v.GetString("consts.topExchange"),
+		ResultExchange:   v.GetString("consts.resultExchange"),
+		BroadcastID:      v.GetString("consts.broadcastId"),
+	}
+
+	infraConfig := &model.InfraConfig{
+		Workers: clusterConfig,
+		Rabbit:  rabbitConfig,
+	}
+
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.Workers, infraConfig.Rabbit)
+
 	exchanges, queues, binds, err := utils.GetRabbitConfig(NODE_TYPE, v)
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	s, err := server.NewServer(id, address, clusterConfig)
+	s, err := server.NewServer(id, address, infraConfig)
 
 	if err != nil {
 		log.Panicf("Failed to initialize server: %s", err)

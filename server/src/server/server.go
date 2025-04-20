@@ -11,19 +11,19 @@ import (
 var log = logging.MustGetLogger("log")
 
 type Server struct {
-	ID                  string
-	serverSocket        *client_server_communication.Socket
-	done                chan bool
-	clientID            string
-	clientSocket        *client_server_communication.Socket
-	workerClusterConfig *common_model.WorkerClusterConfig
-	rabbitMQ            *mom.RabbitMQ
-	consumeChan         mom.ConsumerChan
-	resultQueueName     string
-	resultExchangeName  string
+	ID                 string
+	serverSocket       *client_server_communication.Socket
+	done               chan bool
+	clientID           string
+	clientSocket       *client_server_communication.Socket
+	infraConfig        *common_model.InfraConfig
+	rabbitMQ           *mom.RabbitMQ
+	consumeChan        mom.ConsumerChan
+	resultQueueName    string
+	resultExchangeName string
 }
 
-func NewServer(id string, address string, clusterConfig *common_model.WorkerClusterConfig) (*Server, error) {
+func NewServer(id string, address string, infraConfig *common_model.InfraConfig) (*Server, error) {
 	serverSocket, err := client_server_communication.CreateServerSocket(address)
 
 	if err != nil {
@@ -31,11 +31,11 @@ func NewServer(id string, address string, clusterConfig *common_model.WorkerClus
 	}
 
 	return &Server{
-		ID:                  id,
-		serverSocket:        serverSocket,
-		done:                make(chan bool),
-		workerClusterConfig: clusterConfig,
-		rabbitMQ:            mom.NewRabbitMQ(),
+		ID:           id,
+		serverSocket: serverSocket,
+		done:         make(chan bool),
+		infraConfig:  infraConfig,
+		rabbitMQ:     mom.NewRabbitMQ(),
 	}, nil
 }
 

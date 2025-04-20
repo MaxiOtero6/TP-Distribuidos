@@ -7,26 +7,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const FILTER_EXCHANGE = "filterExchange"
-const OVERVIEWER_EXCHANGE = "overviewExchange"
-const JOINER_EXCHANGE = "joinExchange"
-
 func (s *Server) sendMoviesRabbit(movies []*model.Movie) {
 	alphaTasks := utils.GetAlphaStageTask(movies)
 	muTasks := utils.GetMuStageTask(movies)
 
-	s.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
-	s.publishTasksRabbit(muTasks, OVERVIEWER_EXCHANGE)
+	s.publishTasksRabbit(alphaTasks, s.infraConfig.Rabbit.FilterExchange)
+	s.publishTasksRabbit(muTasks, s.infraConfig.Rabbit.OverviewExchange)
 }
 
 func (s *Server) sendRatingsRabbit(ratings []*model.Rating) {
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, s.workerClusterConfig.JoinCount)
-	s.publishTasksRabbit(zetaTasks, JOINER_EXCHANGE)
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, s.infraConfig.Workers.JoinCount)
+	s.publishTasksRabbit(zetaTasks, s.infraConfig.Rabbit.JoinExchange)
 }
 
 func (s *Server) sendActorsRabbit(actors []*model.Actor) {
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, s.workerClusterConfig.JoinCount)
-	s.publishTasksRabbit(iotaTasks, JOINER_EXCHANGE)
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, s.infraConfig.Workers.JoinCount)
+	s.publishTasksRabbit(iotaTasks, s.infraConfig.Rabbit.JoinExchange)
 }
 
 func (s *Server) publishTasksRabbit(tasks map[string]*protocol.Task, exchange string) {
