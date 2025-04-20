@@ -17,3 +17,19 @@ func (w *WorkerClusterConfig) TotalWorkers() int {
 		w.ReduceCount +
 		w.TopCount
 }
+
+type RabbitConfig struct {
+	FilterExchange   string
+	OverviewExchange string
+	MapExchange      string
+	JoinExchange     string
+	ReduceExchange   string
+	TopExchange      string
+	ResultExchange   string
+	BroadcastID      string
+}
+
+type InfraConfig struct {
+	Workers *WorkerClusterConfig
+	Rabbit  *RabbitConfig
+}
