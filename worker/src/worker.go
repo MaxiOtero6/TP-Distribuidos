@@ -22,7 +22,7 @@ type Worker struct {
 	consumeChan mom.ConsumerChan
 }
 
-// NewWorker creates a new worker with the given id, type, and workerCount
+// NewWorker creates a new worker with the given id, type, and infraConfig
 // and initializes RabbitMQ and action structs
 // It also takes a signal channel to handle SIGTERM signal
 func NewWorker(id string, workerType string, infraConfig *model.InfraConfig, signalChan chan os.Signal) *Worker {
