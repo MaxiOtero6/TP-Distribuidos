@@ -1,5 +1,5 @@
 
-address: "server:12345"
+address: "server_0:12345"
 log:
   level: "debug" 
 #timeout: 30 
