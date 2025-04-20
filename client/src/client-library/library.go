@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/client-library/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/utils"
 	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
 	"github.com/op/go-logging"
