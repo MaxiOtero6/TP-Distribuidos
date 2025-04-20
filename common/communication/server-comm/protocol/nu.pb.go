@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Nu struct {
+type Nu_1 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          []*Nu_Data             `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data          []*Nu_1_Data           `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Nu) Reset() {
-	*x = Nu{}
+func (x *Nu_1) Reset() {
+	*x = Nu_1{}
 	mi := &file_proto_stages_nu_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Nu) String() string {
+func (x *Nu_1) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Nu) ProtoMessage() {}
+func (*Nu_1) ProtoMessage() {}
 
-func (x *Nu) ProtoReflect() protoreflect.Message {
+func (x *Nu_1) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_stages_nu_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,19 +53,63 @@ func (x *Nu) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Nu.ProtoReflect.Descriptor instead.
-func (*Nu) Descriptor() ([]byte, []int) {
+// Deprecated: Use Nu_1.ProtoReflect.Descriptor instead.
+func (*Nu_1) Descriptor() ([]byte, []int) {
 	return file_proto_stages_nu_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Nu) GetData() []*Nu_Data {
+func (x *Nu_1) GetData() []*Nu_1_Data {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type Nu_Data struct {
+type Nu_2 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []*Nu_2_Data           `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Nu_2) Reset() {
+	*x = Nu_2{}
+	mi := &file_proto_stages_nu_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Nu_2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Nu_2) ProtoMessage() {}
+
+func (x *Nu_2) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_nu_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Nu_2.ProtoReflect.Descriptor instead.
+func (*Nu_2) Descriptor() ([]byte, []int) {
+	return file_proto_stages_nu_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Nu_2) GetData() []*Nu_2_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type Nu_1_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
@@ -76,21 +120,21 @@ type Nu_Data struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Nu_Data) Reset() {
-	*x = Nu_Data{}
-	mi := &file_proto_stages_nu_proto_msgTypes[1]
+func (x *Nu_1_Data) Reset() {
+	*x = Nu_1_Data{}
+	mi := &file_proto_stages_nu_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Nu_Data) String() string {
+func (x *Nu_1_Data) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Nu_Data) ProtoMessage() {}
+func (*Nu_1_Data) ProtoMessage() {}
 
-func (x *Nu_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_nu_proto_msgTypes[1]
+func (x *Nu_1_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_nu_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,59 +145,136 @@ func (x *Nu_Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Nu_Data.ProtoReflect.Descriptor instead.
-func (*Nu_Data) Descriptor() ([]byte, []int) {
+// Deprecated: Use Nu_1_Data.ProtoReflect.Descriptor instead.
+func (*Nu_1_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_nu_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Nu_Data) GetId() string {
+func (x *Nu_1_Data) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *Nu_Data) GetTitle() string {
+func (x *Nu_1_Data) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Nu_Data) GetRevenue() uint64 {
+func (x *Nu_1_Data) GetRevenue() uint64 {
 	if x != nil {
 		return x.Revenue
 	}
 	return 0
 }
 
-func (x *Nu_Data) GetBudget() uint64 {
+func (x *Nu_1_Data) GetBudget() uint64 {
 	if x != nil {
 		return x.Budget
 	}
 	return 0
 }
 
-func (x *Nu_Data) GetSentiment() bool {
+func (x *Nu_1_Data) GetSentiment() bool {
 	if x != nil {
 		return x.Sentiment
 	}
 	return false
 }
 
+type Nu_2_Data struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sentiment     bool                   `protobuf:"varint,1,opt,name=sentiment,proto3" json:"sentiment,omitempty"` // 1 'POSITIVE', 0 'NEGATIVE'
+	Revenue       uint64                 `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"`
+	Budget        uint64                 `protobuf:"varint,3,opt,name=budget,proto3" json:"budget,omitempty"`
+	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Nu_2_Data) Reset() {
+	*x = Nu_2_Data{}
+	mi := &file_proto_stages_nu_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Nu_2_Data) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Nu_2_Data) ProtoMessage() {}
+
+func (x *Nu_2_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_nu_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Nu_2_Data.ProtoReflect.Descriptor instead.
+func (*Nu_2_Data) Descriptor() ([]byte, []int) {
+	return file_proto_stages_nu_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *Nu_2_Data) GetSentiment() bool {
+	if x != nil {
+		return x.Sentiment
+	}
+	return false
+}
+
+func (x *Nu_2_Data) GetRevenue() uint64 {
+	if x != nil {
+		return x.Revenue
+	}
+	return 0
+}
+
+func (x *Nu_2_Data) GetBudget() uint64 {
+	if x != nil {
+		return x.Budget
+	}
+	return 0
+}
+
+func (x *Nu_2_Data) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_proto_stages_nu_proto protoreflect.FileDescriptor
 
 const file_proto_stages_nu_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/stages/nu.proto\"\xa0\x01\n" +
-	"\x02Nu\x12\x1c\n" +
-	"\x04data\x18\x01 \x03(\v2\b.Nu.DataR\x04data\x1a|\n" +
+	"\x15proto/stages/nu.proto\"\xa4\x01\n" +
+	"\x04Nu_1\x12\x1e\n" +
+	"\x04data\x18\x01 \x03(\v2\n" +
+	".Nu_1.DataR\x04data\x1a|\n" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
 	"\arevenue\x18\x03 \x01(\x04R\arevenue\x12\x16\n" +
 	"\x06budget\x18\x04 \x01(\x04R\x06budget\x12\x1c\n" +
-	"\tsentiment\x18\x05 \x01(\bR\tsentimentB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\tsentiment\x18\x05 \x01(\bR\tsentiment\"\x94\x01\n" +
+	"\x04Nu_2\x12\x1e\n" +
+	"\x04data\x18\x01 \x03(\v2\n" +
+	".Nu_2.DataR\x04data\x1al\n" +
+	"\x04Data\x12\x1c\n" +
+	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x18\n" +
+	"\arevenue\x18\x02 \x01(\x04R\arevenue\x12\x16\n" +
+	"\x06budget\x18\x03 \x01(\x04R\x06budget\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_nu_proto_rawDescOnce sync.Once
@@ -167,18 +288,21 @@ func file_proto_stages_nu_proto_rawDescGZIP() []byte {
 	return file_proto_stages_nu_proto_rawDescData
 }
 
-var file_proto_stages_nu_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_stages_nu_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_stages_nu_proto_goTypes = []any{
-	(*Nu)(nil),      // 0: Nu
-	(*Nu_Data)(nil), // 1: Nu.Data
+	(*Nu_1)(nil),      // 0: Nu_1
+	(*Nu_2)(nil),      // 1: Nu_2
+	(*Nu_1_Data)(nil), // 2: Nu_1.Data
+	(*Nu_2_Data)(nil), // 3: Nu_2.Data
 }
 var file_proto_stages_nu_proto_depIdxs = []int32{
-	1, // 0: Nu.data:type_name -> Nu.Data
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: Nu_1.data:type_name -> Nu_1.Data
+	3, // 1: Nu_2.data:type_name -> Nu_2.Data
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_stages_nu_proto_init() }
@@ -192,7 +316,7 @@ func file_proto_stages_nu_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_nu_proto_rawDesc), len(file_proto_stages_nu_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

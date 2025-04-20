@@ -4,11 +4,22 @@ option go_package = "common/communication/server-comm/protocol";
 
 
 
-message Eta {
+message Eta_1 {
     message Data {
         string id = 1;
         string title = 2;
         float rating = 3;
+    }
+
+    repeated Data data = 1;
+}
+
+message Eta_2 {
+    message Data {
+        string id = 1;
+        string title = 2;
+        double rating = 3;
+        uint32 count = 4;
     }
 
     repeated Data data = 1;

@@ -21,27 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Eta struct {
+type Eta_1 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          []*Eta_Data            `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data          []*Eta_1_Data          `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Eta) Reset() {
-	*x = Eta{}
+func (x *Eta_1) Reset() {
+	*x = Eta_1{}
 	mi := &file_proto_stages_eta_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Eta) String() string {
+func (x *Eta_1) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Eta) ProtoMessage() {}
+func (*Eta_1) ProtoMessage() {}
 
-func (x *Eta) ProtoReflect() protoreflect.Message {
+func (x *Eta_1) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_stages_eta_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,19 +53,63 @@ func (x *Eta) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Eta.ProtoReflect.Descriptor instead.
-func (*Eta) Descriptor() ([]byte, []int) {
+// Deprecated: Use Eta_1.ProtoReflect.Descriptor instead.
+func (*Eta_1) Descriptor() ([]byte, []int) {
 	return file_proto_stages_eta_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Eta) GetData() []*Eta_Data {
+func (x *Eta_1) GetData() []*Eta_1_Data {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type Eta_Data struct {
+type Eta_2 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []*Eta_2_Data          `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Eta_2) Reset() {
+	*x = Eta_2{}
+	mi := &file_proto_stages_eta_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Eta_2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Eta_2) ProtoMessage() {}
+
+func (x *Eta_2) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_eta_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Eta_2.ProtoReflect.Descriptor instead.
+func (*Eta_2) Descriptor() ([]byte, []int) {
+	return file_proto_stages_eta_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Eta_2) GetData() []*Eta_2_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type Eta_1_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
@@ -74,21 +118,21 @@ type Eta_Data struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Eta_Data) Reset() {
-	*x = Eta_Data{}
-	mi := &file_proto_stages_eta_proto_msgTypes[1]
+func (x *Eta_1_Data) Reset() {
+	*x = Eta_1_Data{}
+	mi := &file_proto_stages_eta_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Eta_Data) String() string {
+func (x *Eta_1_Data) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Eta_Data) ProtoMessage() {}
+func (*Eta_1_Data) ProtoMessage() {}
 
-func (x *Eta_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_eta_proto_msgTypes[1]
+func (x *Eta_1_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_eta_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,28 +143,96 @@ func (x *Eta_Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Eta_Data.ProtoReflect.Descriptor instead.
-func (*Eta_Data) Descriptor() ([]byte, []int) {
+// Deprecated: Use Eta_1_Data.ProtoReflect.Descriptor instead.
+func (*Eta_1_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_eta_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Eta_Data) GetId() string {
+func (x *Eta_1_Data) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *Eta_Data) GetTitle() string {
+func (x *Eta_1_Data) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Eta_Data) GetRating() float32 {
+func (x *Eta_1_Data) GetRating() float32 {
 	if x != nil {
 		return x.Rating
+	}
+	return 0
+}
+
+type Eta_2_Data struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Rating        float64                `protobuf:"fixed64,3,opt,name=rating,proto3" json:"rating,omitempty"`
+	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Eta_2_Data) Reset() {
+	*x = Eta_2_Data{}
+	mi := &file_proto_stages_eta_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Eta_2_Data) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Eta_2_Data) ProtoMessage() {}
+
+func (x *Eta_2_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_eta_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Eta_2_Data.ProtoReflect.Descriptor instead.
+func (*Eta_2_Data) Descriptor() ([]byte, []int) {
+	return file_proto_stages_eta_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *Eta_2_Data) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Eta_2_Data) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Eta_2_Data) GetRating() float64 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *Eta_2_Data) GetCount() uint32 {
+	if x != nil {
+		return x.Count
 	}
 	return 0
 }
@@ -129,13 +241,20 @@ var File_proto_stages_eta_proto protoreflect.FileDescriptor
 
 const file_proto_stages_eta_proto_rawDesc = "" +
 	"\n" +
-	"\x16proto/stages/eta.proto\"j\n" +
-	"\x03Eta\x12\x1d\n" +
-	"\x04data\x18\x01 \x03(\v2\t.Eta.DataR\x04data\x1aD\n" +
+	"\x16proto/stages/eta.proto\"n\n" +
+	"\x05Eta_1\x12\x1f\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Eta_1.DataR\x04data\x1aD\n" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06rating\x18\x03 \x01(\x02R\x06ratingB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x06rating\x18\x03 \x01(\x02R\x06rating\"\x84\x01\n" +
+	"\x05Eta_2\x12\x1f\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Eta_2.DataR\x04data\x1aZ\n" +
+	"\x04Data\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06rating\x18\x03 \x01(\x01R\x06rating\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_eta_proto_rawDescOnce sync.Once
@@ -149,18 +268,21 @@ func file_proto_stages_eta_proto_rawDescGZIP() []byte {
 	return file_proto_stages_eta_proto_rawDescData
 }
 
-var file_proto_stages_eta_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_stages_eta_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_stages_eta_proto_goTypes = []any{
-	(*Eta)(nil),      // 0: Eta
-	(*Eta_Data)(nil), // 1: Eta.Data
+	(*Eta_1)(nil),      // 0: Eta_1
+	(*Eta_2)(nil),      // 1: Eta_2
+	(*Eta_1_Data)(nil), // 2: Eta_1.Data
+	(*Eta_2_Data)(nil), // 3: Eta_2.Data
 }
 var file_proto_stages_eta_proto_depIdxs = []int32{
-	1, // 0: Eta.data:type_name -> Eta.Data
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: Eta_1.data:type_name -> Eta_1.Data
+	3, // 1: Eta_2.data:type_name -> Eta_2.Data
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_stages_eta_proto_init() }
@@ -174,7 +296,7 @@ func file_proto_stages_eta_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_eta_proto_rawDesc), len(file_proto_stages_eta_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

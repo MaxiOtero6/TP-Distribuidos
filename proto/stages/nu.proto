@@ -4,13 +4,24 @@ option go_package = "common/communication/server-comm/protocol";
 
 
 
-message Nu {
+message Nu_1 {
     message Data {
         string id = 1;
         string title = 2;
         uint64 revenue = 3;
         uint64 budget = 4;
         bool sentiment = 5; // 1 'POSITIVE', 0 'NEGATIVE'
+    }
+
+    repeated Data data = 1;
+}
+
+message Nu_2 {
+    message Data {
+        bool sentiment = 1; // 1 'POSITIVE', 0 'NEGATIVE'
+        uint64 revenue = 2;
+        uint64 budget = 3;
+        uint32 count = 4;
     }
 
     repeated Data data = 1;
