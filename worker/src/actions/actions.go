@@ -84,13 +84,13 @@ func NewAction(workerType string, workerCount int) Action {
 	case OverviewerAction:
 		return NewOverviewer(workerCount)
 	case MapperAction:
-		return nil
+		return NewMapper(workerCount)
 	case JoinerAction:
-		return nil
+		return NewJoiner(workerCount)
 	case ReducerAction:
-		return nil
+		return NewReducer(workerCount)
 	case TopperAction:
-		return nil
+		return NewTopper(workerCount)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil
