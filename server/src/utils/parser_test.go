@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/server/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 	"github.com/stretchr/testify/assert"
 )
 
