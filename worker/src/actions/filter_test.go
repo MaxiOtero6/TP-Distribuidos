@@ -295,9 +295,9 @@ func TestGammaStage(t *testing.T) {
 		result := filter.gammaStage(nil)
 		assert.Len(t, result, 1, "Expected 1 exchange")
 		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
-		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
@@ -305,9 +305,9 @@ func TestGammaStage(t *testing.T) {
 		result := filter.gammaStage([]*protocol.Gamma_Data{})
 		assert.Len(t, result, 1, "Expected 1 exchange")
 		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
-		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
@@ -344,9 +344,9 @@ func TestGammaStage(t *testing.T) {
 		result := filter.gammaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
 		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
-		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 1, "Expected 1 destination ID")
 
-		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", res[0].GetId(), "Expected movie ID 1")
@@ -381,9 +381,9 @@ func TestGammaStage(t *testing.T) {
 		result := filter.gammaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
 		assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
-		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[MAP_EXCHANGE][DELTA_STAGE][BROADCAST_ID].GetDelta().GetData()
+		res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 }

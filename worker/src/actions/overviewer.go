@@ -30,7 +30,7 @@ func NewOverviewer(workerCount int) *Overviewer {
 
 /*
 muStage processes the input data and generates tasks for the next stage.
-It analyzes the sentiment of the movie overview and creates Nu_Data tasks.
+It analyzes the sentiment of the movie overview and creates Nu_1_Data tasks.
 
 This function is nil-safe, meaning it will not panic if the input is nil.
 It will simply return a map with empty data.
@@ -48,8 +48,8 @@ Return example
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][NU_STAGE] = make(map[string]*protocol.Task)
-	nuData := make(map[string][]*protocol.Nu_Data)
+	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)
+	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
 		if movie == nil {
@@ -60,7 +60,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[BROADCAST_ID] = append(nuData[BROADCAST_ID], &protocol.Nu_Data{
+		nuData[BROADCAST_ID] = append(nuData[BROADCAST_ID], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -70,9 +70,9 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	}
 
 	for id, data := range nuData {
-		tasks[MAP_EXCHANGE][NU_STAGE][id] = &protocol.Task{
-			Stage: &protocol.Task_Nu{
-				Nu: &protocol.Nu{
+		tasks[MAP_EXCHANGE][NU_STAGE_1][id] = &protocol.Task{
+			Stage: &protocol.Task_Nu_1{
+				Nu_1: &protocol.Nu_1{
 					Data: data,
 				},
 			},
