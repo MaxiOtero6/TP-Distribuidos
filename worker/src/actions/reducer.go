@@ -39,8 +39,8 @@ Return example
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[r.infraConfig.Rabbit.TopExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[r.infraConfig.Rabbit.TopExchange][EPSILON_STAGE] = make(map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()] = make(map[string]map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()][EPSILON_STAGE] = make(map[string]*protocol.Task)
 	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
 	log.Panicf("Reduce: Delta_2 stage not implemented yet %v", data)
@@ -52,7 +52,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range epsilonData {
-		tasks[r.infraConfig.Rabbit.TopExchange][EPSILON_STAGE][id] = &protocol.Task{
+		tasks[r.infraConfig.GetTopExchange()][EPSILON_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: data,
@@ -83,8 +83,8 @@ Return example
 */
 func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[r.infraConfig.Rabbit.TopExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[r.infraConfig.Rabbit.TopExchange][THETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()] = make(map[string]map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()][THETA_STAGE] = make(map[string]*protocol.Task)
 	thetaData := make(map[string][]*protocol.Theta_Data)
 
 	log.Panicf("Reduce: Eta_2 stage not implemented yet %v", data)
@@ -96,7 +96,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range thetaData {
-		tasks[r.infraConfig.Rabbit.TopExchange][THETA_STAGE][id] = &protocol.Task{
+		tasks[r.infraConfig.GetTopExchange()][THETA_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: data,
@@ -127,8 +127,8 @@ Return example
 */
 func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[r.infraConfig.Rabbit.TopExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[r.infraConfig.Rabbit.TopExchange][LAMBDA_STAGE] = make(map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()] = make(map[string]map[string]*protocol.Task)
+	tasks[r.infraConfig.GetTopExchange()][LAMBDA_STAGE] = make(map[string]*protocol.Task)
 	lambdaData := make(map[string][]*protocol.Lambda_Data)
 
 	log.Panicf("Reduce: Kappa_2 stage not implemented yet %v", data)
@@ -140,7 +140,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range lambdaData {
-		tasks[r.infraConfig.Rabbit.TopExchange][LAMBDA_STAGE][id] = &protocol.Task{
+		tasks[r.infraConfig.GetTopExchange()][LAMBDA_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: data,
@@ -170,8 +170,8 @@ Return example
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[r.infraConfig.Rabbit.ResultExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[r.infraConfig.Rabbit.ResultExchange][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[r.infraConfig.GetResultExchange()] = make(map[string]map[string]*protocol.Task)
+	tasks[r.infraConfig.GetResultExchange()][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result5Data := make(map[string][]*protocol.Result5_Data)
 
 	log.Panicf("Reduce: Nu_2 stage not implemented yet %v", data)
@@ -183,7 +183,7 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
 	// }
 
 	for id, data := range result5Data {
-		tasks[r.infraConfig.Rabbit.ResultExchange][RESULT_STAGE][id] = &protocol.Task{
+		tasks[r.infraConfig.GetResultExchange()][RESULT_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Result5{
 				Result5: &protocol.Result5{
 					Data: data,

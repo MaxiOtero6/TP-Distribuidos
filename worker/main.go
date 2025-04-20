@@ -105,12 +105,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		BroadcastID:      v.GetString("consts.broadcastId"),
 	}
 
-	infraConfig := &model.InfraConfig{
-		Workers: clusterConfig,
-		Rabbit:  rabbitConfig,
-	}
+	infraConfig := model.NewInfraConfig(clusterConfig, rabbitConfig)
 
-	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.Workers, infraConfig.Rabbit)
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 

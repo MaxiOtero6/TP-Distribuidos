@@ -11,18 +11,18 @@ func (s *Server) sendMoviesRabbit(movies []*model.Movie) {
 	alphaTasks := utils.GetAlphaStageTask(movies)
 	muTasks := utils.GetMuStageTask(movies)
 
-	s.publishTasksRabbit(alphaTasks, s.infraConfig.Rabbit.FilterExchange)
-	s.publishTasksRabbit(muTasks, s.infraConfig.Rabbit.OverviewExchange)
+	s.publishTasksRabbit(alphaTasks, s.infraConfig.GetFilterExchange())
+	s.publishTasksRabbit(muTasks, s.infraConfig.GetOverviewExchange())
 }
 
 func (s *Server) sendRatingsRabbit(ratings []*model.Rating) {
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, s.infraConfig.Workers.JoinCount)
-	s.publishTasksRabbit(zetaTasks, s.infraConfig.Rabbit.JoinExchange)
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, s.infraConfig.GetJoinCount())
+	s.publishTasksRabbit(zetaTasks, s.infraConfig.GetJoinExchange())
 }
 
 func (s *Server) sendActorsRabbit(actors []*model.Actor) {
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, s.infraConfig.Workers.JoinCount)
-	s.publishTasksRabbit(iotaTasks, s.infraConfig.Rabbit.JoinExchange)
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, s.infraConfig.GetJoinCount())
+	s.publishTasksRabbit(iotaTasks, s.infraConfig.GetJoinExchange())
 }
 
 func (s *Server) publishTasksRabbit(tasks map[string]*protocol.Task, exchange string) {

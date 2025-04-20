@@ -24,7 +24,7 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	}
 
 	return &Overviewer{
-		model:         model,
+		model:       model,
 		infraConfig: infraConfig,
 	}
 }
@@ -48,8 +48,8 @@ Return example
 */
 func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	tasks = make(Tasks)
-	tasks[o.infraConfig.Rabbit.MapExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[o.infraConfig.Rabbit.MapExchange][NU_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[o.infraConfig.GetMapExchange()] = make(map[string]map[string]*protocol.Task)
+	tasks[o.infraConfig.GetMapExchange()][NU_STAGE_1] = make(map[string]*protocol.Task)
 	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
@@ -61,7 +61,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[o.infraConfig.Rabbit.BroadcastID] = append(nuData[o.infraConfig.Rabbit.BroadcastID], &protocol.Nu_1_Data{
+		nuData[o.infraConfig.GetBroadcastID()] = append(nuData[o.infraConfig.GetBroadcastID()], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -71,7 +71,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 	}
 
 	for id, data := range nuData {
-		tasks[o.infraConfig.Rabbit.MapExchange][NU_STAGE_1][id] = &protocol.Task{
+		tasks[o.infraConfig.GetMapExchange()][NU_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
 					Data: data,

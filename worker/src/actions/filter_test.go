@@ -13,38 +13,38 @@ func TestAlphaStage(t *testing.T) {
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := testFilter.alphaStage(nil)
 		assert.Len(t, result, 2, "Expected 2 exchanges")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE], 0, "Expected 0 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange], 2, "Expected 2 stages")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE], 0, "Expected 0 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()], 2, "Expected 2 stages")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-		beta := result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetBeta().GetData()
+		beta := result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE][testFilter.infraConfig.GetBroadcastID()].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
+		iotaData := result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
+		zeta := result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := testFilter.alphaStage([]*protocol.Alpha_Data{})
 		assert.Len(t, result, 2, "Expected 2 exchanges")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE], 0, "Expected 0 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange], 2, "Expected 2 stages")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE], 0, "Expected 0 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()], 2, "Expected 2 stages")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-		beta := result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetBeta().GetData()
+		beta := result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE][testFilter.infraConfig.GetBroadcastID()].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
+		iotaData := result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
+		zeta := result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 
@@ -90,13 +90,13 @@ func TestAlphaStage(t *testing.T) {
 
 		result := testFilter.alphaStage(data)
 		assert.Len(t, result, 2, "Expected 2 exchanges")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE], 1, "Expected 1 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange], 2, "Expected 2 stages")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE], 1, "Expected 1 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()], 2, "Expected 2 stages")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE], 1, "Expected 1 destination ID")
 
-		betaData := result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetBeta().GetData()
+		betaData := result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE][testFilter.infraConfig.GetBroadcastID()].GetBeta().GetData()
 		assert.Len(t, betaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", betaData[0].GetId(), "Expected movie ID 1")
@@ -111,13 +111,13 @@ func TestAlphaStage(t *testing.T) {
 		assert.Equal(t, []string{"Spain", "Argentina"}, betaData[1].GetProdCountries(), "Expected production countries 'Spain', 'Argentina'")
 		assert.Equal(t, []string{"Romantic"}, betaData[1].GetGenres(), "Expected genres 'Romantic'")
 
-		iotaData := result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
+		iotaData := result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", iotaData[0].GetMovie().GetId(), "Expected movie ID 1")
 		assert.Equal(t, "4", iotaData[1].GetMovie().GetId(), "Expected movie ID 4")
 
-		zetaData := result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
+		zetaData := result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zetaData, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", zetaData[0].GetMovie().GetId(), "Expected movie ID 1")
@@ -155,19 +155,19 @@ func TestAlphaStage(t *testing.T) {
 
 		result := testFilter.alphaStage(data)
 		assert.Len(t, result, 2, "Expected 2 exchanges")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE], 0, "Expected 1 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange], 2, "Expected 2 stages")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE], 0, "Expected 1 destination ID")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE], 0, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE], 0, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()], 2, "Expected 2 stages")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE], 0, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE], 0, "Expected 1 destination ID")
 
-		beta := result[testFilter.infraConfig.Rabbit.FilterExchange][BETA_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetBeta().GetData()
+		beta := result[testFilter.infraConfig.GetFilterExchange()][BETA_STAGE][testFilter.infraConfig.GetBroadcastID()].GetBeta().GetData()
 		assert.Len(t, beta, 0, "Expected empty slice")
 
-		iotaData := result[testFilter.infraConfig.Rabbit.JoinExchange][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
+		iotaData := result[testFilter.infraConfig.GetJoinExchange()][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 		assert.Len(t, iotaData, 0, "Expected empty slice")
 
-		zeta := result[testFilter.infraConfig.Rabbit.JoinExchange][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
+		zeta := result[testFilter.infraConfig.GetJoinExchange()][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 		assert.Len(t, zeta, 0, "Expected empty slice")
 	})
 }
@@ -176,20 +176,20 @@ func TestBetaStage(t *testing.T) {
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := testFilter.betaStage(nil)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetResult1().GetData()
+		res := result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE][testFilter.infraConfig.GetBroadcastID()].GetResult1().GetData()
 		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := testFilter.betaStage([]*protocol.Beta_Data{})
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetResult1().GetData()
+		res := result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE][testFilter.infraConfig.GetBroadcastID()].GetResult1().GetData()
 		assert.Len(t, res, 0, "Expected empty slice")
 	})
 
@@ -235,10 +235,10 @@ func TestBetaStage(t *testing.T) {
 
 		result := testFilter.betaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE], 1, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE], 1, "Expected 1 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetResult1().GetData()
+		res := result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE][testFilter.infraConfig.GetBroadcastID()].GetResult1().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
 		assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
@@ -278,10 +278,10 @@ func TestBetaStage(t *testing.T) {
 
 		result := testFilter.betaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.ResultExchange][RESULT_STAGE][testFilter.infraConfig.Rabbit.BroadcastID].GetResult1().GetData()
+		res := result[testFilter.infraConfig.GetResultExchange()][RESULT_STAGE][testFilter.infraConfig.GetBroadcastID()].GetResult1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 }
@@ -290,20 +290,20 @@ func TestGammaStage(t *testing.T) {
 	t.Run("Test with nil data", func(t *testing.T) {
 		result := testFilter.gammaStage(nil)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1][testFilter.infraConfig.Rabbit.BroadcastID].GetDelta_1().GetData()
+		res := result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1][testFilter.infraConfig.GetBroadcastID()].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
 	t.Run("Test with empty data", func(t *testing.T) {
 		result := testFilter.gammaStage([]*protocol.Gamma_Data{})
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1][testFilter.infraConfig.Rabbit.BroadcastID].GetDelta_1().GetData()
+		res := result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1][testFilter.infraConfig.GetBroadcastID()].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 
@@ -339,10 +339,10 @@ func TestGammaStage(t *testing.T) {
 
 		result := testFilter.gammaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1], 1, "Expected 1 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1], 1, "Expected 1 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1][testFilter.infraConfig.Rabbit.BroadcastID].GetDelta_1().GetData()
+		res := result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1][testFilter.infraConfig.GetBroadcastID()].GetDelta_1().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
 		assert.Equal(t, "1", res[0].GetId(), "Expected movie ID 1")
@@ -376,10 +376,10 @@ func TestGammaStage(t *testing.T) {
 
 		result := testFilter.gammaStage(data)
 		assert.Len(t, result, 1, "Expected 1 exchange")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange], 1, "Expected 1 stage")
-		assert.Len(t, result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1], 0, "Expected 0 destination ID")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()], 1, "Expected 1 stage")
+		assert.Len(t, result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-		res := result[testFilter.infraConfig.Rabbit.MapExchange][DELTA_STAGE_1][testFilter.infraConfig.Rabbit.BroadcastID].GetDelta_1().GetData()
+		res := result[testFilter.infraConfig.GetMapExchange()][DELTA_STAGE_1][testFilter.infraConfig.GetBroadcastID()].GetDelta_1().GetData()
 		assert.Empty(t, res, "Expected empty slice")
 	})
 }

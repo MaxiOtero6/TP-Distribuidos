@@ -30,6 +30,81 @@ type RabbitConfig struct {
 }
 
 type InfraConfig struct {
-	Workers *WorkerClusterConfig
-	Rabbit  *RabbitConfig
+	workers *WorkerClusterConfig
+	rabbit  *RabbitConfig
+}
+
+func NewInfraConfig(workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig) *InfraConfig {
+	return &InfraConfig{
+		workers: workerConfig,
+		rabbit:  rabbitConfig,
+	}
+}
+
+func (i *InfraConfig) GetWorkers() *WorkerClusterConfig {
+	return i.workers
+}
+
+func (i *InfraConfig) GetRabbit() *RabbitConfig {
+	return i.rabbit
+}
+
+func (i *InfraConfig) GetFilterCount() int {
+	return i.workers.FilterCount
+}
+
+func (i *InfraConfig) GetOverviewCount() int {
+	return i.workers.OverviewCount
+}
+
+func (i *InfraConfig) GetMapCount() int {
+	return i.workers.MapCount
+}
+
+func (i *InfraConfig) GetJoinCount() int {
+	return i.workers.JoinCount
+}
+
+func (i *InfraConfig) GetReduceCount() int {
+	return i.workers.ReduceCount
+}
+
+func (i *InfraConfig) GetTopCount() int {
+	return i.workers.TopCount
+}
+
+func (i *InfraConfig) GetTotalworkers() int {
+	return i.workers.TotalWorkers()
+}
+
+func (i *InfraConfig) GetFilterExchange() string {
+	return i.rabbit.FilterExchange
+}
+
+func (i *InfraConfig) GetOverviewExchange() string {
+	return i.rabbit.OverviewExchange
+}
+
+func (i *InfraConfig) GetMapExchange() string {
+	return i.rabbit.MapExchange
+}
+
+func (i *InfraConfig) GetJoinExchange() string {
+	return i.rabbit.JoinExchange
+}
+
+func (i *InfraConfig) GetReduceExchange() string {
+	return i.rabbit.ReduceExchange
+}
+
+func (i *InfraConfig) GetTopExchange() string {
+	return i.rabbit.TopExchange
+}
+
+func (i *InfraConfig) GetResultExchange() string {
+	return i.rabbit.ResultExchange
+}
+
+func (i *InfraConfig) GetBroadcastID() string {
+	return i.rabbit.BroadcastID
 }

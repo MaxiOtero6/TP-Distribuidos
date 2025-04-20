@@ -24,15 +24,15 @@ func TestMuStage(t *testing.T) {
 
 		result := testOverviewer.muStage(data)
 		assert.NotNil(t, result)
-		assert.Contains(t, result, testOverviewer.infraConfig.Rabbit.MapExchange)
-		assert.Contains(t, result[testOverviewer.infraConfig.Rabbit.MapExchange], NU_STAGE_1)
-		assert.Len(t, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData(), 1)
+		assert.Contains(t, result, testOverviewer.infraConfig.GetMapExchange())
+		assert.Contains(t, result[testOverviewer.infraConfig.GetMapExchange()], NU_STAGE_1)
+		assert.Len(t, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData(), 1)
 
-		assert.Equal(t, "1", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetId())
-		assert.Equal(t, "Movie 1", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetTitle())
-		assert.Equal(t, uint64(1000), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetRevenue())
-		assert.Equal(t, uint64(500), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetBudget())
-		assert.Equal(t, true, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetSentiment())
+		assert.Equal(t, "1", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetId())
+		assert.Equal(t, "Movie 1", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetTitle())
+		assert.Equal(t, uint64(1000), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetRevenue())
+		assert.Equal(t, uint64(500), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetBudget())
+		assert.Equal(t, true, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetSentiment())
 	})
 
 	t.Run("Process many valid Mu_Data", func(t *testing.T) {
@@ -55,21 +55,21 @@ func TestMuStage(t *testing.T) {
 
 		result := testOverviewer.muStage(data)
 		assert.NotNil(t, result)
-		assert.Contains(t, result, testOverviewer.infraConfig.Rabbit.MapExchange)
-		assert.Contains(t, result[testOverviewer.infraConfig.Rabbit.MapExchange], NU_STAGE_1)
-		assert.Len(t, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData(), 2)
+		assert.Contains(t, result, testOverviewer.infraConfig.GetMapExchange())
+		assert.Contains(t, result[testOverviewer.infraConfig.GetMapExchange()], NU_STAGE_1)
+		assert.Len(t, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData(), 2)
 
-		assert.Equal(t, "1", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetId())
-		assert.Equal(t, "Movie 1", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetTitle())
-		assert.Equal(t, uint64(1000), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetRevenue())
-		assert.Equal(t, uint64(500), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetBudget())
-		assert.Equal(t, true, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[0].GetSentiment())
+		assert.Equal(t, "1", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetId())
+		assert.Equal(t, "Movie 1", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetTitle())
+		assert.Equal(t, uint64(1000), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetRevenue())
+		assert.Equal(t, uint64(500), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetBudget())
+		assert.Equal(t, true, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[0].GetSentiment())
 
-		assert.Equal(t, "2", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[1].GetId())
-		assert.Equal(t, "Movie 2", result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[1].GetTitle())
-		assert.Equal(t, uint64(1100), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[1].GetRevenue())
-		assert.Equal(t, uint64(600), result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[1].GetBudget())
-		assert.Equal(t, false, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData()[1].GetSentiment())
+		assert.Equal(t, "2", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[1].GetId())
+		assert.Equal(t, "Movie 2", result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[1].GetTitle())
+		assert.Equal(t, uint64(1100), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[1].GetRevenue())
+		assert.Equal(t, uint64(600), result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[1].GetBudget())
+		assert.Equal(t, false, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData()[1].GetSentiment())
 	})
 
 	t.Run("Handle nil Mu_Data", func(t *testing.T) {
@@ -77,9 +77,9 @@ func TestMuStage(t *testing.T) {
 
 		result := testOverviewer.muStage(data)
 		assert.NotNil(t, result)
-		assert.Contains(t, result, testOverviewer.infraConfig.Rabbit.MapExchange)
-		assert.Contains(t, result[testOverviewer.infraConfig.Rabbit.MapExchange], NU_STAGE_1)
-		assert.Len(t, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData(), 0)
+		assert.Contains(t, result, testOverviewer.infraConfig.GetMapExchange())
+		assert.Contains(t, result[testOverviewer.infraConfig.GetMapExchange()], NU_STAGE_1)
+		assert.Len(t, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData(), 0)
 	})
 
 	t.Run("Handle empty Mu_Data", func(t *testing.T) {
@@ -87,9 +87,9 @@ func TestMuStage(t *testing.T) {
 
 		result := testOverviewer.muStage(data)
 		assert.NotNil(t, result)
-		assert.Contains(t, result, testOverviewer.infraConfig.Rabbit.MapExchange)
-		assert.Contains(t, result[testOverviewer.infraConfig.Rabbit.MapExchange], NU_STAGE_1)
-		assert.Len(t, result[testOverviewer.infraConfig.Rabbit.MapExchange][NU_STAGE_1][testOverviewer.infraConfig.Rabbit.BroadcastID].GetNu_1().GetData(), 0)
+		assert.Contains(t, result, testOverviewer.infraConfig.GetMapExchange())
+		assert.Contains(t, result[testOverviewer.infraConfig.GetMapExchange()], NU_STAGE_1)
+		assert.Len(t, result[testOverviewer.infraConfig.GetMapExchange()][NU_STAGE_1][testOverviewer.infraConfig.GetBroadcastID()].GetNu_1().GetData(), 0)
 	})
 }
 
@@ -114,8 +114,8 @@ func TestExecuteOverview(t *testing.T) {
 		result, err := testOverviewer.Execute(task)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Contains(t, result, testOverviewer.infraConfig.Rabbit.MapExchange)
-		assert.Contains(t, result[testOverviewer.infraConfig.Rabbit.MapExchange], NU_STAGE_1)
+		assert.Contains(t, result, testOverviewer.infraConfig.GetMapExchange())
+		assert.Contains(t, result[testOverviewer.infraConfig.GetMapExchange()], NU_STAGE_1)
 	})
 
 	t.Run("Invalid stage type", func(t *testing.T) {
