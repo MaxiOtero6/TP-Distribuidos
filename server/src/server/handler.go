@@ -40,9 +40,7 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 			log.Errorf("Error handling message: %v", err)
 			return err
 		}
-
 	}
-	return nil
 }
 
 func (s *Server) handleConnectionMessage(clientSocket *client_server_communication.Socket, syncMessage *protocol.Sync) {
@@ -72,17 +70,16 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 }
 
 func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
-
 	switch batchMessage.Type {
 	case protocol.FileType_MOVIES:
 		movies := s.processMoviesBatch(batchMessage)
-		s.sendMoviesRabbit(movies)
+		s.rabbitHandler.SendMoviesRabbit(movies)
 	case protocol.FileType_CREDITS:
 		actors := s.processCreditsBatch(batchMessage)
-		s.sendActorsRabbit(actors)
+		s.rabbitHandler.SendActorsRabbit(actors)
 	case protocol.FileType_RATINGS:
 		ratings := s.processRatingsBatch(batchMessage)
-		s.sendRatingsRabbit(ratings)
+		s.rabbitHandler.SendRatingsRabbit(ratings)
 	default:
 		log.Errorf("Invalid batch type: %v", batchMessage.Type)
 
