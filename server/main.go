@@ -108,7 +108,7 @@ func initServer(v *viper.Viper) *server.Server {
 
 	s.InitConfig(exchanges, queues, binds)
 
-	log.Infof("Server '%v' ready", s.Id)
+	log.Infof("Server '%v' ready", s.ID)
 
 	return s
 }

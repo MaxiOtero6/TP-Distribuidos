@@ -15,7 +15,7 @@ import (
 var log = logging.MustGetLogger("log")
 
 type Server struct {
-	Id                  string
+	ID                  string
 	serverSocket        *client_server_communication.Socket
 	done                chan bool
 	clientID            string
@@ -35,7 +35,7 @@ func NewServer(id string, address string, clusterConfig *common_model.WorkerClus
 	}
 
 	return &Server{
-		Id:                  id,
+		ID:                  id,
 		serverSocket:        serverSocket,
 		done:                make(chan bool),
 		workerClusterConfig: clusterConfig,
@@ -50,7 +50,7 @@ func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]s
 	}
 
 	// Do not bind the server to a queue without some clientId as routing key
-	s.rabbitMQ.InitConfig(exchanges, queues, nil, s.Id)
+	s.rabbitMQ.InitConfig(exchanges, queues, nil, s.ID)
 
 	s.resultQueueName = binds[0]["queue"]
 	s.resultExchangeName = binds[0]["exchange"]
