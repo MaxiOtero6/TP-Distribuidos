@@ -71,9 +71,21 @@ func (q *queue) bind(exchangeName string, routingKey string) {
 	failOnError(err, fmt.Sprintf("Failed to bind the queue: '%v'", q.amqpName))
 }
 
+// unbind unbinds the queue from an exchange with the specified routing key.
+func (q *queue) unbind(exchangeName string, routingKey string) {
+	err := q.channel.QueueUnbind(
+		q.amqpName,
+		routingKey,
+		exchangeName,
+		nil,
+	)
+
+	failOnError(err, fmt.Sprintf("Failed to unbind the queue: '%v'", q.amqpName))
+}
+
 // consume registers a consumer for the queue.
 // It returns a channel that receives messages from the queue.
-// autoAck is set to false, meaning that the consumer must acknowledge the messages manually. 
+// autoAck is set to false, meaning that the consumer must acknowledge the messages manually.
 func (q *queue) consume() <-chan amqp.Delivery {
 	msgs, err := q.channel.Consume(
 		q.amqpName,
