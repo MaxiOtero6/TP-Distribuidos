@@ -147,6 +147,22 @@ func (r *RabbitMQ) BindQueue(queueName string, exchangeName string, routingKey s
 	log.Infof("Queue '%s' bound to exchange '%s' with routing key '%s'", queueName, exchangeName, routingKey)
 }
 
+// UnbindQueue unbinds the specified queue from the specified exchange with the given routing key.
+// If the queue or exchange does not exist, an error is logged and the function returns.
+// The routing key is used to unbind the messages from the exchange to the queue.
+// This is useful when you want to stop receiving messages from the exchange with the specified routing key.
+func (r *RabbitMQ) UnbindQueue(queueName string, exchangeName string, routingKey string) {
+	q, ok := r.queues[queueName]
+
+	if !ok {
+		log.Errorf("Queue '%s' does not exist", queueName)
+		return
+	}
+
+	q.unbind(exchangeName, routingKey)
+	log.Infof("Queue '%s' unbound from exchange '%s' with routing key '%s'", queueName, exchangeName, routingKey)
+}
+
 // Close closes the RabbitMQ connection and channel.
 // It also closes all the queues and exchanges.
 // If an error occurs while closing the connection or channel, it is logged.
