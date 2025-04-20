@@ -102,6 +102,8 @@ func (s *Server) handleBatchMessage(clientSocket *client_server_communication.So
 			log.Errorf("Error sending batch acknowledgment: %v", err)
 			return err
 		}
+
+		return fmt.Errorf("invalid batch type: %v", batchMessage.Type)
 	}
 
 	log.Infof("Received batch message with type: %v", batchMessage.Type)
