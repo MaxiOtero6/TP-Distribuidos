@@ -4,4 +4,30 @@ log:
   level: "debug" 
 #timeout: 30 
 
+rabbitmq:
+    SERVER:
+        exchanges:
+            filterExchange:
+                name: "filterExchange"
+                kind: "fanout"
 
+            joinExchange:
+                name: "joinExchange"
+                kind: "direct"
+
+            overviewExchange:
+                name: "overviewExchange"
+                kind: "fanout"
+
+            resultExchange:
+                name: "resultExchange"
+                kind: "direct"
+
+        queues:
+            resultQueue:
+                name: ""
+
+        binds:
+            resultQueue:
+                exchange: "resultExchange"
+                queue: ""
