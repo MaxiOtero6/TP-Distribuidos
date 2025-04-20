@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
+	library "github.com/MaxiOtero6/TP-Distribuidos/client-library"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -30,8 +33,6 @@ func InitConfig() (*viper.Viper, error) {
 	// Add env variables supported
 	v.BindEnv("id")
 	v.BindEnv("server", "address")
-	v.BindEnv("loop", "period")
-	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
 
 	// Try to read configuration from config file. If config file
@@ -68,7 +69,20 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
+func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
+	s := <-signalChan
+	clientLibrary.Stop()
+
+	log.Infof("action: exit | result: success | signal: %v",
+		s.String(),
+	)
+}
+
 func main() {
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM)
+
 	v, err := InitConfig()
 	if err != nil {
 		log.Criticalf("%s", err)
@@ -78,5 +92,22 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-}
+	clientConfig := library.ClientConfig{
+		ServerAddress:   v.GetString("server.address"),
+		MaxAmount:       v.GetInt("batch.maxAmount"),
+		MoviesFilePath:  v.GetString("data.movies"),
+		RatingsFilePath: v.GetString("data.ratings"),
+		CreditsFilePath: v.GetString("data.credits"),
+	}
 
+	clientLibrary, err := library.NewLibrary(clientConfig)
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
+
+	go handleSigterm(signalChan, clientLibrary)
+
+	clientLibrary.ProcessData()
+	clientLibrary.Stop()
+
+}

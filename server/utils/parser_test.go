@@ -96,7 +96,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithComma", func(t *testing.T) {
 		line := `1,"John, Doe",25`
 		expected := []string{"1", "John, Doe", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -104,7 +104,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithQuotes", func(t *testing.T) {
 		line := `1,"John Doe, a great person",25`
 		expected := []string{"1", "John Doe, a great person", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -112,7 +112,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithEmptyFields", func(t *testing.T) {
 		line := `1,"",`
 		expected := []string{"1", "", ""}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -120,7 +120,7 @@ func TestParseLine(t *testing.T) {
 	t.Run("TestParseLineWithJsonObjects", func(t *testing.T) {
 		line := `1,"{'id': 16, 'name': 'Animation'}",25`
 		expected := []string{"1", "{'id': 16, 'name': 'Animation'}", "25"}
-		actual := parseLine(&line)
+		actual := ParseLine(&line)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
@@ -129,7 +129,7 @@ func TestParseLine(t *testing.T) {
 func TestParseMovie(t *testing.T) {
 
 	line := MOVIE_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseToyStoryMovie", func(t *testing.T) {
 		expected := []*model.Movie{
@@ -145,25 +145,25 @@ func TestParseMovie(t *testing.T) {
 			},
 		}
 
-		actual := parseMovie(fields)
+		actual := ParseMovie(fields)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
 
 	t.Run("TestParseMovieWithEmptyFields", func(t *testing.T) {
-		actual := parseMovie([]string{})
+		actual := ParseMovie([]string{})
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseMovieWithWrongFieldsLength", func(t *testing.T) {
-		actual := parseMovie(fields[:10])
+		actual := ParseMovie(fields[:10])
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseMovieWithNilFields", func(t *testing.T) {
-		actual := parseMovie(nil)
+		actual := ParseMovie(nil)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -174,7 +174,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[15] = "nonNumeric" //revenue
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -185,7 +185,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[2] = "nonNumeric" //budget
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -196,7 +196,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[14] = "nonNumeric" //release date
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -207,7 +207,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[13] = "" //prod countries
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -218,7 +218,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[3] = "" //genres
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -229,7 +229,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[5] = "" //id
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -240,7 +240,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[20] = "" //title
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -251,7 +251,7 @@ func TestParseMovie(t *testing.T) {
 
 		fields2[9] = "" //overview
 
-		actual := parseMovie(fields2)
+		actual := ParseMovie(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %d", len(actual))
 	})
@@ -259,7 +259,7 @@ func TestParseMovie(t *testing.T) {
 
 func TestParseRating(t *testing.T) {
 	line := RATING_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseRating", func(t *testing.T) {
 		expected := []*model.Rating{
@@ -269,25 +269,25 @@ func TestParseRating(t *testing.T) {
 			},
 		}
 
-		actual := parseRating(fields)
+		actual := ParseRating(fields)
 
 		assert.EqualValues(t, expected, actual, "Expected %v, but got %v", expected, actual)
 	})
 
 	t.Run("TestParseCreditWithEmptyFields", func(t *testing.T) {
-		actual := parseRating([]string{})
+		actual := ParseRating([]string{})
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseCreditWithWrongFieldsLength", func(t *testing.T) {
-		actual := parseRating(fields[:1])
+		actual := ParseRating(fields[:1])
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseCreditWithNilFields", func(t *testing.T) {
-		actual := parseRating(nil)
+		actual := ParseRating(nil)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -298,7 +298,7 @@ func TestParseRating(t *testing.T) {
 
 		fields2[2] = "nonNumeric" //rating
 
-		actual := parseRating(fields2)
+		actual := ParseRating(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -309,7 +309,7 @@ func TestParseRating(t *testing.T) {
 
 		fields2[1] = "" //movieId
 
-		actual := parseRating(fields2)
+		actual := ParseRating(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -317,7 +317,7 @@ func TestParseRating(t *testing.T) {
 
 func TestParseCredits(t *testing.T) {
 	line := CREDIT_LINE
-	fields := parseLine(&line)
+	fields := ParseLine(&line)
 
 	t.Run("TestParseCredit", func(t *testing.T) {
 		var expected []*model.Actor
@@ -334,25 +334,25 @@ func TestParseCredits(t *testing.T) {
 			Name:    "Tim Allen",
 		})
 
-		actual := parseCredit(fields)
+		actual := ParseCredit(fields)
 
 		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
 	})
 
 	t.Run("TestParseRatingWithEmptyFields", func(t *testing.T) {
-		actual := parseCredit([]string{})
+		actual := ParseCredit([]string{})
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseRatingWithWrongFieldsLength", func(t *testing.T) {
-		actual := parseCredit(fields[:1])
+		actual := ParseCredit(fields[:1])
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
 
 	t.Run("TestParseRatingWithNilFields", func(t *testing.T) {
-		actual := parseCredit(nil)
+		actual := ParseCredit(nil)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -363,7 +363,7 @@ func TestParseCredits(t *testing.T) {
 
 		fields2[2] = "" //movieId
 
-		actual := parseCredit(fields2)
+		actual := ParseCredit(fields2)
 
 		assert.Empty(t, actual, "Expected zero items, but got %v", actual)
 	})
@@ -379,7 +379,7 @@ func TestParseCredits(t *testing.T) {
 			Name:    "Tim Allen",
 		}}
 
-		actual := parseCredit(fields2)
+		actual := ParseCredit(fields2)
 
 		assert.Len(t, actual, 1, "Expected one item, but got %v", len(actual))
 		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)
@@ -396,7 +396,7 @@ func TestParseCredits(t *testing.T) {
 			Name:    "Tom Hanks",
 		}}
 
-		actual := parseCredit(fields2)
+		actual := ParseCredit(fields2)
 
 		assert.Len(t, actual, 1, "Expected one item, but got %v", len(actual))
 		assert.EqualValues(t, expected, actual, "Expected %s, but got %s", expected, actual)

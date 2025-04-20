@@ -126,7 +126,7 @@ const file_proto_stages_result5_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x03(\v2\r.Result5.DataR\x04data\x1a:\n" +
 	"\x04Data\x12\x1c\n" +
 	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x14\n" +
-	"\x05ratio\x18\x02 \x01(\x02R\x05ratioB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x05ratio\x18\x02 \x01(\x02R\x05ratioB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_result5_proto_rawDescOnce sync.Once

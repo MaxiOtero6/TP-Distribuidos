@@ -1,0 +1,7 @@
+
+address: "server:12345"
+log:
+  level: "debug" 
+#timeout: 30 
+
+

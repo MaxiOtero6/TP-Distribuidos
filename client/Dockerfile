@@ -8,6 +8,7 @@ RUN go mod download
 
 COPY ./client ./client
 COPY ./common ./common
+COPY ./client-library ./client-library
 
 RUN go build -o client.bin ./client
 

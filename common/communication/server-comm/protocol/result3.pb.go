@@ -135,7 +135,7 @@ const file_proto_stages_result3_proto_rawDesc = "" +
 	"\x04Data\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x04R\x05value\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05titleB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x05title\x18\x03 \x01(\tR\x05titleB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_result3_proto_rawDescOnce sync.Once

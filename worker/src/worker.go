@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/proto"

@@ -135,7 +135,7 @@ const file_proto_stages_kappa_proto_rawDesc = "" +
 	"\x04Data\x12\x18\n" +
 	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x18\n" +
 	"\aactorId\x18\x02 \x01(\tR\aactorId\x12\x1c\n" +
-	"\tactorName\x18\x03 \x01(\tR\tactorNameB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\tactorName\x18\x03 \x01(\tR\tactorNameB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_kappa_proto_rawDescOnce sync.Once

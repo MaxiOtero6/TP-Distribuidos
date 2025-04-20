@@ -1,7 +1,16 @@
 log:
-  level: "INFO"
+  level: "info"
 
 data:
-  movies: ".data/movies_metadata.csv"
-  ratings: ".data/ratings.csv"
-  credits: ".data/credits.csv"
+  movies: ".data/movies_head_10k.csv"
+  ratings: ".data/ratings_head_10k.csv"
+  credits: ".data/credits_head_10k.csv"
+
+server:
+  address: "server:12345"
+
+batch:
+  maxAmount: 10
+
+
+

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "common/communication/client-server-comm/protocol";
+
+enum FileType {
+    MOVIES = 0;
+    CREDITS = 1;
+    RATINGS = 2;
+    EOF = 3;
+}
+
+message Sync {}
+
+message Finish {
+    string client_id = 1;
+}
+
+message Result {
+    string client_id = 1;
+}
+
+message Batch {
+    message Row {
+        string data = 1;
+    }
+
+    FileType type = 1;
+    repeated Row data = 2;
+}
+
+message ClientServerMessage{
+    oneof message {
+        Batch batch = 1;
+        Sync sync = 2;
+        Finish finish = 3;
+        Result result = 4;
+    }
+}
