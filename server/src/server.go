@@ -45,8 +45,13 @@ func NewServer(id string, address string, clusterConfig *common_model.WorkerClus
 
 // InitConfig initializes the server with the given exchanges, queues, and binds
 func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	// Do not bind the server to a queue with routing key
+	if len(binds) != 1 {
+		log.Panicf("For servers is expected to load one bind to the results queue, got %d", len(binds))
+	}
+
+	// Do not bind the server to a queue without some clientId as routing key
 	s.rabbitMQ.InitConfig(exchanges, queues, nil, s.ServerId)
+
 	s.resultQueueName = binds[0]["queue"]
 	s.resultExchangeName = binds[0]["exchange"]
 }
