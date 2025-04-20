@@ -103,5 +103,6 @@ func (e *exchange) publish(routingKey string, body []byte) {
 // The function does not close the channel, as it is assumed that the channel
 // will be closed by the caller when it is no longer needed.
 func (e *exchange) close() {
+	log.Infof("Closing exchange '%s'", e.name)
 	e.context.cancel()
 }
