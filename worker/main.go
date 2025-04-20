@@ -45,6 +45,18 @@ func InitConfig() (*viper.Viper, error) {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
 	}
 
+	rabbitConfig := viper.New()
+	rabbitConfig.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	rabbitConfig.SetConfigFile("./rabbitConfig.yaml")
+	if err := rabbitConfig.ReadInConfig(); err != nil {
+		fmt.Printf("Rabbit configuration could not be read.\n")
+	}
+
+	// Merge the rabbit-specific config with the main config
+	if err := v.MergeConfigMap(rabbitConfig.AllSettings()); err != nil {
+		return nil, fmt.Errorf("failed to merge rabbit-specific config: %w", err)
+	}
+
 	return v, nil
 }
 
