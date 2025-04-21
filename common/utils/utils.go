@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -20,7 +21,9 @@ func GetWorkerIdFromHash(workersCount int, itemIdStr string) (hash string, err e
 }
 
 func RandomHash(workersCount int) string {
-	return fmt.Sprint(rand.Intn(workersCount))
+	// Create a new random source with a specific seed
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return fmt.Sprint(r.Intn(workersCount))
 }
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
