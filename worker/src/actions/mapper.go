@@ -260,14 +260,14 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 			}
 		}
 
-		var sentiment_index int = 0
+		var sentimentIndex int = 0
 		if movie.GetSentiment() {
-			sentiment_index = 1
+			sentimentIndex = 1
 		}
 
-		nu2Data[idHash][sentiment_index].Revenue += movie.GetRevenue()
-		nu2Data[idHash][sentiment_index].Budget += movie.GetBudget()
-		nu2Data[idHash][sentiment_index].Count += 1
+		nu2Data[idHash][sentimentIndex].Revenue += movie.GetRevenue()
+		nu2Data[idHash][sentimentIndex].Budget += movie.GetBudget()
+		nu2Data[idHash][sentimentIndex].Count += 1
 	}
 
 	for id, data := range nu2Data {
