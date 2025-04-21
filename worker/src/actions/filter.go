@@ -229,7 +229,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)
-	deltaData := make(map[string][]*protocol.Delta_1_Data)
+	delta1Data := make(map[string][]*protocol.Delta_1_Data)
 
 	for _, movie := range data {
 		if movie == nil {
@@ -246,13 +246,13 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 			continue
 		}
 
-		deltaData[BROADCAST_ID] = append(deltaData[BROADCAST_ID], &protocol.Delta_1_Data{
+		delta1Data[BROADCAST_ID] = append(delta1Data[BROADCAST_ID], &protocol.Delta_1_Data{
 			Country: countries[0],
 			Budget:  movie.GetBudget(),
 		})
 	}
 
-	for id, data := range deltaData {
+	for id, data := range delta1Data {
 		tasks[MAP_EXCHANGE][DELTA_STAGE_1][id] = &protocol.Task{
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{

@@ -5,6 +5,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
 // Reducer is a struct that implements the Action interface.
@@ -26,11 +27,13 @@ delta2Stage partially sum up investment by country
 This function is nil-safe, meaning it will not panic if the input is nil.
 It will simply return a map with empty data.
 
-Return example
+Then it divides the resulting countries by hashing each country and send it to the corresponding worker to finish the reduction.
+
+# Return example
 
 	{
 		"topExchange": {
-			"epsilon": {
+			"delta_3": {
 				"0": Task,
 				"1": Task
 			}
@@ -42,17 +45,99 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
 
 	tasks = make(Tasks)
 	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
+	delta3Data := make(map[string][]*protocol.Delta_3_Data)
+
+	dataMap := make(map[string]*protocol.Delta_3_Data)
+
+	// Sum up the partial budgets by country
+	for _, country := range data {
+		prodCountry := country.GetCountry()
+
+		if _, ok := dataMap[prodCountry]; !ok {
+			dataMap[prodCountry] = &protocol.Delta_3_Data{
+				Country:       prodCountry,
+				PartialBudget: 0,
+			}
+		}
+
+		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
+	}
+
+	// Divide the resulting countries by hashing each country
+	for _, d3Data := range dataMap {
+		idHash := utils.RandomHash(r.infraConfig.GetReduceCount())
+		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
+			Country:       d3Data.GetCountry(),
+			PartialBudget: d3Data.GetPartialBudget(),
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range delta3Data {
+		tasks[TOP_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
+			Stage: &protocol.Task_Delta_3{
+				Delta_3: &protocol.Delta_3{
+					Data: data,
+				},
+			},
+		}
+	}
+
+	return tasks
+}
+
+/*
+delta3Stage reduce the total investment by country
+
+This function is nil-safe, meaning it will not panic if the input is nil.
+
+Return example
+
+	{
+		"topExchange": {
+			"epsilon": {
+				"0": Task,
+				"1": Task
+			}
+		},
+	}
+*/
+func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+
+	tasks = make(Tasks)
+	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
 	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
-	log.Panicf("Reduce: Delta_2 stage not implemented yet %v", data)
+	dataMap := make(map[string]*protocol.Epsilon_Data)
 
-	// TODO: process data
-	// TODO: see filter.go or overviewer.go for examples
-	// for _, movie := range data {
+	// Sum up the partial budgets by country
+	for _, country := range data {
+		prodCountry := country.GetCountry()
 
-	// }
+		if _, ok := dataMap[prodCountry]; !ok {
+			dataMap[prodCountry] = &protocol.Epsilon_Data{
+				ProdCountry:     prodCountry,
+				TotalInvestment: 0,
+			}
+		}
 
+		dataMap[prodCountry].TotalInvestment += country.GetPartialBudget()
+	}
+
+	// Asign the data to the corresponding worker
+	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
+
+	for _, eData := range dataMap {
+		epsilonData[routingKey] = append(epsilonData[routingKey], &protocol.Epsilon_Data{
+			ProdCountry:     eData.GetProdCountry(),
+			TotalInvestment: eData.GetTotalInvestment(),
+		})
+	}
+
+	// Create tasks for each worker
 	for id, data := range epsilonData {
 		tasks[TOP_EXCHANGE][EPSILON_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Epsilon{
@@ -210,6 +295,10 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Delta_2:
 		data := v.Delta_2.GetData()
 		return r.delta2Stage(data), nil
+
+	case *protocol.Task_Delta_3:
+		data := v.Delta_3.GetData()
+		return r.delta3Stage(data), nil
 
 	case *protocol.Task_Eta_2:
 		data := v.Eta_2.GetData()

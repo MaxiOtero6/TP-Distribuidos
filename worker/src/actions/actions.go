@@ -25,6 +25,7 @@ const BETA_STAGE string = "beta"
 const GAMMA_STAGE string = "gamma"
 const DELTA_STAGE_1 string = "delta_1"
 const DELTA_STAGE_2 string = "delta_2"
+const DELTA_STAGE_3 string = "delta_3"
 const EPSILON_STAGE string = "epsilon"
 
 // Query 3

@@ -61,10 +61,10 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 		dataMap[prodCountry].PartialBudget += movie.GetBudget()
 	}
 
-	for _, e2Data := range dataMap {
+	for _, d2Data := range dataMap {
 		idHash := utils.RandomHash(m.infraConfig.GetReduceCount())
 
-		delta2Data[idHash] = append(delta2Data[idHash], e2Data)
+		delta2Data[idHash] = append(delta2Data[idHash], d2Data)
 	}
 
 	for id, data := range delta2Data {
