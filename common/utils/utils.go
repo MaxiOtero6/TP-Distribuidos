@@ -2,7 +2,9 @@ package utils
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -16,6 +18,13 @@ func GetWorkerIdFromHash(workersCount int, itemIdStr string) (hash string, err e
 
 	hash = fmt.Sprint(itemId % workersCount)
 	return
+}
+
+var randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func RandomHash(workersCount int) string {
+	// Use the package-level random source
+	return fmt.Sprint(randomSource.Intn(workersCount))
 }
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {

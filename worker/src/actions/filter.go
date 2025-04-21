@@ -251,9 +251,8 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 		}
 
 		deltaData[BROADCAST_ID] = append(deltaData[BROADCAST_ID], &protocol.Delta_1_Data{
-			Id:          movie.GetId(),
-			ProdCountry: countries[0],
-			Budget:      movie.GetBudget(),
+			Country: countries[0],
+			Budget:  movie.GetBudget(),
 		})
 	}
 

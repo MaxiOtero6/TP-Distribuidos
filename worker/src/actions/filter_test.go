@@ -355,13 +355,11 @@ func TestGammaStage(t *testing.T) {
 		res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 		assert.Len(t, res, 2, "Expected 2 movies")
 
-		assert.Equal(t, "1", res[0].GetId(), "Expected movie ID 1")
 		assert.Equal(t, uint64(2005), res[0].GetBudget(), "Expected movie budget 2005")
-		assert.Equal(t, "Argentina", res[0].GetProdCountry(), "Expected production country 'Argentina'")
+		assert.Equal(t, "Argentina", res[0].GetCountry(), "Expected production country 'Argentina'")
 
-		assert.Equal(t, "3", res[1].GetId(), "Expected movie ID 3")
 		assert.Equal(t, uint64(2005), res[1].GetBudget(), "Expected movie budget 2005")
-		assert.Equal(t, "Spain", res[1].GetProdCountry(), "Expected production country 'Spain'")
+		assert.Equal(t, "Spain", res[1].GetCountry(), "Expected production country 'Spain'")
 	})
 
 	t.Run("Test with all movies filtered out", func(t *testing.T) {
