@@ -9,7 +9,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
 )
 
-const MAX_SIZE = 24576 // 24KB
+const MAX_SIZE = 1024 * 1024 // 1MB
 const COMMUNICATION_DELIMITER = '\n'
 
 type Parser struct {
