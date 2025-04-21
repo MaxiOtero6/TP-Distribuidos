@@ -66,11 +66,8 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	lengthBytes := make([]byte, 3)
 	_, err := s.reader.Read(lengthBytes)
 	if err != nil {
-		log.Errorf("Error reading message length: %v", err)
 		return nil, err
 	}
-
-	//length := int(lengthBytes[0])<<8 | int(lengthBytes[1])
 
 	length := int(lengthBytes[0])<<16 | int(lengthBytes[1])<<8 | int(lengthBytes[2])
 	log.Debugf("Message length: %d", length)
@@ -82,7 +79,6 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	for messageReceivedLength < length {
 		n, err := s.reader.Read(message[messageReceivedLength:])
 		if err != nil {
-			log.Errorf("Error reading message: %v", err)
 			return nil, err
 		}
 		messageReceivedLength += n
@@ -92,7 +88,6 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	var responseMessage protocol.Message
 	err = proto.Unmarshal(message, &responseMessage)
 	if err != nil {
-		log.Errorf("Error deserializing message: %v", err)
 		return nil, err
 	}
 
@@ -113,11 +108,7 @@ func (s *Socket) Write(message *protocol.Message) error {
 
 	sendMessage := make([]byte, 3+length)
 
-	// Write the length of the message in the first 2 bytes
-	// sendMessage[0] = byte(length >> 8)
-	// sendMessage[1] = byte(length & 0xFF)
-
-	// Escribir el tamaño del mensaje en los primeros 3 bytes
+	// Write the length of the message in the first 3 bytes
 	sendMessage[0] = byte(length >> 16)
 	sendMessage[1] = byte(length >> 8)
 	sendMessage[2] = byte(length & 0xFF)
@@ -128,7 +119,6 @@ func (s *Socket) Write(message *protocol.Message) error {
 	for bytes_written < len(sendMessage) {
 		n, err := s.conn.Write(sendMessage[bytes_written:])
 		if err != nil {
-			log.Errorf("Error writing to socket: %v", err)
 			return err
 		}
 		bytes_written += n
@@ -137,5 +127,13 @@ func (s *Socket) Write(message *protocol.Message) error {
 }
 
 func (s *Socket) Close() error {
-	return s.conn.Close()
+
+	if s.conn != nil {
+		return s.conn.Close()
+	}
+	if s.listener != nil {
+		return s.listener.Close()
+	}
+	return nil
+
 }
