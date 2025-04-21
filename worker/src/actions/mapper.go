@@ -124,11 +124,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	}
 
 	for movieId, e2Data := range dataMap {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movieId)
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movieId)
 
 		eta2Data[idHash] = append(eta2Data[idHash], e2Data)
 	}
@@ -188,11 +184,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 	}
 
 	for actorId, k2Data := range dataMap {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), actorId)
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), actorId)
 
 		kappa2Data[idHash] = append(kappa2Data[idHash], k2Data)
 	}
@@ -236,11 +228,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	nu2Data := make(map[string][]*protocol.Nu_2_Data)
 
 	for _, movie := range data {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movie.GetId())
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movie.GetId())
 
 		// Initialize idHash key if it doesn't exist
 		if _, ok := nu2Data[idHash]; !ok {

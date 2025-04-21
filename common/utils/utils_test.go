@@ -12,21 +12,16 @@ func TestGetWorkerIdFromHash(t *testing.T) {
 		workersCount int
 		itemIdStr    string
 		expectedHash string
-		expectError  bool
 	}{
-		{workersCount: 5, itemIdStr: "10", expectedHash: "0", expectError: false},
-		{workersCount: 3, itemIdStr: "7", expectedHash: "1", expectError: false},
-		{workersCount: 4, itemIdStr: "invalid", expectedHash: "", expectError: true},
+		{workersCount: 5, itemIdStr: "10", expectedHash: "2"},
+		{workersCount: 3, itemIdStr: "7", expectedHash: "0"},
+		{workersCount: 4, itemIdStr: "USA", expectedHash: "0"},
+		{workersCount: 10, itemIdStr: "ARG", expectedHash: "9"},
 	}
 
 	for _, test := range tests {
-		hash, err := GetWorkerIdFromHash(test.workersCount, test.itemIdStr)
-		if test.expectError {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-			assert.Equal(t, test.expectedHash, hash)
-		}
+		hash := GetWorkerIdFromHash(test.workersCount, test.itemIdStr)
+		assert.Equal(t, test.expectedHash, hash)
 	}
 }
 

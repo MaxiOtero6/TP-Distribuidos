@@ -2,22 +2,23 @@ package utils
 
 import (
 	"fmt"
+	"hash/fnv"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
-func GetWorkerIdFromHash(workersCount int, itemIdStr string) (hash string, err error) {
-	itemId, err := strconv.Atoi(itemIdStr)
+func fnvHash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
 
-	if err != nil {
-		return
-	}
+func GetWorkerIdFromHash(workersCount int, item string) string {
+	hashedItem := fnvHash(item)
 
-	hash = fmt.Sprint(itemId % workersCount)
-	return
+	return fmt.Sprint(hashedItem % uint32(workersCount))
 }
 
 var randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))

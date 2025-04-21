@@ -93,11 +93,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		idHash, err := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
-
-		if err != nil {
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
 
 		zetaData[idHash] = append(zetaData[idHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
