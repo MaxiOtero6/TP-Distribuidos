@@ -112,9 +112,9 @@ outer:
 // This function is nil-safe, meaning it will not panic if the input is nil
 // It will simply return without doing anything
 func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
-	for exchange, stage := range subTasks {
-		for _, value := range stage {
-			for routingKey, task := range value {
+	for exchange, stages := range subTasks {
+		for _, stage := range stages {
+			for routingKey, task := range stage {
 
 				taskRaw, err := proto.Marshal(task)
 
