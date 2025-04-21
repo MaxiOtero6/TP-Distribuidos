@@ -13,7 +13,6 @@ var log = logging.MustGetLogger("log")
 type Server struct {
 	ID            string
 	serverSocket  *client_server_communication.Socket
-	done          chan bool
 	isRunning     bool
 	clientID      string
 	clientSocket  *client_server_communication.Socket
@@ -29,7 +28,6 @@ func NewServer(id string, address string, infraConfig *common_model.InfraConfig)
 	return &Server{
 		ID:            id,
 		serverSocket:  serverSocket,
-		done:          make(chan bool),
 		isRunning:     true,
 		rabbitHandler: rabbit.NewRabbitHandler(infraConfig),
 	}, nil
@@ -42,7 +40,6 @@ func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]s
 
 func (s *Server) acceptConnections() {
 	for s.isRunning {
-
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
 			if !s.isRunning {

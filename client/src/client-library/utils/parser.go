@@ -7,10 +7,13 @@ import (
 	"os"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/op/go-logging"
 )
 
 const MAX_SIZE = 1024 * 1024 // 1MB
 const COMMUNICATION_DELIMITER = '\n'
+
+var log = logging.MustGetLogger("log")
 
 type Parser struct {
 	file         *os.File
@@ -103,5 +106,6 @@ func (p *Parser) Close() {
 	if p.file != nil {
 		p.file.Close()
 		p.file = nil
+		log.Info("Parser file closed successfully.")
 	}
 }

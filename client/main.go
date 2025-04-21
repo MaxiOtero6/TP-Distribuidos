@@ -71,6 +71,7 @@ func InitLogger(logLevel string) error {
 
 func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
 	s := <-signalChan
+
 	clientLibrary.Stop()
 
 	log.Infof("action: exit | result: success | signal: %v",
