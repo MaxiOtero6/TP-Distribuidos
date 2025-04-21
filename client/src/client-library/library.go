@@ -59,18 +59,30 @@ func (l *Library) ProcessData() {
 
 	err := l.sendSync()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendSync | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendSync | result: fail | error: %v", err)
 		return
 	}
 
 	err = l.sendAllFiles()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendAllFiles | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
 		return
 	}
 
 	err = l.sendFinishMessage()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendFinishMessage | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
 		return
 	}
@@ -80,7 +92,11 @@ func (l *Library) ProcessData() {
 		if err == ErrSignalReceived {
 			log.Infof("action: fetchServerResults | result: success | error: %v", err)
 			return
+		} else if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: fetchServerResults | result: fail | error: %v", err)
+			return
 		}
+
 		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 		return
 	}
