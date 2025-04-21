@@ -109,18 +109,61 @@ func (x *Delta_2) GetData() []*Delta_2_Data {
 	return nil
 }
 
+type Delta_3 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []*Delta_3_Data        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Delta_3) Reset() {
+	*x = Delta_3{}
+	mi := &file_proto_stages_delta_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Delta_3) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Delta_3) ProtoMessage() {}
+
+func (x *Delta_3) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_delta_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Delta_3.ProtoReflect.Descriptor instead.
+func (*Delta_3) Descriptor() ([]byte, []int) {
+	return file_proto_stages_delta_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Delta_3) GetData() []*Delta_3_Data {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type Delta_1_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ProdCountry   string                 `protobuf:"bytes,2,opt,name=prod_country,json=prodCountry,proto3" json:"prod_country,omitempty"`
-	Budget        uint64                 `protobuf:"varint,3,opt,name=budget,proto3" json:"budget,omitempty"`
+	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
+	Budget        uint64                 `protobuf:"varint,2,opt,name=budget,proto3" json:"budget,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Delta_1_Data) Reset() {
 	*x = Delta_1_Data{}
-	mi := &file_proto_stages_delta_proto_msgTypes[2]
+	mi := &file_proto_stages_delta_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +175,7 @@ func (x *Delta_1_Data) String() string {
 func (*Delta_1_Data) ProtoMessage() {}
 
 func (x *Delta_1_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_delta_proto_msgTypes[2]
+	mi := &file_proto_stages_delta_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -148,16 +191,9 @@ func (*Delta_1_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_delta_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Delta_1_Data) GetId() string {
+func (x *Delta_1_Data) GetCountry() string {
 	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Delta_1_Data) GetProdCountry() string {
-	if x != nil {
-		return x.ProdCountry
+		return x.Country
 	}
 	return ""
 }
@@ -171,15 +207,16 @@ func (x *Delta_1_Data) GetBudget() uint64 {
 
 type Delta_2_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Country       string                 `protobuf:"bytes,2,opt,name=country,proto3" json:"country,omitempty"`
-	PartialBudget uint64                 `protobuf:"varint,3,opt,name=partial_budget,json=partialBudget,proto3" json:"partial_budget,omitempty"`
+	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
+	PartialBudget uint64                 `protobuf:"varint,2,opt,name=partial_budget,json=partialBudget,proto3" json:"partial_budget,omitempty"`
+	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Delta_2_Data) Reset() {
 	*x = Delta_2_Data{}
-	mi := &file_proto_stages_delta_proto_msgTypes[3]
+	mi := &file_proto_stages_delta_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +228,7 @@ func (x *Delta_2_Data) String() string {
 func (*Delta_2_Data) ProtoMessage() {}
 
 func (x *Delta_2_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_delta_proto_msgTypes[3]
+	mi := &file_proto_stages_delta_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -221,22 +258,95 @@ func (x *Delta_2_Data) GetPartialBudget() uint64 {
 	return 0
 }
 
+func (x *Delta_2_Data) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type Delta_3_Data struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
+	PartialBudget uint64                 `protobuf:"varint,2,opt,name=partial_budget,json=partialBudget,proto3" json:"partial_budget,omitempty"`
+	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Delta_3_Data) Reset() {
+	*x = Delta_3_Data{}
+	mi := &file_proto_stages_delta_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Delta_3_Data) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Delta_3_Data) ProtoMessage() {}
+
+func (x *Delta_3_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_delta_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Delta_3_Data.ProtoReflect.Descriptor instead.
+func (*Delta_3_Data) Descriptor() ([]byte, []int) {
+	return file_proto_stages_delta_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *Delta_3_Data) GetCountry() string {
+	if x != nil {
+		return x.Country
+	}
+	return ""
+}
+
+func (x *Delta_3_Data) GetPartialBudget() uint64 {
+	if x != nil {
+		return x.PartialBudget
+	}
+	return 0
+}
+
+func (x *Delta_3_Data) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_proto_stages_delta_proto protoreflect.FileDescriptor
 
 const file_proto_stages_delta_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/stages/delta.proto\"\x7f\n" +
+	"\x18proto/stages/delta.proto\"f\n" +
 	"\aDelta_1\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Delta_1.DataR\x04data\x1aQ\n" +
-	"\x04Data\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\fprod_country\x18\x02 \x01(\tR\vprodCountry\x12\x16\n" +
-	"\x06budget\x18\x03 \x01(\x04R\x06budget\"u\n" +
-	"\aDelta_2\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Delta_2.DataR\x04data\x1aG\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Delta_1.DataR\x04data\x1a8\n" +
 	"\x04Data\x12\x18\n" +
-	"\acountry\x18\x02 \x01(\tR\acountry\x12%\n" +
-	"\x0epartial_budget\x18\x03 \x01(\x04R\rpartialBudgetB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\acountry\x18\x01 \x01(\tR\acountry\x12\x16\n" +
+	"\x06budget\x18\x02 \x01(\x04R\x06budget\"\x8b\x01\n" +
+	"\aDelta_2\x12!\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Delta_2.DataR\x04data\x1a]\n" +
+	"\x04Data\x12\x18\n" +
+	"\acountry\x18\x01 \x01(\tR\acountry\x12%\n" +
+	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudget\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\rR\x05count\"\x8b\x01\n" +
+	"\aDelta_3\x12!\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Delta_3.DataR\x04data\x1a]\n" +
+	"\x04Data\x12\x18\n" +
+	"\acountry\x18\x01 \x01(\tR\acountry\x12%\n" +
+	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudget\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_delta_proto_rawDescOnce sync.Once
@@ -250,21 +360,24 @@ func file_proto_stages_delta_proto_rawDescGZIP() []byte {
 	return file_proto_stages_delta_proto_rawDescData
 }
 
-var file_proto_stages_delta_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_stages_delta_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_stages_delta_proto_goTypes = []any{
 	(*Delta_1)(nil),      // 0: Delta_1
 	(*Delta_2)(nil),      // 1: Delta_2
-	(*Delta_1_Data)(nil), // 2: Delta_1.Data
-	(*Delta_2_Data)(nil), // 3: Delta_2.Data
+	(*Delta_3)(nil),      // 2: Delta_3
+	(*Delta_1_Data)(nil), // 3: Delta_1.Data
+	(*Delta_2_Data)(nil), // 4: Delta_2.Data
+	(*Delta_3_Data)(nil), // 5: Delta_3.Data
 }
 var file_proto_stages_delta_proto_depIdxs = []int32{
-	2, // 0: Delta_1.data:type_name -> Delta_1.Data
-	3, // 1: Delta_2.data:type_name -> Delta_2.Data
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: Delta_1.data:type_name -> Delta_1.Data
+	4, // 1: Delta_2.data:type_name -> Delta_2.Data
+	5, // 2: Delta_3.data:type_name -> Delta_3.Data
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_stages_delta_proto_init() }
@@ -278,7 +391,7 @@ func file_proto_stages_delta_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_delta_proto_rawDesc), len(file_proto_stages_delta_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
