@@ -20,10 +20,11 @@ func GetWorkerIdFromHash(workersCount int, itemIdStr string) (hash string, err e
 	return
 }
 
+var randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 func RandomHash(workersCount int) string {
-	// Create a new random source with a specific seed
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return fmt.Sprint(r.Intn(workersCount))
+	// Use the package-level random source
+	return fmt.Sprint(randomSource.Intn(workersCount))
 }
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
