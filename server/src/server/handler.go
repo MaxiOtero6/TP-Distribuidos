@@ -5,7 +5,6 @@ import (
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
 func (s *Server) handleMessage(clientSocket *client_server_communication.Socket, message *protocol.Message) error {
@@ -33,15 +32,9 @@ func (s *Server) handleMessage(clientSocket *client_server_communication.Socket,
 func (s *Server) handleConnection(clientSocket *client_server_communication.Socket) error {
 	for {
 
-		done := utils.IsDone(s.done)
-		if done {
-			log.Info("Server is shutting down, closing client connection")
-			return nil
-		}
-
 		message, err := clientSocket.Read()
 		if err != nil {
-			if utils.IsDone(s.done) {
+			if !s.isRunning {
 				log.Info("Exiting connection handler")
 				return nil
 			}
@@ -49,6 +42,10 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 		}
 		err = s.handleMessage(clientSocket, message)
 		if err != nil {
+			if !s.isRunning {
+				log.Info("Exiting connection handler")
+				return nil
+			}
 			log.Errorf("Error handling message: %v", err)
 			return err
 		}

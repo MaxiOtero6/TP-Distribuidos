@@ -3,7 +3,6 @@ package server
 import (
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/rabbit"
 	"github.com/google/uuid"
 	"github.com/op/go-logging"
@@ -15,6 +14,7 @@ type Server struct {
 	ID            string
 	serverSocket  *client_server_communication.Socket
 	done          chan bool
+	isRunning     bool
 	clientID      string
 	clientSocket  *client_server_communication.Socket
 	rabbitHandler *rabbit.RabbitHandler
@@ -30,6 +30,7 @@ func NewServer(id string, address string, infraConfig *common_model.InfraConfig)
 		ID:            id,
 		serverSocket:  serverSocket,
 		done:          make(chan bool),
+		isRunning:     true,
 		rabbitHandler: rabbit.NewRabbitHandler(infraConfig),
 	}, nil
 }
@@ -40,15 +41,11 @@ func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]s
 }
 
 func (s *Server) acceptConnections() {
-	for {
-		done := utils.IsDone(s.done)
-		if done {
-			break
-		}
+	for s.isRunning {
 
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
-			if utils.IsDone(s.done) {
+			if !s.isRunning {
 				log.Info("Server socket closed, exiting accept loop")
 				continue
 			}
@@ -80,10 +77,7 @@ func (s *Server) Run() {
 
 func (s *Server) Stop() {
 
-	if s.done != nil {
-		close(s.done)
-		log.Info("Server shutdown signal sent")
-	}
+	s.isRunning = false
 
 	if s.serverSocket != nil {
 		s.clientSocket.Close()
