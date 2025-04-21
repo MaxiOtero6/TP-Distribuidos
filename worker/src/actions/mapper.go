@@ -55,12 +55,10 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 			dataMap[prodCountry] = &protocol.Delta_2_Data{
 				Country:       prodCountry,
 				PartialBudget: 0,
-				Count:         0,
 			}
 		}
 
 		dataMap[prodCountry].PartialBudget += movie.GetBudget()
-		dataMap[prodCountry].Count += 1
 	}
 
 	for _, e2Data := range dataMap {
