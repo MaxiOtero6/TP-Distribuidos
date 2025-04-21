@@ -24,3 +24,14 @@ message Eta_2 {
 
     repeated Data data = 1;
 }
+
+message Eta_3 {
+    message Data {
+        string id = 1;
+        string title = 2;
+        double rating = 3;
+        uint32 count = 4;
+    }
+
+    repeated Data data = 1;
+}

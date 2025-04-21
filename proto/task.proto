@@ -34,18 +34,21 @@ message Task {
         Zeta zeta = 8;
         Eta_1 eta_1 = 9;
         Eta_2 eta_2 = 10;
-        Theta theta = 11;
-        Iota iota = 12;
-        Kappa_1 kappa_1 = 13;
-        Kappa_2 kappa_2 = 14;
-        Lambda lambda = 15;
-        Mu mu = 16;
-        Nu_1 nu_1 = 17;
-        Nu_2 nu_2 = 18;
-        Result1 result1 = 19;
-        Result2 result2 = 20;
-        Result3 result3 = 21;
-        Result4 result4 = 22;
-        Result5 result5 = 23;
+        Eta_3 eta_3 = 11;
+        Theta theta = 12;
+        Iota iota = 13;
+        Kappa_1 kappa_1 = 14;
+        Kappa_2 kappa_2 = 15;
+        Kappa_3 kappa_3 = 16;
+        Lambda lambda = 17;
+        Mu mu = 18;
+        Nu_1 nu_1 = 19;
+        Nu_2 nu_2 = 20;
+        Nu_3 nu_3 = 21;
+        Result1 result1 = 22;
+        Result2 result2 = 23;
+        Result3 result3 = 24;
+        Result4 result4 = 25;
+        Result5 result5 = 26;
     }
 }
