@@ -8,9 +8,15 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
+type PartialResults struct {
+	delta3Data  map[string]*protocol.Delta_3_Data
+	epsilonData map[string]*protocol.Epsilon_Data
+}
+
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
-	infraConfig *model.InfraConfig
+	infraConfig    *model.InfraConfig
+	partialResults *PartialResults
 }
 
 // NewReduce creates a new Reduce instance.
@@ -18,6 +24,9 @@ type Reducer struct {
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return &Reducer{
 		infraConfig: infraConfig,
+		partialResults: &PartialResults{
+			epsilonData: make(map[string]*protocol.Epsilon_Data),
+		},
 	}
 }
 
@@ -41,14 +50,8 @@ Then it divides the resulting countries by hashing each country and send it to t
 	}
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
-	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-
 	tasks = make(Tasks)
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
-	delta3Data := make(map[string][]*protocol.Delta_3_Data)
-
-	dataMap := make(map[string]*protocol.Delta_3_Data)
+	dataMap := r.partialResults.delta3Data
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -63,6 +66,16 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
 
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
+
+	// TODO: check if there is more data to process
+	if true {
+		return tasks
+	}
+
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
+	delta3Data := make(map[string][]*protocol.Delta_3_Data)
 
 	// Divide the resulting countries by hashing each country
 	for _, d3Data := range dataMap {
@@ -104,14 +117,8 @@ Return example
 	}
 */
 func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
-	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-
 	tasks = make(Tasks)
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
-	epsilonData := make(map[string][]*protocol.Epsilon_Data)
-
-	dataMap := make(map[string]*protocol.Epsilon_Data)
+	dataMap := r.partialResults.epsilonData
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -126,6 +133,16 @@ func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
 
 		dataMap[prodCountry].TotalInvestment += country.GetPartialBudget()
 	}
+
+	// TODO: check if there is more data to process
+	if true {
+		return tasks
+	}
+
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
+	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
 	// Asign the data to the corresponding worker
 	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
