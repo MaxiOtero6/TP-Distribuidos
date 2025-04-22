@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 
 	"slices"
 
@@ -265,6 +266,92 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	return tasks
 }
 
+func (f *Filter) getNextNodeId(nodeId string) (string, error) {
+	clientId, err := strconv.Atoi(nodeId)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+	}
+
+	nextNodeId := fmt.Sprintf("%d", (clientId+1)%f.infraConfig.GetFilterCount())
+	return nextNodeId, nil
+}
+
+func (f *Filter) getNextStageData(stage string) (string, string, int, error) {
+	switch stage {
+	case ALPHA_STAGE:
+		return BETA_STAGE, f.infraConfig.GetFilterExchange(), f.infraConfig.GetFilterCount(), nil
+	case BETA_STAGE:
+		return RESULT_STAGE, f.infraConfig.GetResultExchange(), 1, nil
+	case GAMMA_STAGE:
+		return DELTA_STAGE_1, f.infraConfig.GetMapExchange(), f.infraConfig.GetMapCount(), nil
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+	tasks = make(Tasks)
+
+	// if the creator is the same as the worker, send the EOF to the next stage
+	if data.GetWorkerCreatorId() == f.infraConfig.GetNodeId() {
+		nextStage, nextExchange, nextStageCount, err := f.getNextStageData(data.GetStage())
+		if err != nil {
+			log.Errorf("Failed to get next stage data: %s", err)
+			return nil
+		}
+
+		nextStageEOF := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						ClientId:        data.GetClientId(),
+						WorkerCreatorId: "",
+						Stage:           nextStage,
+					},
+				},
+			},
+		}
+
+		randomNode := utils.RandomHash(nextStageCount)
+
+		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
+		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
+
+	} else { // if the creator is not the same as the worker, send EOF to the next node
+		nextRingEOF := data
+
+		if data.GetWorkerCreatorId() == "" {
+			nextRingEOF.WorkerCreatorId = f.infraConfig.GetNodeId()
+		}
+
+		eofTask := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: nextRingEOF,
+				},
+			},
+		}
+
+		nextNode, err := f.getNextNodeId(f.infraConfig.GetNodeId())
+
+		if err != nil {
+			log.Errorf("Failed to get next node id: %s", err)
+			return nil
+		}
+
+		filterExchange := f.infraConfig.GetFilterExchange()
+		stage := data.GetStage()
+
+		tasks[filterExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[filterExchange][stage] = make(map[string]*protocol.Task)
+		tasks[filterExchange][stage][nextNode] = eofTask
+
+	}
+	return tasks
+}
+
 // Execute executes the action.
 // It returns a map of tasks for the next stages.
 // It returns an error if the action fails.
@@ -281,6 +368,10 @@ func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Gamma:
 		data := v.Gamma.GetData()
 		return f.gammaStage(data), nil
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+		return f.omegaEOFStage(data), nil
+
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
