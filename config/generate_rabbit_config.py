@@ -5,17 +5,17 @@ import sys
 
 FILTER_EXCHANGE = {
     "name": "filterExchange",
-    "kind": "fanout"
+    "kind": "direct"
 }
 
 OVERVIEW_EXCHANGE = {
     "name": "overviewExchange",
-    "kind": "fanout"
+    "kind": "direct"
 }
 
 MAP_EXCHANGE = {
     "name": "mapExchange",
-    "kind": "fanout"
+    "kind": "direct"
 }
 
 JOIN_EXCHANGE = {
@@ -39,15 +39,15 @@ RESULT_EXCHANGE = {
 }
 
 FILTER_QUEUE = {
-    "name": "filterQueue"
+    "name": ""
 }
 
 OVERVIEW_QUEUE = {
-    "name": "overviewQueue"
+    "name": ""
 }
 
 MAP_QUEUE = {
-    "name": "mapQueue"
+    "name": ""
 }
 
 JOIN_QUEUE = {
