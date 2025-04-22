@@ -359,8 +359,8 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range delta3Data {
-		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
+	for nodeId, data := range delta3Data {
+		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Delta_3{
 				Delta_3: &protocol.Delta_3{
 					Data: data,
@@ -389,8 +389,8 @@ func (r *Reducer) delta3Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range epsilonData {
-		tasks[TOP_EXCHANGE][EPSILON_STAGE][id] = &protocol.Task{
+	for nodeId, data := range epsilonData {
+		tasks[TOP_EXCHANGE][EPSILON_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: data,
@@ -420,8 +420,8 @@ func (r *Reducer) eta2Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range eta3Data {
-		tasks[REDUCE_EXCHANGE][ETA_STAGE_3][id] = &protocol.Task{
+	for nodeId, data := range eta3Data {
+		tasks[REDUCE_EXCHANGE][ETA_STAGE_3][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Eta_3{
 				Eta_3: &protocol.Eta_3{
 					Data: data,
@@ -452,8 +452,8 @@ func (r *Reducer) eta3Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range thetaData {
-		tasks[TOP_EXCHANGE][THETA_STAGE][id] = &protocol.Task{
+	for nodeId, data := range thetaData {
+		tasks[TOP_EXCHANGE][THETA_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: data,
@@ -480,8 +480,8 @@ func (r *Reducer) kappa2Results(tasks Tasks) {
 		})
 	}
 	// Create tasks for each worker
-	for id, data := range kappa3Data {
-		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_3][id] = &protocol.Task{
+	for nodeId, data := range kappa3Data {
+		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_3][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Kappa_3{
 				Kappa_3: &protocol.Kappa_3{
 					Data: data,
@@ -509,8 +509,8 @@ func (r *Reducer) kappa3Results(tasks Tasks) {
 		})
 	}
 	// Create tasks for each worker
-	for id, data := range lambdaData {
-		tasks[TOP_EXCHANGE][LAMBDA_STAGE][id] = &protocol.Task{
+	for nodeId, data := range lambdaData {
+		tasks[TOP_EXCHANGE][LAMBDA_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: data,
@@ -540,8 +540,8 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range delta3Data {
-		tasks[REDUCE_EXCHANGE][NU_STAGE_3][id] = &protocol.Task{
+	for nodeId, data := range delta3Data {
+		tasks[REDUCE_EXCHANGE][NU_STAGE_3][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Nu_3{
 				Nu_3: &protocol.Nu_3{
 					Data: data,
@@ -572,8 +572,8 @@ func (r *Reducer) nu3Results(tasks Tasks) {
 	}
 
 	// Create tasks for each worker
-	for id, data := range resultData {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+	for nodeId, data := range resultData {
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Result5{
 				Result5: &protocol.Result5{
 					Data: data,

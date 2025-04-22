@@ -114,8 +114,8 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 		})
 	}
 
-	for id, data := range betaData {
-		tasks[FILTER_EXCHANGE][BETA_STAGE][id] = &protocol.Task{
+	for nodeId, data := range betaData {
+		tasks[FILTER_EXCHANGE][BETA_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Beta{
 				Beta: &protocol.Beta{
 					Data: data,
@@ -124,8 +124,8 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 		}
 	}
 
-	for id, data := range zetaData {
-		tasks[JOIN_EXCHANGE][ZETA_STAGE][id] = &protocol.Task{
+	for nodeId, data := range zetaData {
+		tasks[JOIN_EXCHANGE][ZETA_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
 					Data: data,
@@ -134,8 +134,8 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 		}
 	}
 
-	for id, data := range iotaData {
-		tasks[JOIN_EXCHANGE][IOTA_STAGE][id] = &protocol.Task{
+	for nodeId, data := range iotaData {
+		tasks[JOIN_EXCHANGE][IOTA_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
 					Data: data,
@@ -193,8 +193,8 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
 		})
 	}
 
-	for id, data := range resData {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+	for nodeId, data := range resData {
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Result1{
 				Result1: &protocol.Result1{
 					Data: data,
@@ -253,8 +253,8 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 		})
 	}
 
-	for id, data := range delta1Data {
-		tasks[MAP_EXCHANGE][DELTA_STAGE_1][id] = &protocol.Task{
+	for nodeId, data := range delta1Data {
+		tasks[MAP_EXCHANGE][DELTA_STAGE_1][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{
 					Data: data,

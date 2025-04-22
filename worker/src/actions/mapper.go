@@ -247,8 +247,8 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
 	}
 
-	for id, data := range nu2Data {
-		tasks[REDUCE_EXCHANGE][NU_STAGE_2][id] = &protocol.Task{
+	for nodeId, data := range nu2Data {
+		tasks[REDUCE_EXCHANGE][NU_STAGE_2][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Nu_2{
 				Nu_2: &protocol.Nu_2{
 					Data: data,
