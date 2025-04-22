@@ -52,7 +52,6 @@ Then it divides the resulting countries by hashing each country and send it to t
 	}
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
-	tasks = make(Tasks)
 	dataMap := r.partialResults.delta3Data
 
 	// Sum up the partial budgets by country
@@ -69,37 +68,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	// TODO: check if there is more data to process
-	if true {
-		return tasks
-	}
-
-	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
-	delta3Data := make(map[string][]*protocol.Delta_3_Data)
-
-	// Divide the resulting countries by hashing each country
-	for _, d3Data := range dataMap {
-		idHash := utils.RandomHash(r.infraConfig.GetReduceCount())
-		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
-			Country:       d3Data.GetCountry(),
-			PartialBudget: d3Data.GetPartialBudget(),
-		})
-	}
-
-	// Create tasks for each worker
-	for id, data := range delta3Data {
-		tasks[TOP_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
-			Stage: &protocol.Task_Delta_3{
-				Delta_3: &protocol.Delta_3{
-					Data: data,
-				},
-			},
-		}
-	}
-
-	return tasks
+	return nil
 }
 
 /*
@@ -119,7 +88,6 @@ Return example
 	}
 */
 func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
-	tasks = make(Tasks)
 	dataMap := r.partialResults.epsilonData
 
 	// Sum up the partial budgets by country
@@ -136,38 +104,7 @@ func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
 		dataMap[prodCountry].TotalInvestment += country.GetPartialBudget()
 	}
 
-	// TODO: check if there is more data to process
-	if true {
-		return tasks
-	}
-
-	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
-	epsilonData := make(map[string][]*protocol.Epsilon_Data)
-
-	// Asign the data to the corresponding worker
-	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
-
-	for _, eData := range dataMap {
-		epsilonData[routingKey] = append(epsilonData[routingKey], &protocol.Epsilon_Data{
-			ProdCountry:     eData.GetProdCountry(),
-			TotalInvestment: eData.GetTotalInvestment(),
-		})
-	}
-
-	// Create tasks for each worker
-	for id, data := range epsilonData {
-		tasks[TOP_EXCHANGE][EPSILON_STAGE][id] = &protocol.Task{
-			Stage: &protocol.Task_Epsilon{
-				Epsilon: &protocol.Epsilon{
-					Data: data,
-				},
-			},
-		}
-	}
-
-	return tasks
+	return nil
 }
 
 /*
@@ -217,6 +154,12 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
 }
 
 /*
+ */
+func (r *Reducer) eta3Stage(data []*protocol.Eta_3_Data) (tasks Tasks) {
+	return nil
+}
+
+/*
 kappa2Stage reduce into one, partials actors participations in movies
 
 This function is nil-safe, meaning it will not panic if the input is nil.
@@ -260,6 +203,12 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
 	}
 
 	return tasks
+}
+
+/*
+ */
+func (r *Reducer) kappa3Stage(data []*protocol.Kappa_3_Data) (tasks Tasks) {
+	return nil
 }
 
 /*
@@ -457,9 +406,9 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		// send the results
 		switch data.GetStage() {
 		case DELTA_STAGE_2:
-			return nil
+			r.delta2Results(tasks)
 		case DELTA_STAGE_3:
-			return nil
+			r.delta3Results(tasks)
 		case ETA_STAGE_2:
 			return nil
 		case ETA_STAGE_3:
@@ -478,6 +427,79 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 	}
 
 	return tasks
+}
+
+func (r *Reducer) delta2Results(tasks Tasks) {
+	dataMap := r.partialResults.delta3Data
+
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
+	delta3Data := make(map[string][]*protocol.Delta_3_Data)
+
+	// Divide the resulting countries by hashing each country
+	for _, d3Data := range dataMap {
+		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), d3Data.GetCountry())
+		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
+			Country:       d3Data.GetCountry(),
+			PartialBudget: d3Data.GetPartialBudget(),
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range delta3Data {
+		tasks[TOP_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
+			Stage: &protocol.Task_Delta_3{
+				Delta_3: &protocol.Delta_3{
+					Data: data,
+				},
+			},
+		}
+	}
+
+	// Sum up the partial budgets by country
+	for _, country := range dataMap {
+		prodCountry := country.GetCountry()
+
+		if _, ok := dataMap[prodCountry]; !ok {
+			dataMap[prodCountry] = &protocol.Delta_3_Data{
+				Country:       prodCountry,
+				PartialBudget: 0,
+			}
+		}
+
+		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
+	}
+}
+
+func (r *Reducer) delta3Results(tasks Tasks) {
+	dataMap := r.partialResults.epsilonData
+
+	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
+	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
+	epsilonData := make(map[string][]*protocol.Epsilon_Data)
+
+	// Asign the data to the corresponding worker
+	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
+
+	for _, eData := range dataMap {
+		epsilonData[routingKey] = append(epsilonData[routingKey], &protocol.Epsilon_Data{
+			ProdCountry:     eData.GetProdCountry(),
+			TotalInvestment: eData.GetTotalInvestment(),
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range epsilonData {
+		tasks[TOP_EXCHANGE][EPSILON_STAGE][id] = &protocol.Task{
+			Stage: &protocol.Task_Epsilon{
+				Epsilon: &protocol.Epsilon{
+					Data: data,
+				},
+			},
+		}
+	}
 }
 
 func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
