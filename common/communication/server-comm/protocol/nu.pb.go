@@ -232,9 +232,8 @@ func (x *Nu_1_Data) GetSentiment() bool {
 type Nu_2_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Sentiment     bool                   `protobuf:"varint,1,opt,name=sentiment,proto3" json:"sentiment,omitempty"` // 1 'POSITIVE', 0 'NEGATIVE'
-	Revenue       uint64                 `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"`
-	Budget        uint64                 `protobuf:"varint,3,opt,name=budget,proto3" json:"budget,omitempty"`
-	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	Ratio         float32                `protobuf:"fixed32,2,opt,name=ratio,proto3" json:"ratio,omitempty"`
+	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -276,16 +275,9 @@ func (x *Nu_2_Data) GetSentiment() bool {
 	return false
 }
 
-func (x *Nu_2_Data) GetRevenue() uint64 {
+func (x *Nu_2_Data) GetRatio() float32 {
 	if x != nil {
-		return x.Revenue
-	}
-	return 0
-}
-
-func (x *Nu_2_Data) GetBudget() uint64 {
-	if x != nil {
-		return x.Budget
+		return x.Ratio
 	}
 	return 0
 }
@@ -300,9 +292,8 @@ func (x *Nu_2_Data) GetCount() uint32 {
 type Nu_3_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Sentiment     bool                   `protobuf:"varint,1,opt,name=sentiment,proto3" json:"sentiment,omitempty"` // 1 'POSITIVE', 0 'NEGATIVE'
-	Revenue       uint64                 `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"`
-	Budget        uint64                 `protobuf:"varint,3,opt,name=budget,proto3" json:"budget,omitempty"`
-	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	Ratio         float32                `protobuf:"fixed32,2,opt,name=ratio,proto3" json:"ratio,omitempty"`
+	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -344,16 +335,9 @@ func (x *Nu_3_Data) GetSentiment() bool {
 	return false
 }
 
-func (x *Nu_3_Data) GetRevenue() uint64 {
+func (x *Nu_3_Data) GetRatio() float32 {
 	if x != nil {
-		return x.Revenue
-	}
-	return 0
-}
-
-func (x *Nu_3_Data) GetBudget() uint64 {
-	if x != nil {
-		return x.Budget
+		return x.Ratio
 	}
 	return 0
 }
@@ -378,23 +362,21 @@ const file_proto_stages_nu_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
 	"\arevenue\x18\x03 \x01(\x04R\arevenue\x12\x16\n" +
 	"\x06budget\x18\x04 \x01(\x04R\x06budget\x12\x1c\n" +
-	"\tsentiment\x18\x05 \x01(\bR\tsentiment\"\x94\x01\n" +
+	"\tsentiment\x18\x05 \x01(\bR\tsentiment\"x\n" +
 	"\x04Nu_2\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".Nu_2.DataR\x04data\x1al\n" +
+	".Nu_2.DataR\x04data\x1aP\n" +
 	"\x04Data\x12\x1c\n" +
-	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x18\n" +
-	"\arevenue\x18\x02 \x01(\x04R\arevenue\x12\x16\n" +
-	"\x06budget\x18\x03 \x01(\x04R\x06budget\x12\x14\n" +
-	"\x05count\x18\x04 \x01(\rR\x05count\"\x94\x01\n" +
+	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x14\n" +
+	"\x05ratio\x18\x02 \x01(\x02R\x05ratio\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\rR\x05count\"x\n" +
 	"\x04Nu_3\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".Nu_3.DataR\x04data\x1al\n" +
+	".Nu_3.DataR\x04data\x1aP\n" +
 	"\x04Data\x12\x1c\n" +
-	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x18\n" +
-	"\arevenue\x18\x02 \x01(\x04R\arevenue\x12\x16\n" +
-	"\x06budget\x18\x03 \x01(\x04R\x06budget\x12\x14\n" +
-	"\x05count\x18\x04 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x14\n" +
+	"\x05ratio\x18\x02 \x01(\x02R\x05ratio\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_nu_proto_rawDescOnce sync.Once

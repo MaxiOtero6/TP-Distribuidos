@@ -13,6 +13,7 @@ type PartialResults struct {
 	delta3Data  map[string]*protocol.Delta_3_Data
 	epsilonData map[string]*protocol.Epsilon_Data
 	nu3Data     map[string]*protocol.Nu_3_Data
+	result5Data map[string]*protocol.Result5_Data
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -228,84 +229,48 @@ Return example
 	}
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
-	tasks = make(Tasks)
 	dataMap := r.partialResults.nu3Data
 
-	// Sum up the partial budgets by country
-	for _, country := range data {
-		prodCountry := country.GetCountry()
+	// Sum up the budget and revenue by sentiment
+	for _, nu2Data := range data {
+		sentiment := fmt.Sprintf("%t", nu2Data.GetSentiment())
 
-		if _, ok := dataMap[prodCountry]; !ok {
-			dataMap[prodCountry] = &protocol.Delta_3_Data{
-				Country:       prodCountry,
-				PartialBudget: 0,
+		if _, ok := dataMap[sentiment]; !ok {
+			dataMap[sentiment] = &protocol.Nu_3_Data{
+				Sentiment: nu2Data.GetSentiment(),
+				Ratio:     0,
+				Count:     0,
 			}
 		}
 
-		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
+		dataMap[sentiment].Ratio += nu2Data.GetRatio()
+		dataMap[sentiment].Count += nu2Data.GetCount()
 	}
 
-	// TODO: check if there is more data to process
-	if true {
-		return tasks
-	}
-
-	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
-	nu3Data := make(map[string][]*protocol.Nu_3_Data)
-
-	// Divide the resulting countries by hashing each country
-	for _, d3Data := range dataMap {
-		idHash := utils.RandomHash(r.infraConfig.GetReduceCount())
-		nu3Data[idHash] = append(nu3Data[idHash], &protocol.Nu_3_Data{
-			Country:       d3Data.GetCountry(),
-			PartialBudget: d3Data.GetPartialBudget(),
-		})
-	}
-
-	// Create tasks for each worker
-	for id, data := range nu3Data {
-		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
-			Stage: &protocol.Task_Delta_3{
-				Delta_3: &protocol.Delta_3{
-					Data: data,
-				},
-			},
-		}
-	}
-
-	return tasks
-
-	tasks = make(Tasks)
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-	result5Data := make(map[string][]*protocol.Result5_Data)
-
-	log.Panicf("Reduce: Nu_2 stage not implemented yet %v", data)
-
-	// TODO: process data
-	// TODO: see filter.go or overviewer.go for examples
-	// for _, movie := range data {
-
-	// }
-
-	for id, data := range result5Data {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
-			Stage: &protocol.Task_Result5{
-				Result5: &protocol.Result5{
-					Data: data,
-				},
-			},
-		}
-	}
-
-	return tasks
+	return nil
 }
 
 /*
  */
 func (r *Reducer) nu3Stage(data []*protocol.Nu_3_Data) (tasks Tasks) {
+	dataMap := r.partialResults.result5Data
+
+	// Sum up the budget and revenue by sentiment
+	for _, nu3Data := range data {
+		sentiment := fmt.Sprintf("%t", nu3Data.GetSentiment())
+
+		if _, ok := dataMap[sentiment]; !ok {
+			dataMap[sentiment] = &protocol.Result5_Data{
+				Sentiment: nu3Data.GetSentiment(),
+				Ratio:     0,
+				Count:     0,
+			}
+		}
+
+		dataMap[sentiment].Ratio += nu3Data.GetRatio()
+		dataMap[sentiment].Count += nu3Data.GetCount()
+	}
+
 	return nil
 }
 
@@ -432,14 +397,14 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 func (r *Reducer) delta2Results(tasks Tasks) {
 	dataMap := r.partialResults.delta3Data
 
-	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[TOP_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
+	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
 	delta3Data := make(map[string][]*protocol.Delta_3_Data)
 
 	// Divide the resulting countries by hashing each country
 	for _, d3Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), d3Data.GetCountry())
+		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), d3Data.GetCountry())
 		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
 			Country:       d3Data.GetCountry(),
 			PartialBudget: d3Data.GetPartialBudget(),
@@ -448,27 +413,13 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 
 	// Create tasks for each worker
 	for id, data := range delta3Data {
-		tasks[TOP_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
 			Stage: &protocol.Task_Delta_3{
 				Delta_3: &protocol.Delta_3{
 					Data: data,
 				},
 			},
 		}
-	}
-
-	// Sum up the partial budgets by country
-	for _, country := range dataMap {
-		prodCountry := country.GetCountry()
-
-		if _, ok := dataMap[prodCountry]; !ok {
-			dataMap[prodCountry] = &protocol.Delta_3_Data{
-				Country:       prodCountry,
-				PartialBudget: 0,
-			}
-		}
-
-		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 }
 
@@ -495,6 +446,69 @@ func (r *Reducer) delta3Results(tasks Tasks) {
 		tasks[TOP_EXCHANGE][EPSILON_STAGE][id] = &protocol.Task{
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
+					Data: data,
+				},
+			},
+		}
+	}
+}
+
+func (r *Reducer) nu2Results(tasks Tasks) {
+	dataMap := r.partialResults.nu3Data
+
+	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
+	delta3Data := make(map[string][]*protocol.Nu_3_Data)
+
+	// Divide the resulting sentiments by hashing each sentiment
+	for _, n3Data := range dataMap {
+		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
+		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), sentiment)
+		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Nu_3_Data{
+			Sentiment: n3Data.GetSentiment(),
+			Ratio:     n3Data.GetRatio(),
+			Count:     n3Data.GetCount(),
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range delta3Data {
+		tasks[REDUCE_EXCHANGE][NU_STAGE_3][id] = &protocol.Task{
+			Stage: &protocol.Task_Nu_3{
+				Nu_3: &protocol.Nu_3{
+					Data: data,
+				},
+			},
+		}
+	}
+}
+
+func (r *Reducer) nu3Results(tasks Tasks) {
+	dataMap := r.partialResults.nu3Data
+
+	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	resultData := make(map[string][]*protocol.Result5_Data)
+
+	// Asign the data to the corresponding worker
+	// TODO: check if this is corrects
+	routingKey := "0"
+
+	for _, n3Data := range dataMap {
+		ratio := n3Data.GetRatio() / float32(n3Data.GetCount())
+		resultData[routingKey] = append(resultData[routingKey], &protocol.Result5_Data{
+			Sentiment: n3Data.GetSentiment(),
+			Ratio:     ratio,
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range resultData {
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+			Stage: &protocol.Task_Result5{
+				Result5: &protocol.Result5{
 					Data: data,
 				},
 			},
