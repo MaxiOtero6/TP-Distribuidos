@@ -6,7 +6,6 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
 
@@ -53,7 +52,7 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
 		prodCountry := country.GetProdCountry()
 		investment := country.GetTotalInvestment()
 
-		result2Heap.Insert(investment, map[string]interface{}{
+		result2Heap.Insert(int(investment), map[string]interface{}{
 			"prodCountry": prodCountry,
 		})
 	}
@@ -86,12 +85,14 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
 		title := movie.GetTitle()
 		avgRating := movie.GetAvgRating()
 
-		result3HeapMax.Insert(avgRating, map[string]interface{}{
+		result3HeapMax.Insert(int(avgRating), map[string]interface{}{
 			"Title":     title,
+			"MovieId":   movieId,
 			"AvgRating": avgRating,
 		})
-		result3HeapMin.Insert(-avgRating, map[string]interface{}{
+		result3HeapMin.Insert(-int(avgRating), map[string]interface{}{
 			"Title":     title,
+			"MovieId":   movieId,
 			"AvgRating": avgRating,
 		})
 	}
@@ -119,10 +120,9 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
-	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-	result2Data := make(map[string]*protocol.Result2_Data)
+	result2Data := make(map[string][]*protocol.Result2_Data)
 
 	resultHeap := t.parcialResults.result2Heap
 
@@ -131,7 +131,7 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 		data := element.Data.(map[string]interface{})
 		prodCountry := data["prodCountry"].(string)
 
-		resultMap[BROADCAST_ID] = append(resultMap[BROADCAST_ID], &protocol.Result2_Data{
+		result2Data[BROADCAST_ID] = append(result2Data[BROADCAST_ID], &protocol.Result2_Data{
 			Position:        position,
 			Country:         prodCountry,
 			TotalInvestment: uint64(element.Value),
@@ -149,7 +149,6 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 		}
 	}
 
-	return tasks
 }
 
 /*
@@ -168,11 +167,10 @@ Return example
 		},
 	}
 */
-func (t *Topper) thetaResultStage(data []*protocol.Theta_Data) (tasks Tasks) {
+func (t *Topper) thetaResultStage(tasks Tasks) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
-	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
@@ -184,14 +182,12 @@ func (t *Topper) thetaResultStage(data []*protocol.Theta_Data) (tasks Tasks) {
 	if len(resultHeapMax.GetTopK()) > 0 {
 		element := resultHeapMax.GetTopK()[0]
 		data := element.Data.(map[string]interface{})
-		movieId := data["MovieId"].(string)
 		title := data["Title"].(string)
 
-		resultMap[BROADCAST_ID] = append(resultMap[BROADCAST_ID], protocol.Result3_Data{
-			Type:      "max",
-			MovieId:   movieId,
-			Title:     title,
-			AvgRating: element.Value,
+		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
+			Type:  "max",
+			Title: title,
+			Value: uint64(element.Value),
 		})
 	}
 
@@ -199,14 +195,12 @@ func (t *Topper) thetaResultStage(data []*protocol.Theta_Data) (tasks Tasks) {
 	if len(resultHeapMin.GetTopK()) > 0 {
 		element := resultHeapMin.GetTopK()[0]
 		data := element.Data.(map[string]interface{})
-		movieId := data["MovieId"].(string)
 		title := data["Title"].(string)
 
-		resultMap[BROADCAST_ID] = append(resultMap[BROADCAST_ID], protocol.Result3_Data{
-			Type:      "min",
-			MovieId:   movieId,
-			Title:     title,
-			AvgRating: -element.Value,
+		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
+			Type:  "min",
+			Title: title,
+			Value: uint64(-element.Value),
 		})
 	}
 
@@ -219,8 +213,6 @@ func (t *Topper) thetaResultStage(data []*protocol.Theta_Data) (tasks Tasks) {
 			},
 		}
 	}
-
-	return tasks
 }
 
 /*
@@ -239,11 +231,10 @@ Return example
 		},
 	}
 */
-func (t *Topper) lambdaResultStage(data []*protocol.Lambda_Data) (tasks Tasks) {
+func (t *Topper) lambdaResultStage(tasks Tasks) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
-	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
@@ -256,8 +247,8 @@ func (t *Topper) lambdaResultStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 		actorId := data["ActorId"].(string)
 		actorName := data["ActorName"].(string)
 
-		resultMap[BROADCAST_ID] = append(resultMap[BROADCAST_ID], protocol.Result4_Data{
-			Position:  position,
+		result4Data[BROADCAST_ID] = append(result4Data[BROADCAST_ID], &protocol.Result4_Data{
+			Position:  uint32(position),
 			ActorName: actorName,
 			ActorId:   actorId,
 		})
@@ -272,29 +263,6 @@ func (t *Topper) lambdaResultStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 				},
 			},
 		}
-	}
-
-	return tasks
-}
-
-func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
-	stage := task.GetStage()
-
-	switch v := stage.(type) {
-	case *protocol.Task_Epsilon:
-		data := v.Epsilon.GetData()
-		return t.epsilonStage(data), nil
-
-	case *protocol.Task_Theta:
-		data := v.Theta.GetData()
-		return t.thetaStage(data), nil
-
-	case *protocol.Task_Lambda:
-		data := v.Lambda.GetData()
-		return t.lambdaStage(data), nil
-
-	default:
-		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }
 
@@ -323,24 +291,11 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string) error {
 	return nil
 }
 
-func (t *Topper) getNextStageData(stage string) (string, string, int, error) {
-	switch stage {
-	case EPSILON_STAGE, LAMBDA_STAGE, THETA_STAGE:
-		return RESULT_STAGE, t.infraConfig.GetResultExchange(), 0, nil
-	default:
-		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
-	}
-}
-
 func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 	tasks = make(Tasks)
 
-	nextStage, nextExchange, nextStageCount, err := t.getNextStageData(data.GetStage())
-	if err != nil {
-		log.Errorf("Failed to get next stage data: %s", err)
-		return nil
-	}
+	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
 	nextStageEOF := &protocol.Task{
 		Stage: &protocol.Task_OmegaEOF{
@@ -348,26 +303,43 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 				Data: &protocol.OmegaEOF_Data{
 					ClientId:        data.GetClientId(),
 					WorkerCreatorId: "",
-					Stage:           nextStage,
+					Stage:           RESULT_EXCHANGE,
 				},
 			},
 		},
 	}
 
-	randomNode := utils.RandomHash(nextStageCount)
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%t.infraConfig.GetReduceCount())
-
-	tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[nextExchange][nextExchange] = make(map[string]*protocol.Task)
-	tasks[nextExchange][nextExchange][randomNode] = nextStageEOF
-
-	if err != nil {
-		log.Errorf("Failed to get next node id: %s", err)
-		return nil
-	}
+	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID] = nextStageEOF
 
 	// send the results
 	t.addResultsToNextStage(tasks, data.GetStage())
 
 	return tasks
+}
+
+func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
+	stage := task.GetStage()
+
+	switch v := stage.(type) {
+	case *protocol.Task_Epsilon:
+		data := v.Epsilon.GetData()
+		return t.epsilonStage(data), nil
+
+	case *protocol.Task_Theta:
+		data := v.Theta.GetData()
+		return t.thetaStage(data), nil
+
+	case *protocol.Task_Lambda:
+		data := v.Lambda.GetData()
+		return t.lambdaStage(data), nil
+
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+		return t.omegaEOFStage(data), nil
+
+	default:
+		return nil, fmt.Errorf("invalid query stage: %v", v)
+	}
 }
