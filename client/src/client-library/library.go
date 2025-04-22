@@ -313,11 +313,11 @@ func (l *Library) connectToServer() error {
 	l.socket, err = client_communication.Connect(l.config.ServerAddress)
 
 	if err != nil {
-		log.Infof("action: ConncetToServer | result: false | address: %v", l.config.ServerAddress)
+		log.Infof("action: ConnectToServer | result: false | address: %v", l.config.ServerAddress)
 		return err
 	}
 
-	log.Infof("action: ConncetToServer | result: success | address: %v", l.config.ServerAddress)
+	log.Infof("action: ConnectToServer | result: success | address: %v", l.config.ServerAddress)
 	return nil
 }
 func (l *Library) disconnectFromServer() {
