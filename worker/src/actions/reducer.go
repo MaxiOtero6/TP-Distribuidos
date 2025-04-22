@@ -9,7 +9,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
-type PartialResults struct {
+type ReducerPartialResults struct {
 	delta2  map[string]*protocol.Delta_2_Data
 	delta3  map[string]*protocol.Delta_3_Data
 	eta2    map[string]*protocol.Eta_2_Data
@@ -23,7 +23,7 @@ type PartialResults struct {
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
 	infraConfig    *model.InfraConfig
-	partialResults *PartialResults
+	partialResults *ReducerPartialResults
 }
 
 // NewReduce creates a new Reduce instance.
@@ -31,7 +31,7 @@ type Reducer struct {
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return &Reducer{
 		infraConfig: infraConfig,
-		partialResults: &PartialResults{
+		partialResults: &ReducerPartialResults{
 			delta2:  make(map[string]*protocol.Delta_2_Data),
 			delta3:  make(map[string]*protocol.Delta_3_Data),
 			eta2:    make(map[string]*protocol.Eta_2_Data),
