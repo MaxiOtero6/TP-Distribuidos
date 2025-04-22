@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -84,10 +85,10 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func handleSigterm(signalChan chan os.Signal, server *server.Server) {
+func handleSigterm(signalChan chan os.Signal, server *server.Server, wg *sync.WaitGroup) {
+	defer wg.Done()
 	s := <-signalChan
 	server.Stop()
-
 	log.Infof("action: exit | result: success | signal: %v",
 		s.String(),
 	)
@@ -144,6 +145,8 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGTERM)
 
+	var wg sync.WaitGroup
+
 	v, err := InitConfig()
 	if err != nil {
 		log.Criticalf("%s", err)
@@ -155,8 +158,11 @@ func main() {
 
 	s := initServer(v)
 
-	go handleSigterm(signalChan, s)
+	wg.Add(1)
+	go handleSigterm(signalChan, s, &wg)
 
 	s.Run()
-	s.Stop()
+
+	wg.Wait()
+
 }

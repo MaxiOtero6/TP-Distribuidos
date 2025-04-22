@@ -2,6 +2,7 @@ package client_server_communication
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
@@ -10,6 +11,7 @@ import (
 )
 
 var log = logging.MustGetLogger("log")
+var ErrConnectionClosed = fmt.Errorf("client-server connection closed")
 
 type Socket struct {
 	conn     net.Conn
@@ -50,6 +52,7 @@ func CreateServerSocket(address string) (*Socket, error) {
 func (s *Socket) Accept() (*Socket, error) {
 	conn, err := s.listener.Accept()
 	if err != nil {
+
 		return nil, err
 	}
 
@@ -63,14 +66,17 @@ func (s *Socket) Accept() (*Socket, error) {
 
 func (s *Socket) Read() (*protocol.Message, error) {
 
-	lengthBytes := make([]byte, 2)
+	lengthBytes := make([]byte, 3)
 	_, err := s.reader.Read(lengthBytes)
 	if err != nil {
-		log.Errorf("Error reading message length: %v", err)
-		return nil, err
+		if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+			return nil, ErrConnectionClosed
+		} else {
+			return nil, err
+		}
 	}
 
-	length := int(lengthBytes[0])<<8 | int(lengthBytes[1])
+	length := int(lengthBytes[0])<<16 | int(lengthBytes[1])<<8 | int(lengthBytes[2])
 	log.Debugf("Message length: %d", length)
 
 	message := make([]byte, length)
@@ -80,8 +86,11 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	for messageReceivedLength < length {
 		n, err := s.reader.Read(message[messageReceivedLength:])
 		if err != nil {
-			log.Errorf("Error reading message: %v", err)
-			return nil, err
+			if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+				return nil, ErrConnectionClosed
+			} else {
+				return nil, err
+			}
 		}
 		messageReceivedLength += n
 	}
@@ -90,7 +99,6 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	var responseMessage protocol.Message
 	err = proto.Unmarshal(message, &responseMessage)
 	if err != nil {
-		log.Errorf("Error deserializing message: %v", err)
 		return nil, err
 	}
 
@@ -109,20 +117,24 @@ func (s *Socket) Write(message *protocol.Message) error {
 
 	length := len(message_bytes)
 
-	sendMessage := make([]byte, 2+length)
+	sendMessage := make([]byte, 3+length)
 
-	// Write the length of the message in the first 2 bytes
-	sendMessage[0] = byte(length >> 8)
-	sendMessage[1] = byte(length & 0xFF)
+	// Write the length of the message in the first 3 bytes
+	sendMessage[0] = byte(length >> 16)
+	sendMessage[1] = byte(length >> 8)
+	sendMessage[2] = byte(length & 0xFF)
 
-	copy(sendMessage[2:], message_bytes)
+	copy(sendMessage[3:], message_bytes)
 
 	bytes_written := 0
 	for bytes_written < len(sendMessage) {
 		n, err := s.conn.Write(sendMessage[bytes_written:])
 		if err != nil {
-			log.Errorf("Error writing to socket: %v", err)
-			return err
+			if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+				return ErrConnectionClosed
+			} else {
+				return err
+			}
 		}
 		bytes_written += n
 	}
@@ -130,5 +142,13 @@ func (s *Socket) Write(message *protocol.Message) error {
 }
 
 func (s *Socket) Close() error {
-	return s.conn.Close()
+
+	if s.conn != nil {
+		return s.conn.Close()
+	}
+	if s.listener != nil {
+		return s.listener.Close()
+	}
+	return nil
+
 }
