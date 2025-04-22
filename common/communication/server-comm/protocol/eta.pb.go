@@ -155,7 +155,7 @@ func (x *Eta_3) GetData() []*Eta_3_Data {
 
 type Eta_1_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Rating        float32                `protobuf:"fixed32,3,opt,name=rating,proto3" json:"rating,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -192,9 +192,9 @@ func (*Eta_1_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_eta_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Eta_1_Data) GetId() string {
+func (x *Eta_1_Data) GetMovieId() string {
 	if x != nil {
-		return x.Id
+		return x.MovieId
 	}
 	return ""
 }
@@ -215,7 +215,7 @@ func (x *Eta_1_Data) GetRating() float32 {
 
 type Eta_2_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Rating        float64                `protobuf:"fixed64,3,opt,name=rating,proto3" json:"rating,omitempty"`
 	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
@@ -253,9 +253,9 @@ func (*Eta_2_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_eta_proto_rawDescGZIP(), []int{1, 0}
 }
 
-func (x *Eta_2_Data) GetId() string {
+func (x *Eta_2_Data) GetMovieId() string {
 	if x != nil {
-		return x.Id
+		return x.MovieId
 	}
 	return ""
 }
@@ -283,7 +283,7 @@ func (x *Eta_2_Data) GetCount() uint32 {
 
 type Eta_3_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Rating        float64                `protobuf:"fixed64,3,opt,name=rating,proto3" json:"rating,omitempty"`
 	Count         uint32                 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
@@ -321,9 +321,9 @@ func (*Eta_3_Data) Descriptor() ([]byte, []int) {
 	return file_proto_stages_eta_proto_rawDescGZIP(), []int{2, 0}
 }
 
-func (x *Eta_3_Data) GetId() string {
+func (x *Eta_3_Data) GetMovieId() string {
 	if x != nil {
-		return x.Id
+		return x.MovieId
 	}
 	return ""
 }
@@ -353,24 +353,24 @@ var File_proto_stages_eta_proto protoreflect.FileDescriptor
 
 const file_proto_stages_eta_proto_rawDesc = "" +
 	"\n" +
-	"\x16proto/stages/eta.proto\"n\n" +
+	"\x16proto/stages/eta.proto\"x\n" +
 	"\x05Eta_1\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.Eta_1.DataR\x04data\x1aD\n" +
-	"\x04Data\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Eta_1.DataR\x04data\x1aN\n" +
+	"\x04Data\x12\x18\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06rating\x18\x03 \x01(\x02R\x06rating\"\x84\x01\n" +
+	"\x06rating\x18\x03 \x01(\x02R\x06rating\"\x8e\x01\n" +
 	"\x05Eta_2\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.Eta_2.DataR\x04data\x1aZ\n" +
-	"\x04Data\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Eta_2.DataR\x04data\x1ad\n" +
+	"\x04Data\x12\x18\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06rating\x18\x03 \x01(\x01R\x06rating\x12\x14\n" +
-	"\x05count\x18\x04 \x01(\rR\x05count\"\x84\x01\n" +
+	"\x05count\x18\x04 \x01(\rR\x05count\"\x8e\x01\n" +
 	"\x05Eta_3\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.Eta_3.DataR\x04data\x1aZ\n" +
-	"\x04Data\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Eta_3.DataR\x04data\x1ad\n" +
+	"\x04Data\x12\x18\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06rating\x18\x03 \x01(\x01R\x06rating\x12\x14\n" +
 	"\x05count\x18\x04 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"

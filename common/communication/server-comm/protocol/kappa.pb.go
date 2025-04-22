@@ -217,7 +217,7 @@ type Kappa_2_Data struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	ActorId               string                 `protobuf:"bytes,1,opt,name=actorId,proto3" json:"actorId,omitempty"`
 	ActorName             string                 `protobuf:"bytes,2,opt,name=actorName,proto3" json:"actorName,omitempty"`
-	PartialParticipations uint32                 `protobuf:"varint,3,opt,name=partial_participations,json=partialParticipations,proto3" json:"partial_participations,omitempty"`
+	PartialParticipations uint64                 `protobuf:"varint,3,opt,name=partial_participations,json=partialParticipations,proto3" json:"partial_participations,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -266,7 +266,7 @@ func (x *Kappa_2_Data) GetActorName() string {
 	return ""
 }
 
-func (x *Kappa_2_Data) GetPartialParticipations() uint32 {
+func (x *Kappa_2_Data) GetPartialParticipations() uint64 {
 	if x != nil {
 		return x.PartialParticipations
 	}
@@ -277,7 +277,7 @@ type Kappa_3_Data struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	ActorId               string                 `protobuf:"bytes,1,opt,name=actorId,proto3" json:"actorId,omitempty"`
 	ActorName             string                 `protobuf:"bytes,2,opt,name=actorName,proto3" json:"actorName,omitempty"`
-	PartialParticipations uint32                 `protobuf:"varint,3,opt,name=partial_participations,json=partialParticipations,proto3" json:"partial_participations,omitempty"`
+	PartialParticipations uint64                 `protobuf:"varint,3,opt,name=partial_participations,json=partialParticipations,proto3" json:"partial_participations,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -326,7 +326,7 @@ func (x *Kappa_3_Data) GetActorName() string {
 	return ""
 }
 
-func (x *Kappa_3_Data) GetPartialParticipations() uint32 {
+func (x *Kappa_3_Data) GetPartialParticipations() uint64 {
 	if x != nil {
 		return x.PartialParticipations
 	}
@@ -349,13 +349,13 @@ const file_proto_stages_kappa_proto_rawDesc = "" +
 	"\x04Data\x12\x18\n" +
 	"\aactorId\x18\x01 \x01(\tR\aactorId\x12\x1c\n" +
 	"\tactorName\x18\x02 \x01(\tR\tactorName\x125\n" +
-	"\x16partial_participations\x18\x03 \x01(\rR\x15partialParticipations\"\xa3\x01\n" +
+	"\x16partial_participations\x18\x03 \x01(\x04R\x15partialParticipations\"\xa3\x01\n" +
 	"\aKappa_3\x12!\n" +
 	"\x04data\x18\x01 \x03(\v2\r.Kappa_3.DataR\x04data\x1au\n" +
 	"\x04Data\x12\x18\n" +
 	"\aactorId\x18\x01 \x01(\tR\aactorId\x12\x1c\n" +
 	"\tactorName\x18\x02 \x01(\tR\tactorName\x125\n" +
-	"\x16partial_participations\x18\x03 \x01(\rR\x15partialParticipationsB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x16partial_participations\x18\x03 \x01(\x04R\x15partialParticipationsB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_kappa_proto_rawDescOnce sync.Once

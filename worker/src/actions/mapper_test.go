@@ -101,9 +101,9 @@ func TestEta1Stage(t *testing.T) {
 		mapper := NewMapper(infra)
 
 		data := []*protocol.Eta_1_Data{
-			{Id: "0", Title: "Movie 0", Rating: 4},
-			{Id: "0", Title: "Movie 0", Rating: 5},
-			{Id: "1", Title: "Movie 1", Rating: 3},
+			{MovieId: "0", Title: "Movie 0", Rating: 4},
+			{MovieId: "0", Title: "Movie 0", Rating: 5},
+			{MovieId: "1", Title: "Movie 1", Rating: 3},
 		}
 
 		tasks := mapper.eta1Stage(data)
@@ -119,9 +119,9 @@ func TestEta1Stage(t *testing.T) {
 		mapper := NewMapper(testInfraConfig)
 
 		data := []*protocol.Eta_1_Data{
-			{Id: "0", Title: "Movie 0", Rating: 4},
-			{Id: "0", Title: "Movie 0", Rating: 5},
-			{Id: "1", Title: "Movie 1", Rating: 3},
+			{MovieId: "0", Title: "Movie 0", Rating: 4},
+			{MovieId: "0", Title: "Movie 0", Rating: 5},
+			{MovieId: "1", Title: "Movie 1", Rating: 3},
 		}
 
 		tasks := mapper.eta1Stage(data)
@@ -304,8 +304,8 @@ func TestExecuteMapper(t *testing.T) {
 			Stage: &protocol.Task_Eta_1{
 				Eta_1: &protocol.Eta_1{
 					Data: []*protocol.Eta_1_Data{
-						{Id: "0", Title: "Movie 0", Rating: 4},
-						{Id: "1", Title: "Movie 1", Rating: 5},
+						{MovieId: "0", Title: "Movie 0", Rating: 4},
+						{MovieId: "1", Title: "Movie 1", Rating: 5},
 					},
 				},
 			},
