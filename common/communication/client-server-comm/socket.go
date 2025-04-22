@@ -96,8 +96,8 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	}
 
 	// Deserializa el mensaje usando proto.Unmarshal
-	var responseMessage protocol.Message
-	err = proto.Unmarshal(message, &responseMessage)
+	responseMessage := &protocol.Message{}
+	err = proto.Unmarshal(message, responseMessage)
 	if err != nil {
 		return nil, err
 	}
