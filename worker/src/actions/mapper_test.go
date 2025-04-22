@@ -13,6 +13,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -39,6 +40,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with multiple reducers", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 2,
 			},
@@ -65,6 +67,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with empty data", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 2,
 			},
@@ -88,6 +91,7 @@ func TestEta1Stage(t *testing.T) {
 
 	t.Run("Test Eta1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -150,6 +154,7 @@ func TestKappa1Stage(t *testing.T) {
 
 	t.Run("Test Kappa1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -212,6 +217,7 @@ func TestNu1Stage(t *testing.T) {
 
 	t.Run("Test Nu1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},

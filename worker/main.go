@@ -85,6 +85,8 @@ func InitLogger(logLevel string) error {
 func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	workerType := v.GetString("type")
 
+	nodeId := v.GetString("id")
+
 	clusterConfig := &model.WorkerClusterConfig{
 		FilterCount:   v.GetInt("filter.count"),
 		OverviewCount: v.GetInt("overview.count"),
@@ -105,7 +107,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		BroadcastID:      v.GetString("consts.broadcastId"),
 	}
 
-	infraConfig := model.NewInfraConfig(clusterConfig, rabbitConfig)
+	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 
@@ -115,7 +117,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	w := worker.NewWorker(v.GetString("id"), workerType, infraConfig, signalChan)
+	w := worker.NewWorker(workerType, infraConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

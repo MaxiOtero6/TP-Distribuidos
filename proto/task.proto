@@ -20,7 +20,7 @@ import "proto/stages/result2.proto";
 import "proto/stages/result3.proto";
 import "proto/stages/result4.proto";
 import "proto/stages/result5.proto";
-
+import "proto/stages/omegaEOF.proto";
 
 message Task {
     oneof Stage {
@@ -50,5 +50,6 @@ message Task {
         Result3 result3 = 24;
         Result4 result4 = 25;
         Result5 result5 = 26;
+        OmegaEOF omegaEOF = 27;
     }
 }

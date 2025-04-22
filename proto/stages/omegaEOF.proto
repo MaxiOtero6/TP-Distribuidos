@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "common/communication/server-comm/protocol";
+
+
+
+message OmegaEOF {
+    message Data {
+        string client_id = 1;
+        string stage = 2;
+        string worker_creator_id = 3;
+    }
+
+    Data data = 1;
+}

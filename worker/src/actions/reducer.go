@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -11,6 +12,7 @@ import (
 type PartialResults struct {
 	delta3Data  map[string]*protocol.Delta_3_Data
 	epsilonData map[string]*protocol.Epsilon_Data
+	nu3Data     map[string]*protocol.Nu_3_Data
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -277,7 +279,54 @@ Return example
 	}
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
-	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
+	tasks = make(Tasks)
+	dataMap := r.partialResults.nu3Data
+
+	// Sum up the partial budgets by country
+	for _, country := range data {
+		prodCountry := country.GetCountry()
+
+		if _, ok := dataMap[prodCountry]; !ok {
+			dataMap[prodCountry] = &protocol.Delta_3_Data{
+				Country:       prodCountry,
+				PartialBudget: 0,
+			}
+		}
+
+		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
+	}
+
+	// TODO: check if there is more data to process
+	if true {
+		return tasks
+	}
+
+	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
+	nu3Data := make(map[string][]*protocol.Nu_3_Data)
+
+	// Divide the resulting countries by hashing each country
+	for _, d3Data := range dataMap {
+		idHash := utils.RandomHash(r.infraConfig.GetReduceCount())
+		nu3Data[idHash] = append(nu3Data[idHash], &protocol.Nu_3_Data{
+			Country:       d3Data.GetCountry(),
+			PartialBudget: d3Data.GetPartialBudget(),
+		})
+	}
+
+	// Create tasks for each worker
+	for id, data := range nu3Data {
+		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][id] = &protocol.Task{
+			Stage: &protocol.Task_Delta_3{
+				Delta_3: &protocol.Delta_3{
+					Data: data,
+				},
+			},
+		}
+	}
+
+	return tasks
 
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -305,6 +354,132 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
 	return tasks
 }
 
+/*
+ */
+func (r *Reducer) nu3Stage(data []*protocol.Nu_3_Data) (tasks Tasks) {
+	return nil
+}
+
+/*
+ */
+func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+
+	tasks = make(Tasks)
+
+	// if the creator is the same as the worker, return the TASK for the next stage
+	if data.GetWorkerCreatorId() == r.infraConfig.GetNodeId() {
+		nextStageEOF := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						ClientId:        data.GetClientId(),
+						WorkerCreatorId: "",
+					},
+				},
+			},
+		}
+
+		var nextExchange string
+		var nextStageCount int
+
+		switch data.GetStage() {
+		case DELTA_STAGE_2:
+			nextStageEOF.GetOmegaEOF().Data.Stage = DELTA_STAGE_3
+			nextExchange = r.infraConfig.GetReduceExchange()
+			nextStageCount = r.infraConfig.GetReduceCount()
+		case DELTA_STAGE_3:
+			nextStageEOF.GetOmegaEOF().Data.Stage = EPSILON_STAGE
+			nextExchange = r.infraConfig.GetTopExchange()
+			nextStageCount = r.infraConfig.GetTopCount()
+		case ETA_STAGE_2:
+			nextStageEOF.GetOmegaEOF().Data.Stage = ETA_STAGE_3
+			nextExchange = r.infraConfig.GetReduceExchange()
+			nextStageCount = r.infraConfig.GetReduceCount()
+		case ETA_STAGE_3:
+			nextStageEOF.GetOmegaEOF().Data.Stage = THETA_STAGE
+			nextExchange = r.infraConfig.GetTopExchange()
+			nextStageCount = r.infraConfig.GetTopCount()
+		case KAPPA_STAGE_2:
+			nextStageEOF.GetOmegaEOF().Data.Stage = KAPPA_STAGE_3
+			nextExchange = r.infraConfig.GetReduceExchange()
+			nextStageCount = r.infraConfig.GetReduceCount()
+		case KAPPA_STAGE_3:
+			nextStageEOF.GetOmegaEOF().Data.Stage = LAMBDA_STAGE
+			nextExchange = r.infraConfig.GetTopExchange()
+			nextStageCount = r.infraConfig.GetTopCount()
+		case NU_STAGE_2:
+			nextStageEOF.GetOmegaEOF().Data.Stage = NU_STAGE_3
+			nextExchange = r.infraConfig.GetReduceExchange()
+			nextStageCount = r.infraConfig.GetReduceCount()
+		case NU_STAGE_3:
+			nextStageEOF.GetOmegaEOF().Data.Stage = RESULT_STAGE
+			nextExchange = r.infraConfig.GetResultExchange()
+			// TODO: check if this is correct
+			nextStageCount = 0
+		default:
+			log.Errorf("Invalid stage: %s", data.GetStage())
+			return nil
+		}
+
+		id := utils.RandomHash(nextStageCount)
+
+		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[nextExchange][nextStageEOF.GetOmegaEOF().Data.Stage] = make(map[string]*protocol.Task)
+		tasks[nextExchange][nextStageEOF.GetOmegaEOF().Data.Stage][id] = nextStageEOF
+	} else {
+		nextRingEOF := data
+
+		if data.GetWorkerCreatorId() == "" {
+			nextRingEOF.WorkerCreatorId = r.infraConfig.GetNodeId()
+		}
+
+		clientId, err := strconv.Atoi(r.infraConfig.GetNodeId())
+
+		if err != nil {
+			log.Errorf("Failed to convert clientId to int: %s", err)
+			return nil
+		}
+
+		eofTask := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: nextRingEOF,
+				},
+			},
+		}
+
+		nextNodeId := fmt.Sprintf("%d", (clientId+1)%r.infraConfig.GetReduceCount())
+
+		tasks[r.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
+		tasks[r.infraConfig.GetReduceExchange()][data.GetStage()] = make(map[string]*protocol.Task)
+		tasks[r.infraConfig.GetReduceExchange()][data.GetStage()][nextNodeId] = eofTask
+
+		// send the results
+		switch data.GetStage() {
+		case DELTA_STAGE_2:
+			return nil
+		case DELTA_STAGE_3:
+			return nil
+		case ETA_STAGE_2:
+			return nil
+		case ETA_STAGE_3:
+			return nil
+		case KAPPA_STAGE_2:
+			return nil
+		case KAPPA_STAGE_3:
+			return nil
+		case NU_STAGE_2:
+			return nil
+		case NU_STAGE_3:
+			return nil
+		default:
+			return nil
+		}
+	}
+
+	return tasks
+}
+
 func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
 
@@ -321,13 +496,29 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 		data := v.Eta_2.GetData()
 		return r.eta2Stage(data), nil
 
+	case *protocol.Task_Eta_3:
+		data := v.Eta_3.GetData()
+		return r.eta3Stage(data), nil
+
 	case *protocol.Task_Kappa_2:
 		data := v.Kappa_2.GetData()
 		return r.kappa2Stage(data), nil
 
+	case *protocol.Task_Kappa_3:
+		data := v.Kappa_3.GetData()
+		return r.kappa3Stage(data), nil
+
 	case *protocol.Task_Nu_2:
 		data := v.Nu_2.GetData()
 		return r.nu2Stage(data), nil
+
+	case *protocol.Task_Nu_3:
+		data := v.Nu_3.GetData()
+		return r.nu3Stage(data), nil
+
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+		return r.omegaEOFStage(data), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

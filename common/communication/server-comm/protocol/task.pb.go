@@ -51,6 +51,7 @@ type Task struct {
 	//	*Task_Result3
 	//	*Task_Result4
 	//	*Task_Result5
+	//	*Task_OmegaEOF
 	Stage         isTask_Stage `protobuf_oneof:"Stage"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -327,6 +328,15 @@ func (x *Task) GetResult5() *Result5 {
 	return nil
 }
 
+func (x *Task) GetOmegaEOF() *OmegaEOF {
+	if x != nil {
+		if x, ok := x.Stage.(*Task_OmegaEOF); ok {
+			return x.OmegaEOF
+		}
+	}
+	return nil
+}
+
 type isTask_Stage interface {
 	isTask_Stage()
 }
@@ -435,6 +445,10 @@ type Task_Result5 struct {
 	Result5 *Result5 `protobuf:"bytes,26,opt,name=result5,proto3,oneof"`
 }
 
+type Task_OmegaEOF struct {
+	OmegaEOF *OmegaEOF `protobuf:"bytes,27,opt,name=omegaEOF,proto3,oneof"`
+}
+
 func (*Task_Alpha) isTask_Stage() {}
 
 func (*Task_Beta) isTask_Stage() {}
@@ -487,11 +501,13 @@ func (*Task_Result4) isTask_Stage() {}
 
 func (*Task_Result5) isTask_Stage() {}
 
+func (*Task_OmegaEOF) isTask_Stage() {}
+
 var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"\xf3\x06\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\x1a\x1bproto/stages/omegaEOF.proto\"\x9c\a\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
@@ -519,7 +535,8 @@ const file_proto_task_proto_rawDesc = "" +
 	"\aresult2\x18\x17 \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
 	"\aresult3\x18\x18 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
 	"\aresult4\x18\x19 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
-	"\aresult5\x18\x1a \x01(\v2\b.Result5H\x00R\aresult5B\a\n" +
+	"\aresult5\x18\x1a \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
+	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOFB\a\n" +
 	"\x05StageB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
@@ -536,33 +553,34 @@ func file_proto_task_proto_rawDescGZIP() []byte {
 
 var file_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_task_proto_goTypes = []any{
-	(*Task)(nil),    // 0: Task
-	(*Alpha)(nil),   // 1: Alpha
-	(*Beta)(nil),    // 2: Beta
-	(*Gamma)(nil),   // 3: Gamma
-	(*Delta_1)(nil), // 4: Delta_1
-	(*Delta_2)(nil), // 5: Delta_2
-	(*Delta_3)(nil), // 6: Delta_3
-	(*Epsilon)(nil), // 7: Epsilon
-	(*Zeta)(nil),    // 8: Zeta
-	(*Eta_1)(nil),   // 9: Eta_1
-	(*Eta_2)(nil),   // 10: Eta_2
-	(*Eta_3)(nil),   // 11: Eta_3
-	(*Theta)(nil),   // 12: Theta
-	(*Iota)(nil),    // 13: Iota
-	(*Kappa_1)(nil), // 14: Kappa_1
-	(*Kappa_2)(nil), // 15: Kappa_2
-	(*Kappa_3)(nil), // 16: Kappa_3
-	(*Lambda)(nil),  // 17: Lambda
-	(*Mu)(nil),      // 18: Mu
-	(*Nu_1)(nil),    // 19: Nu_1
-	(*Nu_2)(nil),    // 20: Nu_2
-	(*Nu_3)(nil),    // 21: Nu_3
-	(*Result1)(nil), // 22: Result1
-	(*Result2)(nil), // 23: Result2
-	(*Result3)(nil), // 24: Result3
-	(*Result4)(nil), // 25: Result4
-	(*Result5)(nil), // 26: Result5
+	(*Task)(nil),     // 0: Task
+	(*Alpha)(nil),    // 1: Alpha
+	(*Beta)(nil),     // 2: Beta
+	(*Gamma)(nil),    // 3: Gamma
+	(*Delta_1)(nil),  // 4: Delta_1
+	(*Delta_2)(nil),  // 5: Delta_2
+	(*Delta_3)(nil),  // 6: Delta_3
+	(*Epsilon)(nil),  // 7: Epsilon
+	(*Zeta)(nil),     // 8: Zeta
+	(*Eta_1)(nil),    // 9: Eta_1
+	(*Eta_2)(nil),    // 10: Eta_2
+	(*Eta_3)(nil),    // 11: Eta_3
+	(*Theta)(nil),    // 12: Theta
+	(*Iota)(nil),     // 13: Iota
+	(*Kappa_1)(nil),  // 14: Kappa_1
+	(*Kappa_2)(nil),  // 15: Kappa_2
+	(*Kappa_3)(nil),  // 16: Kappa_3
+	(*Lambda)(nil),   // 17: Lambda
+	(*Mu)(nil),       // 18: Mu
+	(*Nu_1)(nil),     // 19: Nu_1
+	(*Nu_2)(nil),     // 20: Nu_2
+	(*Nu_3)(nil),     // 21: Nu_3
+	(*Result1)(nil),  // 22: Result1
+	(*Result2)(nil),  // 23: Result2
+	(*Result3)(nil),  // 24: Result3
+	(*Result4)(nil),  // 25: Result4
+	(*Result5)(nil),  // 26: Result5
+	(*OmegaEOF)(nil), // 27: OmegaEOF
 }
 var file_proto_task_proto_depIdxs = []int32{
 	1,  // 0: Task.alpha:type_name -> Alpha
@@ -591,11 +609,12 @@ var file_proto_task_proto_depIdxs = []int32{
 	24, // 23: Task.result3:type_name -> Result3
 	25, // 24: Task.result4:type_name -> Result4
 	26, // 25: Task.result5:type_name -> Result5
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	27, // 26: Task.omegaEOF:type_name -> OmegaEOF
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }
@@ -621,6 +640,7 @@ func file_proto_task_proto_init() {
 	file_proto_stages_result3_proto_init()
 	file_proto_stages_result4_proto_init()
 	file_proto_stages_result5_proto_init()
+	file_proto_stages_omegaEOF_proto_init()
 	file_proto_task_proto_msgTypes[0].OneofWrappers = []any{
 		(*Task_Alpha)(nil),
 		(*Task_Beta)(nil),
@@ -648,6 +668,7 @@ func file_proto_task_proto_init() {
 		(*Task_Result3)(nil),
 		(*Task_Result4)(nil),
 		(*Task_Result5)(nil),
+		(*Task_OmegaEOF)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
