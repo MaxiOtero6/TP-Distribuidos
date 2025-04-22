@@ -10,7 +10,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-const MAX_SIZE = 1024 * 1024 // 1MB
+const MAX_SIZE = 1024 * 80 // 80 KB
 const COMMUNICATION_DELIMITER = '\n'
 
 var log = logging.MustGetLogger("log")

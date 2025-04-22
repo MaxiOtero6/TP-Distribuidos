@@ -70,6 +70,7 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 }
 
 func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
+	log.Debugf("Received batch message: %v ", batchMessage)
 	switch batchMessage.Type {
 	case protocol.FileType_MOVIES:
 		movies := s.processMoviesBatch(batchMessage)
