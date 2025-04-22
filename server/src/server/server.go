@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/rabbit"
@@ -9,6 +11,7 @@ import (
 )
 
 var log = logging.MustGetLogger("log")
+var ErrSignalReceived = errors.New("signal received")
 
 type Server struct {
 	ID            string
@@ -40,21 +43,30 @@ func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]s
 
 func (s *Server) acceptConnections() {
 	for s.isRunning {
+
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
 			if !s.isRunning {
-				log.Info("Server socket closed, exiting accept loop")
+				log.Infof("action: ShutdownServer | result: success | error: %v", err)
+				continue
+			} else {
+				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
 				continue
 			}
-			log.Errorf("Error accepting connection: %v", err)
-			continue
+
 		}
 
 		log.Infof("Client connected")
 
 		err = s.handleConnection(clientSocket)
 		if err != nil {
-			log.Errorf("Error handling connection: %v", err)
+			if !s.isRunning {
+				log.Infof("action: handleConnection | result: fail | error: %v", ErrSignalReceived)
+			} else if err == client_server_communication.ErrConnectionClosed {
+				log.Infof("action: handleConnection | result: fail | error: %v | clientId: %s", err, s.getClientID())
+			} else {
+				log.Errorf("action: handleConnection | result: fail | error: %v", err)
+			}
 			continue
 		}
 	}

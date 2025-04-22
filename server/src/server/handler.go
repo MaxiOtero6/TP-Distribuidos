@@ -31,25 +31,16 @@ func (s *Server) handleMessage(clientSocket *client_server_communication.Socket,
 
 func (s *Server) handleConnection(clientSocket *client_server_communication.Socket) error {
 	for {
-
 		message, err := clientSocket.Read()
 		if err != nil {
-			if !s.isRunning {
-				log.Info("Exiting connection handler")
-				return nil
-			}
 			return err
 		}
 		err = s.handleMessage(clientSocket, message)
 		if err != nil {
-			if !s.isRunning {
-				log.Info("Exiting connection handler")
-				return nil
-			}
-			log.Errorf("Error handling message: %v", err)
 			return err
 		}
 	}
+
 }
 
 func (s *Server) handleConnectionMessage(clientSocket *client_server_communication.Socket, syncMessage *protocol.Sync) {
