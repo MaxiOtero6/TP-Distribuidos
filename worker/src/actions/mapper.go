@@ -338,9 +338,12 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			return nil
 		}
 
-		tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()] = make(map[string]*protocol.Task)
-		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()][nextNode] = eofTask
+		mapExchange := m.infraConfig.GetReduceExchange()
+		stage := data.GetStage()
+
+		tasks[mapExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[mapExchange][stage] = make(map[string]*protocol.Task)
+		tasks[mapExchange][stage][nextNode] = eofTask
 
 	}
 	return tasks

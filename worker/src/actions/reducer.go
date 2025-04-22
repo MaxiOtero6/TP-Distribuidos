@@ -324,7 +324,7 @@ func (r *Reducer) getNextStageData(stage string) (string, string, int, error) {
 	case NU_STAGE_2:
 		return NU_STAGE_3, r.infraConfig.GetReduceExchange(), r.infraConfig.GetReduceCount(), nil
 	case NU_STAGE_3:
-		return RESULT_STAGE, r.infraConfig.GetResultExchange(), 0, nil
+		return RESULT_STAGE, r.infraConfig.GetResultExchange(), 1, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
 		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
@@ -662,9 +662,12 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			return nil
 		}
 
-		tasks[r.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-		tasks[r.infraConfig.GetReduceExchange()][data.GetStage()] = make(map[string]*protocol.Task)
-		tasks[r.infraConfig.GetReduceExchange()][data.GetStage()][nextNode] = eofTask
+		reduceExchange := r.infraConfig.GetReduceExchange()
+		stage := data.GetStage()
+
+		tasks[reduceExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[reduceExchange][stage] = make(map[string]*protocol.Task)
+		tasks[reduceExchange][stage][nextNode] = eofTask
 
 		// send the results
 		r.addResultsToNextStage(tasks, data.GetStage())
