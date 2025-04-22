@@ -111,7 +111,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 		iotaData[joinerIdHash] = append(iotaData[joinerIdHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Movie_{
 				Movie: &protocol.Iota_Data_Movie{
-					Id: movie.GetId(),
+					MovieId: movie.GetId(),
 				},
 			},
 		})
