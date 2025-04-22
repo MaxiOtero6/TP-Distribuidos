@@ -615,7 +615,6 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 	// if the creator is the same as the worker, send the EOF to the next stage
 	if data.GetWorkerCreatorId() == r.infraConfig.GetNodeId() {
-
 		nextStage, nextExchange, nextStageCount, err := r.getNextStageData(data.GetStage())
 		if err != nil {
 			log.Errorf("Failed to get next stage data: %s", err)
