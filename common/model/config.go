@@ -30,15 +30,21 @@ type RabbitConfig struct {
 }
 
 type InfraConfig struct {
+	nodeID  string
 	workers *WorkerClusterConfig
 	rabbit  *RabbitConfig
 }
 
-func NewInfraConfig(workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig) *InfraConfig {
+func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig) *InfraConfig {
 	return &InfraConfig{
+		nodeID:  idNode,
 		workers: workerConfig,
 		rabbit:  rabbitConfig,
 	}
+}
+
+func (i *InfraConfig) GetNodeId() string {
+	return i.nodeID
 }
 
 func (i *InfraConfig) GetWorkers() *WorkerClusterConfig {

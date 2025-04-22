@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -55,22 +56,19 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 			dataMap[prodCountry] = &protocol.Delta_2_Data{
 				Country:       prodCountry,
 				PartialBudget: 0,
-				Count:         0,
 			}
 		}
 
 		dataMap[prodCountry].PartialBudget += movie.GetBudget()
-		dataMap[prodCountry].Count += 1
 	}
 
-	for _, e2Data := range dataMap {
-		idHash := utils.RandomHash(m.infraConfig.GetReduceCount())
-
-		delta2Data[idHash] = append(delta2Data[idHash], e2Data)
+	for _, d2Data := range dataMap {
+		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		delta2Data[nodeId] = append(delta2Data[nodeId], d2Data)
 	}
 
-	for id, data := range delta2Data {
-		tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][id] = &protocol.Task{
+	for nodeId, data := range delta2Data {
+		tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Delta_2{
 				Delta_2: &protocol.Delta_2{
 					Data: data,
@@ -110,14 +108,14 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	dataMap := make(map[string]*protocol.Eta_2_Data)
 
 	for _, movieRating := range data {
-		movieId := movieRating.GetId()
+		movieId := movieRating.GetMovieId()
 
 		if _, ok := dataMap[movieId]; !ok {
 			dataMap[movieId] = &protocol.Eta_2_Data{
-				Id:     movieId,
-				Title:  movieRating.GetTitle(),
-				Rating: 0.0,
-				Count:  0,
+				MovieId: movieId,
+				Title:   movieRating.GetTitle(),
+				Rating:  0.0,
+				Count:   0,
 			}
 		}
 
@@ -125,18 +123,13 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 		dataMap[movieId].Count += 1
 	}
 
-	for movieId, e2Data := range dataMap {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movieId)
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
-
-		eta2Data[idHash] = append(eta2Data[idHash], e2Data)
+	for _, e2Data := range dataMap {
+		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		eta2Data[nodeId] = append(eta2Data[nodeId], e2Data)
 	}
 
-	for id, data := range eta2Data {
-		tasks[REDUCE_EXCHANGE][ETA_STAGE_2][id] = &protocol.Task{
+	for nodeId, data := range eta2Data {
+		tasks[REDUCE_EXCHANGE][ETA_STAGE_2][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Eta_2{
 				Eta_2: &protocol.Eta_2{
 					Data: data,
@@ -189,18 +182,13 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 		dataMap[actorId].PartialParticipations += 1
 	}
 
-	for actorId, k2Data := range dataMap {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), actorId)
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
-
-		kappa2Data[idHash] = append(kappa2Data[idHash], k2Data)
+	for _, k2Data := range dataMap {
+		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		kappa2Data[nodeId] = append(kappa2Data[nodeId], k2Data)
 	}
 
-	for id, data := range kappa2Data {
-		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][id] = &protocol.Task{
+	for nodeId, data := range kappa2Data {
+		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Kappa_2{
 				Kappa_2: &protocol.Kappa_2{
 					Data: data,
@@ -237,39 +225,26 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	tasks[REDUCE_EXCHANGE][NU_STAGE_2] = make(map[string]*protocol.Task)
 	nu2Data := make(map[string][]*protocol.Nu_2_Data)
 
-	for _, movie := range data {
-		idHash, err := utils.GetWorkerIdFromHash(m.infraConfig.GetReduceCount(), movie.GetId())
-		if err != nil {
-			log.Errorf("Mapper: error getting worker id from hash %v", err)
-			continue
-		}
+	dataMap := make(map[string]*protocol.Nu_2_Data)
 
-		// Initialize idHash key if it doesn't exist
-		if _, ok := nu2Data[idHash]; !ok {
-			nu2Data[idHash] = []*protocol.Nu_2_Data{
-				{
-					Sentiment: false,
-					Revenue:   0,
-					Budget:    0,
-					Count:     0,
-				},
-				{
-					Sentiment: true,
-					Revenue:   0,
-					Budget:    0,
-					Count:     0,
-				},
+	for _, movie := range data {
+		sentiment := fmt.Sprintf("%t", movie.GetSentiment())
+
+		if _, ok := dataMap[sentiment]; !ok {
+			dataMap[sentiment] = &protocol.Nu_2_Data{
+				Sentiment: movie.GetSentiment(),
+				Ratio:     0.0,
+				Count:     0,
 			}
 		}
 
-		var sentimentIndex int = 0
-		if movie.GetSentiment() {
-			sentimentIndex = 1
-		}
+		dataMap[sentiment].Ratio += float32(movie.GetRevenue()) / float32(movie.GetBudget())
+		dataMap[sentiment].Count += 1
+	}
 
-		nu2Data[idHash][sentimentIndex].Revenue += movie.GetRevenue()
-		nu2Data[idHash][sentimentIndex].Budget += movie.GetBudget()
-		nu2Data[idHash][sentimentIndex].Count += 1
+	for _, n2Data := range dataMap {
+		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
 	}
 
 	for id, data := range nu2Data {
@@ -282,6 +257,92 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 		}
 	}
 
+	return tasks
+}
+
+func (m *Mapper) getNextNodeId(nodeId string) (string, error) {
+	clientId, err := strconv.Atoi(nodeId)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+	}
+
+	nextNodeId := fmt.Sprintf("%d", (clientId+1)%m.infraConfig.GetReduceCount())
+	return nextNodeId, nil
+}
+
+func (m *Mapper) getNextStageData(stage string) (string, string, int, error) {
+	switch stage {
+	case DELTA_STAGE_1:
+		return DELTA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+	case ETA_STAGE_1:
+		return ETA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+	case KAPPA_STAGE_1:
+		return KAPPA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+	case NU_STAGE_1:
+		return NU_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+	tasks = make(Tasks)
+
+	// if the creator is the same as the worker, send the EOF to the next stage
+	if data.GetWorkerCreatorId() == m.infraConfig.GetNodeId() {
+
+		nextStage, nextExchange, nextStageCount, err := m.getNextStageData(data.GetStage())
+		if err != nil {
+			log.Errorf("Failed to get next stage data: %s", err)
+			return nil
+		}
+
+		nextStageEOF := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						ClientId:        data.GetClientId(),
+						WorkerCreatorId: "",
+						Stage:           nextStage,
+					},
+				},
+			},
+		}
+
+		randomNode := utils.RandomHash(nextStageCount)
+
+		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[nextExchange][nextExchange] = make(map[string]*protocol.Task)
+		tasks[nextExchange][nextExchange][randomNode] = nextStageEOF
+
+	} else { // if the creator is not the same as the worker, send EOF to the next node
+		nextRingEOF := data
+
+		if data.GetWorkerCreatorId() == "" {
+			nextRingEOF.WorkerCreatorId = m.infraConfig.GetNodeId()
+		}
+
+		eofTask := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: nextRingEOF,
+				},
+			},
+		}
+
+		nextNode, err := m.getNextNodeId(m.infraConfig.GetNodeId())
+
+		if err != nil {
+			log.Errorf("Failed to get next node id: %s", err)
+			return nil
+		}
+
+		tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
+		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()] = make(map[string]*protocol.Task)
+		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()][nextNode] = eofTask
+
+	}
 	return tasks
 }
 
@@ -304,6 +365,10 @@ func (m *Mapper) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Nu_1:
 		data := v.Nu_1.GetData()
 		return m.nu1Stage(data), nil
+
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+		return m.omegaEOFStage(data), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

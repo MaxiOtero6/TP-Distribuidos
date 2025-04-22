@@ -118,7 +118,7 @@ func initServer(v *viper.Viper) *server.Server {
 		BroadcastID:      v.GetString("consts.broadcastId"),
 	}
 
-	infraConfig := model.NewInfraConfig(clusterConfig, rabbitConfig)
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 

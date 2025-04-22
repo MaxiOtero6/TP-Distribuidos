@@ -25,13 +25,13 @@ type Worker struct {
 // NewWorker creates a new worker with the given id, type, and infraConfig
 // and initializes RabbitMQ and action structs
 // It also takes a signal channel to handle SIGTERM signal
-func NewWorker(id string, workerType string, infraConfig *model.InfraConfig, signalChan chan os.Signal) *Worker {
+func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan chan os.Signal) *Worker {
 	rabbitMQ := mom.NewRabbitMQ()
 
 	action := actions.NewAction(workerType, infraConfig)
 
 	return &Worker{
-		WorkerId:    id,
+		WorkerId:    infraConfig.GetNodeId(),
 		rabbitMQ:    rabbitMQ,
 		action:      action,
 		done:        signalChan,

@@ -20,7 +20,7 @@ import "proto/stages/result2.proto";
 import "proto/stages/result3.proto";
 import "proto/stages/result4.proto";
 import "proto/stages/result5.proto";
-
+import "proto/stages/omegaEOF.proto";
 
 message Task {
     oneof Stage {
@@ -29,22 +29,27 @@ message Task {
         Gamma gamma = 3;
         Delta_1 delta_1 = 4;
         Delta_2 delta_2 = 5;
-        Epsilon epsilon = 6;
-        Zeta zeta = 7;
-        Eta_1 eta_1 = 8;
-        Eta_2 eta_2 = 9;
-        Theta theta = 10;
-        Iota iota = 11;
-        Kappa_1 kappa_1 = 12;
-        Kappa_2 kappa_2 = 13;
-        Lambda lambda = 14;
-        Mu mu = 15;
-        Nu_1 nu_1 = 16;
-        Nu_2 nu_2 = 17;
-        Result1 result1 = 18;
-        Result2 result2 = 19;
-        Result3 result3 = 20;
-        Result4 result4 = 21;
-        Result5 result5 = 22;
+        Delta_3 delta_3 = 6;
+        Epsilon epsilon = 7;
+        Zeta zeta = 8;
+        Eta_1 eta_1 = 9;
+        Eta_2 eta_2 = 10;
+        Eta_3 eta_3 = 11;
+        Theta theta = 12;
+        Iota iota = 13;
+        Kappa_1 kappa_1 = 14;
+        Kappa_2 kappa_2 = 15;
+        Kappa_3 kappa_3 = 16;
+        Lambda lambda = 17;
+        Mu mu = 18;
+        Nu_1 nu_1 = 19;
+        Nu_2 nu_2 = 20;
+        Nu_3 nu_3 = 21;
+        Result1 result1 = 22;
+        Result2 result2 = 23;
+        Result3 result3 = 24;
+        Result4 result4 = 25;
+        Result5 result5 = 26;
+        OmegaEOF omegaEOF = 27;
     }
 }
