@@ -41,7 +41,8 @@ Return example
 	{
 		"filterExchange": {
 			"beta": {
-				"": Task
+				"0": Task,
+				"1": Task
 			}
 		},
 		"joinExchange": {
@@ -59,8 +60,8 @@ Return example
 func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
 	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
-	BROADCAST_ID := f.infraConfig.GetBroadcastID()
 	JOIN_COUNT := f.infraConfig.GetJoinCount()
+	FILTER_COUNT := f.infraConfig.GetFilterCount()
 
 	tasks = make(Tasks)
 	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -86,7 +87,9 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			continue
 		}
 
-		betaData[BROADCAST_ID] = append(betaData[BROADCAST_ID], &protocol.Beta_Data{
+		filterIdHash := utils.GetWorkerIdFromHash(FILTER_COUNT, movie.GetId())
+
+		betaData[filterIdHash] = append(betaData[filterIdHash], &protocol.Beta_Data{
 			Id:            movie.GetId(),
 			Title:         movie.GetTitle(),
 			ReleaseYear:   movie.GetReleaseYear(),
@@ -94,9 +97,9 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		idHash := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
+		joinerIdHash := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
 
-		zetaData[idHash] = append(zetaData[idHash], &protocol.Zeta_Data{
+		zetaData[joinerIdHash] = append(zetaData[joinerIdHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
 				Movie: &protocol.Zeta_Data_Movie{
 					Id:    movie.GetId(),
@@ -105,7 +108,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			},
 		})
 
-		iotaData[idHash] = append(iotaData[idHash], &protocol.Iota_Data{
+		iotaData[joinerIdHash] = append(iotaData[joinerIdHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Movie_{
 				Movie: &protocol.Iota_Data_Movie{
 					Id: movie.GetId(),
@@ -186,6 +189,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data) (tasks Tasks) {
 			continue
 		}
 
+		// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
 		resData[BROADCAST_ID] = append(resData[BROADCAST_ID], &protocol.Result1_Data{
 			Id:     movie.GetId(),
 			Title:  movie.GetTitle(),
@@ -218,14 +222,15 @@ Return example
 	{
 		"mapExchange": {
 			"delta_1": {
-				"": Task
+				"0": Task,
+				"1": Task
 			}
 		},
 	}
 */
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
-	BROADCAST_ID := f.infraConfig.GetBroadcastID()
+	MAP_COUNT := f.infraConfig.GetMapCount()
 
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -247,7 +252,9 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 			continue
 		}
 
-		delta1Data[BROADCAST_ID] = append(delta1Data[BROADCAST_ID], &protocol.Delta_1_Data{
+		mapIdHash := utils.GetWorkerIdFromHash(MAP_COUNT, movie.GetId())
+
+		delta1Data[mapIdHash] = append(delta1Data[mapIdHash], &protocol.Delta_1_Data{
 			Country: countries[0],
 			Budget:  movie.GetBudget(),
 		})

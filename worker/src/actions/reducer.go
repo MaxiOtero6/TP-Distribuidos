@@ -345,13 +345,15 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 	dataMap := r.partialResults.delta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := r.infraConfig.GetReduceCount()
+
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
 	delta3Data := make(map[string][]*protocol.Delta_3_Data)
 
 	// Divide the resulting countries by hashing each country
 	for _, d3Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), d3Data.GetCountry())
+		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, d3Data.GetCountry())
 		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
 			Country:       d3Data.GetCountry(),
 			PartialBudget: d3Data.GetPartialBudget(),
@@ -404,13 +406,15 @@ func (r *Reducer) eta2Results(tasks Tasks) {
 	dataMap := r.partialResults.eta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := r.infraConfig.GetReduceCount()
+
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][ETA_STAGE_3] = make(map[string]*protocol.Task)
 	eta3Data := make(map[string][]*protocol.Eta_3_Data)
 
 	// Divide the resulting movies by hashing each movie
 	for _, e2Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), e2Data.GetMovieId())
+		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, e2Data.GetMovieId())
 		eta3Data[idHash] = append(eta3Data[idHash], &protocol.Eta_3_Data{
 			MovieId: e2Data.GetMovieId(),
 			Title:   e2Data.GetTitle(),
@@ -466,13 +470,15 @@ func (r *Reducer) eta3Results(tasks Tasks) {
 func (r *Reducer) kappa2Results(tasks Tasks) {
 	dataMap := r.partialResults.kappa2
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := r.infraConfig.GetReduceCount()
+
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][KAPPA_STAGE_3] = make(map[string]*protocol.Task)
 	kappa3Data := make(map[string][]*protocol.Kappa_3_Data)
 
 	// Divide the resulting actors by hashing each actor
 	for _, k2Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), k2Data.GetActorId())
+		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, k2Data.GetActorId())
 		kappa3Data[idHash] = append(kappa3Data[idHash], &protocol.Kappa_3_Data{
 			ActorId:               k2Data.GetActorId(),
 			ActorName:             k2Data.GetActorName(),
@@ -524,6 +530,8 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	dataMap := r.partialResults.nu3Data
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := r.infraConfig.GetReduceCount()
+
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
 	delta3Data := make(map[string][]*protocol.Nu_3_Data)
@@ -531,7 +539,7 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	// Divide the resulting sentiments by hashing each sentiment
 	for _, n3Data := range dataMap {
 		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
-		idHash := utils.GetWorkerIdFromHash(r.infraConfig.GetReduceCount(), sentiment)
+		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, sentiment)
 		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Nu_3_Data{
 			Sentiment: n3Data.GetSentiment(),
 			Ratio:     n3Data.GetRatio(),
@@ -560,8 +568,8 @@ func (r *Reducer) nu3Results(tasks Tasks) {
 	resultData := make(map[string][]*protocol.Result5_Data)
 
 	// Asign the data to the corresponding worker
-	// TODO: check if this is corrects
-	routingKey := "0"
+	// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
+	routingKey := ""
 
 	for _, n3Data := range dataMap {
 		ratio := n3Data.GetRatio() / float32(n3Data.GetCount())
