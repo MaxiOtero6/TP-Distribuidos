@@ -13,6 +13,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -39,6 +40,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with multiple reducers", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 2,
 			},
@@ -65,6 +67,7 @@ func TestDelta1Stage(t *testing.T) {
 
 	t.Run("Test Delta1Stage with empty data", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 2,
 			},
@@ -88,6 +91,7 @@ func TestEta1Stage(t *testing.T) {
 
 	t.Run("Test Eta1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -97,9 +101,9 @@ func TestEta1Stage(t *testing.T) {
 		mapper := NewMapper(infra)
 
 		data := []*protocol.Eta_1_Data{
-			{Id: "0", Title: "Movie 0", Rating: 4},
-			{Id: "0", Title: "Movie 0", Rating: 5},
-			{Id: "1", Title: "Movie 1", Rating: 3},
+			{MovieId: "0", Title: "Movie 0", Rating: 4},
+			{MovieId: "0", Title: "Movie 0", Rating: 5},
+			{MovieId: "1", Title: "Movie 1", Rating: 3},
 		}
 
 		tasks := mapper.eta1Stage(data)
@@ -115,9 +119,9 @@ func TestEta1Stage(t *testing.T) {
 		mapper := NewMapper(testInfraConfig)
 
 		data := []*protocol.Eta_1_Data{
-			{Id: "0", Title: "Movie 0", Rating: 4},
-			{Id: "0", Title: "Movie 0", Rating: 5},
-			{Id: "1", Title: "Movie 1", Rating: 3},
+			{MovieId: "0", Title: "Movie 0", Rating: 4},
+			{MovieId: "0", Title: "Movie 0", Rating: 5},
+			{MovieId: "1", Title: "Movie 1", Rating: 3},
 		}
 
 		tasks := mapper.eta1Stage(data)
@@ -150,6 +154,7 @@ func TestKappa1Stage(t *testing.T) {
 
 	t.Run("Test Kappa1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -212,6 +217,7 @@ func TestNu1Stage(t *testing.T) {
 
 	t.Run("Test Nu1Stage with one reducer", func(t *testing.T) {
 		infra := model.NewInfraConfig(
+			"0",
 			&model.WorkerClusterConfig{
 				ReduceCount: 1,
 			},
@@ -298,8 +304,8 @@ func TestExecuteMapper(t *testing.T) {
 			Stage: &protocol.Task_Eta_1{
 				Eta_1: &protocol.Eta_1{
 					Data: []*protocol.Eta_1_Data{
-						{Id: "0", Title: "Movie 0", Rating: 4},
-						{Id: "1", Title: "Movie 1", Rating: 5},
+						{MovieId: "0", Title: "Movie 0", Rating: 4},
+						{MovieId: "1", Title: "Movie 1", Rating: 5},
 					},
 				},
 			},

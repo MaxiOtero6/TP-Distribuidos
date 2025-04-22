@@ -17,7 +17,6 @@ message Delta_2 {
     message Data {
         string country = 1;
         uint64 partial_budget = 2;
-        uint32 count = 3;
     }
 
     repeated Data data = 1;
@@ -28,7 +27,6 @@ message Delta_3 {
     message Data {
         string country = 1;
         uint64 partial_budget = 2;
-        uint32 count = 3;
     }
 
     repeated Data data = 1;

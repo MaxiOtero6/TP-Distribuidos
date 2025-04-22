@@ -36,11 +36,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks m
 	zetaData := make(map[string][]*protocol.Zeta_Data)
 
 	for _, rating := range ratings {
-		idHash, err := utils.GetWorkerIdFromHash(joinersCount, rating.MovieId)
-
-		if err != nil {
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(joinersCount, rating.MovieId)
 
 		zetaData[idHash] = append(zetaData[idHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Rating_{
@@ -70,11 +66,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 	iotaData := make(map[string][]*protocol.Iota_Data)
 
 	for _, actor := range actors {
-		idHash, err := utils.GetWorkerIdFromHash(joinersCount, actor.MovieId)
-
-		if err != nil {
-			continue
-		}
+		idHash := utils.GetWorkerIdFromHash(joinersCount, actor.MovieId)
 
 		iotaData[idHash] = append(iotaData[idHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Actor_{

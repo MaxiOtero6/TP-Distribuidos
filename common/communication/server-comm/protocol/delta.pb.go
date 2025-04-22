@@ -209,7 +209,6 @@ type Delta_2_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
 	PartialBudget uint64                 `protobuf:"varint,2,opt,name=partial_budget,json=partialBudget,proto3" json:"partial_budget,omitempty"`
-	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -258,18 +257,10 @@ func (x *Delta_2_Data) GetPartialBudget() uint64 {
 	return 0
 }
 
-func (x *Delta_2_Data) GetCount() uint32 {
-	if x != nil {
-		return x.Count
-	}
-	return 0
-}
-
 type Delta_3_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
 	PartialBudget uint64                 `protobuf:"varint,2,opt,name=partial_budget,json=partialBudget,proto3" json:"partial_budget,omitempty"`
-	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -318,13 +309,6 @@ func (x *Delta_3_Data) GetPartialBudget() uint64 {
 	return 0
 }
 
-func (x *Delta_3_Data) GetCount() uint32 {
-	if x != nil {
-		return x.Count
-	}
-	return 0
-}
-
 var File_proto_stages_delta_proto protoreflect.FileDescriptor
 
 const file_proto_stages_delta_proto_rawDesc = "" +
@@ -334,19 +318,17 @@ const file_proto_stages_delta_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x03(\v2\r.Delta_1.DataR\x04data\x1a8\n" +
 	"\x04Data\x12\x18\n" +
 	"\acountry\x18\x01 \x01(\tR\acountry\x12\x16\n" +
-	"\x06budget\x18\x02 \x01(\x04R\x06budget\"\x8b\x01\n" +
+	"\x06budget\x18\x02 \x01(\x04R\x06budget\"u\n" +
 	"\aDelta_2\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Delta_2.DataR\x04data\x1a]\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Delta_2.DataR\x04data\x1aG\n" +
 	"\x04Data\x12\x18\n" +
 	"\acountry\x18\x01 \x01(\tR\acountry\x12%\n" +
-	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudget\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\rR\x05count\"\x8b\x01\n" +
+	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudget\"u\n" +
 	"\aDelta_3\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Delta_3.DataR\x04data\x1a]\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Delta_3.DataR\x04data\x1aG\n" +
 	"\x04Data\x12\x18\n" +
 	"\acountry\x18\x01 \x01(\tR\acountry\x12%\n" +
-	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudget\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudgetB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_delta_proto_rawDescOnce sync.Once

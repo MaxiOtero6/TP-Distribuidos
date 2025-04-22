@@ -19,9 +19,18 @@ message Nu_1 {
 message Nu_2 {
     message Data {
         bool sentiment = 1; // 1 'POSITIVE', 0 'NEGATIVE'
-        uint64 revenue = 2;
-        uint64 budget = 3;
-        uint32 count = 4;
+        float ratio = 2;
+        uint32 count = 3;
+    }
+
+    repeated Data data = 1;
+}
+
+message Nu_3 {
+    message Data {
+        bool sentiment = 1; // 1 'POSITIVE', 0 'NEGATIVE'
+        float ratio = 2;
+        uint32 count = 3;
     }
 
     repeated Data data = 1;
