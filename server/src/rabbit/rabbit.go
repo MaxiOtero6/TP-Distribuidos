@@ -78,8 +78,8 @@ func (r *RabbitHandler) Close() {
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
 func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie) {
-	alphaTasks := utils.GetAlphaStageTask(movies)
-	muTasks := utils.GetMuStageTask(movies)
+	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount())
+	muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
 
 	r.publishTasksRabbit(alphaTasks, r.infraConfig.GetFilterExchange())
 	r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())

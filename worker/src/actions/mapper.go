@@ -11,14 +11,18 @@ import (
 
 // Mapper is a struct that implements the Action interface.
 type Mapper struct {
-	infraConfig *model.InfraConfig
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, itemId string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
 func NewMapper(infraConfig *model.InfraConfig) *Mapper {
 	return &Mapper{
-		infraConfig: infraConfig,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -41,6 +45,7 @@ Return example
 */
 func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -63,7 +68,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 	}
 
 	for _, d2Data := range dataMap {
-		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		delta2Data[nodeId] = append(delta2Data[nodeId], d2Data)
 	}
 
@@ -99,6 +104,7 @@ Return example
 */
 func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -124,7 +130,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	}
 
 	for _, e2Data := range dataMap {
-		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		eta2Data[nodeId] = append(eta2Data[nodeId], e2Data)
 	}
 
@@ -160,6 +166,7 @@ Return example
 */
 func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -183,7 +190,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 	}
 
 	for _, k2Data := range dataMap {
-		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		kappa2Data[nodeId] = append(kappa2Data[nodeId], k2Data)
 	}
 
@@ -219,6 +226,7 @@ Return example
 */
 func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
+	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -243,12 +251,12 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	}
 
 	for _, n2Data := range dataMap {
-		nodeId := utils.RandomHash(m.infraConfig.GetReduceCount())
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
 	}
 
-	for id, data := range nu2Data {
-		tasks[REDUCE_EXCHANGE][NU_STAGE_2][id] = &protocol.Task{
+	for nodeId, data := range nu2Data {
+		tasks[REDUCE_EXCHANGE][NU_STAGE_2][nodeId] = &protocol.Task{
 			Stage: &protocol.Task_Nu_2{
 				Nu_2: &protocol.Nu_2{
 					Data: data,
@@ -291,7 +299,6 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 	// if the creator is the same as the worker, send the EOF to the next stage
 	if data.GetWorkerCreatorId() == m.infraConfig.GetNodeId() {
-
 		nextStage, nextExchange, nextStageCount, err := m.getNextStageData(data.GetStage())
 		if err != nil {
 			log.Errorf("Failed to get next stage data: %s", err)
@@ -310,11 +317,11 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := m.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextExchange] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextExchange][randomNode] = nextStageEOF
+		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
+		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
 
 	} else { // if the creator is not the same as the worker, send EOF to the next node
 		nextRingEOF := data
@@ -338,9 +345,12 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			return nil
 		}
 
-		tasks[m.infraConfig.GetReduceExchange()] = make(map[string]map[string]*protocol.Task)
-		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()] = make(map[string]*protocol.Task)
-		tasks[m.infraConfig.GetReduceExchange()][data.GetStage()][nextNode] = eofTask
+		mapExchange := m.infraConfig.GetReduceExchange()
+		stage := data.GetStage()
+
+		tasks[mapExchange] = make(map[string]map[string]*protocol.Task)
+		tasks[mapExchange][stage] = make(map[string]*protocol.Task)
+		tasks[mapExchange][stage][nextNode] = eofTask
 
 	}
 	return tasks
