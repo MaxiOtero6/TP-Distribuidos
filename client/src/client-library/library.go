@@ -145,7 +145,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 		if err := l.socket.Write(batch); err != nil {
 			return err
 		}
-		log.Infof("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
+		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
 		err = l.waitForSuccessServerResponse()
 		if err != nil {

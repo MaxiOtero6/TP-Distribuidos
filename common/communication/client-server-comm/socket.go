@@ -102,8 +102,8 @@ func (s *Socket) Read() (*protocol.Message, error) {
 		return nil, err
 	}
 
-	log.Debugf("Successfully deserialized message: %v", responseMessage)
-	return &responseMessage, nil
+	//log.Debugf("Successfully deserialized message: %v", responseMessage)
+	return responseMessage, nil
 }
 
 func (s *Socket) Write(message *protocol.Message) error {
