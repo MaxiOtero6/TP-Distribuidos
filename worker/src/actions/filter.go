@@ -102,8 +102,8 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 		zetaData[joinerIdHash] = append(zetaData[joinerIdHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
 				Movie: &protocol.Zeta_Data_Movie{
-					Id:    movie.GetId(),
-					Title: movie.GetTitle(),
+					MovieId: movie.GetId(),
+					Title:   movie.GetTitle(),
 				},
 			},
 		})
@@ -274,12 +274,12 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 }
 
 func (f *Filter) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
+	currentNodeId, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%f.infraConfig.GetFilterCount())
+	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%f.infraConfig.GetFilterCount())
 	return nextNodeId, nil
 }
 

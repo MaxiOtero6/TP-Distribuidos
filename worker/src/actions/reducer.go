@@ -677,7 +677,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		tasks[reduceExchange][stage][nextNode] = eofTask
 
 		// send the results
-		r.addResultsToNextStage(tasks, data.GetStage())
+		r.addResultsToNextStage(tasks, stage)
 	}
 	return tasks
 }
