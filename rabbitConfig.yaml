@@ -13,11 +13,11 @@ rabbitmq:
     exchanges:
       filterExchange:
         name: "filterExchange"
-        kind: "fanout"
+        kind: "direct"
 
       overviewExchange:
         name: "overviewExchange"
-        kind: "fanout"
+        kind: "direct"
 
       joinExchange:
         name: "joinExchange"
@@ -40,7 +40,7 @@ rabbitmq:
     exchanges:
       filterExchange:
         name: "filterExchange"
-        kind: "fanout"
+        kind: "direct"
 
       joinExchange:
         name: "joinExchange"
@@ -48,7 +48,7 @@ rabbitmq:
 
       mapExchange:
         name: "mapExchange"
-        kind: "fanout"
+        kind: "direct"
 
       resultExchange:
         name: "resultExchange"
@@ -56,22 +56,22 @@ rabbitmq:
 
     queues:
       filterQueue:
-        name: "filterQueue"
+        name: ""
 
     binds:
       filterQueue:
         exchange: "filterExchange"
-        queue: "filterQueue"
+        queue: ""
 
   OVERVIEW:
     exchanges:
       overviewExchange:
         name: "overviewExchange"
-        kind: "fanout"
+        kind: "direct"
 
       mapExchange:
         name: "mapExchange"
-        kind: "fanout"
+        kind: "direct"
 
       resultExchange:
         name: "resultExchange"
@@ -79,18 +79,18 @@ rabbitmq:
 
     queues:
       overviewQueue:
-        name: "overviewQueue"
+        name: ""
 
     binds:
       overviewQueue:
         exchange: "overviewExchange"
-        queue: "overviewQueue"
+        queue: ""
 
   MAPPER:
     exchanges:
       mapExchange:
         name: "mapExchange"
-        kind: "fanout"
+        kind: "direct"
 
       reduceExchange:
         name: "reduceExchange"
@@ -98,12 +98,12 @@ rabbitmq:
 
     queues:
       mapQueue:
-        name: "mapQueue"
+        name: ""
 
     binds:
       mapQueue:
         exchange: "mapExchange"
-        queue: "mapQueue"
+        queue: ""
 
   JOINER:
     exchanges:
@@ -113,7 +113,7 @@ rabbitmq:
 
       mapExchange:
         name: "mapExchange"
-        kind: "fanout"
+        kind: "direct"
 
     queues:
       joinQueue:
