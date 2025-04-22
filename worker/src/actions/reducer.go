@@ -637,8 +637,8 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		randomNode := utils.RandomHash(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextExchange] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextExchange][randomNode] = nextStageEOF
+		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
+		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
 
 	} else { // if the creator is not the same as the worker, send the stage results and EOF to the next node
 		nextRingEOF := data
