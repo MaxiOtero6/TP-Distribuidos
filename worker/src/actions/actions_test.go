@@ -9,6 +9,7 @@ var testInfraConfig = model.NewInfraConfig(
 	&model.WorkerClusterConfig{
 		JoinCount:   1,
 		ReduceCount: 2,
+		MapCount:    1,
 	},
 	&model.RabbitConfig{
 		FilterExchange: "filterExchange",

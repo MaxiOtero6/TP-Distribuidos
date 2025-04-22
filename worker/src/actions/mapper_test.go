@@ -1,12 +1,23 @@
 package actions
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/stretchr/testify/assert"
 )
+
+func itemHash(workersCount int, item string) string {
+	itemInt, _ := strconv.Atoi(item)
+	return fmt.Sprintf("%d", itemInt%workersCount)
+}
+
+func randomHash(workersCount int) string {
+	return "0"
+}
 
 func TestDelta1Stage(t *testing.T) {
 	REDUCE_EXCHANGE := testInfraConfig.GetReduceExchange()
@@ -20,7 +31,11 @@ func TestDelta1Stage(t *testing.T) {
 			testInfraConfig.GetRabbit(),
 		)
 
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Delta_1_Data{
 			{Country: "USA", Budget: 100},
@@ -47,7 +62,11 @@ func TestDelta1Stage(t *testing.T) {
 			testInfraConfig.GetRabbit(),
 		)
 
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Delta_1_Data{
 			{Country: "USA", Budget: 100},
@@ -74,7 +93,11 @@ func TestDelta1Stage(t *testing.T) {
 			testInfraConfig.GetRabbit(),
 		)
 
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Delta_1_Data{}
 
@@ -98,7 +121,11 @@ func TestEta1Stage(t *testing.T) {
 			testInfraConfig.GetRabbit(),
 		)
 
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Eta_1_Data{
 			{MovieId: "0", Title: "Movie 0", Rating: 4},
@@ -116,7 +143,11 @@ func TestEta1Stage(t *testing.T) {
 	})
 
 	t.Run("Test Eta1Stage with multiple reducers", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Eta_1_Data{
 			{MovieId: "0", Title: "Movie 0", Rating: 4},
@@ -128,16 +159,18 @@ func TestEta1Stage(t *testing.T) {
 
 		assert.Contains(t, tasks, REDUCE_EXCHANGE)
 		assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
-		assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 2) // ReduceCount is 2
+		assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 1) // randomHash set to "0"
 
 		result0Data := tasks[REDUCE_EXCHANGE][ETA_STAGE_2]["0"].GetEta_2().GetData()
-		result1Data := tasks[REDUCE_EXCHANGE][ETA_STAGE_2]["1"].GetEta_2().GetData()
-		assert.Len(t, result0Data, 1) // Should contain 1 movie
-		assert.Len(t, result1Data, 1) // Should contain 1 movie
+		assert.Len(t, result0Data, 2) // Should contain 2 movies
 	})
 
 	t.Run("Test Eta1Stage with empty data", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Eta_1_Data{}
 
@@ -161,7 +194,11 @@ func TestKappa1Stage(t *testing.T) {
 			testInfraConfig.GetRabbit(),
 		)
 
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Kappa_1_Data{
 			{ActorId: "0", ActorName: "Actor 0"},
@@ -180,7 +217,11 @@ func TestKappa1Stage(t *testing.T) {
 	})
 
 	t.Run("Test Kappa1Stage with multiple reducers", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Kappa_1_Data{
 			{ActorId: "0", ActorName: "Actor 0"},
@@ -192,15 +233,16 @@ func TestKappa1Stage(t *testing.T) {
 
 		assert.Contains(t, tasks, REDUCE_EXCHANGE)
 		assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
-		assert.Len(t, tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2], 2) // ReduceCount is 2
 		result0Data := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2]["0"].GetKappa_2().GetData()
-		result1Data := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2]["1"].GetKappa_2().GetData()
-		assert.Len(t, result0Data, 1) // Should contain 1 actor
-		assert.Len(t, result1Data, 1) // Should contain 1 actor
+		assert.Len(t, result0Data, 2) // Should contain 2 actors
 	})
 
 	t.Run("Test Kappa1Stage with empty data", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Kappa_1_Data{}
 
@@ -223,7 +265,11 @@ func TestNu1Stage(t *testing.T) {
 			},
 			testInfraConfig.GetRabbit(),
 		)
-		mapper := NewMapper(infra)
+		mapper := &Mapper{
+			infraConfig:    infra,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Nu_1_Data{
 			{Id: "0", Sentiment: true, Revenue: 1000, Budget: 500},
@@ -241,7 +287,11 @@ func TestNu1Stage(t *testing.T) {
 	})
 
 	t.Run("Test Nu1Stage with multiple reducers", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Nu_1_Data{
 			{Id: "0", Sentiment: true, Revenue: 1000, Budget: 500},
@@ -253,15 +303,15 @@ func TestNu1Stage(t *testing.T) {
 
 		assert.Contains(t, tasks, REDUCE_EXCHANGE)
 		assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
-		assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2], 2) // ReduceCount is 2
-		result0Data := tasks[REDUCE_EXCHANGE][NU_STAGE_2]["0"].GetNu_2().GetData()
-		result1Data := tasks[REDUCE_EXCHANGE][NU_STAGE_2]["1"].GetNu_2().GetData()
-		assert.Len(t, result0Data, 2) // Should contain 2 movies
-		assert.Len(t, result1Data, 2) // Should contain 2 movies
+		assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2]["0"].GetNu_2().GetData(), 2)
 	})
 
 	t.Run("Test Nu1Stage with empty data", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		data := []*protocol.Nu_1_Data{}
 
@@ -277,7 +327,11 @@ func TestExecuteMapper(t *testing.T) {
 	REDUCE_EXCHANGE := testInfraConfig.GetReduceExchange()
 
 	t.Run("Test ExecuteMapper with Delta_1 stage", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		task := &protocol.Task{
 			Stage: &protocol.Task_Delta_1{
@@ -298,7 +352,11 @@ func TestExecuteMapper(t *testing.T) {
 	})
 
 	t.Run("Test ExecuteMapper with Eta_1 stage", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		task := &protocol.Task{
 			Stage: &protocol.Task_Eta_1{
@@ -319,7 +377,11 @@ func TestExecuteMapper(t *testing.T) {
 	})
 
 	t.Run("Test ExecuteMapper with Kappa_1 stage", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		task := &protocol.Task{
 			Stage: &protocol.Task_Kappa_1{
@@ -340,7 +402,11 @@ func TestExecuteMapper(t *testing.T) {
 	})
 
 	t.Run("Test ExecuteMapper with Nu_1 stage", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		task := &protocol.Task{
 			Stage: &protocol.Task_Nu_1{
@@ -361,7 +427,11 @@ func TestExecuteMapper(t *testing.T) {
 	})
 
 	t.Run("Test ExecuteMapper with unknown stage", func(t *testing.T) {
-		mapper := NewMapper(testInfraConfig)
+		mapper := &Mapper{
+			infraConfig:    testInfraConfig,
+			itemHashFunc:   itemHash,
+			randomHashFunc: randomHash,
+		}
 
 		task := &protocol.Task{}
 
