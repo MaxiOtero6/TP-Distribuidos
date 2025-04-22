@@ -15,12 +15,16 @@ import (
 // It filters movies based on certain criteria.
 // It is used in the worker to filter movies in the pipeline.
 type Filter struct {
-	infraConfig *model.InfraConfig
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 func NewFilter(infraConfig *model.InfraConfig) *Filter {
 	return &Filter{
-		infraConfig: infraConfig,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -87,7 +91,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			continue
 		}
 
-		filterIdHash := utils.GetWorkerIdFromHash(FILTER_COUNT, movie.GetId())
+		filterIdHash := f.itemHashFunc(FILTER_COUNT, movie.GetId())
 
 		betaData[filterIdHash] = append(betaData[filterIdHash], &protocol.Beta_Data{
 			Id:            movie.GetId(),
@@ -97,7 +101,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data) (tasks Tasks) {
 			Genres:        movie.GetGenres(),
 		})
 
-		joinerIdHash := utils.GetWorkerIdFromHash(JOIN_COUNT, movie.GetId())
+		joinerIdHash := f.itemHashFunc(JOIN_COUNT, movie.GetId())
 
 		zetaData[joinerIdHash] = append(zetaData[joinerIdHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
@@ -252,7 +256,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data) (tasks Tasks) {
 			continue
 		}
 
-		mapIdHash := utils.GetWorkerIdFromHash(MAP_COUNT, movie.GetId())
+		mapIdHash := f.itemHashFunc(MAP_COUNT, movie.GetId())
 
 		delta1Data[mapIdHash] = append(delta1Data[mapIdHash], &protocol.Delta_1_Data{
 			Country: countries[0],
@@ -320,7 +324,7 @@ func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := f.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)

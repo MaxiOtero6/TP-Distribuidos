@@ -24,6 +24,8 @@ type PartialResults struct {
 type Reducer struct {
 	infraConfig    *model.InfraConfig
 	partialResults *PartialResults
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewReduce creates a new Reduce instance.
@@ -41,6 +43,8 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 			nu2Data: make(map[string]*protocol.Nu_2_Data),
 			nu3Data: make(map[string]*protocol.Nu_3_Data),
 		},
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -641,7 +645,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := r.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)

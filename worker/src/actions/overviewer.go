@@ -14,6 +14,8 @@ import (
 type Overviewer struct {
 	model       sentiment.Models
 	infraConfig *model.InfraConfig
+	itemHashFunc    func(workersCount int, item string) string
+	randomHashFunc   func(workersCount int) string
 }
 
 // NewOverviewer creates a new Overviewer instance.
@@ -28,6 +30,8 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	return &Overviewer{
 		model:       model,
 		infraConfig: infraConfig,
+		itemHashFunc:    utils.GetWorkerIdFromHash,
+		randomHashFunc:   utils.RandomHash,
 	}
 }
 
@@ -64,7 +68,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
 
-		mapIdHash := utils.GetWorkerIdFromHash(MAP_COUNT, movie.GetId())
+		mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
 
 		// true: POSITIVE
 		// false: NEGATIVE
@@ -133,7 +137,7 @@ func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := o.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
