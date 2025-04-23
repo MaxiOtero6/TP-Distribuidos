@@ -336,12 +336,12 @@ func (r *Reducer) getNextStageData(stage string) (string, string, int, error) {
 }
 
 func (r *Reducer) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
+	nodeIdInt, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+		return "", fmt.Errorf("failed to convert nodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%r.infraConfig.GetReduceCount())
+	nextNodeId := fmt.Sprintf("%d", (nodeIdInt+1)%r.infraConfig.GetReduceCount())
 	return nextNodeId, nil
 }
 
@@ -542,15 +542,21 @@ func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
 
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
-	delta3Data := make(map[string][]*protocol.Nu_3_Data)
+	if _, ok := tasks[REDUCE_EXCHANGE]; !ok {
+		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
+	if _, ok := tasks[REDUCE_EXCHANGE][NU_STAGE_3]; !ok {
+		tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
+	}
+
+	nu3Data := make(map[string][]*protocol.Nu_3_Data)
 
 	// Divide the resulting sentiments by hashing each sentiment
 	for _, n3Data := range dataMap {
 		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
 		nodeId := r.itemHashFunc(REDUCE_COUNT, sentiment)
-		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Nu_3_Data{
+		nu3Data[nodeId] = append(nu3Data[nodeId], &protocol.Nu_3_Data{
 			Sentiment: n3Data.GetSentiment(),
 			Ratio:     n3Data.GetRatio(),
 			Count:     n3Data.GetCount(),
@@ -558,7 +564,7 @@ func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
 	}
 
 	// Create tasks for each worker
-	for nodeId, data := range delta3Data {
+	for nodeId, data := range nu3Data {
 		tasks[REDUCE_EXCHANGE][NU_STAGE_3][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_3{
@@ -632,9 +638,13 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
  */
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
-
+	log.Debugf("omegaEOFStage: %v", data)
 	// if the creator is the same as the worker, send the EOF to the next stage
 	if data.GetWorkerCreatorId() == r.infraConfig.GetNodeId() {
+		log.Debugf("ENTRE ACA Y NO TIENE SENTIDO")
+		log.Debugf("%v", data.GetWorkerCreatorId() == r.infraConfig.GetNodeId())
+		log.Debugf("%v", data.GetWorkerCreatorId())
+		log.Debugf("%v", r.infraConfig.GetNodeId())
 		nextStage, nextExchange, nextStageCount, err := r.getNextStageData(data.GetStage())
 		if err != nil {
 			log.Errorf("Failed to get next stage data: %s", err)
@@ -688,14 +698,19 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 
 		reduceExchange := r.infraConfig.GetReduceExchange()
 		stage := data.GetStage()
-
+		log.Debugf("Stage: %s", stage)
+		log.Debugf("omega %v", data)
+		log.Debugf("nextof %v", nextRingEOF)
 		tasks[reduceExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[reduceExchange][stage] = make(map[string]*protocol.Task)
 		tasks[reduceExchange][stage][nextNode] = eofTask
+		log.Debugf("Next node: %s", nextNode)
+		log.Debugf("expected task: %v", eofTask)
 
 		// send the results
 		r.addResultsToNextStage(tasks, data.GetStage(), clientId)
 	}
+	log.Debugf("eof task: %v", tasks)
 	return tasks
 }
 
