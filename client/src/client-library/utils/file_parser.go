@@ -60,6 +60,7 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 						Type:     p.fileType,
 						Data:     make([]*protocol.Batch_Row, 0, p.maxBatch),
 						ClientId: clientId,
+						EOF:      false,
 					},
 				},
 			},
@@ -81,13 +82,7 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 
 	for range p.maxBatch {
 		line, err := p.bufReader.ReadString(COMMUNICATION_DELIMITER)
-		if err != nil {
-			if err == io.EOF {
-				if len(batch.Data) > 0 {
-					return batchMessage, nil
-				}
-
-			}
+		if err != nil && err != io.EOF {
 			return nil, err
 		}
 
@@ -96,8 +91,15 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 			break
 		}
 
-		batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
-		totalSize += len(line)
+		if len(line) > 0 {
+			batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
+			totalSize += len(line)
+		}
+
+		if err == io.EOF {
+			batch.EOF = true
+			return batchMessage, io.EOF
+		}
 	}
 
 	return batchMessage, nil

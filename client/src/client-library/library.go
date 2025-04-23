@@ -133,6 +133,7 @@ func (l *Library) sendAllFiles() error {
 // Send each line to the server and wait for confirmation
 // until an OEF or the client is shutdown
 func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
+	log.Infof("action: sendFile | result: start | file: %s", filename)
 
 	parser, err := utils.NewParser(l.config.MaxAmount, filename, fileType)
 	if err != nil {
@@ -143,17 +144,16 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	for l.isRunning {
 
-		batch, err := parser.ReadBatch(l.config.ClientId)
-		if err != nil {
-			if err == io.EOF {
-				log.Infof("End of file reached for: %s", filename)
-				break
-			}
+		batch, fileErr := parser.ReadBatch(l.config.ClientId)
+		
+		if fileErr != io.EOF && fileErr != nil {
 			return err
 		}
+
 		if err := l.socket.Write(batch); err != nil {
 			return err
 		}
+
 		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
 		err = l.waitForSuccessServerResponse()
@@ -162,6 +162,9 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 			return err
 		}
 
+		if fileErr == io.EOF {
+			break
+		}
 	}
 
 	return nil
