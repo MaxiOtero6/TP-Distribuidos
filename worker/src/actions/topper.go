@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -185,7 +184,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 		title := data["Title"].(string)
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
-			Type:  "max",
+			Type:  "Max",
 			Title: title,
 			Value: uint64(element.Value),
 		})
@@ -198,7 +197,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 		title := data["Title"].(string)
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
-			Type:  "min",
+			Type:  "Min",
 			Title: title,
 			Value: uint64(-element.Value),
 		})
@@ -266,16 +265,6 @@ func (t *Topper) lambdaResultStage(tasks Tasks) {
 	}
 }
 
-func (t *Topper) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%t.infraConfig.GetReduceCount())
-	return nextNodeId, nil
-}
-
 func (t *Topper) addResultsToNextStage(tasks Tasks, stage string) error {
 	switch stage {
 	case EPSILON_STAGE:
@@ -295,26 +284,51 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 	tasks = make(Tasks)
 
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+	TOP_EXCHANGE := t.infraConfig.GetTopExchange()
 	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
-	nextStageEOF := &protocol.Task{
-		Stage: &protocol.Task_OmegaEOF{
-			OmegaEOF: &protocol.OmegaEOF{
-				Data: &protocol.OmegaEOF_Data{
-					ClientId:        data.GetClientId(),
-					WorkerCreatorId: "",
-					Stage:           RESULT_EXCHANGE,
+	if data.GetWorkerCreatorId() == t.infraConfig.GetNodeId() {
+
+		nextStageEOF := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						ClientId:        data.GetClientId(),
+						WorkerCreatorId: "",
+						Stage:           RESULT_STAGE,
+					},
 				},
 			},
-		},
+		}
+
+		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+		tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID] = nextStageEOF
+
+	} else {
+
+		nextRingEOF := data
+
+		if data.GetWorkerCreatorId() == "" {
+			nextRingEOF.WorkerCreatorId = t.infraConfig.GetNodeId()
+		}
+
+		eofTask := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: nextRingEOF,
+				},
+			},
+		}
+
+		nextNode := t.infraConfig.GetNodeId()
+
+		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+		tasks[TOP_EXCHANGE][data.GetStage()] = make(map[string]*protocol.Task)
+		tasks[TOP_EXCHANGE][data.GetStage()][nextNode] = eofTask
+
+		t.addResultsToNextStage(tasks, data.GetStage())
 	}
-
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID] = nextStageEOF
-
-	// send the results
-	t.addResultsToNextStage(tasks, data.GetStage())
 
 	return tasks
 }

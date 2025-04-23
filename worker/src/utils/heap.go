@@ -2,6 +2,7 @@ package heap
 
 import (
 	"container/heap"
+	"sort"
 )
 
 // Element represents an item in the heap.
@@ -53,6 +54,7 @@ func (h *TopKHeap) Insert(value int, data interface{}) {
 	if h.heap.Len() > h.k {
 		heap.Pop(&h.heap) // Remove the smallest element if the heap exceeds size K
 	}
+
 }
 
 // GetTopK returns the elements in the heap in descending order.
@@ -64,6 +66,11 @@ func (h *TopKHeap) GetTopK() []*Element {
 	for i := 0; i < len(result)/2; i++ {
 		result[i], result[len(result)-1-i] = result[len(result)-1-i], result[i]
 	}
+
+	// Ordenar explícitamente en orden descendente por el valor
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Value > result[j].Value
+	})
 
 	return result
 }
