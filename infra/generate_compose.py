@@ -35,7 +35,9 @@ class ServiceType(Enum):
     MAP = "MAPPER"
     REDUCE = "REDUCER"
 
-    def to_service(self, id: int, instances_per_service: Dict["ServiceType", int]) -> "Service":
+    def to_service(
+        self, id: int, instances_per_service: Dict["ServiceType", int]
+    ) -> "Service":
         match self:
             case ServiceType.SERVER:
                 return Service(
@@ -44,49 +46,70 @@ class ServiceType(Enum):
                     environment={
                         "SERVER_PORT": str(8080 + id),
                         "SERVER_ID": str(id),
-                        "SERVER_FILTER_COUNT": str(instances_per_service.get(ServiceType.FILTER, 0)),
-                        "SERVER_OVERVIEW_COUNT": str(instances_per_service.get(ServiceType.OVERVIEW, 0)),
-                        "SERVER_MAP_COUNT": str(instances_per_service.get(ServiceType.MAP, 0)),
-                        "SERVER_JOIN_COUNT": str(instances_per_service.get(ServiceType.JOINER, 0)),
-                        "SERVER_REDUCE_COUNT": str(instances_per_service.get(ServiceType.REDUCE, 0)),
-                        "SERVER_TOP_COUNT": str(instances_per_service.get(ServiceType.TOP, 0)),
+                        "SERVER_FILTER_COUNT": str(
+                            instances_per_service.get(ServiceType.FILTER, 0)
+                        ),
+                        "SERVER_OVERVIEW_COUNT": str(
+                            instances_per_service.get(ServiceType.OVERVIEW, 0)
+                        ),
+                        "SERVER_MAP_COUNT": str(
+                            instances_per_service.get(ServiceType.MAP, 0)
+                        ),
+                        "SERVER_JOIN_COUNT": str(
+                            instances_per_service.get(ServiceType.JOINER, 0)
+                        ),
+                        "SERVER_REDUCE_COUNT": str(
+                            instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "SERVER_TOP_COUNT": str(
+                            instances_per_service.get(ServiceType.TOP, 0)
+                        ),
                     },
-                    networks=[
-                        MOVIES_NETWORK_NAME
-                    ],
+                    networks=[MOVIES_NETWORK_NAME],
+                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
                     volumes={
                         "./server/config.yaml": "/app/config.yaml",
-                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml"
-                    }
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
+                    },
                 )
             case ServiceType.CLIENT:
+                server_count = instances_per_service.get(ServiceType.SERVER, 0)
+                depends_on = (
+                    {
+                        f"server_{i}": {"condition": "service_started"}
+                        for i in range(server_count)
+                    }
+                    if server_count > 0
+                    else None
+                )
+
                 return Service(
                     container_name=f"client_{id}",
                     image="client:latest",
-                    environment={
-                        "CLIENT_ID": str(id)
-                    },
-                    networks=[
-                        MOVIES_NETWORK_NAME
-                    ],
+                    environment={"CLIENT_ID": str(id)},
+                    networks=[MOVIES_NETWORK_NAME],
                     volumes={
                         "./client/config.yaml": "/app/config.yaml",
-                        os.path.abspath("./.data/"): "/app/.data"
-                    }
+                        os.path.abspath("./.data/"): "/app/.data",
+                    },
+                    depends_on=depends_on,
                 )
             case ServiceType.RABBIT_MQ:
                 return Service(
                     container_name="rabbitmq",
                     image="rabbitmq:4-management",
-                    networks=[
-                        MOVIES_NETWORK_NAME
-                    ],
-                    ports={
-                        "15672": "15672",
-                        "5672": "5672",
+                    networks=[MOVIES_NETWORK_NAME],
+                    ports={"15672": "15672", "5672": "5672"},
+                    volumes={"rabbit": "/var/lib/rabbitmq"},
+                    environment={
+                        "RABBITMQ_DEFAULT_USER": "guest",
+                        "RABBITMQ_DEFAULT_PASS": "guest",
                     },
-                    volumes={
-                        "rabbit": "/var/lib/rabbitmq",
+                    healthcheck={
+                        "test": ["CMD", "rabbitmq-diagnostics", "ping"],
+                        "interval": "10s",
+                        "timeout": "5s",
+                        "retries": 5,
                     },
                 )
             case (
@@ -104,23 +127,31 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
-                        "WORKER_FILTER_COUNT": str(instances_per_service.get(ServiceType.FILTER, 0)),
-                        "WORKER_OVERVIEW_COUNT": str(instances_per_service.get(ServiceType.OVERVIEW, 0)),
-                        "WORKER_MAP_COUNT": str(instances_per_service.get(ServiceType.MAP, 0)),
-                        "WORKER_JOIN_COUNT": str(instances_per_service.get(ServiceType.JOINER, 0)),
-                        "WORKER_REDUCE_COUNT": str(instances_per_service.get(ServiceType.REDUCE, 0)),
-                        "WORKER_TOP_COUNT": str(instances_per_service.get(ServiceType.TOP, 0)),
+                        "WORKER_FILTER_COUNT": str(
+                            instances_per_service.get(ServiceType.FILTER, 0)
+                        ),
+                        "WORKER_OVERVIEW_COUNT": str(
+                            instances_per_service.get(ServiceType.OVERVIEW, 0)
+                        ),
+                        "WORKER_MAP_COUNT": str(
+                            instances_per_service.get(ServiceType.MAP, 0)
+                        ),
+                        "WORKER_JOIN_COUNT": str(
+                            instances_per_service.get(ServiceType.JOINER, 0)
+                        ),
+                        "WORKER_REDUCE_COUNT": str(
+                            instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "WORKER_TOP_COUNT": str(
+                            instances_per_service.get(ServiceType.TOP, 0)
+                        ),
                     },
-                    networks=[
-                        MOVIES_NETWORK_NAME
-                    ],
-                    depends_on=[
-                        "rabbitmq"
-                    ],
+                    networks=[MOVIES_NETWORK_NAME],
+                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
                     volumes={
                         "./worker/config.yaml": "/app/config.yaml",
-                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml"
-                    }
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
+                    },
                 )
 
 
@@ -170,8 +201,10 @@ class Service:
     entrypoint: Optional[str]
     networks: Optional[List[str]]
     environment: Optional[Dict[str, str]]
-    depends_on: Optional[List[str]]
+    depends_on: Optional[Dict[str, dict]]
     volumes: Optional[Dict[str, str]]
+    ports: Optional[Dict[str, str]]
+    healthcheck: Optional[Dict[str, any]]
     indent_level: int
 
     def __init__(
@@ -181,28 +214,27 @@ class Service:
         entrypoint: Optional[str] = None,
         environment: Optional[Dict[str, str]] = None,
         networks: Optional[List[str]] = None,
-        depends_on: Optional[List[str]] = None,
+        depends_on: Optional[Dict[str, dict]] = None,
         ports: Optional[Dict[str, str]] = None,
         volumes: Optional[Dict[str, str]] = None,
+        healthcheck: Optional[Dict[str, any]] = None,
         indent_level: int = 1,
     ) -> None:
-        self.container_name: str = container_name
-        self.image: str = image
-        self.entrypoint: Optional[str] = entrypoint
-        self.environment: Optional[Dict[str, str]] = environment
-        self.networks: Optional[List[str]] = networks
-        self.depends_on: Optional[List[str]] = depends_on
-        self.ports: Optional[Dict[str, str]] = ports
-        self.volumes: Optional[Dict[str, str]] = volumes
-        self.indent_level: int = indent_level
+        self.container_name = container_name
+        self.image = image
+        self.entrypoint = entrypoint
+        self.environment = environment
+        self.networks = networks
+        self.depends_on = depends_on
+        self.ports = ports
+        self.volumes = volumes
+        self.healthcheck = healthcheck
+        self.indent_level = indent_level
 
     def __str__(self) -> str:
-        level: int = self.indent_level
-        lines: List[str] = []
-        lines.append(indent(f"{self.container_name}:", level))
-        lines.append(
-            indent(f"container_name: {self.container_name}", level + 1)
-        )
+        level = self.indent_level
+        lines = [indent(f"{self.container_name}:", level)]
+        lines.append(indent(f"container_name: {self.container_name}", level + 1))
         lines.append(indent(f"image: {self.image}", level + 1))
         if self.entrypoint:
             lines.append(indent(f"entrypoint: {self.entrypoint}", level + 1))
@@ -219,8 +251,13 @@ class Service:
 
         if self.depends_on:
             lines.append(indent("depends_on:", level + 1))
-            for dep in self.depends_on:
-                lines.append(indent(f"- {dep}", level + 2))
+            for service_name, options in self.depends_on.items():
+                if options:
+                    lines.append(indent(f"{service_name}:", level + 2))
+                    for k, v in options.items():
+                        lines.append(indent(f"{k}: {v}", level + 3))
+                else:
+                    lines.append(indent(f"- {service_name}", level + 2))
 
         if self.ports:
             lines.append(indent("ports:", level + 1))
@@ -231,6 +268,16 @@ class Service:
             lines.append(indent("volumes:", level + 1))
             for key, value in self.volumes.items():
                 lines.append(indent(f"- {key}:{value}", level + 2))
+
+        if self.healthcheck:
+            lines.append(indent("healthcheck:", level + 1))
+            for key, value in self.healthcheck.items():
+                if isinstance(value, list):
+                    lines.append(indent(f"{key}:", level + 2))
+                    for item in value:
+                        lines.append(indent(f"- {item}", level + 3))
+                else:
+                    lines.append(indent(f"{key}: {value}", level + 2))
 
         return "\n".join(lines) + "\n"
 
@@ -339,9 +386,7 @@ def write_to_file(output_file: str, compose: DockerCompose) -> None:
 def main() -> None:
     n_instances_path, output_file_path = get_args()
     instances_per_service = read_instances(n_instances_path)
-    docker_compose: DockerCompose = generate_docker_compose(
-        instances_per_service
-    )
+    docker_compose: DockerCompose = generate_docker_compose(instances_per_service)
     write_to_file(output_file_path, docker_compose)
 
 
