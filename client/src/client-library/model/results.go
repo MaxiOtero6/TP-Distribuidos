@@ -8,7 +8,7 @@ type Query1 struct {
 
 type Query2 struct {
 	Country         string
-	TotalInvestment float64
+	TotalInvestment uint64
 }
 
 type Query3 struct {
