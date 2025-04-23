@@ -74,8 +74,8 @@ func (r *RabbitHandler) Close() {
 }
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
-func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie) {
-	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount())
+func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string) {
+	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount(), clientId)
 	// muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
 	r.publishTasksRabbit(alphaTasks, r.infraConfig.GetFilterExchange())
 	// r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())
@@ -83,15 +83,15 @@ func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie) {
 
 // SendRatingsRabbit sends the ratings to the join exchange
 // The ratings are shuffled by the join count hashing
-func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating) {
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, r.infraConfig.GetJoinCount())
+func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string) {
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, r.infraConfig.GetJoinCount(), clientId)
 	r.publishTasksRabbit(zetaTasks, r.infraConfig.GetJoinExchange())
 }
 
 // SendActorsRabbit sends the actors to the join exchange
 // The actors are shuffled by the join count hashing
-func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor) {
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, r.infraConfig.GetJoinCount())
+func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string) {
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, r.infraConfig.GetJoinCount(), clientId)
 	r.publishTasksRabbit(iotaTasks, r.infraConfig.GetJoinExchange())
 }
 
@@ -116,13 +116,13 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 	unmarshallResult := func(msg amqp.Delivery) (*protocol.ResultsResponse_Result, error) {
 		task := &protocol.Task{}
 		err := proto.Unmarshal(msg.Body, task)
-		
+
 		if err != nil {
 			return nil, err
 		}
-		
+
 		result := &protocol.ResultsResponse_Result{}
-		
+
 		switch task.GetStage().(type) {
 		case *protocol.Task_Result1:
 			result.Message = &protocol.ResultsResponse_Result_Result1{
@@ -147,7 +147,7 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 		default:
 			return nil, fmt.Errorf("unknown task stage: %v", task.GetStage())
 		}
-		
+
 		return result, nil
 	}
 

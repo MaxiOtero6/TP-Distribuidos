@@ -6,7 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 )
 
-func GetAlphaStageTask(movies []*model.Movie, filtersCount int) (tasks map[string]*protocol.Task) {
+func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var alphaData = make(map[string][]*protocol.Alpha_Data)
 
@@ -24,6 +24,7 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int) (tasks map[strin
 
 	for id, data := range alphaData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Alpha{
 				Alpha: &protocol.Alpha{
 					Data: data,
@@ -35,7 +36,7 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int) (tasks map[strin
 	return tasks
 }
 
-func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks map[string]*protocol.Task) {
+func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
 
@@ -54,6 +55,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks m
 
 	for id, data := range zetaData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
 					Data: data,
@@ -65,7 +67,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks m
 	return tasks
 }
 
-func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map[string]*protocol.Task) {
+func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	iotaData := make(map[string][]*protocol.Iota_Data)
 
@@ -85,6 +87,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 
 	for id, data := range iotaData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
 					Data: data,
@@ -96,7 +99,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 	return tasks
 }
 
-func GetMuStageTask(movies []*model.Movie, overviewCount int) (tasks map[string]*protocol.Task) {
+func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var muData = make(map[string][]*protocol.Mu_Data)
 
@@ -114,6 +117,7 @@ func GetMuStageTask(movies []*model.Movie, overviewCount int) (tasks map[string]
 
 	for id, data := range muData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Mu{
 				Mu: &protocol.Mu{
 					Data: data,
