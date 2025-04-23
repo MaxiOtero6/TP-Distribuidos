@@ -75,8 +75,11 @@ func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string,
 
 	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
 	// muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT)
+	gammaTasks := utils.GetGammaStageTask(movies, FILTER_COUNT, clientId)
+	
 	r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
 	// r.publishTasksRabbit(muTasks, OVERVIEW_EXCHANGE)
+	r.publishTasksRabbit(gammaTasks, FILTER_EXCHANGE)
 
 	if isEOF {
 		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)

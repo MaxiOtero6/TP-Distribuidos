@@ -61,6 +61,34 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string)
 	return tasks
 }
 
+func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
+	tasks = make(map[string]*protocol.Task)
+	var gammaData = make(map[string][]*protocol.Gamma_Data)
+
+	for _, movie := range movies {
+		idHash := utils.GetWorkerIdFromHash(filtersCount, movie.Id)
+
+		gammaData[idHash] = append(gammaData[idHash], &protocol.Gamma_Data{
+			Id:            movie.Id,
+			Budget:        movie.Budget,
+			ProdCountries: movie.ProdCountries,
+		})
+	}
+
+	for id, data := range gammaData {
+		tasks[id] = &protocol.Task{
+			ClientId: clientId,
+			Stage: &protocol.Task_Gamma{
+				Gamma: &protocol.Gamma{
+					Data: data,
+				},
+			},
+		}
+	}
+
+	return tasks
+}
+
 func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
