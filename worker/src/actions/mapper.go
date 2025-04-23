@@ -240,7 +240,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 
 	for _, movie := range data {
 
-		if movie.GetBudget() == 0 {
+		if movie.GetBudget() == 0 || movie.GetRevenue() == 0 {
 			continue
 		}
 
