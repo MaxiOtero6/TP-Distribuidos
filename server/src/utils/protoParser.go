@@ -6,6 +6,31 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 )
 
+const ALPHA_STAGE = "alpha"
+const ZETA_STAGE = "zeta"
+const IOTA_STAGE = "iota"
+const MU_STAGE = "mu"
+
+func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
+	tasks := make(map[string]*protocol.Task)
+
+	funnyEOFHash := utils.GetWorkerIdFromHash(workersCount, "EOF")
+
+	tasks[funnyEOFHash] = &protocol.Task{
+		ClientId: clientId,
+		Stage: &protocol.Task_OmegaEOF{
+			OmegaEOF: &protocol.OmegaEOF{
+				Data: &protocol.OmegaEOF_Data{
+					Stage:           stage,
+					WorkerCreatorId: "",
+				},
+			},
+		},
+	}
+
+	return tasks
+}
+
 func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var alphaData = make(map[string][]*protocol.Alpha_Data)

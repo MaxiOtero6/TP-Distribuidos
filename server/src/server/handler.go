@@ -78,13 +78,13 @@ func (s *Server) handleBatchMessage(clientSocket *client_server_communication.So
 	switch batchMessage.Type {
 	case protocol.FileType_MOVIES:
 		movies := s.processMoviesBatch(batchMessage)
-		s.rabbitHandler.SendMoviesRabbit(movies, clientId)
+		s.rabbitHandler.SendMoviesRabbit(movies, clientId, batchMessage.GetEOF())
 	case protocol.FileType_CREDITS:
 		// actors := s.processCreditsBatch(batchMessage)
-		// s.rabbitHandler.SendActorsRabbit(actors, clientId)
+		// s.rabbitHandler.SendActorsRabbit(actors, clientId, batchMessage.GetEOF())
 	case protocol.FileType_RATINGS:
 		// ratings := s.processRatingsBatch(batchMessage)
-		// s.rabbitHandler.SendRatingsRabbit(ratings, clientId)
+		// s.rabbitHandler.SendRatingsRabbit(ratings, clientId, batchMessage.GetEOF())
 	default:
 		log.Errorf("Invalid batch type: %v", batchMessage.Type)
 

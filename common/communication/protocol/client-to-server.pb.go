@@ -27,7 +27,6 @@ const (
 	FileType_MOVIES  FileType = 0
 	FileType_CREDITS FileType = 1
 	FileType_RATINGS FileType = 2
-	FileType_EOF     FileType = 3
 )
 
 // Enum value maps for FileType.
@@ -36,13 +35,11 @@ var (
 		0: "MOVIES",
 		1: "CREDITS",
 		2: "RATINGS",
-		3: "EOF",
 	}
 	FileType_value = map[string]int32{
 		"MOVIES":  0,
 		"CREDITS": 1,
 		"RATINGS": 2,
-		"EOF":     3,
 	}
 )
 
@@ -202,6 +199,7 @@ type Batch struct {
 	Type          FileType               `protobuf:"varint,1,opt,name=type,proto3,enum=FileType" json:"type,omitempty"`
 	Data          []*Batch_Row           `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
 	ClientId      string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	EOF           bool                   `protobuf:"varint,4,opt,name=EOF,proto3" json:"EOF,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -255,6 +253,13 @@ func (x *Batch) GetClientId() string {
 		return x.ClientId
 	}
 	return ""
+}
+
+func (x *Batch) GetEOF() bool {
+	if x != nil {
+		return x.EOF
+	}
+	return false
 }
 
 type ClientServerMessage struct {
@@ -424,12 +429,13 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\x06Finish\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"%\n" +
 	"\x06Result\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"~\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\x90\x01\n" +
 	"\x05Batch\x12\x1d\n" +
 	"\x04type\x18\x01 \x01(\x0e2\t.FileTypeR\x04type\x12\x1e\n" +
 	"\x04data\x18\x02 \x03(\v2\n" +
 	".Batch.RowR\x04data\x12\x1b\n" +
-	"\tclient_id\x18\x03 \x01(\tR\bclientId\x1a\x19\n" +
+	"\tclient_id\x18\x03 \x01(\tR\bclientId\x12\x10\n" +
+	"\x03EOF\x18\x04 \x01(\bR\x03EOF\x1a\x19\n" +
 	"\x03Row\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\tR\x04data\"\xa3\x01\n" +
 	"\x13ClientServerMessage\x12\x1e\n" +
@@ -437,13 +443,12 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\x04sync\x18\x02 \x01(\v2\x05.SyncH\x00R\x04sync\x12!\n" +
 	"\x06finish\x18\x03 \x01(\v2\a.FinishH\x00R\x06finish\x12!\n" +
 	"\x06result\x18\x04 \x01(\v2\a.ResultH\x00R\x06resultB\t\n" +
-	"\amessage*9\n" +
+	"\amessage*0\n" +
 	"\bFileType\x12\n" +
 	"\n" +
 	"\x06MOVIES\x10\x00\x12\v\n" +
 	"\aCREDITS\x10\x01\x12\v\n" +
-	"\aRATINGS\x10\x02\x12\a\n" +
-	"\x03EOF\x10\x03B\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\aRATINGS\x10\x02B\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_client_server_messages_client_to_server_proto_rawDescOnce sync.Once

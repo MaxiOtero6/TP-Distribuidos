@@ -66,25 +66,50 @@ func (r *RabbitHandler) Close() {
 }
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
-func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string) {
-	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount(), clientId)
-	// muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
-	r.publishTasksRabbit(alphaTasks, r.infraConfig.GetFilterExchange())
-	// r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())
+func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string, isEOF bool) {
+	FILTER_COUNT := r.infraConfig.GetFilterCount()
+	// OVERVIEW_COUNT := r.infraConfig.GetOverviewCount()
+
+	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
+	// OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
+
+	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
+	// muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT)
+	r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
+	// r.publishTasksRabbit(muTasks, OVERVIEW_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)
+		// r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE), OVERVIEW_EXCHANGE)
+	}
 }
 
 // SendRatingsRabbit sends the ratings to the join exchange
 // The ratings are shuffled by the join count hashing
-func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string) {
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, r.infraConfig.GetJoinCount(), clientId)
-	r.publishTasksRabbit(zetaTasks, r.infraConfig.GetJoinExchange())
+func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string, isEOF bool) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, JOINER_COUNT, clientId)
+	r.publishTasksRabbit(zetaTasks, JOINER_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE), JOINER_EXCHANGE)
+	}
 }
 
 // SendActorsRabbit sends the actors to the join exchange
 // The actors are shuffled by the join count hashing
-func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string) {
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, r.infraConfig.GetJoinCount(), clientId)
-	r.publishTasksRabbit(iotaTasks, r.infraConfig.GetJoinExchange())
+func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string, isEOF bool) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, JOINER_COUNT, clientId)
+	r.publishTasksRabbit(iotaTasks, JOINER_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE), JOINER_EXCHANGE)
+	}
 }
 
 // publishTasksRabbit publishes the tasks to the specified exchange
