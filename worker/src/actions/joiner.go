@@ -34,12 +34,16 @@ type JoinerPartialResults struct {
 type Joiner struct {
 	infraConfig    *model.InfraConfig
 	partialResults *JoinerPartialResults
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewJoiner creates a new Joiner instance.
 func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return &Joiner{
-		infraConfig: infraConfig,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 

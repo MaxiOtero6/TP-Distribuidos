@@ -5,11 +5,13 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
 // Topper is a struct that implements the Action interface.
 type Topper struct {
 	infraConfig *model.InfraConfig
+	hashFunc    func(workersCount int, item string) string
 }
 
 // NewTopper creates a new Topper instance.
@@ -17,6 +19,7 @@ type Topper struct {
 func NewTopper(infraConfig *model.InfraConfig) *Topper {
 	return &Topper{
 		infraConfig: infraConfig,
+		hashFunc:    utils.GetWorkerIdFromHash,
 	}
 }
 

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/rabbit"
@@ -9,11 +11,12 @@ import (
 )
 
 var log = logging.MustGetLogger("log")
+var ErrSignalReceived = errors.New("signal received")
 
 type Server struct {
 	ID            string
 	serverSocket  *client_server_communication.Socket
-	done          chan bool
+	isRunning     bool
 	clientID      string
 	clientSocket  *client_server_communication.Socket
 	rabbitHandler *rabbit.RabbitHandler
@@ -21,7 +24,6 @@ type Server struct {
 
 func NewServer(id string, address string, infraConfig *common_model.InfraConfig) (*Server, error) {
 	serverSocket, err := client_server_communication.CreateServerSocket(address)
-
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +31,7 @@ func NewServer(id string, address string, infraConfig *common_model.InfraConfig)
 	return &Server{
 		ID:            id,
 		serverSocket:  serverSocket,
-		done:          make(chan bool),
+		isRunning:     true,
 		rabbitHandler: rabbit.NewRabbitHandler(infraConfig),
 	}, nil
 }
@@ -40,14 +42,33 @@ func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]s
 }
 
 func (s *Server) acceptConnections() {
-	for {
+	for s.isRunning {
+
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
-			break
+			if !s.isRunning {
+				log.Infof("action: ShutdownServer | result: success | error: %v", err)
+				continue
+			} else {
+				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
+				continue
+			}
+
 		}
+
 		log.Infof("Client connected")
 
-		s.handleConnection(clientSocket)
+		err = s.handleConnection(clientSocket)
+		if err != nil {
+			if !s.isRunning {
+				log.Infof("action: handleConnection | result: fail | error: %v", ErrSignalReceived)
+			} else if err == client_server_communication.ErrConnectionClosed {
+				log.Infof("action: handleConnection | result: fail | error: %v | clientId: %s", err, s.getClientID())
+			} else {
+				log.Errorf("action: handleConnection | result: fail | error: %v", err)
+			}
+			continue
+		}
 	}
 }
 
@@ -64,7 +85,23 @@ func (s *Server) Run() {
 }
 
 func (s *Server) Stop() {
-	s.done <- true
-	s.serverSocket.Close()
-	s.rabbitHandler.Close()
+
+	s.isRunning = false
+
+	if s.serverSocket != nil {
+		s.clientSocket.Close()
+		s.clientSocket = nil
+		log.Infof("Client socket closed")
+	}
+
+	if s.serverSocket != nil {
+		s.serverSocket.Close()
+		s.serverSocket = nil
+		log.Info("Server socket closed")
+	}
+	if s.rabbitHandler != nil {
+		s.rabbitHandler.Close()
+		log.Infof("Rabbit handler closed")
+	}
+
 }

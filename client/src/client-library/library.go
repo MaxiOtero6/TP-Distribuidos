@@ -33,9 +33,9 @@ type Library struct {
 	socket        *client_communication.Socket
 	fileNames     []string
 	sleepTime     time.Duration
-	running       bool
 	responseCount int
 	done          chan bool
+	isRunning     bool
 	config        ClientConfig
 }
 
@@ -50,43 +50,53 @@ func NewLibrary(config ClientConfig) (*Library, error) {
 		socket:        socket,
 		config:        config,
 		sleepTime:     1,
-		running:       true,
+		isRunning:     true,
 		responseCount: 0,
-		done:          make(chan bool, 1),
 	}, nil
-}
-
-func (l *Library) isDone() bool {
-	select {
-	case <-l.done:
-		return true
-	default:
-	}
-	return false
 }
 
 func (l *Library) ProcessData() {
 
 	err := l.sendSync()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendSync | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendSync | result: fail | error: %v", err)
 		return
 	}
 
 	err = l.sendAllFiles()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendAllFiles | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
 		return
 	}
 
 	err = l.sendFinishMessage()
 	if err != nil {
+		if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: sendFinishMessage | result: fail | error: %v", err)
+			return
+		}
 		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
 		return
 	}
 
 	err = l.fetchServerResults()
 	if err != nil {
+		if err == ErrSignalReceived {
+			log.Infof("action: fetchServerResults | result: success | error: %v", err)
+			return
+		} else if err == client_communication.ErrConnectionClosed {
+			log.Infof("action: fetchServerResults | result: fail | error: %v", err)
+			return
+		}
+
 		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 		return
 	}
@@ -110,6 +120,9 @@ func (l *Library) sendAllFiles() error {
 	return nil
 }
 
+// Read line by line the file with the name pass by parameter and
+// Send each line to the server and wait for confirmation
+// until an OEF or the client is shutdown
 func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	parser, err := utils.NewParser(l.config.MaxAmount, filename, fileType)
@@ -119,17 +132,12 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	defer parser.Close()
 
-	for {
-
-		done := l.isDone()
-		if done {
-			return ErrSignalReceived
-		}
+	for l.isRunning {
 
 		batch, err := parser.ReadBatch()
 		if err != nil {
 			if err == io.EOF {
-				log.Infof("End of file reached for: %s", filename) // Log end of file
+				log.Infof("End of file reached for: %s", filename)
 				break
 			}
 			return err
@@ -137,14 +145,16 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 		if err := l.socket.Write(batch); err != nil {
 			return err
 		}
-		log.Info("Batch sent successfully, waiting for server response...")
+		log.Infof("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
+
 		err = l.waitForSuccessServerResponse()
 		if err != nil {
-			log.Criticalf("action: batch_send | result: fail")
+			log.Criticalf("action: batch_send | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)
 			return err
 		}
 
 	}
+
 	return nil
 
 }
@@ -173,11 +183,9 @@ func (l *Library) sendCreditsFile() error {
 
 func (l *Library) sendSync() error {
 
-	done := l.isDone()
-	if done {
-		return ErrSignalReceived
+	if !l.isRunning {
+		return nil
 	}
-
 	syncMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
@@ -198,11 +206,10 @@ func (l *Library) sendSync() error {
 
 	return nil
 }
-
 func (l *Library) sendFinishMessage() error {
-	done := l.isDone()
-	if done {
-		return ErrSignalReceived
+
+	if !l.isRunning {
+		return nil
 	}
 
 	finishMessage := &protocol.Message{
@@ -220,16 +227,12 @@ func (l *Library) sendFinishMessage() error {
 	if err := l.socket.Write(finishMessage); err != nil {
 		return err
 	}
+	log.Infof("action: SendFinishMessage | result: success | client_id: %v", l.config.ClientId)
 	return nil
 }
-
 func (l *Library) fetchServerResults() error {
 
-	for l.running {
-		done := l.isDone()
-		if done {
-			return ErrSignalReceived
-		}
+	for l.isRunning {
 
 		if l.sleepTime > MAX_DELAY {
 			return fmt.Errorf("timeout")
@@ -247,7 +250,6 @@ func (l *Library) fetchServerResults() error {
 		}
 
 		done, response, err := l.waitForAllResultsServerResponse()
-
 		if err != nil {
 			return err
 		}
@@ -266,7 +268,6 @@ func (l *Library) fetchServerResults() error {
 
 	return nil
 }
-
 func (l *Library) processRequestResponseMessage(message []*protocol.Request_Query) {
 	if len(message) == 0 {
 		log.Infof("action: processResultMessage | result: fail | error: empty response")
@@ -276,7 +277,6 @@ func (l *Library) processRequestResponseMessage(message []*protocol.Request_Quer
 		log.Infof("action:  | result: success | query number : %v | response: %v", query.Type, query.Message)
 	}
 }
-
 func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query, error) {
 	response, err := l.waitForServerResponse()
 	if err != nil {
@@ -294,7 +294,6 @@ func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query
 	return false, nil, fmt.Errorf("unexpected response type received")
 
 }
-
 func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Query, error) {
 	done, responses, err := l.waitForResultServerResponse()
 	if err != nil {
@@ -303,24 +302,24 @@ func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Q
 	if done {
 		l.responseCount++
 		if l.responseCount == QUERIES_AMOUNT {
-			l.running = false
+			l.isRunning = false
 		}
 	}
 	return done, responses, nil
 
 }
-
 func (l *Library) connectToServer() error {
 	var err error
 	l.socket, err = client_communication.Connect(l.config.ServerAddress)
 
 	if err != nil {
+		log.Infof("action: ConnectToServer | result: false | address: %v", l.config.ServerAddress)
 		return err
 	}
 
+	log.Infof("action: ConnectToServer | result: success | address: %v", l.config.ServerAddress)
 	return nil
 }
-
 func (l *Library) disconnectFromServer() {
 	if l.socket != nil {
 		l.socket.Close()
@@ -332,10 +331,12 @@ func (l *Library) disconnectFromServer() {
 func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error) {
 	response, err := l.socket.Read()
 	if err != nil {
+		if !l.isRunning {
+			return nil, ErrSignalReceived
+		}
 		return nil, err
 	}
 
-	// Verificar que el mensaje recibido sea del tipo esperado
 	serverClientMessage, ok := response.GetMessage().(*protocol.Message_ServerClientMessage)
 	if !ok {
 		return nil, fmt.Errorf("unexpected message type: expected ServerClientMessage")
@@ -391,7 +392,6 @@ func (l *Library) sendResultMessage() error {
 }
 
 func (l *Library) Stop() {
-	close(l.done)
+	l.isRunning = false
 	l.disconnectFromServer()
-	l.running = false
 }

@@ -11,14 +11,18 @@ import (
 
 // Mapper is a struct that implements the Action interface.
 type Mapper struct {
-	infraConfig *model.InfraConfig
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, itemId string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
 func NewMapper(infraConfig *model.InfraConfig) *Mapper {
 	return &Mapper{
-		infraConfig: infraConfig,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -64,7 +68,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data) (tasks Tasks) {
 	}
 
 	for _, d2Data := range dataMap {
-		nodeId := utils.RandomHash(REDUCE_COUNT)
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		delta2Data[nodeId] = append(delta2Data[nodeId], d2Data)
 	}
 
@@ -126,7 +130,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data) (tasks Tasks) {
 	}
 
 	for _, e2Data := range dataMap {
-		nodeId := utils.RandomHash(REDUCE_COUNT)
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		eta2Data[nodeId] = append(eta2Data[nodeId], e2Data)
 	}
 
@@ -186,7 +190,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data) (tasks Tasks) {
 	}
 
 	for _, k2Data := range dataMap {
-		nodeId := utils.RandomHash(REDUCE_COUNT)
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		kappa2Data[nodeId] = append(kappa2Data[nodeId], k2Data)
 	}
 
@@ -247,7 +251,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data) (tasks Tasks) {
 	}
 
 	for _, n2Data := range dataMap {
-		nodeId := utils.RandomHash(REDUCE_COUNT)
+		nodeId := m.randomHashFunc(REDUCE_COUNT)
 		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
 	}
 
@@ -313,7 +317,7 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := m.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)

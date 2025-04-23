@@ -24,6 +24,8 @@ type ReducerPartialResults struct {
 type Reducer struct {
 	infraConfig    *model.InfraConfig
 	partialResults *ReducerPartialResults
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewReduce creates a new Reduce instance.
@@ -41,6 +43,8 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 			nu2Data: make(map[string]*protocol.Nu_2_Data),
 			nu3Data: make(map[string]*protocol.Nu_3_Data),
 		},
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -353,7 +357,7 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 
 	// Divide the resulting countries by hashing each country
 	for _, d3Data := range dataMap {
-		nodeId := utils.GetWorkerIdFromHash(REDUCE_COUNT, d3Data.GetCountry())
+		nodeId := r.itemHashFunc(REDUCE_COUNT, d3Data.GetCountry())
 		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Delta_3_Data{
 			Country:       d3Data.GetCountry(),
 			PartialBudget: d3Data.GetPartialBudget(),
@@ -414,7 +418,7 @@ func (r *Reducer) eta2Results(tasks Tasks) {
 
 	// Divide the resulting movies by hashing each movie
 	for _, e2Data := range dataMap {
-		nodeId := utils.GetWorkerIdFromHash(REDUCE_COUNT, e2Data.GetMovieId())
+		nodeId := r.itemHashFunc(REDUCE_COUNT, e2Data.GetMovieId())
 		eta3Data[nodeId] = append(eta3Data[nodeId], &protocol.Eta_3_Data{
 			MovieId: e2Data.GetMovieId(),
 			Title:   e2Data.GetTitle(),
@@ -478,7 +482,7 @@ func (r *Reducer) kappa2Results(tasks Tasks) {
 
 	// Divide the resulting actors by hashing each actor
 	for _, k2Data := range dataMap {
-		nodeId := utils.GetWorkerIdFromHash(REDUCE_COUNT, k2Data.GetActorId())
+		nodeId := r.itemHashFunc(REDUCE_COUNT, k2Data.GetActorId())
 		kappa3Data[nodeId] = append(kappa3Data[nodeId], &protocol.Kappa_3_Data{
 			ActorId:               k2Data.GetActorId(),
 			ActorName:             k2Data.GetActorName(),
@@ -539,7 +543,7 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	// Divide the resulting sentiments by hashing each sentiment
 	for _, n3Data := range dataMap {
 		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
-		nodeId := utils.GetWorkerIdFromHash(REDUCE_COUNT, sentiment)
+		nodeId := r.itemHashFunc(REDUCE_COUNT, sentiment)
 		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Nu_3_Data{
 			Sentiment: n3Data.GetSentiment(),
 			Ratio:     n3Data.GetRatio(),
@@ -641,7 +645,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			},
 		}
 
-		randomNode := utils.RandomHash(nextStageCount)
+		randomNode := r.randomHashFunc(nextStageCount)
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
