@@ -1,3 +1,4 @@
+import os
 import sys
 from enum import Enum
 from typing import List, Tuple, Dict, Optional
@@ -69,7 +70,8 @@ class ServiceType(Enum):
                         MOVIES_NETWORK_NAME
                     ],
                     volumes={
-                        "./client/config.yaml": "/app/config.yaml"
+                        "./client/config.yaml": "/app/config.yaml",
+                        os.path.abspath("./.data/"): "/app/.data"
                     }
                 )
             case ServiceType.RABBIT_MQ:

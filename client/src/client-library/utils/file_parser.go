@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 )
 
@@ -50,15 +50,17 @@ func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Pars
 	}, nil
 }
 
-func (p *Parser) ReadBatch() (*protocol.Message, error) {
+func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 
 	batchMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
 				Message: &protocol.ClientServerMessage_Batch{
 					Batch: &protocol.Batch{
-						Type: p.fileType,
-						Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+						Type:     p.fileType,
+						Data:     make([]*protocol.Batch_Row, 0, p.maxBatch),
+						ClientId: clientId,
+						EOF:      false,
 					},
 				},
 			},
@@ -80,13 +82,7 @@ func (p *Parser) ReadBatch() (*protocol.Message, error) {
 
 	for range p.maxBatch {
 		line, err := p.bufReader.ReadString(COMMUNICATION_DELIMITER)
-		if err != nil {
-			if err == io.EOF {
-				if len(batch.Data) > 0 {
-					return batchMessage, nil
-				}
-
-			}
+		if err != nil && err != io.EOF {
 			return nil, err
 		}
 
@@ -95,8 +91,15 @@ func (p *Parser) ReadBatch() (*protocol.Message, error) {
 			break
 		}
 
-		batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
-		totalSize += len(line)
+		if len(line) > 0 {
+			batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
+			totalSize += len(line)
+		}
+
+		if err == io.EOF {
+			batch.EOF = true
+			return batchMessage, io.EOF
+		}
 	}
 
 	return batchMessage, nil

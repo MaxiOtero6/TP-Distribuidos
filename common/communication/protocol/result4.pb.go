@@ -144,7 +144,7 @@ const file_proto_stages_result4_proto_rawDesc = "" +
 	"\bposition\x18\x01 \x01(\rR\bposition\x12\x18\n" +
 	"\aactorId\x18\x02 \x01(\tR\aactorId\x12\x1c\n" +
 	"\tactorName\x18\x03 \x01(\tR\tactorName\x12&\n" +
-	"\x0eparticipations\x18\x04 \x01(\x04R\x0eparticipationsB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x0eparticipations\x18\x04 \x01(\x04R\x0eparticipationsB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_result4_proto_rawDescOnce sync.Once

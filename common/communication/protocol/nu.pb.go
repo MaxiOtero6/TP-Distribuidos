@@ -376,7 +376,7 @@ const file_proto_stages_nu_proto_rawDesc = "" +
 	"\x04Data\x12\x1c\n" +
 	"\tsentiment\x18\x01 \x01(\bR\tsentiment\x12\x14\n" +
 	"\x05ratio\x18\x02 \x01(\x02R\x05ratio\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\rR\x05countB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x05count\x18\x03 \x01(\rR\x05countB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_nu_proto_rawDescOnce sync.Once

@@ -153,7 +153,7 @@ const file_proto_stages_mu_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
 	"\arevenue\x18\x03 \x01(\x04R\arevenue\x12\x16\n" +
 	"\x06budget\x18\x04 \x01(\x04R\x06budget\x12\x1a\n" +
-	"\boverview\x18\x05 \x01(\tR\boverviewB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\boverview\x18\x05 \x01(\tR\boverviewB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_mu_proto_rawDescOnce sync.Once

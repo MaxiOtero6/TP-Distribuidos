@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/op/go-logging"
 )
@@ -16,6 +16,11 @@ type Action interface {
 	// It returns an error if the action fails.
 	Execute(task *protocol.Task) (Tasks, error)
 }
+
+// EOF Types
+const SMALL_TABLE string = "small"
+const BIG_TABLE string = "big"
+const GENERAL string = "general"
 
 // Query 1
 const ALPHA_STAGE string = "alpha"

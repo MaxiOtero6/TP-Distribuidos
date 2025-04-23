@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/op/go-logging"
@@ -90,6 +90,7 @@ outer:
 			}
 
 			log.Debugf("Task %T received from queue", task.GetStage())
+			//log.Debugf("Task value: %v", task.GetResult1().GetData())
 
 			subTasks, err := w.action.Execute(task)
 

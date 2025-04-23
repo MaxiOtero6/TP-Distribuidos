@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "common/communication/server-comm/protocol";
+option go_package = "common/communication/protocol";
 
 
 message Result4 {

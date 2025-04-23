@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/proto"
 )
@@ -65,14 +65,18 @@ func (s *Socket) Accept() (*Socket, error) {
 }
 
 func (s *Socket) Read() (*protocol.Message, error) {
+	expectedLength := 3
+	lengthBytes := make([]byte, expectedLength)
+	for expectedLength > 0 {
+		n, err := s.reader.Read(lengthBytes[len(lengthBytes)-expectedLength:])
+		expectedLength -= n
 
-	lengthBytes := make([]byte, 3)
-	_, err := s.reader.Read(lengthBytes)
-	if err != nil {
-		if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
-			return nil, ErrConnectionClosed
-		} else {
-			return nil, err
+		if err != nil {
+			if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+				return nil, ErrConnectionClosed
+			} else {
+				return nil, err
+			}
 		}
 	}
 
@@ -96,14 +100,14 @@ func (s *Socket) Read() (*protocol.Message, error) {
 	}
 
 	// Deserializa el mensaje usando proto.Unmarshal
-	var responseMessage protocol.Message
-	err = proto.Unmarshal(message, &responseMessage)
+	responseMessage := &protocol.Message{}
+	err := proto.Unmarshal(message, responseMessage)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debugf("Successfully deserialized message: %v", responseMessage)
-	return &responseMessage, nil
+	//log.Debugf("Successfully deserialized message: %v", responseMessage)
+	return responseMessage, nil
 }
 
 func (s *Socket) Write(message *protocol.Message) error {
@@ -113,7 +117,7 @@ func (s *Socket) Write(message *protocol.Message) error {
 		return err
 	}
 
-	log.Debugf("Sending message: %v", message_bytes)
+	// log.Debugf("Sending message: %v", message_bytes)
 
 	length := len(message_bytes)
 
@@ -142,7 +146,6 @@ func (s *Socket) Write(message *protocol.Message) error {
 }
 
 func (s *Socket) Close() error {
-
 	if s.conn != nil {
 		return s.conn.Close()
 	}

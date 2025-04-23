@@ -111,7 +111,7 @@ const file_proto_messages_proto_rawDesc = "" +
 	"\aMessage\x12J\n" +
 	"\x15client_server_message\x18\x01 \x01(\v2\x14.ClientServerMessageH\x00R\x13clientServerMessage\x12J\n" +
 	"\x15server_client_message\x18\x02 \x01(\v2\x14.ServerClientMessageH\x00R\x13serverClientMessageB\t\n" +
-	"\amessageB2Z0common/communication/client-server-comm/protocolb\x06proto3"
+	"\amessageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_messages_proto_rawDescOnce sync.Once

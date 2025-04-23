@@ -1,17 +1,45 @@
 package utils
 
 import (
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 )
 
-func GetAlphaStageTask(movies []*model.Movie) (tasks map[string]*protocol.Task) {
+const ALPHA_STAGE = "alpha"
+const ZETA_STAGE = "zeta"
+const IOTA_STAGE = "iota"
+const MU_STAGE = "mu"
+const GAMMA_STAGE = "gamma"
+
+func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
+	tasks := make(map[string]*protocol.Task)
+
+	funnyEOFHash := utils.GetWorkerIdFromHash(workersCount, "EOF")
+
+	tasks[funnyEOFHash] = &protocol.Task{
+		ClientId: clientId,
+		Stage: &protocol.Task_OmegaEOF{
+			OmegaEOF: &protocol.OmegaEOF{
+				Data: &protocol.OmegaEOF_Data{
+					Stage:           stage,
+					WorkerCreatorId: "",
+				},
+			},
+		},
+	}
+
+	return tasks
+}
+
+func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
-	var alphaData []*protocol.Alpha_Data
+	var alphaData = make(map[string][]*protocol.Alpha_Data)
 
 	for _, movie := range movies {
-		alphaData = append(alphaData, &protocol.Alpha_Data{
+		idHash := utils.GetWorkerIdFromHash(filtersCount, movie.Id)
+
+		alphaData[idHash] = append(alphaData[idHash], &protocol.Alpha_Data{
 			Id:            movie.Id,
 			Title:         movie.Title,
 			ProdCountries: movie.ProdCountries,
@@ -20,18 +48,49 @@ func GetAlphaStageTask(movies []*model.Movie) (tasks map[string]*protocol.Task) 
 		})
 	}
 
-	tasks[""] = &protocol.Task{
-		Stage: &protocol.Task_Alpha{
-			Alpha: &protocol.Alpha{
-				Data: alphaData,
+	for id, data := range alphaData {
+		tasks[id] = &protocol.Task{
+			ClientId: clientId,
+			Stage: &protocol.Task_Alpha{
+				Alpha: &protocol.Alpha{
+					Data: data,
+				},
 			},
-		},
+		}
 	}
 
 	return tasks
 }
 
-func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks map[string]*protocol.Task) {
+func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
+	tasks = make(map[string]*protocol.Task)
+	var gammaData = make(map[string][]*protocol.Gamma_Data)
+
+	for _, movie := range movies {
+		idHash := utils.GetWorkerIdFromHash(filtersCount, movie.Id)
+
+		gammaData[idHash] = append(gammaData[idHash], &protocol.Gamma_Data{
+			Id:            movie.Id,
+			Budget:        movie.Budget,
+			ProdCountries: movie.ProdCountries,
+		})
+	}
+
+	for id, data := range gammaData {
+		tasks[id] = &protocol.Task{
+			ClientId: clientId,
+			Stage: &protocol.Task_Gamma{
+				Gamma: &protocol.Gamma{
+					Data: data,
+				},
+			},
+		}
+	}
+
+	return tasks
+}
+
+func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
 
@@ -50,6 +109,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks m
 
 	for id, data := range zetaData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
 					Data: data,
@@ -61,7 +121,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int) (tasks m
 	return tasks
 }
 
-func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map[string]*protocol.Task) {
+func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	iotaData := make(map[string][]*protocol.Iota_Data)
 
@@ -71,9 +131,9 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 		iotaData[idHash] = append(iotaData[idHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Actor_{
 				Actor: &protocol.Iota_Data_Actor{
-					Id:      actor.Id,
-					Name:    actor.Name,
-					MovieId: actor.MovieId,
+					ActorId:   actor.Id,
+					ActorName: actor.Name,
+					MovieId:   actor.MovieId,
 				},
 			},
 		})
@@ -81,6 +141,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 
 	for id, data := range iotaData {
 		tasks[id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
 					Data: data,
@@ -92,12 +153,14 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 	return tasks
 }
 
-func GetMuStageTask(movies []*model.Movie) (tasks map[string]*protocol.Task) {
+func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
-	var muData []*protocol.Mu_Data
+	var muData = make(map[string][]*protocol.Mu_Data)
 
 	for _, movie := range movies {
-		muData = append(muData, &protocol.Mu_Data{
+		idHash := utils.GetWorkerIdFromHash(overviewCount, movie.Id)
+
+		muData[idHash] = append(muData[idHash], &protocol.Mu_Data{
 			Id:       movie.Id,
 			Title:    movie.Title,
 			Revenue:  movie.Revenue,
@@ -106,12 +169,15 @@ func GetMuStageTask(movies []*model.Movie) (tasks map[string]*protocol.Task) {
 		})
 	}
 
-	tasks[""] = &protocol.Task{
-		Stage: &protocol.Task_Mu{
-			Mu: &protocol.Mu{
-				Data: muData,
+	for id, data := range muData {
+		tasks[id] = &protocol.Task{
+			ClientId: clientId,
+			Stage: &protocol.Task_Mu{
+				Mu: &protocol.Mu{
+					Data: data,
+				},
 			},
-		},
+		}
 	}
 
 	return tasks

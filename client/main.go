@@ -108,7 +108,10 @@ func main() {
 
 	go handleSigterm(signalChan, clientLibrary)
 
-	clientLibrary.ProcessData()
+	results := clientLibrary.ProcessData()
+
+	log.Infof("action: processData | result: success | data: %v", results)
+
 	clientLibrary.Stop()
 
 }

@@ -3,7 +3,7 @@ package actions
 import (
 	"fmt"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
@@ -268,12 +268,11 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	return nil
 }
 
-func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
 
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 	TOP_EXCHANGE := t.infraConfig.GetTopExchange()
-	nodeId := data.GetClientId()
 
 	if data.GetWorkerCreatorId() == t.infraConfig.GetNodeId() {
 
@@ -281,7 +280,6 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
-						ClientId:        data.GetClientId(),
 						WorkerCreatorId: "",
 						Stage:           RESULT_STAGE,
 					},
@@ -291,7 +289,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 		tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = nextStageEOF
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][clientId] = nextStageEOF
 
 	} else {
 
@@ -315,7 +313,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		tasks[TOP_EXCHANGE][data.GetStage()] = make(map[string]*protocol.Task)
 		tasks[TOP_EXCHANGE][data.GetStage()][nextNode] = eofTask
 
-		t.addResultsToNextStage(tasks, data.GetStage(), data.GetClientId())
+		t.addResultsToNextStage(tasks, data.GetStage(), clientId)
 	}
 
 	return tasks
@@ -323,6 +321,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:
@@ -339,7 +338,7 @@ func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return t.omegaEOFStage(data), nil
+		return t.omegaEOFStage(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

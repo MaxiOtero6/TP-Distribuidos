@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"
 )

@@ -546,7 +546,7 @@ const file_proto_task_proto_rawDesc = "" +
 	"\aresult5\x18\x1a \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
 	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOF\x12\x1a\n" +
 	"\bclientId\x18\x1c \x01(\tR\bclientIdB\a\n" +
-	"\x05StageB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_task_proto_rawDescOnce sync.Once
