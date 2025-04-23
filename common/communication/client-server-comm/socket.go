@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/proto"
 )

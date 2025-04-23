@@ -328,7 +328,7 @@ const file_proto_stages_delta_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x03(\v2\r.Delta_3.DataR\x04data\x1aG\n" +
 	"\x04Data\x12\x18\n" +
 	"\acountry\x18\x01 \x01(\tR\acountry\x12%\n" +
-	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudgetB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x0epartial_budget\x18\x02 \x01(\x04R\rpartialBudgetB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_delta_proto_rawDescOnce sync.Once

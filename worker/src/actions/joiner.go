@@ -3,24 +3,24 @@ package actions
 import (
 	"fmt"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
 // Joiner is a struct that implements the Action interface.
 type Joiner struct {
-	infraConfig *model.InfraConfig
-	itemHashFunc    func(workersCount int, item string) string
-	randomHashFunc   func(workersCount int) string
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewJoiner creates a new Joiner instance.
 func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return &Joiner{
-		infraConfig: infraConfig,
-		itemHashFunc:    utils.GetWorkerIdFromHash,
-		randomHashFunc:   utils.RandomHash,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 

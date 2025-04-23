@@ -70,61 +70,6 @@ func (MessageStatus) EnumDescriptor() ([]byte, []int) {
 	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{0}
 }
 
-type Request_Query_QueryType int32
-
-const (
-	Request_Query_QUERY_1 Request_Query_QueryType = 0
-	Request_Query_QUERY_2 Request_Query_QueryType = 1
-	Request_Query_QUERY_3 Request_Query_QueryType = 2
-	Request_Query_QUERY_4 Request_Query_QueryType = 3
-	Request_Query_QUERY_5 Request_Query_QueryType = 4
-)
-
-// Enum value maps for Request_Query_QueryType.
-var (
-	Request_Query_QueryType_name = map[int32]string{
-		0: "QUERY_1",
-		1: "QUERY_2",
-		2: "QUERY_3",
-		3: "QUERY_4",
-		4: "QUERY_5",
-	}
-	Request_Query_QueryType_value = map[string]int32{
-		"QUERY_1": 0,
-		"QUERY_2": 1,
-		"QUERY_3": 2,
-		"QUERY_4": 3,
-		"QUERY_5": 4,
-	}
-)
-
-func (x Request_Query_QueryType) Enum() *Request_Query_QueryType {
-	p := new(Request_Query_QueryType)
-	*p = x
-	return p
-}
-
-func (x Request_Query_QueryType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Request_Query_QueryType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_client_server_messages_server_to_client_proto_enumTypes[1].Descriptor()
-}
-
-func (Request_Query_QueryType) Type() protoreflect.EnumType {
-	return &file_proto_client_server_messages_server_to_client_proto_enumTypes[1]
-}
-
-func (x Request_Query_QueryType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Request_Query_QueryType.Descriptor instead.
-func (Request_Query_QueryType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2, 0, 0}
-}
-
 type BatchAck struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	BatchId       string                 `protobuf:"bytes,1,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
@@ -221,28 +166,28 @@ func (x *SyncAck) GetClientId() string {
 	return ""
 }
 
-type Request struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        MessageStatus          `protobuf:"varint,1,opt,name=status,proto3,enum=MessageStatus" json:"status,omitempty"`
-	Responses     []*Request_Query       `protobuf:"bytes,2,rep,name=responses,proto3" json:"responses,omitempty"`
+type ResultResponse struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Status        MessageStatus           `protobuf:"varint,1,opt,name=status,proto3,enum=MessageStatus" json:"status,omitempty"`
+	Responses     []*ResultResponse_Query `protobuf:"bytes,2,rep,name=responses,proto3" json:"responses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Request) Reset() {
-	*x = Request{}
+func (x *ResultResponse) Reset() {
+	*x = ResultResponse{}
 	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Request) String() string {
+func (x *ResultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Request) ProtoMessage() {}
+func (*ResultResponse) ProtoMessage() {}
 
-func (x *Request) ProtoReflect() protoreflect.Message {
+func (x *ResultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -254,19 +199,19 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Request.ProtoReflect.Descriptor instead.
-func (*Request) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResultResponse.ProtoReflect.Descriptor instead.
+func (*ResultResponse) Descriptor() ([]byte, []int) {
 	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Request) GetStatus() MessageStatus {
+func (x *ResultResponse) GetStatus() MessageStatus {
 	if x != nil {
 		return x.Status
 	}
 	return MessageStatus_SUCCESS
 }
 
-func (x *Request) GetResponses() []*Request_Query {
+func (x *ResultResponse) GetResponses() []*ResultResponse_Query {
 	if x != nil {
 		return x.Responses
 	}
@@ -340,7 +285,7 @@ func (x *ServerClientMessage) GetSyncAck() *SyncAck {
 	return nil
 }
 
-func (x *ServerClientMessage) GetRequest() *Request {
+func (x *ServerClientMessage) GetRequest() *ResultResponse {
 	if x != nil {
 		if x, ok := x.Message.(*ServerClientMessage_Request); ok {
 			return x.Request
@@ -362,7 +307,7 @@ type ServerClientMessage_SyncAck struct {
 }
 
 type ServerClientMessage_Request struct {
-	Request *Request `protobuf:"bytes,3,opt,name=request,proto3,oneof"`
+	Request *ResultResponse `protobuf:"bytes,3,opt,name=request,proto3,oneof"`
 }
 
 func (*ServerClientMessage_BatchAck) isServerClientMessage_Message() {}
@@ -371,28 +316,34 @@ func (*ServerClientMessage_SyncAck) isServerClientMessage_Message() {}
 
 func (*ServerClientMessage_Request) isServerClientMessage_Message() {}
 
-type Request_Query struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Type          Request_Query_QueryType `protobuf:"varint,1,opt,name=type,proto3,enum=Request_Query_QueryType" json:"type,omitempty"`
-	Message       string                  `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+type ResultResponse_Query struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Message:
+	//
+	//	*ResultResponse_Query_Result1
+	//	*ResultResponse_Query_Result2
+	//	*ResultResponse_Query_Result3
+	//	*ResultResponse_Query_Result4
+	//	*ResultResponse_Query_Result5
+	Message       isResultResponse_Query_Message `protobuf_oneof:"Message"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Request_Query) Reset() {
-	*x = Request_Query{}
+func (x *ResultResponse_Query) Reset() {
+	*x = ResultResponse_Query{}
 	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Request_Query) String() string {
+func (x *ResultResponse_Query) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Request_Query) ProtoMessage() {}
+func (*ResultResponse_Query) ProtoMessage() {}
 
-func (x *Request_Query) ProtoReflect() protoreflect.Message {
+func (x *ResultResponse_Query) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -404,56 +355,126 @@ func (x *Request_Query) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Request_Query.ProtoReflect.Descriptor instead.
-func (*Request_Query) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResultResponse_Query.ProtoReflect.Descriptor instead.
+func (*ResultResponse_Query) Descriptor() ([]byte, []int) {
 	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2, 0}
 }
 
-func (x *Request_Query) GetType() Request_Query_QueryType {
-	if x != nil {
-		return x.Type
-	}
-	return Request_Query_QUERY_1
-}
-
-func (x *Request_Query) GetMessage() string {
+func (x *ResultResponse_Query) GetMessage() isResultResponse_Query_Message {
 	if x != nil {
 		return x.Message
 	}
-	return ""
+	return nil
 }
+
+func (x *ResultResponse_Query) GetResult1() *Result1 {
+	if x != nil {
+		if x, ok := x.Message.(*ResultResponse_Query_Result1); ok {
+			return x.Result1
+		}
+	}
+	return nil
+}
+
+func (x *ResultResponse_Query) GetResult2() *Result2 {
+	if x != nil {
+		if x, ok := x.Message.(*ResultResponse_Query_Result2); ok {
+			return x.Result2
+		}
+	}
+	return nil
+}
+
+func (x *ResultResponse_Query) GetResult3() *Result3 {
+	if x != nil {
+		if x, ok := x.Message.(*ResultResponse_Query_Result3); ok {
+			return x.Result3
+		}
+	}
+	return nil
+}
+
+func (x *ResultResponse_Query) GetResult4() *Result4 {
+	if x != nil {
+		if x, ok := x.Message.(*ResultResponse_Query_Result4); ok {
+			return x.Result4
+		}
+	}
+	return nil
+}
+
+func (x *ResultResponse_Query) GetResult5() *Result5 {
+	if x != nil {
+		if x, ok := x.Message.(*ResultResponse_Query_Result5); ok {
+			return x.Result5
+		}
+	}
+	return nil
+}
+
+type isResultResponse_Query_Message interface {
+	isResultResponse_Query_Message()
+}
+
+type ResultResponse_Query_Result1 struct {
+	Result1 *Result1 `protobuf:"bytes,1,opt,name=result1,proto3,oneof"`
+}
+
+type ResultResponse_Query_Result2 struct {
+	Result2 *Result2 `protobuf:"bytes,2,opt,name=result2,proto3,oneof"`
+}
+
+type ResultResponse_Query_Result3 struct {
+	Result3 *Result3 `protobuf:"bytes,3,opt,name=result3,proto3,oneof"`
+}
+
+type ResultResponse_Query_Result4 struct {
+	Result4 *Result4 `protobuf:"bytes,4,opt,name=result4,proto3,oneof"`
+}
+
+type ResultResponse_Query_Result5 struct {
+	Result5 *Result5 `protobuf:"bytes,5,opt,name=result5,proto3,oneof"`
+}
+
+func (*ResultResponse_Query_Result1) isResultResponse_Query_Message() {}
+
+func (*ResultResponse_Query_Result2) isResultResponse_Query_Message() {}
+
+func (*ResultResponse_Query_Result3) isResultResponse_Query_Message() {}
+
+func (*ResultResponse_Query_Result4) isResultResponse_Query_Message() {}
+
+func (*ResultResponse_Query_Result5) isResultResponse_Query_Message() {}
 
 var File_proto_client_server_messages_server_to_client_proto protoreflect.FileDescriptor
 
 const file_proto_client_server_messages_server_to_client_proto_rawDesc = "" +
 	"\n" +
-	"3proto/client-server-messages/server-to-client.proto\"M\n" +
+	"3proto/client-server-messages/server-to-client.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"M\n" +
 	"\bBatchAck\x12\x19\n" +
 	"\bbatch_id\x18\x01 \x01(\tR\abatchId\x12&\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x0e.MessageStatusR\x06status\"&\n" +
 	"\aSyncAck\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\xff\x01\n" +
-	"\aRequest\x12&\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x0e.MessageStatusR\x06status\x12,\n" +
-	"\tresponses\x18\x02 \x03(\v2\x0e.Request.QueryR\tresponses\x1a\x9d\x01\n" +
-	"\x05Query\x12,\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x18.Request.Query.QueryTypeR\x04type\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"L\n" +
-	"\tQueryType\x12\v\n" +
-	"\aQUERY_1\x10\x00\x12\v\n" +
-	"\aQUERY_2\x10\x01\x12\v\n" +
-	"\aQUERY_3\x10\x02\x12\v\n" +
-	"\aQUERY_4\x10\x03\x12\v\n" +
-	"\aQUERY_5\x10\x04\"\x97\x01\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\xc0\x02\n" +
+	"\x0eResultResponse\x12&\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x0e.MessageStatusR\x06status\x123\n" +
+	"\tresponses\x18\x02 \x03(\v2\x15.ResultResponse.QueryR\tresponses\x1a\xd0\x01\n" +
+	"\x05Query\x12$\n" +
+	"\aresult1\x18\x01 \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
+	"\aresult2\x18\x02 \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
+	"\aresult3\x18\x03 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
+	"\aresult4\x18\x04 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
+	"\aresult5\x18\x05 \x01(\v2\b.Result5H\x00R\aresult5B\t\n" +
+	"\aMessage\"\x9e\x01\n" +
 	"\x13ServerClientMessage\x12(\n" +
 	"\tbatch_ack\x18\x01 \x01(\v2\t.BatchAckH\x00R\bbatchAck\x12%\n" +
-	"\bsync_ack\x18\x02 \x01(\v2\b.SyncAckH\x00R\asyncAck\x12$\n" +
-	"\arequest\x18\x03 \x01(\v2\b.RequestH\x00R\arequestB\t\n" +
+	"\bsync_ack\x18\x02 \x01(\v2\b.SyncAckH\x00R\asyncAck\x12+\n" +
+	"\arequest\x18\x03 \x01(\v2\x0f.ResultResponseH\x00R\arequestB\t\n" +
 	"\amessage*3\n" +
 	"\rMessageStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\b\n" +
 	"\x04FAIL\x10\x01\x12\v\n" +
-	"\aPENDING\x10\x02B2Z0common/communication/client-server-comm/protocolb\x06proto3"
+	"\aPENDING\x10\x02B\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_client_server_messages_server_to_client_proto_rawDescOnce sync.Once
@@ -467,30 +488,38 @@ func file_proto_client_server_messages_server_to_client_proto_rawDescGZIP() []by
 	return file_proto_client_server_messages_server_to_client_proto_rawDescData
 }
 
-var file_proto_client_server_messages_server_to_client_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_client_server_messages_server_to_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_client_server_messages_server_to_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_client_server_messages_server_to_client_proto_goTypes = []any{
 	(MessageStatus)(0),           // 0: MessageStatus
-	(Request_Query_QueryType)(0), // 1: Request.Query.QueryType
-	(*BatchAck)(nil),             // 2: BatchAck
-	(*SyncAck)(nil),              // 3: SyncAck
-	(*Request)(nil),              // 4: Request
-	(*ServerClientMessage)(nil),  // 5: ServerClientMessage
-	(*Request_Query)(nil),        // 6: Request.Query
+	(*BatchAck)(nil),             // 1: BatchAck
+	(*SyncAck)(nil),              // 2: SyncAck
+	(*ResultResponse)(nil),       // 3: ResultResponse
+	(*ServerClientMessage)(nil),  // 4: ServerClientMessage
+	(*ResultResponse_Query)(nil), // 5: ResultResponse.Query
+	(*Result1)(nil),              // 6: Result1
+	(*Result2)(nil),              // 7: Result2
+	(*Result3)(nil),              // 8: Result3
+	(*Result4)(nil),              // 9: Result4
+	(*Result5)(nil),              // 10: Result5
 }
 var file_proto_client_server_messages_server_to_client_proto_depIdxs = []int32{
-	0, // 0: BatchAck.status:type_name -> MessageStatus
-	0, // 1: Request.status:type_name -> MessageStatus
-	6, // 2: Request.responses:type_name -> Request.Query
-	2, // 3: ServerClientMessage.batch_ack:type_name -> BatchAck
-	3, // 4: ServerClientMessage.sync_ack:type_name -> SyncAck
-	4, // 5: ServerClientMessage.request:type_name -> Request
-	1, // 6: Request.Query.type:type_name -> Request.Query.QueryType
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0,  // 0: BatchAck.status:type_name -> MessageStatus
+	0,  // 1: ResultResponse.status:type_name -> MessageStatus
+	5,  // 2: ResultResponse.responses:type_name -> ResultResponse.Query
+	1,  // 3: ServerClientMessage.batch_ack:type_name -> BatchAck
+	2,  // 4: ServerClientMessage.sync_ack:type_name -> SyncAck
+	3,  // 5: ServerClientMessage.request:type_name -> ResultResponse
+	6,  // 6: ResultResponse.Query.result1:type_name -> Result1
+	7,  // 7: ResultResponse.Query.result2:type_name -> Result2
+	8,  // 8: ResultResponse.Query.result3:type_name -> Result3
+	9,  // 9: ResultResponse.Query.result4:type_name -> Result4
+	10, // 10: ResultResponse.Query.result5:type_name -> Result5
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_proto_client_server_messages_server_to_client_proto_init() }
@@ -498,17 +527,29 @@ func file_proto_client_server_messages_server_to_client_proto_init() {
 	if File_proto_client_server_messages_server_to_client_proto != nil {
 		return
 	}
+	file_proto_stages_result1_proto_init()
+	file_proto_stages_result2_proto_init()
+	file_proto_stages_result3_proto_init()
+	file_proto_stages_result4_proto_init()
+	file_proto_stages_result5_proto_init()
 	file_proto_client_server_messages_server_to_client_proto_msgTypes[3].OneofWrappers = []any{
 		(*ServerClientMessage_BatchAck)(nil),
 		(*ServerClientMessage_SyncAck)(nil),
 		(*ServerClientMessage_Request)(nil),
+	}
+	file_proto_client_server_messages_server_to_client_proto_msgTypes[4].OneofWrappers = []any{
+		(*ResultResponse_Query_Result1)(nil),
+		(*ResultResponse_Query_Result2)(nil),
+		(*ResultResponse_Query_Result3)(nil),
+		(*ResultResponse_Query_Result4)(nil),
+		(*ResultResponse_Query_Result5)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_client_server_messages_server_to_client_proto_rawDesc), len(file_proto_client_server_messages_server_to_client_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,

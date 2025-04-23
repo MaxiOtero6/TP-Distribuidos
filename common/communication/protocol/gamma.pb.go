@@ -135,7 +135,7 @@ const file_proto_stages_gamma_proto_rawDesc = "" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0eprod_countries\x18\x02 \x03(\tR\rprodCountries\x12\x16\n" +
-	"\x06budget\x18\x03 \x01(\x04R\x06budgetB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x06budget\x18\x03 \x01(\x04R\x06budgetB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_gamma_proto_rawDescOnce sync.Once

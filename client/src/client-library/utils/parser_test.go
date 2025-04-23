@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/stretchr/testify/assert"
 )
 

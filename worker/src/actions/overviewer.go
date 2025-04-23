@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/cdipaolo/sentiment"
@@ -12,10 +12,10 @@ import (
 
 // Overviewer is a struct that implements the Action interface.
 type Overviewer struct {
-	model       sentiment.Models
-	infraConfig *model.InfraConfig
-	itemHashFunc    func(workersCount int, item string) string
-	randomHashFunc   func(workersCount int) string
+	model          sentiment.Models
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewOverviewer creates a new Overviewer instance.
@@ -28,10 +28,10 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	}
 
 	return &Overviewer{
-		model:       model,
-		infraConfig: infraConfig,
-		itemHashFunc:    utils.GetWorkerIdFromHash,
-		randomHashFunc:   utils.RandomHash,
+		model:          model,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 

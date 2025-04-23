@@ -135,7 +135,7 @@ const file_proto_stages_omegaEOF_proto_rawDesc = "" +
 	"\x04Data\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x14\n" +
 	"\x05stage\x18\x02 \x01(\tR\x05stage\x12*\n" +
-	"\x11worker_creator_id\x18\x03 \x01(\tR\x0fworkerCreatorIdB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x11worker_creator_id\x18\x03 \x01(\tR\x0fworkerCreatorIdB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_omegaEOF_proto_rawDescOnce sync.Once

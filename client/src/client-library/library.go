@@ -8,7 +8,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/utils"
 	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 )
 
@@ -268,16 +268,16 @@ func (l *Library) fetchServerResults() error {
 
 	return nil
 }
-func (l *Library) processRequestResponseMessage(message []*protocol.Request_Query) {
+func (l *Library) processRequestResponseMessage(message []*protocol.ResultResponse_Query) {
 	if len(message) == 0 {
 		log.Infof("action: processResultMessage | result: fail | error: empty response")
 		return
 	}
 	for _, query := range message {
-		log.Infof("action:  | result: success | query number : %v | response: %v", query.Type, query.Message)
+		log.Infof("action:  | result: success | query type : %T | response: %v", query.GetMessage(), query.Message)
 	}
 }
-func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query, error) {
+func (l *Library) waitForResultServerResponse() (bool, []*protocol.ResultResponse_Query, error) {
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return false, nil, err
@@ -294,7 +294,7 @@ func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query
 	return false, nil, fmt.Errorf("unexpected response type received")
 
 }
-func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Query, error) {
+func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.ResultResponse_Query, error) {
 	done, responses, err := l.waitForResultServerResponse()
 	if err != nil {
 		return false, nil, err

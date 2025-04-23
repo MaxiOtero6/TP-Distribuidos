@@ -434,7 +434,7 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\x06MOVIES\x10\x00\x12\v\n" +
 	"\aCREDITS\x10\x01\x12\v\n" +
 	"\aRATINGS\x10\x02\x12\a\n" +
-	"\x03EOF\x10\x03B2Z0common/communication/client-server-comm/protocolb\x06proto3"
+	"\x03EOF\x10\x03B\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_client_server_messages_client_to_server_proto_rawDescOnce sync.Once

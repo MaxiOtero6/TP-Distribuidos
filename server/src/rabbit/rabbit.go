@@ -2,7 +2,7 @@ package rabbit
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "common/communication/client-server-comm/protocol";
+option go_package = "common/communication/protocol";
 
 import "proto/client-server-messages/client-to-server.proto";
 import "proto/client-server-messages/server-to-client.proto";

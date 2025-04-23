@@ -7,7 +7,7 @@ data:
   credits: ".data/credits_head_10k.csv"
 
 server:
-  address: "server:12345"
+  address: "server_0:12345"
 
 batch:
   maxAmount: 10

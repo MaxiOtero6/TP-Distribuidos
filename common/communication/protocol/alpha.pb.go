@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.30.2
-// source: proto/stages/beta.proto
+// source: proto/stages/alpha.proto
 
 package protocol
 
@@ -21,28 +21,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Beta struct {
+type Alpha struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          []*Beta_Data           `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data          []*Alpha_Data          `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Beta) Reset() {
-	*x = Beta{}
-	mi := &file_proto_stages_beta_proto_msgTypes[0]
+func (x *Alpha) Reset() {
+	*x = Alpha{}
+	mi := &file_proto_stages_alpha_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Beta) String() string {
+func (x *Alpha) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Beta) ProtoMessage() {}
+func (*Alpha) ProtoMessage() {}
 
-func (x *Beta) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_beta_proto_msgTypes[0]
+func (x *Alpha) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_alpha_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -53,19 +53,19 @@ func (x *Beta) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Beta.ProtoReflect.Descriptor instead.
-func (*Beta) Descriptor() ([]byte, []int) {
-	return file_proto_stages_beta_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use Alpha.ProtoReflect.Descriptor instead.
+func (*Alpha) Descriptor() ([]byte, []int) {
+	return file_proto_stages_alpha_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Beta) GetData() []*Beta_Data {
+func (x *Alpha) GetData() []*Alpha_Data {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type Beta_Data struct {
+type Alpha_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	ProdCountries []string               `protobuf:"bytes,2,rep,name=prod_countries,json=prodCountries,proto3" json:"prod_countries,omitempty"`
@@ -76,21 +76,21 @@ type Beta_Data struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Beta_Data) Reset() {
-	*x = Beta_Data{}
-	mi := &file_proto_stages_beta_proto_msgTypes[1]
+func (x *Alpha_Data) Reset() {
+	*x = Alpha_Data{}
+	mi := &file_proto_stages_alpha_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Beta_Data) String() string {
+func (x *Alpha_Data) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Beta_Data) ProtoMessage() {}
+func (*Alpha_Data) ProtoMessage() {}
 
-func (x *Beta_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_beta_proto_msgTypes[1]
+func (x *Alpha_Data) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_stages_alpha_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,80 +101,79 @@ func (x *Beta_Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Beta_Data.ProtoReflect.Descriptor instead.
-func (*Beta_Data) Descriptor() ([]byte, []int) {
-	return file_proto_stages_beta_proto_rawDescGZIP(), []int{0, 0}
+// Deprecated: Use Alpha_Data.ProtoReflect.Descriptor instead.
+func (*Alpha_Data) Descriptor() ([]byte, []int) {
+	return file_proto_stages_alpha_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *Beta_Data) GetId() string {
+func (x *Alpha_Data) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *Beta_Data) GetProdCountries() []string {
+func (x *Alpha_Data) GetProdCountries() []string {
 	if x != nil {
 		return x.ProdCountries
 	}
 	return nil
 }
 
-func (x *Beta_Data) GetTitle() string {
+func (x *Alpha_Data) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Beta_Data) GetReleaseYear() uint32 {
+func (x *Alpha_Data) GetReleaseYear() uint32 {
 	if x != nil {
 		return x.ReleaseYear
 	}
 	return 0
 }
 
-func (x *Beta_Data) GetGenres() []string {
+func (x *Alpha_Data) GetGenres() []string {
 	if x != nil {
 		return x.Genres
 	}
 	return nil
 }
 
-var File_proto_stages_beta_proto protoreflect.FileDescriptor
+var File_proto_stages_alpha_proto protoreflect.FileDescriptor
 
-const file_proto_stages_beta_proto_rawDesc = "" +
+const file_proto_stages_alpha_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/stages/beta.proto\"\xb7\x01\n" +
-	"\x04Beta\x12\x1e\n" +
-	"\x04data\x18\x01 \x03(\v2\n" +
-	".Beta.DataR\x04data\x1a\x8e\x01\n" +
+	"\x18proto/stages/alpha.proto\"\xb9\x01\n" +
+	"\x05Alpha\x12\x1f\n" +
+	"\x04data\x18\x01 \x03(\v2\v.Alpha.DataR\x04data\x1a\x8e\x01\n" +
 	"\x04Data\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0eprod_countries\x18\x02 \x03(\tR\rprodCountries\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12!\n" +
 	"\frelease_year\x18\x04 \x01(\rR\vreleaseYear\x12\x16\n" +
-	"\x06genres\x18\x05 \x03(\tR\x06genresB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x06genres\x18\x05 \x03(\tR\x06genresB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
-	file_proto_stages_beta_proto_rawDescOnce sync.Once
-	file_proto_stages_beta_proto_rawDescData []byte
+	file_proto_stages_alpha_proto_rawDescOnce sync.Once
+	file_proto_stages_alpha_proto_rawDescData []byte
 )
 
-func file_proto_stages_beta_proto_rawDescGZIP() []byte {
-	file_proto_stages_beta_proto_rawDescOnce.Do(func() {
-		file_proto_stages_beta_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_stages_beta_proto_rawDesc), len(file_proto_stages_beta_proto_rawDesc)))
+func file_proto_stages_alpha_proto_rawDescGZIP() []byte {
+	file_proto_stages_alpha_proto_rawDescOnce.Do(func() {
+		file_proto_stages_alpha_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_stages_alpha_proto_rawDesc), len(file_proto_stages_alpha_proto_rawDesc)))
 	})
-	return file_proto_stages_beta_proto_rawDescData
+	return file_proto_stages_alpha_proto_rawDescData
 }
 
-var file_proto_stages_beta_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_stages_beta_proto_goTypes = []any{
-	(*Beta)(nil),      // 0: Beta
-	(*Beta_Data)(nil), // 1: Beta.Data
+var file_proto_stages_alpha_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_stages_alpha_proto_goTypes = []any{
+	(*Alpha)(nil),      // 0: Alpha
+	(*Alpha_Data)(nil), // 1: Alpha.Data
 }
-var file_proto_stages_beta_proto_depIdxs = []int32{
-	1, // 0: Beta.data:type_name -> Beta.Data
+var file_proto_stages_alpha_proto_depIdxs = []int32{
+	1, // 0: Alpha.data:type_name -> Alpha.Data
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -182,26 +181,26 @@ var file_proto_stages_beta_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_stages_beta_proto_init() }
-func file_proto_stages_beta_proto_init() {
-	if File_proto_stages_beta_proto != nil {
+func init() { file_proto_stages_alpha_proto_init() }
+func file_proto_stages_alpha_proto_init() {
+	if File_proto_stages_alpha_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_beta_proto_rawDesc), len(file_proto_stages_beta_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_alpha_proto_rawDesc), len(file_proto_stages_alpha_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_stages_beta_proto_goTypes,
-		DependencyIndexes: file_proto_stages_beta_proto_depIdxs,
-		MessageInfos:      file_proto_stages_beta_proto_msgTypes,
+		GoTypes:           file_proto_stages_alpha_proto_goTypes,
+		DependencyIndexes: file_proto_stages_alpha_proto_depIdxs,
+		MessageInfos:      file_proto_stages_alpha_proto_msgTypes,
 	}.Build()
-	File_proto_stages_beta_proto = out.File
-	file_proto_stages_beta_proto_goTypes = nil
-	file_proto_stages_beta_proto_depIdxs = nil
+	File_proto_stages_alpha_proto = out.File
+	file_proto_stages_alpha_proto_goTypes = nil
+	file_proto_stages_alpha_proto_depIdxs = nil
 }
