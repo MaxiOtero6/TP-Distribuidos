@@ -21,7 +21,6 @@ type RabbitHandler struct {
 	infraConfig        *common_model.InfraConfig
 	resultQueueName    string
 	resultExchangeName string
-	consumeChan        mom.ConsumerChan
 }
 
 // NewRabbitHandler creates a new RabbitHandler instance
@@ -58,13 +57,6 @@ func (r *RabbitHandler) RegisterNewClient(clientId string) {
 	}
 
 	r.rabbitMQ.BindQueue(r.resultQueueName, r.resultExchangeName, clientId)
-
-	// If no consume channel for the result queue is set, create one
-	// This is to avoid creating multiple consume channels for the same queue
-	// and to ensure that the consume channel is created only once
-	if r.consumeChan == nil {
-		r.consumeChan = r.rabbitMQ.Consume(r.resultQueueName)
-	}
 }
 
 // Close closes the RabbitMQ connection
@@ -151,7 +143,7 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 		return result, nil
 	}
 
-	r.consumeChan = r.rabbitMQ.Consume(r.resultQueueName)
+	consumeChan := r.rabbitMQ.Consume(r.resultQueueName)
 
 	results := &protocol.ResultsResponse{
 		Results: make([]*protocol.ResultsResponse_Result, 0),
@@ -159,7 +151,7 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 	}
 
 	select {
-	case msg := <-r.consumeChan:
+	case msg := <-consumeChan:
 		r, err := unmarshallResult(msg)
 
 		if err != nil {
@@ -172,7 +164,7 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 		r.rabbitMQ.CancelConsumer(r.resultQueueName)
 		// Consume until channel closes to get inflight messages
 		for {
-			msg, ok := <-r.consumeChan
+			msg, ok := <-consumeChan
 
 			if !ok {
 				break
