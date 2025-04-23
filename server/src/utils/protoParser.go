@@ -10,6 +10,7 @@ const ALPHA_STAGE = "alpha"
 const ZETA_STAGE = "zeta"
 const IOTA_STAGE = "iota"
 const MU_STAGE = "mu"
+const GAMMA_STAGE = "gamma"
 
 func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
 	tasks := make(map[string]*protocol.Task)
