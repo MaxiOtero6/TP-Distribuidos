@@ -350,7 +350,7 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 			return nil
 		}
 
-		mapExchange := m.infraConfig.GetReduceExchange()
+		mapExchange := m.infraConfig.GetMapExchange()
 		stage := data.GetStage()
 
 		tasks[mapExchange] = make(map[string]map[string]*protocol.Task)
