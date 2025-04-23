@@ -188,16 +188,19 @@ func (p *ResultParser) handleResult5(result *protocol.Result5) {
 		return
 	}
 
-	negative := &model.Query5{
-		RevenueBudgetRatio: data[0].GetRatio(),
-	}
+	for _, d := range data {
+		q5 := &model.Query5{
+			RevenueBudgetRatio: d.GetRatio(),
+		}
 
-	positive := &model.Query5{
-		RevenueBudgetRatio: data[0].GetRatio(),
-	}
+		key := "negative"
 
-	p.results.Query5["negative"] = negative
-	p.results.Query5["positive"] = positive
+		if d.GetSentiment() {
+			key = "positive"
+		}
+
+		p.results.Query5[key] = q5
+	}
 }
 
 func (p *ResultParser) Save(results *protocol.ResultsResponse) {
