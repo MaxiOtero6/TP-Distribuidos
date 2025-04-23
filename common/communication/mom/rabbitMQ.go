@@ -132,21 +132,20 @@ func (r *RabbitMQ) Consume(queueName string) ConsumerChan {
 	return ret
 }
 
-// CancelConsumer cancels the consumer for the specified queue.
-// If the queue does not exist, an error is logged and the function returns.
-// This is useful when you want to stop consuming messages from the queue.
-// You need to consume the channel until it closes,
-// otherwise in flight messages will be lost.
-func (r *RabbitMQ) CancelConsumer(queueName string) {
+// GetHeadDelivery retrieves the head delivery from the specified queue.
+// It returns the delivery and a boolean indicating whether the delivery was successful.
+// If the queue does not exist, an error is logged and the function returns an empty delivery and false.
+// The head delivery is the first message in the queue.
+// The autoAck parameter is set to false, meaning that the consumer must acknowledge the message manually.
+func (r *RabbitMQ) GetHeadDelivery(queueName string) (amqp.Delivery, bool) {
 	q, ok := r.queues[queueName]
 
 	if !ok {
 		log.Errorf("Queue '%s' does not exist", queueName)
-		return
+		return amqp.Delivery{}, false
 	}
 
-	q.close()
-	log.Infof("Consumer cancelled for queue '%s'", queueName)
+	return q.getHeadDelivery()
 }
 
 // BindQueue binds the specified queue to the specified exchange with the given routing key.

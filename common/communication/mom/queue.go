@@ -115,3 +115,20 @@ func (q *queue) close() {
 		log.Infof("Consumer '%v' cancelled gracefully ", q.name)
 	}
 }
+
+// getHeadDelivery retrieves the head delivery from the queue.
+// It returns the delivery and a boolean indicating whether the delivery was successful.
+// If the queue does not exist, an error is logged and the function returns an empty delivery and false.
+// The head delivery is the first message in the queue.
+// The function uses the channel's Get method to retrieve the message.
+// The autoAck parameter is set to false, meaning that the consumer must acknowledge the message manually.
+func (q *queue) getHeadDelivery() (amqp.Delivery, bool) {
+	msg, ok, err := q.channel.Get(q.amqpName, false)
+
+	if err != nil {
+		failOnError(err, fmt.Sprintf("Failed to get message from queue: '%v'", q.amqpName))
+		return amqp.Delivery{}, false
+	}
+
+	return msg, ok
+}
