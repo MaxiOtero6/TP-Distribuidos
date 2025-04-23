@@ -171,35 +171,22 @@ func (p *ResultParser) handleResult4(result *protocol.Result4) {
 // It checks if the negative and positive keys already exist in the map.
 // If they do, an error is logged.
 func (p *ResultParser) handleResult5(result *protocol.Result5) {
-	if _, ok := p.results.Query5["negative"]; ok {
-		log.Errorf("action: handleResult5 | result: fail | error: negative already exists")
-		return
-	}
-
-	if _, ok := p.results.Query5["positive"]; ok {
-		log.Errorf("action: handleResult5 | result: fail | error: positive already exists")
-		return
-	}
-
 	data := result.GetData()
 
-	if len(data) != 2 {
-		log.Errorf("action: handleResult5 | result: fail | error: expected 2 elements, got %d", len(data))
-		return
-	}
-
 	for _, d := range data {
-		q5 := &model.Query5{
-			RevenueBudgetRatio: d.GetRatio(),
-		}
-
 		key := "negative"
 
 		if d.GetSentiment() {
 			key = "positive"
 		}
 
-		p.results.Query5[key] = q5
+		if _, ok := p.results.Query5[key]; !ok {
+			p.results.Query5[key] = &model.Query5{
+				RevenueBudgetRatio: 0,
+			}
+		}
+
+		p.results.Query5[key].RevenueBudgetRatio += d.GetRatio()
 	}
 }
 
