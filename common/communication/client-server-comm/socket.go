@@ -117,7 +117,7 @@ func (s *Socket) Write(message *protocol.Message) error {
 		return err
 	}
 
-	log.Debugf("Sending message: %v", message_bytes)
+	// log.Debugf("Sending message: %v", message_bytes)
 
 	length := len(message_bytes)
 
@@ -146,7 +146,6 @@ func (s *Socket) Write(message *protocol.Message) error {
 }
 
 func (s *Socket) Close() error {
-
 	if s.conn != nil {
 		return s.conn.Close()
 	}
