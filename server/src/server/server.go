@@ -53,12 +53,12 @@ func (s *Server) acceptConnections() {
 				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
 				continue
 			}
-
 		}
 
 		log.Infof("Client connected")
+		s.clientSocket = clientSocket
 
-		err = s.handleConnection(clientSocket)
+		err = s.handleConnection()
 		if err != nil {
 			if !s.isRunning {
 				log.Infof("action: handleConnection | result: fail | error: %v", ErrSignalReceived)
@@ -67,6 +67,8 @@ func (s *Server) acceptConnections() {
 			} else {
 				log.Errorf("action: handleConnection | result: fail | error: %v", err)
 			}
+			s.clientSocket.Close()
+			s.clientSocket = nil
 			continue
 		}
 	}

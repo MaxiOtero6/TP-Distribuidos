@@ -3,11 +3,10 @@ package server
 import (
 	"fmt"
 
-	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
-func (s *Server) handleMessage(clientSocket *client_server_communication.Socket, message *protocol.Message) error {
+func (s *Server) handleMessage(message *protocol.Message) error {
 	clientServerMessage, ok := message.GetMessage().(*protocol.Message_ClientServerMessage)
 
 	if !ok {
@@ -16,9 +15,9 @@ func (s *Server) handleMessage(clientSocket *client_server_communication.Socket,
 
 	switch msg := clientServerMessage.ClientServerMessage.GetMessage().(type) {
 	case *protocol.ClientServerMessage_Sync:
-		s.handleConnectionMessage(clientSocket, msg.Sync)
+		s.handleConnectionMessage(msg.Sync)
 	case *protocol.ClientServerMessage_Batch:
-		s.handleBatchMessage(clientSocket, msg.Batch)
+		s.handleBatchMessage(msg.Batch)
 	case *protocol.ClientServerMessage_Finish:
 		s.handleFinishMessage(msg.Finish)
 	case *protocol.ClientServerMessage_Result:
@@ -29,13 +28,13 @@ func (s *Server) handleMessage(clientSocket *client_server_communication.Socket,
 	return nil
 }
 
-func (s *Server) handleConnection(clientSocket *client_server_communication.Socket) error {
+func (s *Server) handleConnection() error {
 	for {
-		message, err := clientSocket.Read()
+		message, err := s.clientSocket.Read()
 		if err != nil {
 			return err
 		}
-		err = s.handleMessage(clientSocket, message)
+		err = s.handleMessage(message)
 		if err != nil {
 			return err
 		}
@@ -43,7 +42,7 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 
 }
 
-func (s *Server) handleConnectionMessage(clientSocket *client_server_communication.Socket, syncMessage *protocol.Sync) {
+func (s *Server) handleConnectionMessage(syncMessage *protocol.Sync) {
 	clientID := generateUniqueID()
 
 	idMessage := &protocol.Message{
@@ -58,7 +57,7 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 		},
 	}
 
-	if err := clientSocket.Write(idMessage); err != nil {
+	if err := s.clientSocket.Write(idMessage); err != nil {
 		log.Errorf("Error sending ID to client: %v", err)
 		return
 	}
@@ -66,12 +65,11 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 	s.rabbitHandler.RegisterNewClient(clientID)
 
 	s.clientID = clientID
-	s.clientSocket = clientSocket
 
 	log.Infof("Client connected with ID: %s", clientID)
 }
 
-func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
+func (s *Server) handleBatchMessage(batchMessage *protocol.Batch) error {
 	//log.Debugf("Received batch message: %v ", batchMessage)
 	clientId := batchMessage.GetClientId()
 
@@ -100,7 +98,7 @@ func (s *Server) handleBatchMessage(clientSocket *client_server_communication.So
 			},
 		}
 
-		if err := clientSocket.Write(ackMessage); err != nil {
+		if err := s.clientSocket.Write(ackMessage); err != nil {
 			log.Errorf("Error sending batch acknowledgment: %v", err)
 			return err
 		}
@@ -122,7 +120,7 @@ func (s *Server) handleBatchMessage(clientSocket *client_server_communication.So
 		},
 	}
 
-	if err := clientSocket.Write(ackMessage); err != nil {
+	if err := s.clientSocket.Write(ackMessage); err != nil {
 		log.Errorf("Error sending batch acknowledgment: %v", err)
 		return err
 	}
@@ -149,6 +147,8 @@ func (s *Server) handleResultMessage(resultMessage *protocol.Result) error {
 			},
 		},
 	}
+
+	log.Debugf("Sending results to client %v, status: %v", resultMessage.ClientId, results.GetStatus())
 
 	if err := s.clientSocket.Write(message); err != nil {
 		log.Errorf("Error sending results: %v", err)
