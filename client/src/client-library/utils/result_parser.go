@@ -120,12 +120,12 @@ func (p *ResultParser) handleResult3(result *protocol.Result3) {
 	}
 
 	max := &model.Query3{
-		AvgRating: data[0].GetAvgRating(),
+		AvgRating: data[0].GetRating(),
 		Title:     data[0].GetTitle(),
 	}
 
 	min := &model.Query3{
-		AvgRating: data[1].GetAvgRating(),
+		AvgRating: data[1].GetRating(),
 		Title:     data[1].GetTitle(),
 	}
 

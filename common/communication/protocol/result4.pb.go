@@ -66,12 +66,13 @@ func (x *Result4) GetData() []*Result4_Data {
 }
 
 type Result4_Data struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Position      uint32                 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
-	ActorId       string                 `protobuf:"bytes,2,opt,name=actorId,proto3" json:"actorId,omitempty"`
-	ActorName     string                 `protobuf:"bytes,3,opt,name=actorName,proto3" json:"actorName,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Position       uint32                 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	ActorId        string                 `protobuf:"bytes,2,opt,name=actorId,proto3" json:"actorId,omitempty"`
+	ActorName      string                 `protobuf:"bytes,3,opt,name=actorName,proto3" json:"actorName,omitempty"`
+	Participations uint64                 `protobuf:"varint,4,opt,name=participations,proto3" json:"participations,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Result4_Data) Reset() {
@@ -125,17 +126,25 @@ func (x *Result4_Data) GetActorName() string {
 	return ""
 }
 
+func (x *Result4_Data) GetParticipations() uint64 {
+	if x != nil {
+		return x.Participations
+	}
+	return 0
+}
+
 var File_proto_stages_result4_proto protoreflect.FileDescriptor
 
 const file_proto_stages_result4_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/stages/result4.proto\"\x88\x01\n" +
+	"\x1aproto/stages/result4.proto\"\xb1\x01\n" +
 	"\aResult4\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Result4.DataR\x04data\x1aZ\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Result4.DataR\x04data\x1a\x82\x01\n" +
 	"\x04Data\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\rR\bposition\x12\x18\n" +
 	"\aactorId\x18\x02 \x01(\tR\aactorId\x12\x1c\n" +
-	"\tactorName\x18\x03 \x01(\tR\tactorNameB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\tactorName\x18\x03 \x01(\tR\tactorName\x12&\n" +
+	"\x0eparticipations\x18\x04 \x01(\x04R\x0eparticipationsB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_result4_proto_rawDescOnce sync.Once
