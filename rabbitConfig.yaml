@@ -63,7 +63,7 @@ rabbitmq:
         exchange: "filterExchange"
         queue: ""
 
-  OVERVIEW:
+  OVERVIEWER:
     exchanges:
       overviewExchange:
         name: "overviewExchange"
