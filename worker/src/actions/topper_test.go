@@ -117,10 +117,10 @@ func TestTopperExecute(t *testing.T) {
 		assert.Len(t, resultData, 2, "Expected 2 movies in the result (highest and lowest)")
 		assert.Equal(t, "Movie C", resultData[0].GetTitle(), "Expected Movie C to have the highest rating")
 		assert.Equal(t, "Max", resultData[0].GetType(), "Expected Movie C to be of type Max")
-		assert.Equal(t, uint64(5), resultData[0].GetValue(), "Expected Movie C to have the highest rating")
+		assert.Equal(t, float32(5), resultData[0].GetRating(), "Expected Movie C to have the highest rating")
 		assert.Equal(t, "Movie B", resultData[1].GetTitle(), "Expected Movie B to have the lowest rating")
 		assert.Equal(t, "Min", resultData[1].GetType(), "Expected Movie B to have the correct ID")
-		assert.Equal(t, uint64(3), resultData[1].GetValue(), "Expected Movie B to have the lowest rating")
+		assert.Equal(t, float32(3), resultData[1].GetRating(), "Expected Movie B to have the lowest rating")
 	})
 
 	t.Run("Test Theta Stage with multiple tasks", func(t *testing.T) {
@@ -163,10 +163,10 @@ func TestTopperExecute(t *testing.T) {
 		assert.Len(t, resultData, 2, "Expected 2 movies in the result (highest and lowest)")
 		assert.Equal(t, "Movie A", resultData[0].GetTitle(), "Expected Movie A to have the highest rating")
 		assert.Equal(t, "Max", resultData[0].GetType(), "Expected Movie A to be of type Max")
-		assert.Equal(t, uint64(10), resultData[0].GetValue(), "Expected Movie A to have the highest rating")
+		assert.Equal(t, float32(10), resultData[0].GetRating(), "Expected Movie A to have the highest rating")
 		assert.Equal(t, "Movie C", resultData[1].GetTitle(), "Expected Movie C to have the lowest rating")
 		assert.Equal(t, "Min", resultData[1].GetType(), "Expected Movie C to have the correct ID")
-		assert.Equal(t, uint64(2), resultData[1].GetValue(), "Expected Movie C to have the lowest rating")
+		assert.Equal(t, float32(2), resultData[1].GetRating(), "Expected Movie C to have the lowest rating")
 
 	})
 

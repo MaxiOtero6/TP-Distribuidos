@@ -11,14 +11,14 @@ import (
 // ParcilResult is a struct that holds the results of the different stages.
 
 type result3 struct {
-	maxHeap *heap.TopKHeap
-	minHeap *heap.TopKHeap
+	maxHeap *heap.TopKHeap[float32, *protocol.Theta_Data]
+	minHeap *heap.TopKHeap[float32, *protocol.Theta_Data]
 }
 
 type ParcialResults struct {
-	result2Heap *heap.TopKHeap
-	result3Heap result3
-	result4Heap *heap.TopKHeap
+	epsilonHeap *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
+	thetaData   result3
+	lamdaHeap   *heap.TopKHeap[uint64, *protocol.Lambda_Data]
 }
 
 // Topper is a struct that implements the Action interface.
@@ -34,42 +34,34 @@ func NewTopper(infraConfig *model.InfraConfig) *Topper {
 		infraConfig: infraConfig,
 
 		parcialResults: &ParcialResults{
-			result2Heap: heap.NewTopKHeap(5),
-			result3Heap: result3{
-				maxHeap: heap.NewTopKHeap(1),
-				minHeap: heap.NewTopKHeap(1),
+			epsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](5),
+			thetaData: result3{
+				maxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](1),
+				minHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](1),
 			},
-			result4Heap: heap.NewTopKHeap(10),
+			lamdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](10),
 		},
 	}
 }
 
 func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
-	result2Heap := t.parcialResults.result2Heap
+	epsilonHeap := t.parcialResults.epsilonHeap
 
-	for _, country := range data {
-		prodCountry := country.GetProdCountry()
-		investment := country.GetTotalInvestment()
-
-		result2Heap.Insert(int(investment), map[string]interface{}{
-			"prodCountry": prodCountry,
-		})
+	for _, eData := range data {
+		investment := eData.GetTotalInvestment()
+		epsilonHeap.Insert(investment, eData)
 	}
 
 	return nil
 }
 
 func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
-	result4Heap := t.parcialResults.result4Heap
-	for _, actor := range data {
-		actorId := actor.GetActorId()
-		participations := actor.GetParticipations()
-		actorName := actor.GetActorName()
+	lamdaHeap := t.parcialResults.lamdaHeap
 
-		result4Heap.Insert(int(participations), map[string]interface{}{
-			"ActorId":   actorId,
-			"ActorName": actorName,
-		})
+	for _, lData := range data {
+		participations := lData.GetParticipations()
+
+		lamdaHeap.Insert(participations, lData)
 
 	}
 
@@ -77,23 +69,14 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 }
 
 func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
-	result3HeapMax := t.parcialResults.result3Heap.maxHeap
-	result3HeapMin := t.parcialResults.result3Heap.minHeap
-	for _, movie := range data {
-		movieId := movie.GetId()
-		title := movie.GetTitle()
-		avgRating := movie.GetAvgRating()
+	thetaMinHeap := t.parcialResults.thetaData.minHeap
+	thetaMaxHeap := t.parcialResults.thetaData.maxHeap
 
-		result3HeapMax.Insert(int(avgRating), map[string]interface{}{
-			"Title":     title,
-			"MovieId":   movieId,
-			"AvgRating": avgRating,
-		})
-		result3HeapMin.Insert(-int(avgRating), map[string]interface{}{
-			"Title":     title,
-			"MovieId":   movieId,
-			"AvgRating": avgRating,
-		})
+	for _, tData := range data {
+		avgRating := tData.GetAvgRating()
+
+		thetaMaxHeap.Insert(avgRating, tData)
+		thetaMinHeap.Insert(-avgRating, tData)
 	}
 	return nil
 }
@@ -123,17 +106,16 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result2Data := make(map[string][]*protocol.Result2_Data)
 
-	resultHeap := t.parcialResults.result2Heap
+	resultHeap := t.parcialResults.epsilonHeap
 
 	position := uint32(1)
 	for _, element := range resultHeap.GetTopK() {
-		data := element.Data.(map[string]interface{})
-		prodCountry := data["prodCountry"].(string)
+		eData := element.Data
 
 		result2Data[BROADCAST_ID] = append(result2Data[BROADCAST_ID], &protocol.Result2_Data{
 			Position:        position,
-			Country:         prodCountry,
-			TotalInvestment: uint64(element.Value),
+			Country:         eData.GetProdCountry(),
+			TotalInvestment: element.Value,
 		})
 		position++
 	}
@@ -174,32 +156,30 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
 
-	resultHeapMax := t.parcialResults.result3Heap.maxHeap
-	resultHeapMin := t.parcialResults.result3Heap.minHeap
+	resultHeapMax := t.parcialResults.thetaData.maxHeap
+	resultHeapMin := t.parcialResults.thetaData.minHeap
 
 	// Process the maximum value
 	if len(resultHeapMax.GetTopK()) > 0 {
 		element := resultHeapMax.GetTopK()[0]
-		data := element.Data.(map[string]interface{})
-		title := data["Title"].(string)
+		tData := element.Data
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
-			Type:  "Max",
-			Title: title,
-			Value: uint64(element.Value),
+			Type:   "Max",
+			Title:  tData.GetTitle(),
+			Rating: element.Value,
 		})
 	}
 
 	// Process the minimum value
 	if len(resultHeapMin.GetTopK()) > 0 {
 		element := resultHeapMin.GetTopK()[0]
-		data := element.Data.(map[string]interface{})
-		title := data["Title"].(string)
+		tData := element.Data
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
-			Type:  "Min",
-			Title: title,
-			Value: uint64(-element.Value),
+			Type:   "Min",
+			Title:  tData.GetTitle(),
+			Rating: -element.Value,
 		})
 	}
 
@@ -238,18 +218,17 @@ func (t *Topper) lambdaResultStage(tasks Tasks) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
 
-	resultHeap := t.parcialResults.result4Heap
+	resultHeap := t.parcialResults.lamdaHeap
 
-	position := 1
+	position := uint32(1)
 	for _, element := range resultHeap.GetTopK() {
-		data := element.Data.(map[string]interface{})
-		actorId := data["ActorId"].(string)
-		actorName := data["ActorName"].(string)
+		lData := element.Data
 
 		result4Data[BROADCAST_ID] = append(result4Data[BROADCAST_ID], &protocol.Result4_Data{
-			Position:  uint32(position),
-			ActorName: actorName,
-			ActorId:   actorId,
+			Position:       position,
+			ActorName:      lData.GetActorName(),
+			ActorId:        lData.GetActorId(),
+			Participations: element.Value,
 		})
 		position++
 	}

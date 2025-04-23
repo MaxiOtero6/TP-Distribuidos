@@ -8,6 +8,7 @@ message Result4 {
         uint32 position = 1;
         string actorId = 2;
         string actorName = 3;
+        uint64 participations = 4;
     }
 
     repeated Data data = 1;
