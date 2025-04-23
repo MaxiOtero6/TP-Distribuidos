@@ -345,46 +345,49 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 	})
 }
 
-// func TestEOFArrival(t *testing.T) {
+func TestEOFArrival(t *testing.T) {
 
-// 	var testTopper = NewTopper(testInfraConfig)
-// 	t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {
+	var testTopper = NewTopper(testInfraConfig)
+	t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {
 
-// 		epsilonTask := &protocol.Task{
-// 			Stage: &protocol.Task_Epsilon{
-// 				Epsilon: &protocol.Epsilon{
-// 					Data: []*protocol.Epsilon_Data{
-// 						{ProdCountry: "Spain", TotalInvestment: 700},
-// 						{ProdCountry: "Germany", TotalInvestment: 800},
-// 						{ProdCountry: "Italy", TotalInvestment: 600},
-// 						{ProdCountry: "Poland", TotalInvestment: 900},
-// 						{ProdCountry: "USA", TotalInvestment: 1000},
-// 					},
-// 				},
-// 			},
-// 		}
+		epsilonTask := &protocol.Task{
+			Stage: &protocol.Task_Epsilon{
+				Epsilon: &protocol.Epsilon{
+					Data: []*protocol.Epsilon_Data{
+						{ProdCountry: "Spain", TotalInvestment: 700},
+						{ProdCountry: "Germany", TotalInvestment: 800},
+						{ProdCountry: "Italy", TotalInvestment: 600},
+						{ProdCountry: "Poland", TotalInvestment: 900},
+						{ProdCountry: "USA", TotalInvestment: 1000},
+					},
+				},
+			},
+		}
 
-// 		eofTask := &protocol.Task{
-// 			Stage: &protocol.Task_OmegaEOF{
-// 				OmegaEOF: &protocol.OmegaEOF{
-// 					Data: &protocol.OmegaEOF_Data{
-// 						Stage:           EPSILON_STAGE,
-// 						ClientId:        "",
-// 						WorkerCreatorId: "",
-// 					},
-// 				},
-// 			},
-// 		}
+		eofTask := &protocol.Task{
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						Stage:           EPSILON_STAGE,
+						ClientId:        "",
+						WorkerCreatorId: "",
+					},
+				},
+			},
+		}
 
-// 		_, err := testTopper.Execute(epsilonTask)
-// 		task, err := testTopper.Execute(eofTask)
-// 		assert.NoError(t, err, "Expected no error during execution")
+		_, err := testTopper.Execute(epsilonTask)
+		tasks, err := testTopper.Execute(eofTask)
+		assert.NoError(t, err, "Expected no error during execution")
 
-// 		resultTask := task[testInfraConfig.GetResultExchange()][RESULT_STAGE][""]
-// 		fmt.Printf("%+v\n", resultTask)
-// 		resultData := resultTask.GetResult2().GetData()
+		resultTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][""]
+		resultData := resultTask.GetResult2().GetData()
+		circularEofTask := tasks[testInfraConfig.GetTopExchange()][EPSILON_STAGE][testInfraConfig.GetNodeId()]
+		resultEofTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][""]
 
-// 		assert.Len(t, resultData, 5, "Expected 5 results for EOF arrival")
-// 	})
+		assert.Len(t, resultData, 5, "Expected 5 results for EOF arrival")
+		assert.NotNil(t, circularEofTask, "Expected EOF task to be present in the tasks")
+		assert.NotNil(t, resultEofTask, "Expected EOF task to be present in the tasks")
+	})
 
-//}
+}
