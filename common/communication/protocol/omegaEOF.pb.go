@@ -69,6 +69,7 @@ type OmegaEOF_Data struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Stage           string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
 	WorkerCreatorId string                 `protobuf:"bytes,2,opt,name=worker_creator_id,json=workerCreatorId,proto3" json:"worker_creator_id,omitempty"`
+	EofType         string                 `protobuf:"bytes,3,opt,name=eofType,proto3" json:"eofType,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -117,16 +118,24 @@ func (x *OmegaEOF_Data) GetWorkerCreatorId() string {
 	return ""
 }
 
+func (x *OmegaEOF_Data) GetEofType() string {
+	if x != nil {
+		return x.EofType
+	}
+	return ""
+}
+
 var File_proto_stages_omegaEOF_proto protoreflect.FileDescriptor
 
 const file_proto_stages_omegaEOF_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/stages/omegaEOF.proto\"x\n" +
+	"\x1bproto/stages/omegaEOF.proto\"\x92\x01\n" +
 	"\bOmegaEOF\x12\"\n" +
-	"\x04data\x18\x01 \x01(\v2\x0e.OmegaEOF.DataR\x04data\x1aH\n" +
+	"\x04data\x18\x01 \x01(\v2\x0e.OmegaEOF.DataR\x04data\x1ab\n" +
 	"\x04Data\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12*\n" +
-	"\x11worker_creator_id\x18\x02 \x01(\tR\x0fworkerCreatorIdB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x11worker_creator_id\x18\x02 \x01(\tR\x0fworkerCreatorId\x12\x18\n" +
+	"\aeofType\x18\x03 \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_stages_omegaEOF_proto_rawDescOnce sync.Once

@@ -149,7 +149,7 @@ func (*Zeta_Data_Rating_) isZeta_Data_Data() {}
 
 type Zeta_Data_Movie struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -185,9 +185,9 @@ func (*Zeta_Data_Movie) Descriptor() ([]byte, []int) {
 	return file_proto_stages_zeta_proto_rawDescGZIP(), []int{0, 0, 0}
 }
 
-func (x *Zeta_Data_Movie) GetId() string {
+func (x *Zeta_Data_Movie) GetMovieId() string {
 	if x != nil {
-		return x.Id
+		return x.MovieId
 	}
 	return ""
 }
@@ -255,15 +255,15 @@ var File_proto_stages_zeta_proto protoreflect.FileDescriptor
 
 const file_proto_stages_zeta_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/stages/zeta.proto\"\xf9\x01\n" +
+	"\x17proto/stages/zeta.proto\"\x83\x02\n" +
 	"\x04Zeta\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".Zeta.DataR\x04data\x1a\xd0\x01\n" +
+	".Zeta.DataR\x04data\x1a\xda\x01\n" +
 	"\x04Data\x12(\n" +
 	"\x05movie\x18\x01 \x01(\v2\x10.Zeta.Data.MovieH\x00R\x05movie\x12+\n" +
-	"\x06rating\x18\x02 \x01(\v2\x11.Zeta.Data.RatingH\x00R\x06rating\x1a-\n" +
-	"\x05Movie\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x06rating\x18\x02 \x01(\v2\x11.Zeta.Data.RatingH\x00R\x06rating\x1a7\n" +
+	"\x05Movie\x12\x18\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x1a:\n" +
 	"\x06Rating\x12\x18\n" +
 	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x16\n" +

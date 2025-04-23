@@ -273,12 +273,12 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 }
 
 func (m *Mapper) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
+	currentNodeId, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%m.infraConfig.GetReduceCount())
+	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%m.infraConfig.GetReduceCount())
 	return nextNodeId, nil
 }
 

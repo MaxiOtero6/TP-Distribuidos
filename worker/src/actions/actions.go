@@ -17,6 +17,11 @@ type Action interface {
 	Execute(task *protocol.Task) (Tasks, error)
 }
 
+// EOF Types
+const SMALL_TABLE string = "small"
+const BIG_TABLE string = "big"
+const GENERAL string = "general"
+
 // Query 1
 const ALPHA_STAGE string = "alpha"
 const BETA_STAGE string = "beta"

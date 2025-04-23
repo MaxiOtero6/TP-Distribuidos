@@ -9,7 +9,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
-type PartialResults struct {
+type ReducerPartialResults struct {
 	delta2  map[string]*protocol.Delta_2_Data
 	delta3  map[string]*protocol.Delta_3_Data
 	eta2    map[string]*protocol.Eta_2_Data
@@ -23,7 +23,7 @@ type PartialResults struct {
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
 	infraConfig    *model.InfraConfig
-	partialResults *PartialResults
+	partialResults *ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
 }
@@ -33,7 +33,7 @@ type Reducer struct {
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return &Reducer{
 		infraConfig: infraConfig,
-		partialResults: &PartialResults{
+		partialResults: &ReducerPartialResults{
 			delta2:  make(map[string]*protocol.Delta_2_Data),
 			delta3:  make(map[string]*protocol.Delta_3_Data),
 			eta2:    make(map[string]*protocol.Eta_2_Data),
@@ -357,8 +357,8 @@ func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
 
 	// Divide the resulting countries by hashing each country
 	for _, d3Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, d3Data.GetCountry())
-		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Delta_3_Data{
+		nodeId := r.itemHashFunc(REDUCE_COUNT, d3Data.GetCountry())
+		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Delta_3_Data{
 			Country:       d3Data.GetCountry(),
 			PartialBudget: d3Data.GetPartialBudget(),
 		})
@@ -386,10 +386,10 @@ func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
 	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
 	// Asign the data to the corresponding worker
-	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
+	nodeId := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
 
 	for _, eData := range dataMap {
-		epsilonData[routingKey] = append(epsilonData[routingKey], &protocol.Epsilon_Data{
+		epsilonData[nodeId] = append(epsilonData[nodeId], &protocol.Epsilon_Data{
 			ProdCountry:     eData.GetCountry(),
 			TotalInvestment: eData.GetPartialBudget(),
 		})
@@ -420,8 +420,8 @@ func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 
 	// Divide the resulting movies by hashing each movie
 	for _, e2Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, e2Data.GetMovieId())
-		eta3Data[idHash] = append(eta3Data[idHash], &protocol.Eta_3_Data{
+		nodeId := r.itemHashFunc(REDUCE_COUNT, e2Data.GetMovieId())
+		eta3Data[nodeId] = append(eta3Data[nodeId], &protocol.Eta_3_Data{
 			MovieId: e2Data.GetMovieId(),
 			Title:   e2Data.GetTitle(),
 			Rating:  e2Data.GetRating(),
@@ -451,11 +451,11 @@ func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
 	thetaData := make(map[string][]*protocol.Theta_Data)
 
 	// Asign the data to the corresponding worker
-	routingKey := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), THETA_STAGE)
+	nodeId := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), THETA_STAGE)
 
 	for _, e3Data := range dataMap {
 		avgRating := float32(e3Data.GetRating()) / float32(e3Data.GetCount())
-		thetaData[routingKey] = append(thetaData[routingKey], &protocol.Theta_Data{
+		thetaData[nodeId] = append(thetaData[nodeId], &protocol.Theta_Data{
 			Id:        e3Data.GetMovieId(),
 			Title:     e3Data.GetTitle(),
 			AvgRating: avgRating,
@@ -486,8 +486,8 @@ func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 
 	// Divide the resulting actors by hashing each actor
 	for _, k2Data := range dataMap {
-		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, k2Data.GetActorId())
-		kappa3Data[idHash] = append(kappa3Data[idHash], &protocol.Kappa_3_Data{
+		nodeId := r.itemHashFunc(REDUCE_COUNT, k2Data.GetActorId())
+		kappa3Data[nodeId] = append(kappa3Data[nodeId], &protocol.Kappa_3_Data{
 			ActorId:               k2Data.GetActorId(),
 			ActorName:             k2Data.GetActorName(),
 			PartialParticipations: k2Data.GetPartialParticipations(),
@@ -549,8 +549,8 @@ func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
 	// Divide the resulting sentiments by hashing each sentiment
 	for _, n3Data := range dataMap {
 		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
-		idHash := utils.GetWorkerIdFromHash(REDUCE_COUNT, sentiment)
-		delta3Data[idHash] = append(delta3Data[idHash], &protocol.Nu_3_Data{
+		nodeId := r.itemHashFunc(REDUCE_COUNT, sentiment)
+		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Nu_3_Data{
 			Sentiment: n3Data.GetSentiment(),
 			Ratio:     n3Data.GetRatio(),
 			Count:     n3Data.GetCount(),
@@ -580,11 +580,11 @@ func (r *Reducer) nu3Results(tasks Tasks, clientId string) {
 
 	// Asign the data to the corresponding worker
 	// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
-	routingKey := ""
+	nodeId := ""
 
 	for _, n3Data := range dataMap {
 		ratio := n3Data.GetRatio() / float32(n3Data.GetCount())
-		resultData[routingKey] = append(resultData[routingKey], &protocol.Result5_Data{
+		resultData[nodeId] = append(resultData[nodeId], &protocol.Result5_Data{
 			Sentiment: n3Data.GetSentiment(),
 			Ratio:     ratio,
 		})

@@ -149,7 +149,7 @@ func (*Iota_Data_Actor_) isIota_Data_Data() {}
 
 type Iota_Data_Movie struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,9 +184,9 @@ func (*Iota_Data_Movie) Descriptor() ([]byte, []int) {
 	return file_proto_stages_iota_proto_rawDescGZIP(), []int{0, 0, 0}
 }
 
-func (x *Iota_Data_Movie) GetId() string {
+func (x *Iota_Data_Movie) GetMovieId() string {
 	if x != nil {
-		return x.Id
+		return x.MovieId
 	}
 	return ""
 }
@@ -194,8 +194,8 @@ func (x *Iota_Data_Movie) GetId() string {
 type Iota_Data_Actor struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MovieId       string                 `protobuf:"bytes,1,opt,name=movieId,proto3" json:"movieId,omitempty"`
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	ActorId       string                 `protobuf:"bytes,2,opt,name=actorId,proto3" json:"actorId,omitempty"`
+	ActorName     string                 `protobuf:"bytes,3,opt,name=actorName,proto3" json:"actorName,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -237,16 +237,16 @@ func (x *Iota_Data_Actor) GetMovieId() string {
 	return ""
 }
 
-func (x *Iota_Data_Actor) GetId() string {
+func (x *Iota_Data_Actor) GetActorId() string {
 	if x != nil {
-		return x.Id
+		return x.ActorId
 	}
 	return ""
 }
 
-func (x *Iota_Data_Actor) GetName() string {
+func (x *Iota_Data_Actor) GetActorName() string {
 	if x != nil {
-		return x.Name
+		return x.ActorName
 	}
 	return ""
 }
@@ -255,19 +255,19 @@ var File_proto_stages_iota_proto protoreflect.FileDescriptor
 
 const file_proto_stages_iota_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/stages/iota.proto\"\xeb\x01\n" +
+	"\x17proto/stages/iota.proto\"\x89\x02\n" +
 	"\x04Iota\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
-	".Iota.DataR\x04data\x1a\xc2\x01\n" +
+	".Iota.DataR\x04data\x1a\xe0\x01\n" +
 	"\x04Data\x12(\n" +
 	"\x05movie\x18\x01 \x01(\v2\x10.Iota.Data.MovieH\x00R\x05movie\x12(\n" +
-	"\x05actor\x18\x02 \x01(\v2\x10.Iota.Data.ActorH\x00R\x05actor\x1a\x17\n" +
-	"\x05Movie\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x1aE\n" +
+	"\x05actor\x18\x02 \x01(\v2\x10.Iota.Data.ActorH\x00R\x05actor\x1a!\n" +
+	"\x05Movie\x12\x18\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x1aY\n" +
 	"\x05Actor\x12\x18\n" +
-	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04nameB\x06\n" +
+	"\amovieId\x18\x01 \x01(\tR\amovieId\x12\x18\n" +
+	"\aactorId\x18\x02 \x01(\tR\aactorId\x12\x1c\n" +
+	"\tactorName\x18\x03 \x01(\tR\tactorNameB\x06\n" +
 	"\x04dataB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (

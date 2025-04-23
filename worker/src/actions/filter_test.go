@@ -146,16 +146,16 @@ func TestFilter(t *testing.T) {
 			iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
 			assert.Len(t, iotaData, 2, "Expected 2 movies")
 
-			assert.Equal(t, "1", iotaData[0].GetMovie().GetId(), "Expected movie ID 1")
-			assert.Equal(t, "4", iotaData[1].GetMovie().GetId(), "Expected movie ID 4")
+			assert.Equal(t, "1", iotaData[0].GetMovie().GetMovieId(), "Expected movie ID 1")
+			assert.Equal(t, "4", iotaData[1].GetMovie().GetMovieId(), "Expected movie ID 4")
 
 			zetaData := result[JOIN_EXCHANGE][ZETA_STAGE][TEST_WORKER_ID].GetZeta().GetData()
 			assert.Len(t, zetaData, 2, "Expected 2 movies")
 
-			assert.Equal(t, "1", zetaData[0].GetMovie().GetId(), "Expected movie ID 1")
+			assert.Equal(t, "1", zetaData[0].GetMovie().GetMovieId(), "Expected movie ID 1")
 			assert.Equal(t, "Movie 1", zetaData[0].GetMovie().GetTitle(), "Expected movie title 'Movie 1'")
 
-			assert.Equal(t, "4", zetaData[1].GetMovie().GetId(), "Expected movie ID 4")
+			assert.Equal(t, "4", zetaData[1].GetMovie().GetMovieId(), "Expected movie ID 4")
 			assert.Equal(t, "Movie 4", zetaData[1].GetMovie().GetTitle(), "Expected movie title 'Movie 4'")
 		})
 

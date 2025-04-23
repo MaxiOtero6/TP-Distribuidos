@@ -96,12 +96,12 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 }
 
 func (o *Overviewer) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
+	currentNodeId, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%o.infraConfig.GetOverviewCount())
+	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%o.infraConfig.GetOverviewCount())
 	return nextNodeId, nil
 }
 
