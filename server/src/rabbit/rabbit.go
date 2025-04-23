@@ -1,6 +1,8 @@
 package rabbit
 
 import (
+	"fmt"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -79,10 +81,9 @@ func (r *RabbitHandler) Close() {
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
 func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie) {
 	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount())
-	muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
-
+	// muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
 	r.publishTasksRabbit(alphaTasks, r.infraConfig.GetFilterExchange())
-	r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())
+	// r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())
 }
 
 // SendRatingsRabbit sends the ratings to the join exchange
@@ -112,4 +113,90 @@ func (r *RabbitHandler) publishTasksRabbit(tasks map[string]*protocol.Task, exch
 
 		r.rabbitMQ.Publish(exchange, routingKey, bytes)
 	}
+}
+
+// GetResults retrieves the results from the result queue
+// The results are unmarshalled and returned as a ResultsResponse
+func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
+	unmarshallResult := func(msg amqp.Delivery) (*protocol.ResultsResponse_Result, error) {
+		task := &protocol.Task{}
+		err := proto.Unmarshal(msg.Body, task)
+		
+		if err != nil {
+			return nil, err
+		}
+		
+		result := &protocol.ResultsResponse_Result{}
+		
+		switch task.GetStage().(type) {
+		case *protocol.Task_Result1:
+			result.Message = &protocol.ResultsResponse_Result_Result1{
+				Result1: task.GetResult1(),
+			}
+		case *protocol.Task_Result2:
+			result.Message = &protocol.ResultsResponse_Result_Result2{
+				Result2: task.GetResult2(),
+			}
+		case *protocol.Task_Result3:
+			result.Message = &protocol.ResultsResponse_Result_Result3{
+				Result3: task.GetResult3(),
+			}
+		case *protocol.Task_Result4:
+			result.Message = &protocol.ResultsResponse_Result_Result4{
+				Result4: task.GetResult4(),
+			}
+		case *protocol.Task_Result5:
+			result.Message = &protocol.ResultsResponse_Result_Result5{
+				Result5: task.GetResult5(),
+			}
+		default:
+			return nil, fmt.Errorf("unknown task stage: %v", task.GetStage())
+		}
+		
+		return result, nil
+	}
+
+	r.consumeChan = r.rabbitMQ.Consume(r.resultQueueName)
+
+	results := &protocol.ResultsResponse{
+		Results: make([]*protocol.ResultsResponse_Result, 0),
+		Status:  protocol.MessageStatus_PENDING,
+	}
+
+	select {
+	case msg := <-r.consumeChan:
+		r, err := unmarshallResult(msg)
+
+		if err != nil {
+			log.Errorf("Error unmarshalling task: %v", err)
+		} else {
+			results.Results = append(results.Results, r)
+		}
+
+	default:
+		r.rabbitMQ.CancelConsumer(r.resultQueueName)
+		// Consume until channel closes to get inflight messages
+		for {
+			msg, ok := <-r.consumeChan
+
+			if !ok {
+				break
+			}
+
+			r, err := unmarshallResult(msg)
+
+			if err != nil {
+				log.Errorf("Error unmarshalling task: %v", err)
+				continue
+			}
+
+			results.Results = append(results.Results, r)
+		}
+	}
+
+	if len(results.Results) > 0 {
+		results.Status = protocol.MessageStatus_SUCCESS
+	}
+
+	return results
 }
