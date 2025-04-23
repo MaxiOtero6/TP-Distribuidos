@@ -52,4 +52,6 @@ message Task {
         Result5 result5 = 26;
         OmegaEOF omegaEOF = 27;
     }
+    
+    string clientId = 28;
 }

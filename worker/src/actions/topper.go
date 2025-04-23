@@ -114,10 +114,9 @@ Return example
 		},
 	}
 */
-func (t *Topper) epsilonResultStage(tasks Tasks) {
+func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
 
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
-	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -125,12 +124,15 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 
 	resultHeap := t.parcialResults.result2Heap
 
+	// Asign the data to the corresponding worker
+	nodeId := clientId
+
 	position := uint32(1)
 	for _, element := range resultHeap.GetTopK() {
 		data := element.Data.(map[string]interface{})
 		prodCountry := data["prodCountry"].(string)
 
-		result2Data[BROADCAST_ID] = append(result2Data[BROADCAST_ID], &protocol.Result2_Data{
+		result2Data[nodeId] = append(result2Data[nodeId], &protocol.Result2_Data{
 			Position:        position,
 			Country:         prodCountry,
 			TotalInvestment: uint64(element.Value),
@@ -140,6 +142,7 @@ func (t *Topper) epsilonResultStage(tasks Tasks) {
 
 	for id, data := range result2Data {
 		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Result2{
 				Result2: &protocol.Result2{
 					Data: data,
@@ -166,9 +169,8 @@ Return example
 		},
 	}
 */
-func (t *Topper) thetaResultStage(tasks Tasks) {
+func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
-	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -177,13 +179,15 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 	resultHeapMax := t.parcialResults.result3Heap.maxHeap
 	resultHeapMin := t.parcialResults.result3Heap.minHeap
 
+	nodeId := clientId
+
 	// Process the maximum value
 	if len(resultHeapMax.GetTopK()) > 0 {
 		element := resultHeapMax.GetTopK()[0]
 		data := element.Data.(map[string]interface{})
 		title := data["Title"].(string)
 
-		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
+		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
 			Type:  "Max",
 			Title: title,
 			Value: uint64(element.Value),
@@ -196,7 +200,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 		data := element.Data.(map[string]interface{})
 		title := data["Title"].(string)
 
-		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
+		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
 			Type:  "Min",
 			Title: title,
 			Value: uint64(-element.Value),
@@ -205,6 +209,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 
 	for id, data := range result3Data {
 		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Result3{
 				Result3: &protocol.Result3{
 					Data: data,
@@ -230,9 +235,8 @@ Return example
 		},
 	}
 */
-func (t *Topper) lambdaResultStage(tasks Tasks) {
+func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
-	BROADCAST_ID := t.infraConfig.GetBroadcastID()
 
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
@@ -240,13 +244,15 @@ func (t *Topper) lambdaResultStage(tasks Tasks) {
 
 	resultHeap := t.parcialResults.result4Heap
 
+	nodeId := clientId
+
 	position := 1
 	for _, element := range resultHeap.GetTopK() {
 		data := element.Data.(map[string]interface{})
 		actorId := data["ActorId"].(string)
 		actorName := data["ActorName"].(string)
 
-		result4Data[BROADCAST_ID] = append(result4Data[BROADCAST_ID], &protocol.Result4_Data{
+		result4Data[nodeId] = append(result4Data[nodeId], &protocol.Result4_Data{
 			Position:  uint32(position),
 			ActorName: actorName,
 			ActorId:   actorId,
@@ -256,6 +262,7 @@ func (t *Topper) lambdaResultStage(tasks Tasks) {
 
 	for id, data := range result4Data {
 		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Result4{
 				Result4: &protocol.Result4{
 					Data: data,
@@ -265,14 +272,14 @@ func (t *Topper) lambdaResultStage(tasks Tasks) {
 	}
 }
 
-func (t *Topper) addResultsToNextStage(tasks Tasks, stage string) error {
+func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId string) error {
 	switch stage {
 	case EPSILON_STAGE:
-		t.epsilonResultStage(tasks)
+		t.epsilonResultStage(tasks, clientId)
 	case LAMBDA_STAGE:
-		t.lambdaResultStage(tasks)
+		t.lambdaResultStage(tasks, clientId)
 	case THETA_STAGE:
-		t.thetaResultStage(tasks)
+		t.thetaResultStage(tasks, clientId)
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
@@ -285,7 +292,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 	TOP_EXCHANGE := t.infraConfig.GetTopExchange()
-	BROADCAST_ID := t.infraConfig.GetBroadcastID()
+	nodeId := data.GetClientId()
 
 	if data.GetWorkerCreatorId() == t.infraConfig.GetNodeId() {
 
@@ -303,7 +310,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 		tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID] = nextStageEOF
+		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = nextStageEOF
 
 	} else {
 
@@ -327,7 +334,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		tasks[TOP_EXCHANGE][data.GetStage()] = make(map[string]*protocol.Task)
 		tasks[TOP_EXCHANGE][data.GetStage()][nextNode] = eofTask
 
-		t.addResultsToNextStage(tasks, data.GetStage())
+		t.addResultsToNextStage(tasks, data.GetStage(), data.GetClientId())
 	}
 
 	return tasks
