@@ -23,9 +23,9 @@ message SyncAck {
     string client_id = 1;
 }
 
-message ResultResponse {
+message ResultsResponse {
     
-    message Query{
+    message Result{
         oneof Message {
             Result1 result1 = 1;
             Result2 result2 = 2;
@@ -36,7 +36,7 @@ message ResultResponse {
     }   
    
     MessageStatus status = 1;
-    repeated Query responses = 2;
+    repeated Result results = 2;
 }
 
 
@@ -44,6 +44,6 @@ message ServerClientMessage{
     oneof message {
         BatchAck batch_ack = 1;
         SyncAck sync_ack = 2;
-        ResultResponse request = 3;
+        ResultsResponse results = 3;
     }
 }

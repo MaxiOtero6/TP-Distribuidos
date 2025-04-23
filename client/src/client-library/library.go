@@ -108,14 +108,14 @@ func (l *Library) sendAllFiles() error {
 		return err
 	}
 
-	err = l.sendCreditsFile()
-	if err != nil {
-		return err
-	}
-	err = l.sendRatingsFile()
-	if err != nil {
-		return err
-	}
+	// err = l.sendCreditsFile()
+	// if err != nil {
+	// 	return err
+	// }
+	// err = l.sendRatingsFile()
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -268,7 +268,7 @@ func (l *Library) fetchServerResults() error {
 
 	return nil
 }
-func (l *Library) processRequestResponseMessage(message []*protocol.ResultResponse_Query) {
+func (l *Library) processRequestResponseMessage(message []*protocol.ResultsResponse_Result) {
 	if len(message) == 0 {
 		log.Infof("action: processResultMessage | result: fail | error: empty response")
 		return
@@ -277,24 +277,24 @@ func (l *Library) processRequestResponseMessage(message []*protocol.ResultRespon
 		log.Infof("action:  | result: success | query type : %T | response: %v", query.GetMessage(), query.Message)
 	}
 }
-func (l *Library) waitForResultServerResponse() (bool, []*protocol.ResultResponse_Query, error) {
+func (l *Library) waitForResultServerResponse() (bool, []*protocol.ResultsResponse_Result, error) {
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return false, nil, err
 	}
 
 	switch resp := response.GetMessage().(type) {
-	case *protocol.ServerClientMessage_Request:
-		if resp.Request.Status == protocol.MessageStatus_SUCCESS {
-			return true, resp.Request.Responses, nil
-		} else if resp.Request.Status == protocol.MessageStatus_PENDING {
+	case *protocol.ServerClientMessage_Results:
+		if resp.Results.Status == protocol.MessageStatus_SUCCESS {
+			return true, resp.Results.Results, nil
+		} else if resp.Results.Status == protocol.MessageStatus_PENDING {
 			return false, nil, nil
 		}
 	}
 	return false, nil, fmt.Errorf("unexpected response type received")
 
 }
-func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.ResultResponse_Query, error) {
+func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.ResultsResponse_Result, error) {
 	done, responses, err := l.waitForResultServerResponse()
 	if err != nil {
 		return false, nil, err
