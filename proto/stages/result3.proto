@@ -6,8 +6,9 @@ option go_package = "common/communication/server-comm/protocol";
 message Result3 {
     message Data {
         string type = 1;
-        uint64 value = 2;
-        string title = 3;    
+        string id = 2;
+        string title = 3;
+        float rating = 4;
     }
 
     repeated Data data = 1;
