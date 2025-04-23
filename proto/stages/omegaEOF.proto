@@ -9,6 +9,7 @@ message OmegaEOF {
         string client_id = 1;
         string stage = 2;
         string worker_creator_id = 3;
+        string eofType = 4;
     }
 
     Data data = 1;
