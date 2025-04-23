@@ -206,7 +206,6 @@ func TestFilter(t *testing.T) {
 
 	t.Run("Test beta stage", func(t *testing.T) {
 		RESULT_EXCHANGE := testFilter.infraConfig.GetResultExchange()
-		BROADCAST_ID := testFilter.infraConfig.GetBroadcastID()
 
 		t.Run("Test with nil data", func(t *testing.T) {
 			result := testFilter.betaStage(nil, CLIENT_ID)
@@ -214,7 +213,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
@@ -224,7 +223,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
@@ -273,7 +272,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 1, "Expected 1 destination ID")
 
-			res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 2, "Expected 2 movies")
 
 			assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
@@ -316,7 +315,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[RESULT_EXCHANGE][RESULT_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][RESULT_STAGE][BROADCAST_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 	})
