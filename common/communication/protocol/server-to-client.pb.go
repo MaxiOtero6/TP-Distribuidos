@@ -325,6 +325,7 @@ type ResultsResponse_Result struct {
 	//	*ResultsResponse_Result_Result3
 	//	*ResultsResponse_Result_Result4
 	//	*ResultsResponse_Result_Result5
+	//	*ResultsResponse_Result_OmegaEOF
 	Message       isResultsResponse_Result_Message `protobuf_oneof:"Message"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -412,6 +413,15 @@ func (x *ResultsResponse_Result) GetResult5() *Result5 {
 	return nil
 }
 
+func (x *ResultsResponse_Result) GetOmegaEOF() *OmegaEOF {
+	if x != nil {
+		if x, ok := x.Message.(*ResultsResponse_Result_OmegaEOF); ok {
+			return x.OmegaEOF
+		}
+	}
+	return nil
+}
+
 type isResultsResponse_Result_Message interface {
 	isResultsResponse_Result_Message()
 }
@@ -436,6 +446,10 @@ type ResultsResponse_Result_Result5 struct {
 	Result5 *Result5 `protobuf:"bytes,5,opt,name=result5,proto3,oneof"`
 }
 
+type ResultsResponse_Result_OmegaEOF struct {
+	OmegaEOF *OmegaEOF `protobuf:"bytes,27,opt,name=omegaEOF,proto3,oneof"`
+}
+
 func (*ResultsResponse_Result_Result1) isResultsResponse_Result_Message() {}
 
 func (*ResultsResponse_Result_Result2) isResultsResponse_Result_Message() {}
@@ -446,25 +460,28 @@ func (*ResultsResponse_Result_Result4) isResultsResponse_Result_Message() {}
 
 func (*ResultsResponse_Result_Result5) isResultsResponse_Result_Message() {}
 
+func (*ResultsResponse_Result_OmegaEOF) isResultsResponse_Result_Message() {}
+
 var File_proto_client_server_messages_server_to_client_proto protoreflect.FileDescriptor
 
 const file_proto_client_server_messages_server_to_client_proto_rawDesc = "" +
 	"\n" +
-	"3proto/client-server-messages/server-to-client.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\"M\n" +
+	"3proto/client-server-messages/server-to-client.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\x1a\x1bproto/stages/omegaEOF.proto\"M\n" +
 	"\bBatchAck\x12\x19\n" +
 	"\bbatch_id\x18\x01 \x01(\tR\abatchId\x12&\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x0e.MessageStatusR\x06status\"&\n" +
 	"\aSyncAck\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\xc0\x02\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\xe9\x02\n" +
 	"\x0fResultsResponse\x12&\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x0e.MessageStatusR\x06status\x121\n" +
-	"\aresults\x18\x02 \x03(\v2\x17.ResultsResponse.ResultR\aresults\x1a\xd1\x01\n" +
+	"\aresults\x18\x02 \x03(\v2\x17.ResultsResponse.ResultR\aresults\x1a\xfa\x01\n" +
 	"\x06Result\x12$\n" +
 	"\aresult1\x18\x01 \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
 	"\aresult2\x18\x02 \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
 	"\aresult3\x18\x03 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
 	"\aresult4\x18\x04 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
-	"\aresult5\x18\x05 \x01(\v2\b.Result5H\x00R\aresult5B\t\n" +
+	"\aresult5\x18\x05 \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
+	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOFB\t\n" +
 	"\aMessage\"\x9f\x01\n" +
 	"\x13ServerClientMessage\x12(\n" +
 	"\tbatch_ack\x18\x01 \x01(\v2\t.BatchAckH\x00R\bbatchAck\x12%\n" +
@@ -502,6 +519,7 @@ var file_proto_client_server_messages_server_to_client_proto_goTypes = []any{
 	(*Result3)(nil),                // 8: Result3
 	(*Result4)(nil),                // 9: Result4
 	(*Result5)(nil),                // 10: Result5
+	(*OmegaEOF)(nil),               // 11: OmegaEOF
 }
 var file_proto_client_server_messages_server_to_client_proto_depIdxs = []int32{
 	0,  // 0: BatchAck.status:type_name -> MessageStatus
@@ -515,11 +533,12 @@ var file_proto_client_server_messages_server_to_client_proto_depIdxs = []int32{
 	8,  // 8: ResultsResponse.Result.result3:type_name -> Result3
 	9,  // 9: ResultsResponse.Result.result4:type_name -> Result4
 	10, // 10: ResultsResponse.Result.result5:type_name -> Result5
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	11, // 11: ResultsResponse.Result.omegaEOF:type_name -> OmegaEOF
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_client_server_messages_server_to_client_proto_init() }
@@ -532,6 +551,7 @@ func file_proto_client_server_messages_server_to_client_proto_init() {
 	file_proto_stages_result3_proto_init()
 	file_proto_stages_result4_proto_init()
 	file_proto_stages_result5_proto_init()
+	file_proto_stages_omegaEOF_proto_init()
 	file_proto_client_server_messages_server_to_client_proto_msgTypes[3].OneofWrappers = []any{
 		(*ServerClientMessage_BatchAck)(nil),
 		(*ServerClientMessage_SyncAck)(nil),
@@ -543,6 +563,7 @@ func file_proto_client_server_messages_server_to_client_proto_init() {
 		(*ResultsResponse_Result_Result3)(nil),
 		(*ResultsResponse_Result_Result4)(nil),
 		(*ResultsResponse_Result_Result5)(nil),
+		(*ResultsResponse_Result_OmegaEOF)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -136,6 +136,10 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 			result.Message = &protocol.ResultsResponse_Result_Result5{
 				Result5: task.GetResult5(),
 			}
+		case *protocol.Task_OmegaEOF:
+			result.Message = &protocol.ResultsResponse_Result_OmegaEOF{
+				OmegaEOF: task.GetOmegaEOF(),
+			}
 		default:
 			return nil, fmt.Errorf("unknown task stage: %v", task.GetStage())
 		}

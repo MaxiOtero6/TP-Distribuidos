@@ -7,6 +7,7 @@ import "proto/stages/result2.proto";
 import "proto/stages/result3.proto";
 import "proto/stages/result4.proto";
 import "proto/stages/result5.proto";
+import "proto/stages/omegaEOF.proto";
 
 enum MessageStatus {
     SUCCESS = 0;
@@ -32,6 +33,7 @@ message ResultsResponse {
             Result3 result3 = 3;
             Result4 result4 = 4;
             Result5 result5 = 5;
+            OmegaEOF omegaEOF = 27;
         };
     }   
    
