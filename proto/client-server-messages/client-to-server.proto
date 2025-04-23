@@ -26,6 +26,7 @@ message Batch {
 
     FileType type = 1;
     repeated Row data = 2;
+    string client_id = 3;
 }
 
 message ClientServerMessage{

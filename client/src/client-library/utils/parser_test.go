@@ -19,7 +19,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		assert.NoError(t, err)
 		defer parser.Close()
 
-		batch, err := parser.ReadBatch()
+		batch, err := parser.ReadBatch("")
 		assert.NoError(t, err)
 		assert.NotNil(t, batch)
 
@@ -39,7 +39,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		assert.NoError(t, err)
 		defer parser.Close()
 
-		batch, err := parser.ReadBatch()
+		batch, err := parser.ReadBatch("")
 		assert.NoError(t, err)
 		assert.NotNil(t, batch)
 

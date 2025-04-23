@@ -50,15 +50,16 @@ func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Pars
 	}, nil
 }
 
-func (p *Parser) ReadBatch() (*protocol.Message, error) {
+func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 
 	batchMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
 				Message: &protocol.ClientServerMessage_Batch{
 					Batch: &protocol.Batch{
-						Type: p.fileType,
-						Data: make([]*protocol.Batch_Row, 0, p.maxBatch),
+						Type:     p.fileType,
+						Data:     make([]*protocol.Batch_Row, 0, p.maxBatch),
+						ClientId: clientId,
 					},
 				},
 			},

@@ -134,7 +134,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	for l.isRunning {
 
-		batch, err := parser.ReadBatch()
+		batch, err := parser.ReadBatch(l.config.ClientId)
 		if err != nil {
 			if err == io.EOF {
 				log.Infof("End of file reached for: %s", filename)

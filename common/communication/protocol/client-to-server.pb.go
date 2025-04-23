@@ -201,6 +201,7 @@ type Batch struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          FileType               `protobuf:"varint,1,opt,name=type,proto3,enum=FileType" json:"type,omitempty"`
 	Data          []*Batch_Row           `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
+	ClientId      string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,6 +248,13 @@ func (x *Batch) GetData() []*Batch_Row {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *Batch) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
 }
 
 type ClientServerMessage struct {
@@ -416,11 +424,12 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\x06Finish\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"%\n" +
 	"\x06Result\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"a\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\"~\n" +
 	"\x05Batch\x12\x1d\n" +
 	"\x04type\x18\x01 \x01(\x0e2\t.FileTypeR\x04type\x12\x1e\n" +
 	"\x04data\x18\x02 \x03(\v2\n" +
-	".Batch.RowR\x04data\x1a\x19\n" +
+	".Batch.RowR\x04data\x12\x1b\n" +
+	"\tclient_id\x18\x03 \x01(\tR\bclientId\x1a\x19\n" +
 	"\x03Row\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\tR\x04data\"\xa3\x01\n" +
 	"\x13ClientServerMessage\x12\x1e\n" +
