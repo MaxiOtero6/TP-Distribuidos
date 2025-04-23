@@ -7,13 +7,13 @@ option go_package = "common/communication/server-comm/protocol";
 message Iota {
     message Data {
         message Movie {
-            string id = 1;
+            string movieId = 1;
         }
 
         message Actor {
             string movieId = 1;
-            string id = 2;
-            string name = 3;
+            string actorId = 2;
+            string actorName = 3;
         }
 
         oneof data {

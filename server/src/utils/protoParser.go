@@ -75,9 +75,9 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int) (tasks map
 		iotaData[idHash] = append(iotaData[idHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Actor_{
 				Actor: &protocol.Iota_Data_Actor{
-					Id:      actor.Id,
-					Name:    actor.Name,
-					MovieId: actor.MovieId,
+					ActorId:   actor.Id,
+					ActorName: actor.Name,
+					MovieId:   actor.MovieId,
 				},
 			},
 		})

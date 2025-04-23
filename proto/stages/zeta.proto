@@ -7,7 +7,7 @@ option go_package = "common/communication/server-comm/protocol";
 message Zeta {
     message Data {
         message Movie {
-            string id = 1;
+            string movieId = 1;
             string title = 2;
         }
 
