@@ -379,9 +379,13 @@ func (l *Library) sendResultMessage() error {
 			},
 		},
 	}
+
 	if err := l.socket.Write(consultMessage); err != nil {
 		return err
 	}
+
+	log.Debugf("action: sendResultMessage | result: success | clientId: %v", l.config.ClientId)
+
 	return nil
 }
 
