@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
 func (s *Server) handleMessage(clientSocket *client_server_communication.Socket, message *protocol.Message) error {
@@ -70,17 +70,17 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 }
 
 func (s *Server) handleBatchMessage(clientSocket *client_server_communication.Socket, batchMessage *protocol.Batch) error {
-	log.Debugf("Received batch message: %v ", batchMessage)
+	//log.Debugf("Received batch message: %v ", batchMessage)
 	switch batchMessage.Type {
 	case protocol.FileType_MOVIES:
 		movies := s.processMoviesBatch(batchMessage)
 		s.rabbitHandler.SendMoviesRabbit(movies)
 	case protocol.FileType_CREDITS:
-		actors := s.processCreditsBatch(batchMessage)
-		s.rabbitHandler.SendActorsRabbit(actors)
+		// actors := s.processCreditsBatch(batchMessage)
+		// s.rabbitHandler.SendActorsRabbit(actors)
 	case protocol.FileType_RATINGS:
-		ratings := s.processRatingsBatch(batchMessage)
-		s.rabbitHandler.SendRatingsRabbit(ratings)
+		// ratings := s.processRatingsBatch(batchMessage)
+		// s.rabbitHandler.SendRatingsRabbit(ratings)
 	default:
 		log.Errorf("Invalid batch type: %v", batchMessage.Type)
 
@@ -131,7 +131,25 @@ func (s *Server) handleFinishMessage(finishMessage *protocol.Finish) {
 	//TODO
 }
 
-func (s *Server) handleResultMessage(resultMessage *protocol.Result) {
+func (s *Server) handleResultMessage(resultMessage *protocol.Result) error {
 	log.Infof("Received result message from user: %v ", resultMessage.ClientId)
-	//TODO
+
+	results := s.rabbitHandler.GetResults(resultMessage.ClientId)
+
+	message := &protocol.Message{
+		Message: &protocol.Message_ServerClientMessage{
+			ServerClientMessage: &protocol.ServerClientMessage{
+				Message: &protocol.ServerClientMessage_Results{
+					Results: results,
+				},
+			},
+		},
+	}
+
+	if err := s.clientSocket.Write(message); err != nil {
+		log.Errorf("Error sending results: %v", err)
+		return err
+	}
+
+	return nil
 }
