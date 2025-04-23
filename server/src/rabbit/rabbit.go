@@ -147,42 +147,27 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 		return result, nil
 	}
 
-	consumeChan := r.rabbitMQ.Consume(r.resultQueueName)
-
 	results := &protocol.ResultsResponse{
 		Results: make([]*protocol.ResultsResponse_Result, 0),
 		Status:  protocol.MessageStatus_PENDING,
 	}
 
-	select {
-	case msg := <-consumeChan:
+	for {
+		msg, ok := r.rabbitMQ.GetHeadDelivery(r.resultQueueName)
+
+		if !ok {
+			break
+		}
+
 		r, err := unmarshallResult(msg)
 
 		if err != nil {
 			log.Errorf("Error unmarshalling task: %v", err)
-		} else {
-			results.Results = append(results.Results, r)
+			continue
 		}
 
-	default:
-		r.rabbitMQ.CancelConsumer(r.resultQueueName)
-		// Consume until channel closes to get inflight messages
-		for {
-			msg, ok := <-consumeChan
-
-			if !ok {
-				break
-			}
-
-			r, err := unmarshallResult(msg)
-
-			if err != nil {
-				log.Errorf("Error unmarshalling task: %v", err)
-				continue
-			}
-
-			results.Results = append(results.Results, r)
-		}
+		results.Results = append(results.Results, r)
+		msg.Ack(false)
 	}
 
 	if len(results.Results) > 0 {
