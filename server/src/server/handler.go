@@ -63,6 +63,8 @@ func (s *Server) handleConnectionMessage(clientSocket *client_server_communicati
 		return
 	}
 
+	s.rabbitHandler.RegisterNewClient(clientID)
+
 	s.clientID = clientID
 	s.clientSocket = clientSocket
 
