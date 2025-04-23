@@ -15,6 +15,7 @@ import (
 func TestOverviewer(t *testing.T) {
 	HARDCODED_WORKER_ID := "0"
 	MAP_EXCHANGE := "mapExchange"
+	CLIENT_ID := "testClientId"
 
 	var testInfraConfig = model.NewInfraConfig(
 		HARDCODED_WORKER_ID,
@@ -61,7 +62,7 @@ func TestOverviewer(t *testing.T) {
 				},
 			}
 
-			result := testOverviewer.muStage(data)
+			result := testOverviewer.muStage(data, CLIENT_ID)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
@@ -92,7 +93,7 @@ func TestOverviewer(t *testing.T) {
 				},
 			}
 
-			result := testOverviewer.muStage(data)
+			result := testOverviewer.muStage(data, CLIENT_ID)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
@@ -114,7 +115,7 @@ func TestOverviewer(t *testing.T) {
 		t.Run("Handle nil Mu_Data", func(t *testing.T) {
 			data := []*protocol.Mu_Data{nil}
 
-			result := testOverviewer.muStage(data)
+			result := testOverviewer.muStage(data, CLIENT_ID)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
@@ -124,7 +125,7 @@ func TestOverviewer(t *testing.T) {
 		t.Run("Handle empty Mu_Data", func(t *testing.T) {
 			data := []*protocol.Mu_Data{}
 
-			result := testOverviewer.muStage(data)
+			result := testOverviewer.muStage(data, CLIENT_ID)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)

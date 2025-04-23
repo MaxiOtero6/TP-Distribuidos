@@ -321,7 +321,6 @@ func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
-						ClientId:        data.GetClientId(),
 						WorkerCreatorId: "",
 						Stage:           nextStage,
 					},
@@ -330,6 +329,10 @@ func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		}
 
 		randomNode := f.randomHashFunc(nextStageCount)
+
+		if nextStage == RESULT_STAGE {
+			randomNode = clientId
+		}
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)

@@ -12,6 +12,7 @@ import (
 
 func TestMapper(t *testing.T) {
 	HARDCODED_WORKER_ID := "0"
+	CLIENT_ID := "testClientId"
 
 	var testInfraConfig = model.NewInfraConfig(
 		HARDCODED_WORKER_ID,
@@ -58,7 +59,7 @@ func TestMapper(t *testing.T) {
 				{Country: "UK", Budget: 150},
 			}
 
-			tasks := mapper.delta1Stage(data)
+			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
@@ -89,7 +90,7 @@ func TestMapper(t *testing.T) {
 				{Country: "UK", Budget: 150},
 			}
 
-			tasks := mapper.delta1Stage(data)
+			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
@@ -116,7 +117,7 @@ func TestMapper(t *testing.T) {
 
 			data := []*protocol.Delta_1_Data{}
 
-			tasks := mapper.delta1Stage(data)
+			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
@@ -148,7 +149,7 @@ func TestMapper(t *testing.T) {
 				{MovieId: "1", Title: "Movie 1", Rating: 3},
 			}
 
-			tasks := mapper.eta1Stage(data)
+			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
@@ -170,7 +171,7 @@ func TestMapper(t *testing.T) {
 				{MovieId: "1", Title: "Movie 1", Rating: 3},
 			}
 
-			tasks := mapper.eta1Stage(data)
+			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
@@ -189,7 +190,7 @@ func TestMapper(t *testing.T) {
 
 			data := []*protocol.Eta_1_Data{}
 
-			tasks := mapper.eta1Stage(data)
+			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
@@ -221,7 +222,7 @@ func TestMapper(t *testing.T) {
 				{ActorId: "1", ActorName: "Actor 1"},
 			}
 
-			tasks := mapper.kappa1Stage(data)
+			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
@@ -244,7 +245,7 @@ func TestMapper(t *testing.T) {
 				{ActorId: "1", ActorName: "Actor 1"},
 			}
 
-			tasks := mapper.kappa1Stage(data)
+			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
@@ -261,7 +262,7 @@ func TestMapper(t *testing.T) {
 
 			data := []*protocol.Kappa_1_Data{}
 
-			tasks := mapper.kappa1Stage(data)
+			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
@@ -292,7 +293,7 @@ func TestMapper(t *testing.T) {
 				{Id: "1", Sentiment: true, Revenue: 1500, Budget: 750},
 			}
 
-			tasks := mapper.nu1Stage(data)
+			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
@@ -314,7 +315,7 @@ func TestMapper(t *testing.T) {
 				{Id: "1", Sentiment: true, Revenue: 1500, Budget: 750},
 			}
 
-			tasks := mapper.nu1Stage(data)
+			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
@@ -330,7 +331,7 @@ func TestMapper(t *testing.T) {
 
 			data := []*protocol.Nu_1_Data{}
 
-			tasks := mapper.nu1Stage(data)
+			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)

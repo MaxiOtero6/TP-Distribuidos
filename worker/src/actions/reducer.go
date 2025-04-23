@@ -345,7 +345,7 @@ func (r *Reducer) getNextNodeId(nodeId string) (string, error) {
 	return nextNodeId, nil
 }
 
-func (r *Reducer) delta2Results(tasks Tasks) {
+func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.delta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
@@ -367,6 +367,7 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range delta3Data {
 		tasks[REDUCE_EXCHANGE][DELTA_STAGE_3][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Delta_3{
 				Delta_3: &protocol.Delta_3{
 					Data: data,
@@ -376,7 +377,7 @@ func (r *Reducer) delta2Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) delta3Results(tasks Tasks) {
+func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.delta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
@@ -397,6 +398,7 @@ func (r *Reducer) delta3Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range epsilonData {
 		tasks[TOP_EXCHANGE][EPSILON_STAGE][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: data,
@@ -406,7 +408,7 @@ func (r *Reducer) delta3Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) eta2Results(tasks Tasks) {
+func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.eta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
@@ -430,6 +432,7 @@ func (r *Reducer) eta2Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range eta3Data {
 		tasks[REDUCE_EXCHANGE][ETA_STAGE_3][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Eta_3{
 				Eta_3: &protocol.Eta_3{
 					Data: data,
@@ -439,7 +442,7 @@ func (r *Reducer) eta2Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) eta3Results(tasks Tasks) {
+func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.eta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
@@ -462,6 +465,7 @@ func (r *Reducer) eta3Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range thetaData {
 		tasks[TOP_EXCHANGE][THETA_STAGE][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: data,
@@ -471,7 +475,7 @@ func (r *Reducer) eta3Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) kappa2Results(tasks Tasks) {
+func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.kappa2
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
@@ -492,6 +496,7 @@ func (r *Reducer) kappa2Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range kappa3Data {
 		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_3][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Kappa_3{
 				Kappa_3: &protocol.Kappa_3{
 					Data: data,
@@ -501,7 +506,7 @@ func (r *Reducer) kappa2Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) kappa3Results(tasks Tasks) {
+func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.kappa3
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
 	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -521,6 +526,7 @@ func (r *Reducer) kappa3Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range lambdaData {
 		tasks[TOP_EXCHANGE][LAMBDA_STAGE][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: data,
@@ -530,7 +536,7 @@ func (r *Reducer) kappa3Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) nu2Results(tasks Tasks) {
+func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.nu3Data
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
@@ -554,6 +560,7 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range delta3Data {
 		tasks[REDUCE_EXCHANGE][NU_STAGE_3][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Nu_3{
 				Nu_3: &protocol.Nu_3{
 					Data: data,
@@ -563,7 +570,7 @@ func (r *Reducer) nu2Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) nu3Results(tasks Tasks) {
+func (r *Reducer) nu3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.nu3Data
 
 	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
@@ -586,6 +593,7 @@ func (r *Reducer) nu3Results(tasks Tasks) {
 	// Create tasks for each worker
 	for nodeId, data := range resultData {
 		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Result5{
 				Result5: &protocol.Result5{
 					Data: data,
@@ -595,24 +603,24 @@ func (r *Reducer) nu3Results(tasks Tasks) {
 	}
 }
 
-func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string) error {
+func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId string) error {
 	switch stage {
 	case DELTA_STAGE_2:
-		r.delta2Results(tasks)
+		r.delta2Results(tasks, clientId)
 	case DELTA_STAGE_3:
-		r.delta3Results(tasks)
+		r.delta3Results(tasks, clientId)
 	case ETA_STAGE_2:
-		r.eta2Results(tasks)
+		r.eta2Results(tasks, clientId)
 	case ETA_STAGE_3:
-		r.eta3Results(tasks)
+		r.eta3Results(tasks, clientId)
 	case KAPPA_STAGE_2:
-		r.kappa2Results(tasks)
+		r.kappa2Results(tasks, clientId)
 	case KAPPA_STAGE_3:
-		r.kappa3Results(tasks)
+		r.kappa3Results(tasks, clientId)
 	case NU_STAGE_2:
-		r.nu2Results(tasks)
+		r.nu2Results(tasks, clientId)
 	case NU_STAGE_3:
-		r.nu3Results(tasks)
+		r.nu3Results(tasks, clientId)
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
@@ -622,7 +630,7 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string) error {
 
 /*
  */
-func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
 
 	// if the creator is the same as the worker, send the EOF to the next stage
@@ -634,10 +642,10 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		}
 
 		nextStageEOF := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
-						ClientId:        data.GetClientId(),
 						WorkerCreatorId: "",
 						Stage:           nextStage,
 					},
@@ -646,6 +654,10 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		}
 
 		randomNode := r.randomHashFunc(nextStageCount)
+
+		if nextStage == RESULT_STAGE {
+			randomNode = clientId
+		}
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
@@ -659,6 +671,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		}
 
 		eofTask := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: nextRingEOF,
@@ -681,13 +694,14 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		tasks[reduceExchange][stage][nextNode] = eofTask
 
 		// send the results
-		r.addResultsToNextStage(tasks, data.GetStage())
+		r.addResultsToNextStage(tasks, data.GetStage(), clientId)
 	}
 	return tasks
 }
 
 func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_2:
@@ -724,7 +738,7 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return r.omegaEOFStage(data), nil
+		return r.omegaEOFStage(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

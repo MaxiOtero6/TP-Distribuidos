@@ -160,6 +160,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 
 func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	// clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:

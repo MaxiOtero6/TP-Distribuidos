@@ -116,6 +116,7 @@ func (j *Joiner) iotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
 
 func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	// clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Zeta:
