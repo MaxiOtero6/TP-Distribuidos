@@ -16,6 +16,7 @@ var testInfraConfig = model.NewInfraConfig(
 	&model.WorkerClusterConfig{},
 	&model.RabbitConfig{
 		ResultExchange: "resultExchange",
+		TopExchange:    "topExchange",
 	},
 )
 
