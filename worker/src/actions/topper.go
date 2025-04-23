@@ -3,7 +3,7 @@ package actions
 import (
 	"fmt"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
@@ -160,6 +160,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 
 func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	// clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:

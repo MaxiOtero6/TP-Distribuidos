@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/cdipaolo/sentiment"
@@ -12,10 +12,10 @@ import (
 
 // Overviewer is a struct that implements the Action interface.
 type Overviewer struct {
-	model       sentiment.Models
-	infraConfig *model.InfraConfig
-	itemHashFunc    func(workersCount int, item string) string
-	randomHashFunc   func(workersCount int) string
+	model          sentiment.Models
+	infraConfig    *model.InfraConfig
+	itemHashFunc   func(workersCount int, item string) string
+	randomHashFunc func(workersCount int) string
 }
 
 // NewOverviewer creates a new Overviewer instance.
@@ -28,10 +28,10 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	}
 
 	return &Overviewer{
-		model:       model,
-		infraConfig: infraConfig,
-		itemHashFunc:    utils.GetWorkerIdFromHash,
-		randomHashFunc:   utils.RandomHash,
+		model:          model,
+		infraConfig:    infraConfig,
+		itemHashFunc:   utils.GetWorkerIdFromHash,
+		randomHashFunc: utils.RandomHash,
 	}
 }
 
@@ -52,7 +52,7 @@ Return example
 		}
 	}
 */
-func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
+func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks Tasks) {
 	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
 	MAP_COUNT := o.infraConfig.GetMapCount()
 
@@ -83,6 +83,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data) (tasks Tasks) {
 
 	for nodeId, data := range nuData {
 		tasks[MAP_EXCHANGE][NU_STAGE_1][nodeId] = &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
 					Data: data,
@@ -114,7 +115,7 @@ func (o *Overviewer) getNextStageData(stage string) (string, string, int, error)
 	}
 }
 
-func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
+func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
 
 	// if the creator is the same as the worker, send the EOF to the next stage
@@ -126,10 +127,10 @@ func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		}
 
 		nextStageEOF := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
-						ClientId:        data.GetClientId(),
 						WorkerCreatorId: "",
 						Stage:           nextStage,
 					},
@@ -151,6 +152,7 @@ func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 		}
 
 		eofTask := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: nextRingEOF,
@@ -178,14 +180,15 @@ func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data) (tasks Tasks) {
 
 func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
+	clientId := task.GetClientId()
 
 	switch v := stage.(type) {
 	case *protocol.Task_Mu:
 		data := v.Mu.GetData()
-		return o.muStage(data), nil
+		return o.muStage(data, clientId), nil
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return o.omegaEOFStage(data), nil
+		return o.omegaEOFStage(data, clientId), nil
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}

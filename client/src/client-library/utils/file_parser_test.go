@@ -2,10 +2,11 @@ package utils
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"testing"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,8 +20,8 @@ func TestParser_ReadBatch(t *testing.T) {
 		assert.NoError(t, err)
 		defer parser.Close()
 
-		batch, err := parser.ReadBatch()
-		assert.NoError(t, err)
+		batch, err := parser.ReadBatch("")
+		assert.Equal(t, io.EOF, err)
 		assert.NotNil(t, batch)
 
 		rows := batch.GetMessage().(*protocol.Message_ClientServerMessage).ClientServerMessage.GetMessage().(*protocol.ClientServerMessage_Batch).Batch.Data
@@ -39,8 +40,8 @@ func TestParser_ReadBatch(t *testing.T) {
 		assert.NoError(t, err)
 		defer parser.Close()
 
-		batch, err := parser.ReadBatch()
-		assert.NoError(t, err)
+		batch, err := parser.ReadBatch("")
+		assert.Equal(t, io.EOF, err)
 		assert.NotNil(t, batch)
 
 		rows := batch.GetMessage().(*protocol.Message_ClientServerMessage).ClientServerMessage.GetMessage().(*protocol.ClientServerMessage_Batch).Batch.Data

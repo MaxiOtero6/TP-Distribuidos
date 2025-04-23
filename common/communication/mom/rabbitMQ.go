@@ -132,6 +132,22 @@ func (r *RabbitMQ) Consume(queueName string) ConsumerChan {
 	return ret
 }
 
+// GetHeadDelivery retrieves the head delivery from the specified queue.
+// It returns the delivery and a boolean indicating whether the delivery was successful.
+// If the queue does not exist, an error is logged and the function returns an empty delivery and false.
+// The head delivery is the first message in the queue.
+// The autoAck parameter is set to false, meaning that the consumer must acknowledge the message manually.
+func (r *RabbitMQ) GetHeadDelivery(queueName string) (amqp.Delivery, bool) {
+	q, ok := r.queues[queueName]
+
+	if !ok {
+		log.Errorf("Queue '%s' does not exist", queueName)
+		return amqp.Delivery{}, false
+	}
+
+	return q.getHeadDelivery()
+}
+
 // BindQueue binds the specified queue to the specified exchange with the given routing key.
 // If the queue or exchange does not exist, an error is logged and the function returns.
 // The routing key is used to route the messages from the exchange to the queue.

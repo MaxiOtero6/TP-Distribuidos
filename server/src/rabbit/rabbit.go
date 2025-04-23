@@ -1,8 +1,10 @@
 package rabbit
 
 import (
+	"fmt"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"
@@ -19,7 +21,6 @@ type RabbitHandler struct {
 	infraConfig        *common_model.InfraConfig
 	resultQueueName    string
 	resultExchangeName string
-	consumeChan        mom.ConsumerChan
 }
 
 // NewRabbitHandler creates a new RabbitHandler instance
@@ -56,18 +57,6 @@ func (r *RabbitHandler) RegisterNewClient(clientId string) {
 	}
 
 	r.rabbitMQ.BindQueue(r.resultQueueName, r.resultExchangeName, clientId)
-
-	// If no consume channel for the result queue is set, create one
-	// This is to avoid creating multiple consume channels for the same queue
-	// and to ensure that the consume channel is created only once
-	if r.consumeChan == nil {
-		r.consumeChan = r.rabbitMQ.Consume(r.resultQueueName)
-	}
-}
-
-// ConsumeResult consumes a message from the result queue
-func (r *RabbitHandler) ConsumeResult() amqp.Delivery {
-	return <-r.consumeChan
 }
 
 // Close closes the RabbitMQ connection
@@ -77,26 +66,50 @@ func (r *RabbitHandler) Close() {
 }
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
-func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie) {
-	alphaTasks := utils.GetAlphaStageTask(movies, r.infraConfig.GetFilterCount())
-	muTasks := utils.GetMuStageTask(movies, r.infraConfig.GetOverviewCount())
+func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string, isEOF bool) {
+	FILTER_COUNT := r.infraConfig.GetFilterCount()
+	// OVERVIEW_COUNT := r.infraConfig.GetOverviewCount()
 
-	r.publishTasksRabbit(alphaTasks, r.infraConfig.GetFilterExchange())
-	r.publishTasksRabbit(muTasks, r.infraConfig.GetOverviewExchange())
+	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
+	// OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
+
+	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
+	// muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT)
+	r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
+	// r.publishTasksRabbit(muTasks, OVERVIEW_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)
+		// r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE), OVERVIEW_EXCHANGE)
+	}
 }
 
 // SendRatingsRabbit sends the ratings to the join exchange
 // The ratings are shuffled by the join count hashing
-func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating) {
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, r.infraConfig.GetJoinCount())
-	r.publishTasksRabbit(zetaTasks, r.infraConfig.GetJoinExchange())
+func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string, isEOF bool) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, JOINER_COUNT, clientId)
+	r.publishTasksRabbit(zetaTasks, JOINER_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE), JOINER_EXCHANGE)
+	}
 }
 
 // SendActorsRabbit sends the actors to the join exchange
 // The actors are shuffled by the join count hashing
-func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor) {
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, r.infraConfig.GetJoinCount())
-	r.publishTasksRabbit(iotaTasks, r.infraConfig.GetJoinExchange())
+func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string, isEOF bool) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, JOINER_COUNT, clientId)
+	r.publishTasksRabbit(iotaTasks, JOINER_EXCHANGE)
+
+	if isEOF {
+		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE), JOINER_EXCHANGE)
+	}
 }
 
 // publishTasksRabbit publishes the tasks to the specified exchange
@@ -112,4 +125,79 @@ func (r *RabbitHandler) publishTasksRabbit(tasks map[string]*protocol.Task, exch
 
 		r.rabbitMQ.Publish(exchange, routingKey, bytes)
 	}
+}
+
+// GetResults retrieves the results from the result queue
+// The results are unmarshalled and returned as a ResultsResponse
+func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
+	unmarshallResult := func(msg amqp.Delivery) (*protocol.ResultsResponse_Result, error) {
+		task := &protocol.Task{}
+		err := proto.Unmarshal(msg.Body, task)
+
+		if err != nil {
+			return nil, err
+		}
+
+		result := &protocol.ResultsResponse_Result{}
+
+		switch task.GetStage().(type) {
+		case *protocol.Task_Result1:
+			result.Message = &protocol.ResultsResponse_Result_Result1{
+				Result1: task.GetResult1(),
+			}
+		case *protocol.Task_Result2:
+			result.Message = &protocol.ResultsResponse_Result_Result2{
+				Result2: task.GetResult2(),
+			}
+		case *protocol.Task_Result3:
+			result.Message = &protocol.ResultsResponse_Result_Result3{
+				Result3: task.GetResult3(),
+			}
+		case *protocol.Task_Result4:
+			result.Message = &protocol.ResultsResponse_Result_Result4{
+				Result4: task.GetResult4(),
+			}
+		case *protocol.Task_Result5:
+			result.Message = &protocol.ResultsResponse_Result_Result5{
+				Result5: task.GetResult5(),
+			}
+		case *protocol.Task_OmegaEOF:
+			result.Message = &protocol.ResultsResponse_Result_OmegaEOF{
+				OmegaEOF: task.GetOmegaEOF(),
+			}
+		default:
+			return nil, fmt.Errorf("unknown task stage: %v", task.GetStage())
+		}
+
+		return result, nil
+	}
+
+	results := &protocol.ResultsResponse{
+		Results: make([]*protocol.ResultsResponse_Result, 0),
+		Status:  protocol.MessageStatus_PENDING,
+	}
+
+	for {
+		msg, ok := r.rabbitMQ.GetHeadDelivery(r.resultQueueName)
+
+		if !ok {
+			break
+		}
+
+		r, err := unmarshallResult(msg)
+
+		if err != nil {
+			log.Errorf("Error unmarshalling task: %v", err)
+			continue
+		}
+
+		results.Results = append(results.Results, r)
+		msg.Ack(false)
+	}
+
+	if len(results.Results) > 0 {
+		results.Status = protocol.MessageStatus_SUCCESS
+	}
+
+	return results
 }

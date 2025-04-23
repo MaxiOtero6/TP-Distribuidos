@@ -4,17 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/utils"
 	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 )
 
-const DELAY_MULTIPLIER = 2
-const MAX_DELAY = 64 // max retries = 6
-const QUERIES_AMOUNT = 5
+const SLEEP_TIME time.Duration = 1 * time.Second
+const DELAY_MULTIPLIER int = 2
+const MAX_RETRIES float64 = 6.0
+const QUERIES_AMOUNT int = 5
 
 var log = logging.MustGetLogger("log")
 
@@ -32,7 +35,7 @@ type ClientConfig struct {
 type Library struct {
 	socket        *client_communication.Socket
 	fileNames     []string
-	sleepTime     time.Duration
+	retryNumber   float64
 	responseCount int
 	done          chan bool
 	isRunning     bool
@@ -49,14 +52,13 @@ func NewLibrary(config ClientConfig) (*Library, error) {
 	return &Library{
 		socket:        socket,
 		config:        config,
-		sleepTime:     1,
+		retryNumber:   0,
 		isRunning:     true,
 		responseCount: 0,
 	}, nil
 }
 
-func (l *Library) ProcessData() {
-
+func (l *Library) ProcessData() (results *model.Results) {
 	err := l.sendSync()
 	if err != nil {
 		if err == client_communication.ErrConnectionClosed {
@@ -87,7 +89,8 @@ func (l *Library) ProcessData() {
 		return
 	}
 
-	err = l.fetchServerResults()
+	results, err = l.fetchServerResults()
+
 	if err != nil {
 		if err == ErrSignalReceived {
 			log.Infof("action: fetchServerResults | result: success | error: %v", err)
@@ -100,6 +103,12 @@ func (l *Library) ProcessData() {
 		log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 		return
 	}
+
+	if results == nil && l.isRunning {
+		log.Errorf("action: fetchServerResults | result: fail | error: results is nil")
+	}
+
+	return results
 }
 
 func (l *Library) sendAllFiles() error {
@@ -108,14 +117,14 @@ func (l *Library) sendAllFiles() error {
 		return err
 	}
 
-	err = l.sendCreditsFile()
-	if err != nil {
-		return err
-	}
-	err = l.sendRatingsFile()
-	if err != nil {
-		return err
-	}
+	// err = l.sendCreditsFile()
+	// if err != nil {
+	// 	return err
+	// }
+	// err = l.sendRatingsFile()
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -124,6 +133,7 @@ func (l *Library) sendAllFiles() error {
 // Send each line to the server and wait for confirmation
 // until an OEF or the client is shutdown
 func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
+	log.Infof("action: sendFile | result: start | file: %s", filename)
 
 	parser, err := utils.NewParser(l.config.MaxAmount, filename, fileType)
 	if err != nil {
@@ -134,18 +144,17 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	for l.isRunning {
 
-		batch, err := parser.ReadBatch()
-		if err != nil {
-			if err == io.EOF {
-				log.Infof("End of file reached for: %s", filename)
-				break
-			}
+		batch, fileErr := parser.ReadBatch(l.config.ClientId)
+		
+		if fileErr != io.EOF && fileErr != nil {
 			return err
 		}
+
 		if err := l.socket.Write(batch); err != nil {
 			return err
 		}
-		log.Infof("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
+
+		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
 		err = l.waitForSuccessServerResponse()
 		if err != nil {
@@ -153,6 +162,9 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 			return err
 		}
 
+		if fileErr == io.EOF {
+			break
+		}
 	}
 
 	return nil
@@ -230,84 +242,69 @@ func (l *Library) sendFinishMessage() error {
 	log.Infof("action: SendFinishMessage | result: success | client_id: %v", l.config.ClientId)
 	return nil
 }
-func (l *Library) fetchServerResults() error {
 
-	for l.isRunning {
+func (l *Library) fetchServerResults() (*model.Results, error) {
+	resultParser := utils.NewResultParser()
 
-		if l.sleepTime > MAX_DELAY {
-			return fmt.Errorf("timeout")
+	for l.isRunning && !resultParser.IsDone() {
+
+		if l.retryNumber > MAX_RETRIES {
+			return nil, fmt.Errorf("timeout")
 		}
 
 		if l.socket == nil {
 			if err := l.connectToServer(); err != nil {
-				return err
+				return nil, err
 			}
 		}
 
+		start := time.Now()
 		err := l.sendResultMessage()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		done, response, err := l.waitForAllResultsServerResponse()
+		ok, response, err := l.waitForResultServerResponse()
+
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		l.processRequestResponseMessage(response)
+		jitter := time.Since(start)
 
-		if !done {
+		if !ok {
 			l.disconnectFromServer()
-			// Exponential backoff
-			l.sleepTime *= DELAY_MULTIPLIER
-			time.Sleep(l.sleepTime * time.Second)
+			// Exponential backoff + jitter
+			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
+			l.retryNumber++
+			time.Sleep(sleepTime)
 			continue
 		}
-		break
+
+		resultParser.Save(response)
 	}
 
-	return nil
+	return resultParser.GetResults(), nil
 }
-func (l *Library) processRequestResponseMessage(message []*protocol.Request_Query) {
-	if len(message) == 0 {
-		log.Infof("action: processResultMessage | result: fail | error: empty response")
-		return
-	}
-	for _, query := range message {
-		log.Infof("action:  | result: success | query number : %v | response: %v", query.Type, query.Message)
-	}
-}
-func (l *Library) waitForResultServerResponse() (bool, []*protocol.Request_Query, error) {
+
+func (l *Library) waitForResultServerResponse() (bool, *protocol.ResultsResponse, error) {
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return false, nil, err
 	}
 
 	switch resp := response.GetMessage().(type) {
-	case *protocol.ServerClientMessage_Request:
-		if resp.Request.Status == protocol.MessageStatus_SUCCESS {
-			return true, resp.Request.Responses, nil
-		} else if resp.Request.Status == protocol.MessageStatus_PENDING {
+	case *protocol.ServerClientMessage_Results:
+		if resp.Results.Status == protocol.MessageStatus_SUCCESS {
+			return true, response.GetResults(), nil
+		} else if resp.Results.Status == protocol.MessageStatus_PENDING {
 			return false, nil, nil
 		}
 	}
 	return false, nil, fmt.Errorf("unexpected response type received")
 
 }
-func (l *Library) waitForAllResultsServerResponse() (bool, []*protocol.Request_Query, error) {
-	done, responses, err := l.waitForResultServerResponse()
-	if err != nil {
-		return false, nil, err
-	}
-	if done {
-		l.responseCount++
-		if l.responseCount == QUERIES_AMOUNT {
-			l.isRunning = false
-		}
-	}
-	return done, responses, nil
 
-}
 func (l *Library) connectToServer() error {
 	var err error
 	l.socket, err = client_communication.Connect(l.config.ServerAddress)
@@ -385,9 +382,13 @@ func (l *Library) sendResultMessage() error {
 			},
 		},
 	}
+
 	if err := l.socket.Write(consultMessage); err != nil {
 		return err
 	}
+
+	log.Debugf("action: sendResultMessage | result: success | clientId: %v", l.config.ClientId)
+
 	return nil
 }
 

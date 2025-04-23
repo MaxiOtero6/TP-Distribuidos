@@ -1,12 +1,11 @@
 syntax = "proto3";
 
-option go_package = "common/communication/client-server-comm/protocol";
+option go_package = "common/communication/protocol";
 
 enum FileType {
     MOVIES = 0;
     CREDITS = 1;
     RATINGS = 2;
-    EOF = 3;
 }
 
 message Sync {}
@@ -26,6 +25,8 @@ message Batch {
 
     FileType type = 1;
     repeated Row data = 2;
+    string client_id = 3;
+    bool EOF = 4;
 }
 
 message ClientServerMessage{
