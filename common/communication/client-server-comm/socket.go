@@ -65,14 +65,18 @@ func (s *Socket) Accept() (*Socket, error) {
 }
 
 func (s *Socket) Read() (*protocol.Message, error) {
+	expectedLength := 3
+	lengthBytes := make([]byte, expectedLength)
+	for expectedLength > 0 {
+		n, err := s.reader.Read(lengthBytes[len(lengthBytes)-expectedLength:])
+		expectedLength -= n
 
-	lengthBytes := make([]byte, 3)
-	_, err := s.reader.Read(lengthBytes)
-	if err != nil {
-		if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
-			return nil, ErrConnectionClosed
-		} else {
-			return nil, err
+		if err != nil {
+			if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+				return nil, ErrConnectionClosed
+			} else {
+				return nil, err
+			}
 		}
 	}
 
@@ -97,7 +101,7 @@ func (s *Socket) Read() (*protocol.Message, error) {
 
 	// Deserializa el mensaje usando proto.Unmarshal
 	responseMessage := &protocol.Message{}
-	err = proto.Unmarshal(message, responseMessage)
+	err := proto.Unmarshal(message, responseMessage)
 	if err != nil {
 		return nil, err
 	}
