@@ -176,7 +176,6 @@ Return example
 */
 func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks Tasks) {
 	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
-	BROADCAST_ID := f.infraConfig.GetBroadcastID()
 
 	tasks = make(Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -197,7 +196,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks T
 		}
 
 		// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
-		resData[BROADCAST_ID] = append(resData[BROADCAST_ID], &protocol.Result1_Data{
+		resData[clientId] = append(resData[clientId], &protocol.Result1_Data{
 			Id:     movie.GetId(),
 			Title:  movie.GetTitle(),
 			Genres: movie.GetGenres(),
