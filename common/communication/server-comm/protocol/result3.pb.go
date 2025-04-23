@@ -68,8 +68,9 @@ func (x *Result3) GetData() []*Result3_Data {
 type Result3_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Rating        float32                `protobuf:"fixed32,2,opt,name=rating,proto3" json:"rating,omitempty"`
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Rating        float32                `protobuf:"fixed32,4,opt,name=rating,proto3" json:"rating,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -111,11 +112,11 @@ func (x *Result3_Data) GetType() string {
 	return ""
 }
 
-func (x *Result3_Data) GetRating() float32 {
+func (x *Result3_Data) GetId() string {
 	if x != nil {
-		return x.Rating
+		return x.Id
 	}
-	return 0
+	return ""
 }
 
 func (x *Result3_Data) GetTitle() string {
@@ -125,17 +126,25 @@ func (x *Result3_Data) GetTitle() string {
 	return ""
 }
 
+func (x *Result3_Data) GetRating() float32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
 var File_proto_stages_result3_proto protoreflect.FileDescriptor
 
 const file_proto_stages_result3_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/stages/result3.proto\"v\n" +
+	"\x1aproto/stages/result3.proto\"\x86\x01\n" +
 	"\aResult3\x12!\n" +
-	"\x04data\x18\x01 \x03(\v2\r.Result3.DataR\x04data\x1aH\n" +
+	"\x04data\x18\x01 \x03(\v2\r.Result3.DataR\x04data\x1aX\n" +
 	"\x04Data\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x12\x16\n" +
-	"\x06rating\x18\x02 \x01(\x02R\x06rating\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05titleB+Z)common/communication/server-comm/protocolb\x06proto3"
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x16\n" +
+	"\x06rating\x18\x04 \x01(\x02R\x06ratingB+Z)common/communication/server-comm/protocolb\x06proto3"
 
 var (
 	file_proto_stages_result3_proto_rawDescOnce sync.Once

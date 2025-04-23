@@ -166,6 +166,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
 			Type:   "Max",
+			Id:     tData.GetId(),
 			Title:  tData.GetTitle(),
 			Rating: element.Value,
 		})
@@ -178,6 +179,7 @@ func (t *Topper) thetaResultStage(tasks Tasks) {
 
 		result3Data[BROADCAST_ID] = append(result3Data[BROADCAST_ID], &protocol.Result3_Data{
 			Type:   "Min",
+			Id:     tData.GetId(),
 			Title:  tData.GetTitle(),
 			Rating: -element.Value,
 		})
