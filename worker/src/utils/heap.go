@@ -5,26 +5,33 @@ import (
 	"sort"
 )
 
-// Element represents an item in the heap.
-type Element struct {
-	Value int         // The value to compare (e.g., total investment)
-	Data  interface{} // Additional data
+// Element represents an item in the heap with generics.
+type Element[V any, D any] struct {
+	Value V
+	Data  D
+}
+
+// Ordered constraint allows types that support <, >, etc.
+type Ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+		~float32 | ~float64 | ~string
 }
 
 // MinHeap is a min-heap of Elements.
-type MinHeap []*Element
+type MinHeap[V Ordered, D any] []*Element[V, D]
 
-func (h MinHeap) Len() int           { return len(h) }
-func (h MinHeap) Less(i, j int) bool { return h[i].Value < h[j].Value } // Min-heap: smallest value at the top
-func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h MinHeap[V, D]) Len() int           { return len(h) }
+func (h MinHeap[V, D]) Less(i, j int) bool { return h[i].Value < h[j].Value }
+func (h MinHeap[V, D]) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 // Push adds an element to the heap.
-func (h *MinHeap) Push(x interface{}) {
-	*h = append(*h, x.(*Element))
+func (h *MinHeap[V, D]) Push(x any) {
+	*h = append(*h, x.(*Element[V, D]))
 }
 
 // Pop removes and returns the smallest element from the heap.
-func (h *MinHeap) Pop() interface{} {
+func (h *MinHeap[V, D]) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]
@@ -33,39 +40,33 @@ func (h *MinHeap) Pop() interface{} {
 }
 
 // TopKHeap is a wrapper around MinHeap with a fixed size.
-type TopKHeap struct {
-	heap MinHeap
+type TopKHeap[V Ordered, D any] struct {
+	heap MinHeap[V, D]
 	k    int
 }
 
 // NewTopKHeap creates a new TopKHeap with a given size.
-func NewTopKHeap(k int) *TopKHeap {
-	h := &MinHeap{}
+func NewTopKHeap[V Ordered, D any](k int) *TopKHeap[V, D] {
+	h := &MinHeap[V, D]{}
 	heap.Init(h)
-	return &TopKHeap{
+	return &TopKHeap[V, D]{
 		heap: *h,
 		k:    k,
 	}
 }
 
 // Insert adds a new element to the heap and maintains the size.
-func (h *TopKHeap) Insert(value int, data interface{}) {
-	heap.Push(&h.heap, &Element{Value: value, Data: data})
+func (h *TopKHeap[V, D]) Insert(value V, data D) {
+	heap.Push(&h.heap, &Element[V, D]{Value: value, Data: data})
 	if h.heap.Len() > h.k {
-		heap.Pop(&h.heap) // Remove the smallest element if the heap exceeds size K
+		heap.Pop(&h.heap)
 	}
-
 }
 
 // GetTopK returns the elements in the heap in descending order.
-func (h *TopKHeap) GetTopK() []*Element {
-	result := make([]*Element, len(h.heap))
+func (h *TopKHeap[V, D]) GetTopK() []*Element[V, D] {
+	result := make([]*Element[V, D], len(h.heap))
 	copy(result, h.heap)
-
-	// Sort in descending order (optional, depending on your use case)
-	for i := 0; i < len(result)/2; i++ {
-		result[i], result[len(result)-1-i] = result[len(result)-1-i], result[i]
-	}
 
 	// Ordenar explícitamente en orden descendente por el valor
 	sort.Slice(result, func(i, j int) bool {
