@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	library "github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library"
+	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/model"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -79,6 +80,33 @@ func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
 	)
 }
 
+func logResults(results *model.Results) {
+	log.Infof("Query1 results:")
+	for _, movie := range results.Query1 {
+		log.Infof("MovieId: %s | Title: %s | Genres: %v", movie.MovieId, movie.Title, movie.Genres)
+	}
+
+	log.Infof("Query2 results:")
+	for _, country := range results.Query2 {
+		log.Infof("Country: %s | TotalInvestment: %d", country.Country, country.TotalInvestment)
+	}
+
+	log.Infof("Query3 results:")
+	for kind, data := range results.Query3 {
+		log.Infof("Kind %v; Movie: %s | AvgRating: %.2f", kind, data.Title, data.AvgRating)
+	}
+
+	log.Infof("Query4 results:")
+	for _, actor := range results.Query4 {
+		log.Infof("Actor: %s | Movie: %s | Character: %s", actor.ActorId, actor.ActorName)
+	}
+
+	log.Infof("Query5 results:")
+	for movie, data := range results.Query5 {
+		log.Infof("Movie: %s | RevenueBudgetRatio: %.2f", movie, data.RevenueBudgetRatio)
+	}
+}
+
 func main() {
 
 	signalChan := make(chan os.Signal, 1)
@@ -110,7 +138,9 @@ func main() {
 
 	results := clientLibrary.ProcessData()
 
-	log.Infof("action: processData | result: success | data: %v", results)
+	log.Infof("action: processData | result: success")
+
+	logResults(results)
 
 	clientLibrary.Stop()
 
