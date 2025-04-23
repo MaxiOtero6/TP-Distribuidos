@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"testing"
 
@@ -20,7 +21,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		defer parser.Close()
 
 		batch, err := parser.ReadBatch("")
-		assert.NoError(t, err)
+		assert.Equal(t, io.EOF, err)
 		assert.NotNil(t, batch)
 
 		rows := batch.GetMessage().(*protocol.Message_ClientServerMessage).ClientServerMessage.GetMessage().(*protocol.ClientServerMessage_Batch).Batch.Data
@@ -40,7 +41,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		defer parser.Close()
 
 		batch, err := parser.ReadBatch("")
-		assert.NoError(t, err)
+		assert.Equal(t, io.EOF, err)
 		assert.NotNil(t, batch)
 
 		rows := batch.GetMessage().(*protocol.Message_ClientServerMessage).ClientServerMessage.GetMessage().(*protocol.ClientServerMessage_Batch).Batch.Data
