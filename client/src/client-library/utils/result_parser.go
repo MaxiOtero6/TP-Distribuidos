@@ -5,7 +5,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
-var QUERIES_AMOUNT int = 5
+var QUERIES_AMOUNT int = 1
 
 // ResultParser is a struct that handles the parsing of results from the server
 // and stores them in a Results struct.
@@ -204,17 +204,23 @@ func (p *ResultParser) Save(results *protocol.ResultsResponse) {
 	for _, result := range results.GetResults() {
 		switch result.Message.(type) {
 		case *protocol.ResultsResponse_Result_Result1:
+			log.Debugf("action: Save | result: success | Result1 received")
 			p.handleResult1(result.GetResult1())
 		case *protocol.ResultsResponse_Result_Result2:
+			log.Debugf("action: Save | result: success | Result2 received")
 			p.handleResult2(result.GetResult2())
 		case *protocol.ResultsResponse_Result_Result3:
+			log.Debugf("action: Save | result: success | Result3 received")
 			p.handleResult3(result.GetResult3())
 		case *protocol.ResultsResponse_Result_Result4:
+			log.Debugf("action: Save | result: success | Result4 received")
 			p.handleResult4(result.GetResult4())
 		case *protocol.ResultsResponse_Result_Result5:
+			log.Debugf("action: Save | result: success | Result5 received")
 			p.handleResult5(result.GetResult5())
 		case *protocol.ResultsResponse_Result_OmegaEOF:
 			p.eofCount++
+			log.Debugf("action: Save | result: success | EOF received | eofCount: %d", p.eofCount)
 		}
 	}
 }
