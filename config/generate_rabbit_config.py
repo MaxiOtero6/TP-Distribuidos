@@ -140,7 +140,7 @@ class Filter:
 class Overview:
     def __str__(self) -> str:
         lines: list[str] = []
-        lines.append(f'{" " * 2}OVERVIEW:')
+        lines.append(f'{" " * 2}OVERVIEWER:')
         lines.append(f'{" " * 4}exchanges:')
         lines.append(f'{" " * 6}overviewExchange:')
         lines.append(f'{" " * 8}name: "{OVERVIEW_EXCHANGE["name"]}"')

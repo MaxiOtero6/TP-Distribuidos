@@ -336,12 +336,12 @@ func (r *Reducer) getNextStageData(stage string) (string, string, int, error) {
 }
 
 func (r *Reducer) getNextNodeId(nodeId string) (string, error) {
-	clientId, err := strconv.Atoi(nodeId)
+	nodeIdInt, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert clientId to int: %s", err)
+		return "", fmt.Errorf("failed to convert nodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (clientId+1)%r.infraConfig.GetReduceCount())
+	nextNodeId := fmt.Sprintf("%d", (nodeIdInt+1)%r.infraConfig.GetReduceCount())
 	return nextNodeId, nil
 }
 
@@ -351,7 +351,10 @@ func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
 
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[REDUCE_EXCHANGE]; !ok {
+		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[REDUCE_EXCHANGE][DELTA_STAGE_3] = make(map[string]*protocol.Task)
 	delta3Data := make(map[string][]*protocol.Delta_3_Data)
 
@@ -381,7 +384,11 @@ func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.delta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+
+	if _, ok := tasks[TOP_EXCHANGE]; !ok {
+		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[TOP_EXCHANGE][EPSILON_STAGE] = make(map[string]*protocol.Task)
 	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
@@ -413,6 +420,10 @@ func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
+
+	if _, ok := tasks[REDUCE_EXCHANGE]; !ok {
+		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
 
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][ETA_STAGE_3] = make(map[string]*protocol.Task)
@@ -446,7 +457,11 @@ func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.eta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+
+	if _, ok := tasks[TOP_EXCHANGE]; !ok {
+		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[TOP_EXCHANGE][THETA_STAGE] = make(map[string]*protocol.Task)
 	thetaData := make(map[string][]*protocol.Theta_Data)
 
@@ -480,7 +495,10 @@ func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
 
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[REDUCE_EXCHANGE]; !ok {
+		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[REDUCE_EXCHANGE][KAPPA_STAGE_3] = make(map[string]*protocol.Task)
 	kappa3Data := make(map[string][]*protocol.Kappa_3_Data)
 
@@ -509,7 +527,11 @@ func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.kappa3
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
-	tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+
+	if _, ok := tasks[TOP_EXCHANGE]; !ok {
+		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[TOP_EXCHANGE][LAMBDA_STAGE] = make(map[string]*protocol.Task)
 	lambdaData := make(map[string][]*protocol.Lambda_Data)
 	// Asign the data to the corresponding worker
@@ -537,28 +559,32 @@ func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.nu3Data
+	dataMap := r.partialResults.nu2Data
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
 
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[REDUCE_EXCHANGE]; !ok {
+		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[REDUCE_EXCHANGE][NU_STAGE_3] = make(map[string]*protocol.Task)
-	delta3Data := make(map[string][]*protocol.Nu_3_Data)
+
+	nu3Data := make(map[string][]*protocol.Nu_3_Data)
 
 	// Divide the resulting sentiments by hashing each sentiment
-	for _, n3Data := range dataMap {
-		sentiment := fmt.Sprintf("%t", n3Data.GetSentiment())
+	for _, n2Data := range dataMap {
+		sentiment := fmt.Sprintf("%t", n2Data.GetSentiment())
 		nodeId := r.itemHashFunc(REDUCE_COUNT, sentiment)
-		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Nu_3_Data{
-			Sentiment: n3Data.GetSentiment(),
-			Ratio:     n3Data.GetRatio(),
-			Count:     n3Data.GetCount(),
+		nu3Data[nodeId] = append(nu3Data[nodeId], &protocol.Nu_3_Data{
+			Sentiment: n2Data.GetSentiment(),
+			Ratio:     n2Data.GetRatio(),
+			Count:     n2Data.GetCount(),
 		})
 	}
 
 	// Create tasks for each worker
-	for nodeId, data := range delta3Data {
+	for nodeId, data := range nu3Data {
 		tasks[REDUCE_EXCHANGE][NU_STAGE_3][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_3{
@@ -574,13 +600,16 @@ func (r *Reducer) nu3Results(tasks Tasks, clientId string) {
 	dataMap := r.partialResults.nu3Data
 
 	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+
+	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
+		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
+
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	resultData := make(map[string][]*protocol.Result5_Data)
 
 	// Asign the data to the corresponding worker
-	// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
-	nodeId := ""
+	nodeId := clientId
 
 	for _, n3Data := range dataMap {
 		ratio := n3Data.GetRatio() / float32(n3Data.GetCount())
@@ -632,7 +661,7 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
  */
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
-
+	log.Debugf("omegaEOFStage: %v", data)
 	// if the creator is the same as the worker, send the EOF to the next stage
 	if data.GetWorkerCreatorId() == r.infraConfig.GetNodeId() {
 		nextStage, nextExchange, nextStageCount, err := r.getNextStageData(data.GetStage())
