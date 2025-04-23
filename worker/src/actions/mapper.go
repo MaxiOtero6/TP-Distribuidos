@@ -239,6 +239,11 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 	dataMap := make(map[string]*protocol.Nu_2_Data)
 
 	for _, movie := range data {
+
+		if movie.GetBudget() == 0 {
+			continue
+		}
+
 		sentiment := fmt.Sprintf("%t", movie.GetSentiment())
 
 		if _, ok := dataMap[sentiment]; !ok {
@@ -249,7 +254,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 			}
 		}
 
-		dataMap[sentiment].Ratio += float32(movie.GetRevenue()) / float32(movie.GetBudget())
+		dataMap[sentiment].Ratio += float32(float64(movie.GetRevenue()) / float64(movie.GetBudget()))
 		dataMap[sentiment].Count += 1
 	}
 
