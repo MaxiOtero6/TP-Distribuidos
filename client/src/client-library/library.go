@@ -145,7 +145,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 	for l.isRunning {
 
 		batch, fileErr := parser.ReadBatch(l.config.ClientId)
-		
+
 		if fileErr != io.EOF && fileErr != nil {
 			return err
 		}
@@ -277,6 +277,7 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
 			l.retryNumber++
+			log.Debugf("action: waitForResultServerResponse | result: fail | retryNumber: %v | sleepTime: %v", l.retryNumber, sleepTime)
 			time.Sleep(sleepTime)
 			continue
 		}
@@ -326,6 +327,7 @@ func (l *Library) disconnectFromServer() {
 }
 
 func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error) {
+	log.Debugf("action: waitForServerResponse | result: start")
 	response, err := l.socket.Read()
 	if err != nil {
 		if !l.isRunning {
