@@ -67,11 +67,6 @@ func (r *RabbitHandler) RegisterNewClient(clientId string) {
 	}
 }
 
-// ConsumeResult consumes a message from the result queue
-func (r *RabbitHandler) ConsumeResult() amqp.Delivery {
-	return <-r.consumeChan
-}
-
 // Close closes the RabbitMQ connection
 // and the channel used for consuming messages
 func (r *RabbitHandler) Close() {
