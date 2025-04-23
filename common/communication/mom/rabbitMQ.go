@@ -132,6 +132,23 @@ func (r *RabbitMQ) Consume(queueName string) ConsumerChan {
 	return ret
 }
 
+// CancelConsumer cancels the consumer for the specified queue.
+// If the queue does not exist, an error is logged and the function returns.
+// This is useful when you want to stop consuming messages from the queue.
+// You need to consume the channel until it closes,
+// otherwise in flight messages will be lost.
+func (r *RabbitMQ) CancelConsumer(queueName string) {
+	q, ok := r.queues[queueName]
+
+	if !ok {
+		log.Errorf("Queue '%s' does not exist", queueName)
+		return
+	}
+
+	q.close()
+	log.Infof("Consumer cancelled for queue '%s'", queueName)
+}
+
 // BindQueue binds the specified queue to the specified exchange with the given routing key.
 // If the queue or exchange does not exist, an error is logged and the function returns.
 // The routing key is used to route the messages from the exchange to the queue.
