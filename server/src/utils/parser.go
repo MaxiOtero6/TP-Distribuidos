@@ -199,6 +199,8 @@ func ParseCredit(fields []string) []*model.Actor {
 			continue
 		}
 
+		movieId = strings.TrimSpace(movieId)
+
 		ret = append(ret,
 			&model.Actor{
 				MovieId: movieId,

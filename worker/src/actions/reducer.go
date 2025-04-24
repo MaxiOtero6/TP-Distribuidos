@@ -425,7 +425,6 @@ func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 		tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	}
 
-	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[REDUCE_EXCHANGE][ETA_STAGE_3] = make(map[string]*protocol.Task)
 	eta3Data := make(map[string][]*protocol.Eta_3_Data)
 

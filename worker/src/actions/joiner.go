@@ -44,6 +44,30 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		partialResults: &JoinerPartialResults{
+			zetaData: StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{
+				smallTable: SmallTablePartialData[*protocol.Zeta_Data_Movie]{
+					data:  make(map[string]*protocol.Zeta_Data_Movie),
+					ready: false,
+				},
+				bigTable: BigTablePartialData[*protocol.Zeta_Data_Rating]{
+					data:  make(map[string][]*protocol.Zeta_Data_Rating),
+					ready: false,
+				},
+				generalEOF: false,
+			},
+			iotaData: StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{
+				smallTable: SmallTablePartialData[*protocol.Iota_Data_Movie]{
+					data:  make(map[string]*protocol.Iota_Data_Movie),
+					ready: false,
+				},
+				bigTable: BigTablePartialData[*protocol.Iota_Data_Actor]{
+					data:  make(map[string][]*protocol.Iota_Data_Actor),
+					ready: false,
+				},
+				generalEOF: false,
+			},
+		},
 	}
 }
 
@@ -78,7 +102,6 @@ func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Ze
 	}
 
 	// create the tasks
-	tasks = make(Tasks)
 	nextExchange := j.infraConfig.GetMapExchange()
 	nextStage := ETA_STAGE_1
 
@@ -217,7 +240,6 @@ func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iot
 		kappa1Data[nodeId] = append(kappa1Data[nodeId], data)
 	}
 
-	tasks = make(Tasks)
 	nextExchange := j.infraConfig.GetMapExchange()
 	nextStage := KAPPA_STAGE_1
 
@@ -440,7 +462,6 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 			return nil
 		}
 	}
-
 	return tasks
 }
 
@@ -491,7 +512,7 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 
 	if data.GetWorkerCreatorId() == j.infraConfig.GetNodeId() {
 		data.EofType = ""
-		j.createEofTask(tasks, data, true, clientId)
+		j.createEofTask(tasks, data, false, clientId)
 	} else {
 		switch data.Stage {
 		case ZETA_STAGE:
@@ -515,8 +536,6 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 		default:
 			return nil
 		}
-
-		j.createEofTask(tasks, data, true, clientId)
 	}
 
 	return tasks

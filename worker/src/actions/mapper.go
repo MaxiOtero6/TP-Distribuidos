@@ -54,8 +54,8 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (ta
 
 	dataMap := make(map[string]*protocol.Delta_2_Data)
 
-	for _, movie := range data {
-		prodCountry := movie.GetCountry()
+	for _, d1Data := range data {
+		prodCountry := d1Data.GetCountry()
 
 		if _, ok := dataMap[prodCountry]; !ok {
 			dataMap[prodCountry] = &protocol.Delta_2_Data{
@@ -64,11 +64,16 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (ta
 			}
 		}
 
-		dataMap[prodCountry].PartialBudget += movie.GetBudget()
+		dataMap[prodCountry].PartialBudget += d1Data.GetBudget()
 	}
 
 	for _, d2Data := range dataMap {
 		nodeId := m.randomHashFunc(REDUCE_COUNT)
+
+		if _, ok := delta2Data[nodeId]; !ok {
+			delta2Data[nodeId] = make([]*protocol.Delta_2_Data, 0)
+		}
+
 		delta2Data[nodeId] = append(delta2Data[nodeId], d2Data)
 	}
 
@@ -114,24 +119,29 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks 
 
 	dataMap := make(map[string]*protocol.Eta_2_Data)
 
-	for _, movieRating := range data {
-		movieId := movieRating.GetMovieId()
+	for _, e1Data := range data {
+		movieId := e1Data.GetMovieId()
 
 		if _, ok := dataMap[movieId]; !ok {
 			dataMap[movieId] = &protocol.Eta_2_Data{
 				MovieId: movieId,
-				Title:   movieRating.GetTitle(),
+				Title:   e1Data.GetTitle(),
 				Rating:  0.0,
 				Count:   0,
 			}
 		}
 
-		dataMap[movieId].Rating += float64(movieRating.GetRating())
+		dataMap[movieId].Rating += float64(e1Data.GetRating())
 		dataMap[movieId].Count += 1
 	}
 
 	for _, e2Data := range dataMap {
 		nodeId := m.randomHashFunc(REDUCE_COUNT)
+
+		if _, ok := eta2Data[nodeId]; !ok {
+			eta2Data[nodeId] = make([]*protocol.Eta_2_Data, 0)
+		}
+
 		eta2Data[nodeId] = append(eta2Data[nodeId], e2Data)
 	}
 
@@ -177,13 +187,13 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (ta
 
 	dataMap := make(map[string]*protocol.Kappa_2_Data)
 
-	for _, actor := range data {
-		actorId := actor.GetActorId()
+	for _, k1Data := range data {
+		actorId := k1Data.GetActorId()
 
 		if _, ok := dataMap[actorId]; !ok {
 			dataMap[actorId] = &protocol.Kappa_2_Data{
 				ActorId:               actorId,
-				ActorName:             actor.GetActorName(),
+				ActorName:             k1Data.GetActorName(),
 				PartialParticipations: 0,
 			}
 		}
@@ -193,6 +203,11 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (ta
 
 	for _, k2Data := range dataMap {
 		nodeId := m.randomHashFunc(REDUCE_COUNT)
+
+		if _, ok := kappa2Data[nodeId]; !ok {
+			kappa2Data[nodeId] = make([]*protocol.Kappa_2_Data, 0)
+		}
+
 		kappa2Data[nodeId] = append(kappa2Data[nodeId], k2Data)
 	}
 
@@ -238,28 +253,33 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 
 	dataMap := make(map[string]*protocol.Nu_2_Data)
 
-	for _, movie := range data {
+	for _, nu1Data := range data {
 
-		if movie.GetBudget() == 0 || movie.GetRevenue() == 0 {
+		if nu1Data.GetBudget() == 0 || nu1Data.GetRevenue() == 0 {
 			continue
 		}
 
-		sentiment := fmt.Sprintf("%t", movie.GetSentiment())
+		sentiment := fmt.Sprintf("%t", nu1Data.GetSentiment())
 
 		if _, ok := dataMap[sentiment]; !ok {
 			dataMap[sentiment] = &protocol.Nu_2_Data{
-				Sentiment: movie.GetSentiment(),
+				Sentiment: nu1Data.GetSentiment(),
 				Ratio:     0.0,
 				Count:     0,
 			}
 		}
 
-		dataMap[sentiment].Ratio += float32(float64(movie.GetRevenue()) / float64(movie.GetBudget()))
+		dataMap[sentiment].Ratio += float32(float64(nu1Data.GetRevenue()) / float64(nu1Data.GetBudget()))
 		dataMap[sentiment].Count += 1
 	}
 
 	for _, n2Data := range dataMap {
 		nodeId := m.randomHashFunc(REDUCE_COUNT)
+
+		if _, ok := nu2Data[nodeId]; !ok {
+			nu2Data[nodeId] = make([]*protocol.Nu_2_Data, 0)
+		}
+
 		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
 	}
 

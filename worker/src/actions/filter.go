@@ -11,6 +11,12 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
+type FilterStageData struct {
+	NextStage    string
+	NextExchange string
+	WorkerCount  int
+}
+
 // Filter is a struct that implements the Action interface.
 // It filters movies based on certain criteria.
 // It is used in the worker to filter movies in the pipeline.
@@ -291,17 +297,48 @@ func (f *Filter) getNextNodeId(nodeId string) (string, error) {
 	return nextNodeId, nil
 }
 
-func (f *Filter) getNextStageData(stage string) (string, string, int, error) {
+func (f *Filter) getNextStageData(stage string) ([]FilterStageData, error) {
 	switch stage {
 	case ALPHA_STAGE:
-		return BETA_STAGE, f.infraConfig.GetFilterExchange(), f.infraConfig.GetFilterCount(), nil
+		return []FilterStageData{
+			{
+				NextStage:    BETA_STAGE,
+				NextExchange: f.infraConfig.GetFilterExchange(),
+				WorkerCount:  f.infraConfig.GetFilterCount(),
+			},
+			{
+				NextStage:    ZETA_STAGE,
+				NextExchange: f.infraConfig.GetJoinExchange(),
+				WorkerCount:  f.infraConfig.GetJoinCount(),
+			},
+			{
+				NextStage:    IOTA_STAGE,
+				NextExchange: f.infraConfig.GetJoinExchange(),
+				WorkerCount:  f.infraConfig.GetJoinCount(),
+			},
+		}, nil
+
 	case BETA_STAGE:
-		return RESULT_STAGE, f.infraConfig.GetResultExchange(), 1, nil
+		return []FilterStageData{
+			{
+				NextStage:    RESULT_STAGE,
+				NextExchange: f.infraConfig.GetResultExchange(),
+				WorkerCount:  1,
+			},
+		}, nil
+
 	case GAMMA_STAGE:
-		return DELTA_STAGE_1, f.infraConfig.GetMapExchange(), f.infraConfig.GetMapCount(), nil
+		return []FilterStageData{
+			{
+				NextStage:    DELTA_STAGE_1,
+				NextExchange: f.infraConfig.GetMapExchange(),
+				WorkerCount:  f.infraConfig.GetMapCount(),
+			},
+		}, nil
+
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+		return nil, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
@@ -310,33 +347,43 @@ func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 
 	// if the creator is the same as the worker, send the EOF to the next stage
 	if data.GetWorkerCreatorId() == f.infraConfig.GetNodeId() {
-		nextStage, nextExchange, nextStageCount, err := f.getNextStageData(data.GetStage())
+		nextDataStages, err := f.getNextStageData(data.GetStage())
 		if err != nil {
 			log.Errorf("Failed to get next stage data: %s", err)
 			return nil
 		}
 
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           nextStage,
+		for _, nextDataStage := range nextDataStages {
+
+			nextStageEOF := &protocol.Task{
+				ClientId: clientId,
+				Stage: &protocol.Task_OmegaEOF{
+					OmegaEOF: &protocol.OmegaEOF{
+						Data: &protocol.OmegaEOF_Data{
+							WorkerCreatorId: "",
+							Stage:           nextDataStage.NextStage,
+							EofType:         data.GetEofType(),
+						},
 					},
 				},
-			},
+			}
+
+			randomNode := f.randomHashFunc(nextDataStage.WorkerCount)
+
+			if nextDataStage.NextStage == RESULT_STAGE {
+				randomNode = clientId
+			}
+
+			if _, exists := tasks[nextDataStage.NextExchange]; !exists {
+				tasks[nextDataStage.NextExchange] = make(map[string]map[string]*protocol.Task)
+			}
+			if _, exists := tasks[nextDataStage.NextExchange][nextDataStage.NextStage]; !exists {
+				tasks[nextDataStage.NextExchange][nextDataStage.NextStage] = make(map[string]*protocol.Task)
+			}
+
+			log.Debugf("EOF type: %s", data.GetEofType())
+			tasks[nextDataStage.NextExchange][nextDataStage.NextStage][randomNode] = nextStageEOF
 		}
-
-		randomNode := f.randomHashFunc(nextStageCount)
-
-		if nextStage == RESULT_STAGE {
-			randomNode = clientId
-		}
-
-		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
 
 	} else { // if the creator is not the same as the worker, send EOF to the next node
 		nextRingEOF := data
