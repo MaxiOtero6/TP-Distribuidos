@@ -20,6 +20,10 @@ func mapJsonRegex(json string, regex string) []string {
 		}
 	}
 
+	if len(mappedMatches) == 0 {
+		return nil
+	}
+
 	return mappedMatches
 }
 
@@ -42,6 +46,10 @@ func mapJsonRegexTuple(json string, regex string, items int) [][]string {
 		}
 	}
 
+	if len(mappedMatches) == 0 {
+		return nil
+	}
+
 	return mappedMatches
 }
 
@@ -55,7 +63,7 @@ func ParseLine(line *string) (fields []string) {
 
 	for _, char := range *line {
 		if char == ',' && !inField {
-			fields = append(fields, currentField.String())
+			fields = append(fields, strings.TrimSpace(currentField.String()))
 			currentField.Reset()
 			continue
 		}
@@ -69,7 +77,7 @@ func ParseLine(line *string) (fields []string) {
 	}
 
 	// Append last field
-	fields = append(fields, currentField.String())
+	fields = append(fields, strings.TrimSpace(currentField.String()))
 
 	return fields
 }
@@ -90,13 +98,13 @@ func ParseMovie(fields []string) []*model.Movie {
 	rawProdCountries := fields[13]
 	rawGenres := fields[3]
 
+	if len(rawProdCountries) == 0 || len(rawGenres) == 0 {
+		return []*model.Movie{}
+	}
+
 	regex := `'name': '([^']+)'`
 	prodCountries := mapJsonRegex(rawProdCountries, regex)
 	genres := mapJsonRegex(rawGenres, regex)
-
-	if len(prodCountries) == 0 || len(genres) == 0 {
-		return []*model.Movie{}
-	}
 
 	rawRevenue := fields[15]
 	rawBudget := fields[2]
@@ -185,6 +193,11 @@ func ParseCredit(fields []string) []*model.Actor {
 	}
 
 	rawCast := fields[0]
+
+	if len(rawCast) == 0 {
+		return []*model.Actor{}
+	}
+
 	regex := `'id': (\d+).*?'name': '([^']+)'`
 	cast := mapJsonRegexTuple(rawCast, regex, 2)
 
@@ -198,8 +211,6 @@ func ParseCredit(fields []string) []*model.Actor {
 		if len(id) == 0 || len(name) == 0 || len(movieId) == 0 {
 			continue
 		}
-
-		movieId = strings.TrimSpace(movieId)
 
 		ret = append(ret,
 			&model.Actor{

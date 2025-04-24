@@ -10,7 +10,6 @@ import (
 	"github.com/op/go-logging"
 )
 
-const MAX_SIZE = 1024 * 80 // 80 KB
 const COMMUNICATION_DELIMITER = '\n'
 
 var log = logging.MustGetLogger("log")
@@ -18,7 +17,7 @@ var log = logging.MustGetLogger("log")
 type Parser struct {
 	file         *os.File
 	fileType     protocol.FileType
-	maxBatch     int
+	maxSize      int
 	bufReader    *bufio.Reader
 	leftoverLine string
 }
@@ -44,7 +43,7 @@ func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Pars
 	return &Parser{
 		file:         file,
 		fileType:     fileType,
-		maxBatch:     maxBatch,
+		maxSize:      maxBatch,
 		bufReader:    bufReader,
 		leftoverLine: "",
 	}, nil
@@ -58,7 +57,7 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 				Message: &protocol.ClientServerMessage_Batch{
 					Batch: &protocol.Batch{
 						Type:     p.fileType,
-						Data:     make([]*protocol.Batch_Row, 0, p.maxBatch),
+						Data:     make([]*protocol.Batch_Row, 0),
 						ClientId: clientId,
 						EOF:      false,
 					},
@@ -71,7 +70,7 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 	totalSize := 0
 
 	if p.leftoverLine != "" {
-		if totalSize+len(p.leftoverLine) > MAX_SIZE {
+		if totalSize+len(p.leftoverLine) > p.maxSize {
 			return batchMessage, nil
 		}
 
@@ -80,13 +79,13 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 		p.leftoverLine = ""
 	}
 
-	for range p.maxBatch {
+	for {
 		line, err := p.bufReader.ReadString(COMMUNICATION_DELIMITER)
 		if err != nil && err != io.EOF {
 			return nil, err
 		}
 
-		if totalSize+len(line) > MAX_SIZE {
+		if totalSize+len(line) > p.maxSize {
 			p.leftoverLine = line
 			break
 		}

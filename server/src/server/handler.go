@@ -106,7 +106,7 @@ func (s *Server) handleBatchMessage(batchMessage *protocol.Batch) error {
 		return fmt.Errorf("invalid batch type: %v", batchMessage.Type)
 	}
 
-	log.Infof("Received batch message with type: %v", batchMessage.Type)
+	log.Debugf("Received batch message with type: %v", batchMessage.Type)
 
 	ackMessage := &protocol.Message{
 		Message: &protocol.Message_ServerClientMessage{
@@ -129,12 +129,12 @@ func (s *Server) handleBatchMessage(batchMessage *protocol.Batch) error {
 }
 
 func (s *Server) handleFinishMessage(finishMessage *protocol.Finish) {
-	log.Infof("Received finish message from user: %v ", finishMessage.ClientId)
+	log.Debugf("Received finish message from user: %v ", finishMessage.ClientId)
 	//TODO
 }
 
 func (s *Server) handleResultMessage(resultMessage *protocol.Result) error {
-	log.Infof("Received result message from user: %v ", resultMessage.ClientId)
+	log.Debugf("Received result message from user: %v ", resultMessage.ClientId)
 
 	results := s.rabbitHandler.GetResults(resultMessage.ClientId)
 

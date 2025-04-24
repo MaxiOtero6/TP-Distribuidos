@@ -17,8 +17,9 @@ type Query3 struct {
 }
 
 type Query4 struct {
-	ActorId   string
-	ActorName string
+	ActorId        string
+	ActorName      string
+	Participations uint64
 }
 
 type Query5 struct {

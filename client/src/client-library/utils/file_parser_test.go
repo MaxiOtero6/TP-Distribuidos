@@ -16,7 +16,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		file := createTempFile(t, content)
 		defer os.Remove(file.Name())
 
-		parser, err := NewParser(10, file.Name(), protocol.FileType_MOVIES)
+		parser, err := NewParser(1000, file.Name(), protocol.FileType_MOVIES)
 		assert.NoError(t, err)
 		defer parser.Close()
 
@@ -36,7 +36,7 @@ func TestParser_ReadBatch(t *testing.T) {
 		file := createTempFile(t, content)
 		defer os.Remove(file.Name())
 
-		parser, err := NewParser(10, file.Name(), protocol.FileType_MOVIES)
+		parser, err := NewParser(1000, file.Name(), protocol.FileType_MOVIES)
 		assert.NoError(t, err)
 		defer parser.Close()
 
