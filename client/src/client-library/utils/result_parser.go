@@ -158,8 +158,9 @@ func (p *ResultParser) handleResult4(result *protocol.Result4) {
 
 	for _, data := range allData {
 		query4 := &model.Query4{
-			ActorId:   data.GetActorId(),
-			ActorName: data.GetActorName(),
+			ActorId:        data.GetActorId(),
+			ActorName:      data.GetActorName(),
+			Participations: data.GetParticipations(),
 		}
 		p.results.Query4 = append(p.results.Query4, query4)
 	}

@@ -111,12 +111,12 @@ func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
 func logResults(results *model.Results) {
 	log.Infof(CYAN + UNDERLINE + "Query1 results:" + RESET)
 	for index, movie := range results.Query1 {
-		log.Infof(BOLD+"[%d] MovieId: %s | Title: %s | Genres: %v"+RESET, index, movie.MovieId, movie.Title, movie.Genres)
+		log.Infof(BOLD+"[%d] MovieId: %s | Title: %s | Genres: %v"+RESET, index+1, movie.MovieId, movie.Title, movie.Genres)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query2 results:" + RESET)
 	for position, country := range results.Query2 {
-		log.Infof(BOLD+"[%d] Country: %s | TotalInvestment: %d"+RESET, position, country.Country, country.TotalInvestment)
+		log.Infof(BOLD+"[%d] Country: %s | TotalInvestment: %d"+RESET, position+1, country.Country, country.TotalInvestment)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query3 results:" + RESET)
@@ -126,7 +126,7 @@ func logResults(results *model.Results) {
 
 	log.Infof(CYAN + UNDERLINE + "Query4 results:" + RESET)
 	for position, actor := range results.Query4 {
-		log.Infof(BOLD+"[%d] ActorId: %s | ActorName: %s"+RESET, position, actor.ActorId, actor.ActorName)
+		log.Infof(BOLD+"[%d] ActorId: %s | ActorName: %s | Participations: %v"+RESET, position+1, actor.ActorId, actor.ActorName, actor.Participations)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query5 results:" + RESET)
