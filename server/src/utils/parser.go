@@ -1,12 +1,16 @@
 package utils
 
 import (
+	"encoding/csv"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("log")
 
 // mapJsonRegex maps a JSON string using a regex pattern and returns the first group of each match.
 func mapJsonRegex(json string, regex string) []string {
@@ -49,33 +53,20 @@ func mapJsonRegexTuple(json string, regex string, items int) [][]string {
 	return mappedMatches
 }
 
-// parseLine parses a CSV line and returns the fields as a slice of strings.
-// It handles quoted fields and commas inside quotes.
-// It also handles empty fields.
-// It returns a slice of strings containing the fields.
+// ParseLine parses a CSV line and returns the fields as a slice of strings.
+// It handles quoted fields, commas inside quotes, and escaped double quotes.
+// It also handles JSON-like strings as single fields.
 func ParseLine(line *string) (fields []string) {
-	var currentField strings.Builder
-	inField := false
+	reader := csv.NewReader(strings.NewReader(*line))
 
-	for _, char := range *line {
-		if char == ',' && !inField {
-			fields = append(fields, strings.TrimSpace(currentField.String()))
-			currentField.Reset()
-			continue
-		}
+	record, err := reader.Read()
 
-		if char == '"' {
-			inField = !inField
-			continue
-		}
-
-		currentField.WriteRune(char)
+	if err != nil {
+		log.Errorf("Error parsing line: %v", err)
+		return []string{}
 	}
 
-	// Append last field
-	fields = append(fields, strings.TrimSpace(currentField.String()))
-
-	return fields
+	return record
 }
 
 // ParseMovie parses a movie line and returns a slice of DataRow with one item.
@@ -194,7 +185,7 @@ func ParseCredit(fields []string) []*model.Actor {
 		return []*model.Actor{}
 	}
 
-	regex := `'id': (\d+).*?'name': '([^']+)'`
+	regex := `'id': (\d+).*?'name': ["']([^"']+)["']`
 	cast := mapJsonRegexTuple(rawCast, regex, 2)
 
 	var ret []*model.Actor
@@ -219,20 +210,3 @@ func ParseCredit(fields []string) []*model.Actor {
 
 	return ret
 }
-
-// func ParseRow(row *string, fileType protocol.FileType) (any, error) {
-// 	fields := parseLine(row)
-
-// 	switch fileType {
-// 	case protocol.FileType_MOVIES:
-// 		return parseMovie(fields), nil
-// 	case protocol.FileType_CREDITS:
-// 		return parseCredit(fields), nil
-// 	case protocol.FileType_RATINGS:
-// 		return parseRating(fields), nil
-// 	case protocol.FileType_EOF: //TODO
-// 		return nil, nil
-// 	default:
-// 		return nil, fmt.Errorf("unknown file type: %s", fileType)
-// 	}
-// }
