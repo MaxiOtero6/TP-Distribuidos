@@ -102,7 +102,6 @@ func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Ze
 	}
 
 	// create the tasks
-	tasks = make(Tasks)
 	nextExchange := j.infraConfig.GetMapExchange()
 	nextStage := ETA_STAGE_1
 
@@ -241,7 +240,6 @@ func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iot
 		kappa1Data[nodeId] = append(kappa1Data[nodeId], data)
 	}
 
-	tasks = make(Tasks)
 	nextExchange := j.infraConfig.GetMapExchange()
 	nextStage := KAPPA_STAGE_1
 
@@ -538,8 +536,6 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 		default:
 			return nil
 		}
-		log.Debugf("General EOF stage data: %v", data)
-		j.createEofTask(tasks, data, true, clientId)
 	}
 
 	return tasks
@@ -548,8 +544,6 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 /*
  */
 func (j *Joiner) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-
-	log.Debugf("Me llego un EOF de stage: %v | tipo: %v ", data.GetStage(), data.GetEofType())
 	switch data.EofType {
 	case SMALL_TABLE:
 		return j.smallTableOmegaEOFStage(data, clientId)
