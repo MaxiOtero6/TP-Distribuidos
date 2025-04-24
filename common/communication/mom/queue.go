@@ -99,6 +99,8 @@ func (q *queue) consume() <-chan amqp.Delivery {
 
 	failOnError(err, fmt.Sprintf("Failed to register a consumer: '%v'", q.amqpName))
 
+	q.channel.Qos(2, 0, false)
+
 	return msgs
 }
 
