@@ -78,11 +78,11 @@ func (s *Server) handleBatchMessage(batchMessage *protocol.Batch) error {
 		movies := s.processMoviesBatch(batchMessage)
 		s.rabbitHandler.SendMoviesRabbit(movies, clientId, batchMessage.GetEOF())
 	case protocol.FileType_CREDITS:
-		// actors := s.processCreditsBatch(batchMessage)
-		// s.rabbitHandler.SendActorsRabbit(actors, clientId, batchMessage.GetEOF())
+		actors := s.processCreditsBatch(batchMessage)
+		s.rabbitHandler.SendActorsRabbit(actors, clientId, batchMessage.GetEOF())
 	case protocol.FileType_RATINGS:
-		// ratings := s.processRatingsBatch(batchMessage)
-		// s.rabbitHandler.SendRatingsRabbit(ratings, clientId, batchMessage.GetEOF())
+		ratings := s.processRatingsBatch(batchMessage)
+		s.rabbitHandler.SendRatingsRabbit(ratings, clientId, batchMessage.GetEOF())
 	default:
 		log.Errorf("Invalid batch type: %v", batchMessage.Type)
 

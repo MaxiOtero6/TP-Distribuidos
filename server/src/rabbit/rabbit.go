@@ -67,24 +67,24 @@ func (r *RabbitHandler) Close() {
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
 func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string, isEOF bool) {
-	// FILTER_COUNT := r.infraConfig.GetFilterCount()
+	FILTER_COUNT := r.infraConfig.GetFilterCount()
 	OVERVIEW_COUNT := r.infraConfig.GetOverviewCount()
 
-	// FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
+	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
 	OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
 
-	// alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
+	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
 	muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT, clientId)
-	// gammaTasks := utils.GetGammaStageTask(movies, FILTER_COUNT, clientId)
+	gammaTasks := utils.GetGammaStageTask(movies, FILTER_COUNT, clientId)
 
-	// r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
+	r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
 	r.publishTasksRabbit(muTasks, OVERVIEW_EXCHANGE)
-	// r.publishTasksRabbit(gammaTasks, FILTER_EXCHANGE)
+	r.publishTasksRabbit(gammaTasks, FILTER_EXCHANGE)
 
 	if isEOF {
-		// r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)
+		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)
 		r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE), OVERVIEW_EXCHANGE)
-		// r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE), OVERVIEW_EXCHANGE)
+		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE), FILTER_EXCHANGE)
 	}
 }
 

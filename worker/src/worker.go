@@ -89,7 +89,6 @@ outer:
 				continue
 			}
 
-			log.Debugf("Task %T received from queue", task.GetStage())
 			//log.Debugf("Task value: %v", task.GetResult1().GetData())
 
 			subTasks, err := w.action.Execute(task)
