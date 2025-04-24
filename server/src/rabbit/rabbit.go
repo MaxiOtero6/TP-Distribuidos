@@ -205,3 +205,7 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 
 	return results
 }
+
+func (r *RabbitHandler) UnbindQueue(clientId string) {
+	r.rabbitMQ.UnbindQueue(r.resultQueueName, r.resultExchangeName, clientId)
+}

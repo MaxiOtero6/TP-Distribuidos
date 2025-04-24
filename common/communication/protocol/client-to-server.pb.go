@@ -150,6 +150,50 @@ func (x *Finish) GetClientId() string {
 	return ""
 }
 
+type Disconnect struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Disconnect) Reset() {
+	*x = Disconnect{}
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Disconnect) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Disconnect) ProtoMessage() {}
+
+func (x *Disconnect) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Disconnect.ProtoReflect.Descriptor instead.
+func (*Disconnect) Descriptor() ([]byte, []int) {
+	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Disconnect) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
 type Result struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
@@ -159,7 +203,7 @@ type Result struct {
 
 func (x *Result) Reset() {
 	*x = Result{}
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -171,7 +215,7 @@ func (x *Result) String() string {
 func (*Result) ProtoMessage() {}
 
 func (x *Result) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -184,7 +228,7 @@ func (x *Result) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Result.ProtoReflect.Descriptor instead.
 func (*Result) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{2}
+	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Result) GetClientId() string {
@@ -206,7 +250,7 @@ type Batch struct {
 
 func (x *Batch) Reset() {
 	*x = Batch{}
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +262,7 @@ func (x *Batch) String() string {
 func (*Batch) ProtoMessage() {}
 
 func (x *Batch) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +275,7 @@ func (x *Batch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Batch.ProtoReflect.Descriptor instead.
 func (*Batch) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{3}
+	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Batch) GetType() FileType {
@@ -270,6 +314,7 @@ type ClientServerMessage struct {
 	//	*ClientServerMessage_Sync
 	//	*ClientServerMessage_Finish
 	//	*ClientServerMessage_Result
+	//	*ClientServerMessage_Disconnect
 	Message       isClientServerMessage_Message `protobuf_oneof:"message"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -277,7 +322,7 @@ type ClientServerMessage struct {
 
 func (x *ClientServerMessage) Reset() {
 	*x = ClientServerMessage{}
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +334,7 @@ func (x *ClientServerMessage) String() string {
 func (*ClientServerMessage) ProtoMessage() {}
 
 func (x *ClientServerMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +347,7 @@ func (x *ClientServerMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientServerMessage.ProtoReflect.Descriptor instead.
 func (*ClientServerMessage) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{4}
+	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ClientServerMessage) GetMessage() isClientServerMessage_Message {
@@ -348,6 +393,15 @@ func (x *ClientServerMessage) GetResult() *Result {
 	return nil
 }
 
+func (x *ClientServerMessage) GetDisconnect() *Disconnect {
+	if x != nil {
+		if x, ok := x.Message.(*ClientServerMessage_Disconnect); ok {
+			return x.Disconnect
+		}
+	}
+	return nil
+}
+
 type isClientServerMessage_Message interface {
 	isClientServerMessage_Message()
 }
@@ -368,6 +422,10 @@ type ClientServerMessage_Result struct {
 	Result *Result `protobuf:"bytes,4,opt,name=result,proto3,oneof"`
 }
 
+type ClientServerMessage_Disconnect struct {
+	Disconnect *Disconnect `protobuf:"bytes,5,opt,name=disconnect,proto3,oneof"`
+}
+
 func (*ClientServerMessage_Batch) isClientServerMessage_Message() {}
 
 func (*ClientServerMessage_Sync) isClientServerMessage_Message() {}
@@ -375,6 +433,8 @@ func (*ClientServerMessage_Sync) isClientServerMessage_Message() {}
 func (*ClientServerMessage_Finish) isClientServerMessage_Message() {}
 
 func (*ClientServerMessage_Result) isClientServerMessage_Message() {}
+
+func (*ClientServerMessage_Disconnect) isClientServerMessage_Message() {}
 
 type Batch_Row struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -385,7 +445,7 @@ type Batch_Row struct {
 
 func (x *Batch_Row) Reset() {
 	*x = Batch_Row{}
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[5]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -397,7 +457,7 @@ func (x *Batch_Row) String() string {
 func (*Batch_Row) ProtoMessage() {}
 
 func (x *Batch_Row) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[5]
+	mi := &file_proto_client_server_messages_client_to_server_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -410,7 +470,7 @@ func (x *Batch_Row) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Batch_Row.ProtoReflect.Descriptor instead.
 func (*Batch_Row) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{3, 0}
+	return file_proto_client_server_messages_client_to_server_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *Batch_Row) GetData() string {
@@ -427,6 +487,9 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"3proto/client-server-messages/client-to-server.proto\"\x06\n" +
 	"\x04Sync\"%\n" +
 	"\x06Finish\x12\x1b\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\")\n" +
+	"\n" +
+	"Disconnect\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"%\n" +
 	"\x06Result\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\x90\x01\n" +
@@ -437,12 +500,15 @@ const file_proto_client_server_messages_client_to_server_proto_rawDesc = "" +
 	"\tclient_id\x18\x03 \x01(\tR\bclientId\x12\x10\n" +
 	"\x03EOF\x18\x04 \x01(\bR\x03EOF\x1a\x19\n" +
 	"\x03Row\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\tR\x04data\"\xa3\x01\n" +
+	"\x04data\x18\x01 \x01(\tR\x04data\"\xd2\x01\n" +
 	"\x13ClientServerMessage\x12\x1e\n" +
 	"\x05batch\x18\x01 \x01(\v2\x06.BatchH\x00R\x05batch\x12\x1b\n" +
 	"\x04sync\x18\x02 \x01(\v2\x05.SyncH\x00R\x04sync\x12!\n" +
 	"\x06finish\x18\x03 \x01(\v2\a.FinishH\x00R\x06finish\x12!\n" +
-	"\x06result\x18\x04 \x01(\v2\a.ResultH\x00R\x06resultB\t\n" +
+	"\x06result\x18\x04 \x01(\v2\a.ResultH\x00R\x06result\x12-\n" +
+	"\n" +
+	"disconnect\x18\x05 \x01(\v2\v.DisconnectH\x00R\n" +
+	"disconnectB\t\n" +
 	"\amessage*0\n" +
 	"\bFileType\x12\n" +
 	"\n" +
@@ -463,28 +529,30 @@ func file_proto_client_server_messages_client_to_server_proto_rawDescGZIP() []by
 }
 
 var file_proto_client_server_messages_client_to_server_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_client_server_messages_client_to_server_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_client_server_messages_client_to_server_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_client_server_messages_client_to_server_proto_goTypes = []any{
 	(FileType)(0),               // 0: FileType
 	(*Sync)(nil),                // 1: Sync
 	(*Finish)(nil),              // 2: Finish
-	(*Result)(nil),              // 3: Result
-	(*Batch)(nil),               // 4: Batch
-	(*ClientServerMessage)(nil), // 5: ClientServerMessage
-	(*Batch_Row)(nil),           // 6: Batch.Row
+	(*Disconnect)(nil),          // 3: Disconnect
+	(*Result)(nil),              // 4: Result
+	(*Batch)(nil),               // 5: Batch
+	(*ClientServerMessage)(nil), // 6: ClientServerMessage
+	(*Batch_Row)(nil),           // 7: Batch.Row
 }
 var file_proto_client_server_messages_client_to_server_proto_depIdxs = []int32{
 	0, // 0: Batch.type:type_name -> FileType
-	6, // 1: Batch.data:type_name -> Batch.Row
-	4, // 2: ClientServerMessage.batch:type_name -> Batch
+	7, // 1: Batch.data:type_name -> Batch.Row
+	5, // 2: ClientServerMessage.batch:type_name -> Batch
 	1, // 3: ClientServerMessage.sync:type_name -> Sync
 	2, // 4: ClientServerMessage.finish:type_name -> Finish
-	3, // 5: ClientServerMessage.result:type_name -> Result
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	4, // 5: ClientServerMessage.result:type_name -> Result
+	3, // 6: ClientServerMessage.disconnect:type_name -> Disconnect
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_proto_client_server_messages_client_to_server_proto_init() }
@@ -492,11 +560,12 @@ func file_proto_client_server_messages_client_to_server_proto_init() {
 	if File_proto_client_server_messages_client_to_server_proto != nil {
 		return
 	}
-	file_proto_client_server_messages_client_to_server_proto_msgTypes[4].OneofWrappers = []any{
+	file_proto_client_server_messages_client_to_server_proto_msgTypes[5].OneofWrappers = []any{
 		(*ClientServerMessage_Batch)(nil),
 		(*ClientServerMessage_Sync)(nil),
 		(*ClientServerMessage_Finish)(nil),
 		(*ClientServerMessage_Result)(nil),
+		(*ClientServerMessage_Disconnect)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -504,7 +573,7 @@ func file_proto_client_server_messages_client_to_server_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_client_server_messages_client_to_server_proto_rawDesc), len(file_proto_client_server_messages_client_to_server_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -37,7 +37,6 @@ type Library struct {
 	fileNames     []string
 	retryNumber   float64
 	responseCount int
-	done          chan bool
 	isRunning     bool
 	config        ClientConfig
 }
@@ -79,16 +78,6 @@ func (l *Library) ProcessData() (results *model.Results) {
 		return
 	}
 
-	err = l.sendFinishMessage()
-	if err != nil {
-		if err == client_communication.ErrConnectionClosed {
-			log.Infof("action: sendFinishMessage | result: fail | error: %v", err)
-			return
-		}
-		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
-		return
-	}
-
 	results, err = l.fetchServerResults()
 
 	if err != nil {
@@ -112,6 +101,7 @@ func (l *Library) ProcessData() (results *model.Results) {
 }
 
 func (l *Library) sendAllFiles() error {
+
 	err := l.sendMoviesFile()
 	if err != nil {
 		return err
@@ -243,6 +233,30 @@ func (l *Library) sendFinishMessage() error {
 	return nil
 }
 
+func (l *Library) sendDisconnectMessage() error {
+	if !l.isRunning {
+		return nil
+	}
+
+	disconnectMessage := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_Disconnect{
+					Disconnect: &protocol.Disconnect{
+						ClientId: l.config.ClientId,
+					},
+				},
+			},
+		},
+	}
+
+	if err := l.socket.Write(disconnectMessage); err != nil {
+		return err
+	}
+	log.Infof("action: SendDisconnectMessage | result: success | client_id: %v", l.config.ClientId)
+	return nil
+}
+
 func (l *Library) fetchServerResults() (*model.Results, error) {
 	resultParser := utils.NewResultParser()
 
@@ -272,7 +286,10 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 
 		jitter := time.Since(start)
 
+		log.Debugf("action: waitForResultServerResponse | result: success | response: %v", response)
+
 		if !ok {
+			l.sendDisconnectMessage()
 			l.disconnectFromServer()
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
@@ -395,6 +412,7 @@ func (l *Library) sendResultMessage() error {
 }
 
 func (l *Library) Stop() {
+	l.sendFinishMessage()
 	l.isRunning = false
 	l.disconnectFromServer()
 }

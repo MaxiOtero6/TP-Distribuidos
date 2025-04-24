@@ -22,6 +22,9 @@ func (s *Server) handleMessage(message *protocol.Message) error {
 		s.handleFinishMessage(msg.Finish)
 	case *protocol.ClientServerMessage_Result:
 		s.handleResultMessage(msg.Result)
+	case *protocol.ClientServerMessage_Disconnect:
+		s.handleDisconnectMessage(msg.Disconnect)
+
 	default:
 		// Handle unknown message type
 	}
@@ -30,15 +33,21 @@ func (s *Server) handleMessage(message *protocol.Message) error {
 
 func (s *Server) handleConnection() error {
 	for {
+		if s.clientSocket == nil {
+			break
+		}
+
 		message, err := s.clientSocket.Read()
 		if err != nil {
 			return err
 		}
+
 		err = s.handleMessage(message)
 		if err != nil {
 			return err
 		}
 	}
+	return nil
 
 }
 
@@ -130,7 +139,26 @@ func (s *Server) handleBatchMessage(batchMessage *protocol.Batch) error {
 
 func (s *Server) handleFinishMessage(finishMessage *protocol.Finish) {
 	log.Infof("Received finish message from user: %v ", finishMessage.ClientId)
-	//TODO
+
+	if s.clientSocket != nil {
+		s.clientSocket.Close()
+		s.clientSocket = nil
+		log.Infof("Client socket closed")
+	}
+
+	s.rabbitHandler.UnbindQueue(finishMessage.ClientId)
+	log.Infof("Unbound queue for client ID: %s", finishMessage.ClientId)
+}
+
+func (s *Server) handleDisconnectMessage(disconnectMessage *protocol.Disconnect) {
+	log.Infof("Received disconnect message from user: %v ", disconnectMessage.ClientId)
+
+	if s.clientSocket != nil {
+		s.clientSocket.Close()
+		s.clientSocket = nil
+		log.Infof("Client socket closed")
+	}
+
 }
 
 func (s *Server) handleResultMessage(resultMessage *protocol.Result) error {
