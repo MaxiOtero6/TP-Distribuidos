@@ -13,6 +13,34 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	RESET     = "\033[0m"
+	BLACK     = "\033[30m"
+	RED       = "\033[31m"
+	GREEN     = "\033[32m"
+	YELLOW    = "\033[33m"
+	BLUE      = "\033[34m"
+	MAGENTA   = "\033[35m"
+	CYAN      = "\033[36m"
+	WHITE     = "\033[37m"
+	BOLD      = "\033[1m"
+	DIM       = "\033[2m"
+	ITALIC    = "\033[3m"
+	UNDERLINE = "\033[4m"
+	BLINK     = "\033[5m"
+	REVERSE   = "\033[7m"
+	HIDDEN    = "\033[8m"
+
+	BG_BLACK   = "\033[40m"
+	BG_RED     = "\033[41m"
+	BG_GREEN   = "\033[42m"
+	BG_YELLOW  = "\033[43m"
+	BG_BLUE    = "\033[44m"
+	BG_MAGENTA = "\033[45m"
+	BG_CYAN    = "\033[46m"
+	BG_WHITE   = "\033[47m"
+)
+
 var log = logging.MustGetLogger("log")
 
 // InitConfig Function that uses viper library to parse configuration parameters.
@@ -81,29 +109,29 @@ func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
 }
 
 func logResults(results *model.Results) {
-	log.Infof("Query1 results:")
-	for _, movie := range results.Query1 {
-		log.Infof("MovieId: %s | Title: %s | Genres: %v", movie.MovieId, movie.Title, movie.Genres)
+	log.Infof(CYAN + UNDERLINE + "Query1 results:" + RESET)
+	for index, movie := range results.Query1 {
+		log.Infof(BOLD+"[%d] MovieId: %s | Title: %s | Genres: %v"+RESET, index, movie.MovieId, movie.Title, movie.Genres)
 	}
 
-	log.Infof("Query2 results:")
-	for _, country := range results.Query2 {
-		log.Infof("Country: %s | TotalInvestment: %d", country.Country, country.TotalInvestment)
+	log.Infof(CYAN + UNDERLINE + "Query2 results:" + RESET)
+	for position, country := range results.Query2 {
+		log.Infof(BOLD+"[%d] Country: %s | TotalInvestment: %d"+RESET, position, country.Country, country.TotalInvestment)
 	}
 
-	log.Infof("Query3 results:")
+	log.Infof(CYAN + UNDERLINE + "Query3 results:" + RESET)
 	for kind, data := range results.Query3 {
-		log.Infof("Kind %v; Movie: %s | AvgRating: %.2f", kind, data.Title, data.AvgRating)
+		log.Infof(BOLD+"[%v] Movie: %s | AvgRating: %.2f"+RESET, strings.ToUpper(kind), data.Title, data.AvgRating)
 	}
 
-	log.Infof("Query4 results:")
-	for _, actor := range results.Query4 {
-		log.Infof("ActorId: %s | ActorName: %s", actor.ActorId, actor.ActorName)
+	log.Infof(CYAN + UNDERLINE + "Query4 results:" + RESET)
+	for position, actor := range results.Query4 {
+		log.Infof(BOLD+"[%d] ActorId: %s | ActorName: %s"+RESET, position, actor.ActorId, actor.ActorName)
 	}
 
-	log.Infof("Query5 results:")
-	for movie, data := range results.Query5 {
-		log.Infof("Movie: %s | RevenueBudgetRatio: %.2f", movie, data.RevenueBudgetRatio)
+	log.Infof(CYAN + UNDERLINE + "Query5 results:" + RESET)
+	for sentiment, data := range results.Query5 {
+		log.Infof(BOLD+"[%s] RevenueBudgetRatio: %.2f"+RESET, strings.ToUpper(sentiment), data.RevenueBudgetRatio)
 	}
 }
 
