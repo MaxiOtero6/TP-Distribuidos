@@ -2,12 +2,12 @@ log:
     level: "debug"
 
 data:
-    movies: ".data/movies_head_10k.csv"
-    ratings: ".data/ratings_head_10k.csv"
-    credits: ".data/credits_head_10k.csv"
+    movies: ".data/movies_metadata.csv"
+    ratings: ".data/ratings.csv"
+    credits: ".data/credits.csv"
 
 server:
     address: "server_0:12345"
 
 batch:
-    maxAmount: 10
+    maxSize: 81920 # 80KB

@@ -25,7 +25,7 @@ var ErrSignalReceived = errors.New("signal received")
 
 type ClientConfig struct {
 	ServerAddress   string
-	MaxAmount       int
+	BatchMaxSize    int
 	MoviesFilePath  string
 	RatingsFilePath string
 	CreditsFilePath string
@@ -135,7 +135,7 @@ func (l *Library) sendAllFiles() error {
 func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 	log.Infof("action: sendFile | result: start | file: %s", filename)
 
-	parser, err := utils.NewParser(l.config.MaxAmount, filename, fileType)
+	parser, err := utils.NewParser(l.config.BatchMaxSize, filename, fileType)
 	if err != nil {
 		return err
 	}

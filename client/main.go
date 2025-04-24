@@ -151,7 +151,7 @@ func main() {
 
 	clientConfig := library.ClientConfig{
 		ServerAddress:   v.GetString("server.address"),
-		MaxAmount:       v.GetInt("batch.maxAmount"),
+		BatchMaxSize:    v.GetInt("batch.maxSize"),
 		MoviesFilePath:  v.GetString("data.movies"),
 		RatingsFilePath: v.GetString("data.ratings"),
 		CreditsFilePath: v.GetString("data.credits"),
