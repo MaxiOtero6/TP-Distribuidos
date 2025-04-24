@@ -98,13 +98,13 @@ func ParseMovie(fields []string) []*model.Movie {
 	rawProdCountries := fields[13]
 	rawGenres := fields[3]
 
+	if len(rawProdCountries) == 0 || len(rawGenres) == 0 {
+		return []*model.Movie{}
+	}
+
 	regex := `'name': '([^']+)'`
 	prodCountries := mapJsonRegex(rawProdCountries, regex)
 	genres := mapJsonRegex(rawGenres, regex)
-
-	if prodCountries == nil || genres == nil {
-		return []*model.Movie{}
-	}
 
 	rawRevenue := fields[15]
 	rawBudget := fields[2]
@@ -193,6 +193,11 @@ func ParseCredit(fields []string) []*model.Actor {
 	}
 
 	rawCast := fields[0]
+
+	if len(rawCast) == 0 {
+		return []*model.Actor{}
+	}
+
 	regex := `'id': (\d+).*?'name': '([^']+)'`
 	cast := mapJsonRegexTuple(rawCast, regex, 2)
 
