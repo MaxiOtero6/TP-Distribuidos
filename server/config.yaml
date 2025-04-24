@@ -1,4 +1,4 @@
 address: "server_0:12345"
 log:
-    level: "debug"
+    level: "INFO"
 #timeout: 30
