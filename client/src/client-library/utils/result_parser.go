@@ -5,7 +5,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 )
 
-var QUERIES_AMOUNT int = 1
+var QUERIES_AMOUNT int = 5
 
 // ResultParser is a struct that handles the parsing of results from the server
 // and stores them in a Results struct.
