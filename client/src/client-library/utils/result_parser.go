@@ -174,19 +174,17 @@ func (p *ResultParser) handleResult5(result *protocol.Result5) {
 	data := result.GetData()
 
 	for _, d := range data {
-		key := "negative"
+		var key string
 
 		if d.GetSentiment() {
 			key = "positive"
+		} else {
+			key = "negative"
 		}
 
-		if _, ok := p.results.Query5[key]; !ok {
-			p.results.Query5[key] = &model.Query5{
-				RevenueBudgetRatio: 0,
-			}
+		p.results.Query5[key] = &model.Query5{
+			RevenueBudgetRatio: d.GetRatio(),
 		}
-
-		p.results.Query5[key].RevenueBudgetRatio += d.GetRatio()
 	}
 }
 
