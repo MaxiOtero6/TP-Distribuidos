@@ -12,10 +12,28 @@ const IOTA_STAGE = "iota"
 const MU_STAGE = "mu"
 const GAMMA_STAGE = "gamma"
 
+// EOF Types
+const SMALL_TABLE string = "small"
+const BIG_TABLE string = "big"
+const GENERAL string = "general"
+
 func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
 	tasks := make(map[string]*protocol.Task)
 
 	funnyEOFHash := utils.GetWorkerIdFromHash(workersCount, "EOF")
+	var EofType string
+
+	switch stage {
+	case ALPHA_STAGE:
+		EofType = SMALL_TABLE
+	case ZETA_STAGE:
+		EofType = BIG_TABLE
+	case IOTA_STAGE:
+		EofType = BIG_TABLE
+
+	default:
+		EofType = GENERAL
+	}
 
 	tasks[funnyEOFHash] = &protocol.Task{
 		ClientId: clientId,
@@ -24,6 +42,7 @@ func GetEOFTask(workersCount int, clientId string, stage string) map[string]*pro
 				Data: &protocol.OmegaEOF_Data{
 					Stage:           stage,
 					WorkerCreatorId: "",
+					EofType:         EofType,
 				},
 			},
 		},
