@@ -283,7 +283,7 @@ func (m *Mapper) getNextNodeId(nodeId string) (string, error) {
 		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
 	}
 
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%m.infraConfig.GetReduceCount())
+	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%m.infraConfig.GetMapCount())
 	return nextNodeId, nil
 }
 
@@ -334,6 +334,8 @@ func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 
 	} else { // if the creator is not the same as the worker, send EOF to the next node
 		nextRingEOF := data
+
+		log.Debugf("workerCreatorId: %s", data.GetWorkerCreatorId())
 
 		if data.GetWorkerCreatorId() == "" {
 			nextRingEOF.WorkerCreatorId = m.infraConfig.GetNodeId()
