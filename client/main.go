@@ -98,7 +98,7 @@ func logResults(results *model.Results) {
 
 	log.Infof("Query4 results:")
 	for _, actor := range results.Query4 {
-		log.Infof("Actor: %s | Movie: %s | Character: %s", actor.ActorId, actor.ActorName)
+		log.Infof("ActorId: %s | ActorName: %s", actor.ActorId, actor.ActorName)
 	}
 
 	log.Infof("Query5 results:")
