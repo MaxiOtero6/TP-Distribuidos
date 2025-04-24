@@ -67,7 +67,11 @@ func (s *Server) acceptConnections() {
 			} else {
 				log.Errorf("action: handleConnection | result: fail | error: %v", err)
 			}
-			s.clientSocket.Close()
+
+			if s.clientSocket != nil {
+				s.clientSocket.Close()
+			}
+
 			s.clientSocket = nil
 			continue
 		}
@@ -90,7 +94,7 @@ func (s *Server) Stop() {
 
 	s.isRunning = false
 
-	if s.serverSocket != nil {
+	if s.clientSocket != nil {
 		s.clientSocket.Close()
 		s.clientSocket = nil
 		log.Infof("Client socket closed")
