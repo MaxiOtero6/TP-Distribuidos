@@ -62,7 +62,6 @@ func ParseLine(line *string) (fields []string) {
 	record, err := reader.Read()
 
 	if err != nil {
-		log.Errorf("Error parsing line: %v", err)
 		return []string{}
 	}
 
