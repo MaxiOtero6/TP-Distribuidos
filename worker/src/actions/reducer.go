@@ -393,7 +393,7 @@ func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
 	epsilonData := make(map[string][]*protocol.Epsilon_Data)
 
 	// Asign the data to the corresponding worker
-	nodeId := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), EPSILON_STAGE)
+	nodeId := r.itemHashFunc(r.infraConfig.GetTopCount(), EPSILON_STAGE)
 
 	for _, eData := range dataMap {
 		epsilonData[nodeId] = append(epsilonData[nodeId], &protocol.Epsilon_Data{
@@ -465,7 +465,7 @@ func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
 	thetaData := make(map[string][]*protocol.Theta_Data)
 
 	// Asign the data to the corresponding worker
-	nodeId := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), THETA_STAGE)
+	nodeId := r.itemHashFunc(r.infraConfig.GetTopCount(), THETA_STAGE)
 
 	for _, e3Data := range dataMap {
 		avgRating := float32(e3Data.GetRating()) / float32(e3Data.GetCount())
@@ -534,7 +534,7 @@ func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
 	tasks[TOP_EXCHANGE][LAMBDA_STAGE] = make(map[string]*protocol.Task)
 	lambdaData := make(map[string][]*protocol.Lambda_Data)
 	// Asign the data to the corresponding worker
-	nodeId := utils.GetWorkerIdFromHash(r.infraConfig.GetTopCount(), LAMBDA_STAGE)
+	nodeId := r.itemHashFunc(r.infraConfig.GetTopCount(), LAMBDA_STAGE)
 	// Divide the resulting actors by hashing each actor
 	for _, k3Data := range dataMap {
 		participations := k3Data.GetPartialParticipations()
@@ -681,15 +681,19 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 			},
 		}
 
-		randomNode := r.randomHashFunc(nextStageCount)
+		var nodeId string
 
 		if nextStage == RESULT_STAGE {
-			randomNode = clientId
+			nodeId = clientId
+		} else if nextExchange == r.infraConfig.GetTopExchange() {
+			nodeId = r.itemHashFunc(r.infraConfig.GetTopCount(), nextStage)
+		} else {
+			nodeId = r.randomHashFunc(nextStageCount)
 		}
 
 		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
 		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
+		tasks[nextExchange][nextStage][nodeId] = nextStageEOF
 
 	} else { // if the creator is not the same as the worker, send the stage results and EOF to the next node
 		nextRingEOF := data
