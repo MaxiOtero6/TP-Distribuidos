@@ -74,7 +74,6 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Zeta_Data_Rating, clientId string) {
 	joinedData := make([]*protocol.Eta_1_Data, 0)
 
-	log.Debugf("Joining Zeta data with %d ratings", len(ratingsData))
 	for movieId, ratings := range ratingsData {
 		movieData, ok := j.partialResults.zetaData.smallTable.data[movieId]
 		if !ok {
@@ -199,7 +198,6 @@ Return example
 	}
 */
 func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string) (tasks Tasks) {
-	log.Debugf("Zeta stage data: %v", data)
 	if data == nil {
 		return nil
 	}
