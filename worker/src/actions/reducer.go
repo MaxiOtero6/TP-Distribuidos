@@ -157,7 +157,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
 		}
 
 		dataMap[movieId].Rating += e2Data.GetRating()
-		dataMap[movieId].Count += 1
+		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
 	return nil
@@ -182,7 +182,7 @@ func (r *Reducer) eta3Stage(data []*protocol.Eta_3_Data) (tasks Tasks) {
 		}
 
 		dataMap[movieId].Rating += e3Data.GetRating()
-		dataMap[movieId].Count += 1
+		dataMap[movieId].Count += e3Data.GetCount()
 	}
 
 	return nil
