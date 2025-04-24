@@ -62,7 +62,7 @@ func (l *Library) ProcessData() (results *model.Results) {
 	err := l.sendSync()
 	if err != nil {
 		if err == client_communication.ErrConnectionClosed {
-			log.Infof("action: sendSync | result: fail | error: %v", err)
+			log.Errorf("action: sendSync | result: fail | error: %v", err)
 			return
 		}
 		log.Errorf("action: sendSync | result: fail | error: %v", err)
@@ -72,7 +72,7 @@ func (l *Library) ProcessData() (results *model.Results) {
 	err = l.sendAllFiles()
 	if err != nil {
 		if err == client_communication.ErrConnectionClosed {
-			log.Infof("action: sendAllFiles | result: fail | error: %v", err)
+			log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
 			return
 		}
 		log.Errorf("action: sendAllFiles | result: fail | error: %v", err)
@@ -82,7 +82,7 @@ func (l *Library) ProcessData() (results *model.Results) {
 	err = l.sendFinishMessage()
 	if err != nil {
 		if err == client_communication.ErrConnectionClosed {
-			log.Infof("action: sendFinishMessage | result: fail | error: %v", err)
+			log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
 			return
 		}
 		log.Errorf("action: sendFinishMessage | result: fail | error: %v", err)
@@ -96,7 +96,7 @@ func (l *Library) ProcessData() (results *model.Results) {
 			log.Infof("action: fetchServerResults | result: success | error: %v", err)
 			return
 		} else if err == client_communication.ErrConnectionClosed {
-			log.Infof("action: fetchServerResults | result: fail | error: %v", err)
+			log.Errorf("action: fetchServerResults | result: fail | error: %v", err)
 			return
 		}
 
@@ -277,7 +277,7 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
 			l.retryNumber++
-			log.Debugf("action: waitForResultServerResponse | result: fail | retryNumber: %v | sleepTime: %v", l.retryNumber, sleepTime)
+			log.Warningf("action: waitForResultServerResponse | result: fail | retryNumber: %v | sleepTime: %v", l.retryNumber, sleepTime)
 			time.Sleep(sleepTime)
 			continue
 		}
@@ -353,7 +353,7 @@ func (l *Library) waitForSuccessServerResponse() error {
 	switch resp := response.GetMessage().(type) {
 	case *protocol.ServerClientMessage_BatchAck:
 		if resp.BatchAck.Status == protocol.MessageStatus_SUCCESS {
-			log.Infof("action: receiveBatchAckResponse | result: success | response: %v", resp.BatchAck.Status)
+			log.Debugf("action: receiveBatchAckResponse | result: success | response: %v", resp.BatchAck.Status)
 
 		} else {
 			log.Errorf("action: receiveBatchAckResponse | result: fail | error: %v", resp.BatchAck.Status)
@@ -362,7 +362,7 @@ func (l *Library) waitForSuccessServerResponse() error {
 
 	case *protocol.ServerClientMessage_SyncAck:
 		l.config.ClientId = resp.SyncAck.ClientId
-		log.Infof("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
+		log.Debugf("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
 
 	default:
 		log.Errorf("action: receiveResponse | result: fail | error: Unexpected response type received")
