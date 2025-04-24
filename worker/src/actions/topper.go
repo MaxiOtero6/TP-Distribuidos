@@ -101,7 +101,9 @@ func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
 
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
+		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result2Data := make(map[string][]*protocol.Result2_Data)
 
@@ -154,7 +156,9 @@ Return example
 func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
+		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
 
@@ -219,7 +223,9 @@ Return example
 func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
+		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	}
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
 
@@ -277,6 +283,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 	if data.GetWorkerCreatorId() == t.infraConfig.GetNodeId() {
 
 		nextStageEOF := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
@@ -300,6 +307,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		}
 
 		eofTask := &protocol.Task{
+			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: nextRingEOF,
