@@ -40,6 +40,25 @@ class ServiceType(Enum):
     ) -> "Service":
         match self:
             case ServiceType.SERVER:
+                depends_on = {"rabbitmq": {"condition": "service_healthy"}}
+
+                filter_count = instances_per_service.get(ServiceType.FILTER, 0)
+                for i in range(filter_count):
+                    depends_on[f"filter_{i}"] = {
+                        "condition": "service_started"}
+
+                overview_count = instances_per_service.get(
+                    ServiceType.OVERVIEW, 0)
+                for i in range(overview_count):
+                    depends_on[f"overviewer_{i}"] = {
+                        "condition": "service_started"}
+
+                joiner_count = instances_per_service.get(
+                    ServiceType.JOINER, 0)
+                for i in range(joiner_count):
+                    depends_on[f"joiner_{i}"] = {
+                        "condition": "service_started"}
+
                 return Service(
                     container_name=f"server_{id}",
                     image="server:latest",
@@ -66,7 +85,7 @@ class ServiceType(Enum):
                         ),
                     },
                     networks=[MOVIES_NETWORK_NAME],
-                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
+                    depends_on=depends_on,
                     volumes={
                         "./server/config.yaml": "/app/config.yaml",
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
@@ -234,7 +253,8 @@ class Service:
     def __str__(self) -> str:
         level = self.indent_level
         lines = [indent(f"{self.container_name}:", level)]
-        lines.append(indent(f"container_name: {self.container_name}", level + 1))
+        lines.append(
+            indent(f"container_name: {self.container_name}", level + 1))
         lines.append(indent(f"image: {self.image}", level + 1))
         if self.entrypoint:
             lines.append(indent(f"entrypoint: {self.entrypoint}", level + 1))
@@ -386,7 +406,8 @@ def write_to_file(output_file: str, compose: DockerCompose) -> None:
 def main() -> None:
     n_instances_path, output_file_path = get_args()
     instances_per_service = read_instances(n_instances_path)
-    docker_compose: DockerCompose = generate_docker_compose(instances_per_service)
+    docker_compose: DockerCompose = generate_docker_compose(
+        instances_per_service)
     write_to_file(output_file_path, docker_compose)
 
 
