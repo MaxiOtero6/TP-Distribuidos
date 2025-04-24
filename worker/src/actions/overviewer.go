@@ -67,7 +67,6 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 		}
 
 		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
-
 		mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
 
 		// true: POSITIVE

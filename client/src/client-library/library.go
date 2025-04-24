@@ -117,14 +117,14 @@ func (l *Library) sendAllFiles() error {
 		return err
 	}
 
-	// err = l.sendCreditsFile()
-	// if err != nil {
-	// 	return err
-	// }
-	// err = l.sendRatingsFile()
-	// if err != nil {
-	// 	return err
-	// }
+	err = l.sendCreditsFile()
+	if err != nil {
+		return err
+	}
+	err = l.sendRatingsFile()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
