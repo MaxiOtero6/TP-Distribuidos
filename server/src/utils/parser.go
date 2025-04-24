@@ -20,10 +20,6 @@ func mapJsonRegex(json string, regex string) []string {
 		}
 	}
 
-	if len(mappedMatches) == 0 {
-		return nil
-	}
-
 	return mappedMatches
 }
 

@@ -40,7 +40,7 @@ func TestMapJsonRegex(t *testing.T) {
 
 		actual := mapJsonRegex(json, rx)
 
-		assert.Nil(t, actual, "Expected a nil slice, but got %v", actual)
+		assert.Empty(t, actual, "Expected an empty slice, but got %v", actual)
 	})
 }
 
@@ -79,7 +79,7 @@ func TestMapJsonRegexTuple(t *testing.T) {
 
 		actual := mapJsonRegexTuple(json, rx, 1)
 
-		assert.Nil(t, actual, "Expected a nil slice, but got %v", len(actual))
+		assert.Empty(t, actual, "Expected an empty slice, but got %v", len(actual))
 	})
 
 	t.Run("TestGetZeroFieldsWithExistentFieldsRegexFromJsonGenreObjectList", func(t *testing.T) {
