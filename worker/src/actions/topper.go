@@ -8,6 +8,12 @@ import (
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
 
+const EPSILON_TOP_K = 5
+const LAMBDA_TOP_K = 10
+const THETA_TOP_K = 1
+const TYPE_MAX = "Max"
+const TYPE_MIN = "Min"
+
 // ParcilResult is a struct that holds the results of the different stages.
 
 type result3 struct {
@@ -34,12 +40,12 @@ func NewTopper(infraConfig *model.InfraConfig) *Topper {
 		infraConfig: infraConfig,
 
 		parcialResults: &ParcialResults{
-			epsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](5),
+			epsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K),
 			thetaData: result3{
-				maxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](1),
-				minHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](1),
+				maxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
+				minHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
 			},
-			lamdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](10),
+			lamdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K),
 		},
 	}
 }
@@ -174,7 +180,7 @@ func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 		tData := element.Data
 
 		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
-			Type:   "Max",
+			Type:   TYPE_MAX,
 			Id:     tData.GetId(),
 			Title:  tData.GetTitle(),
 			Rating: element.Value,
@@ -186,7 +192,7 @@ func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 		element := resultHeapMin.GetTopK()[0]
 		tData := element.Data
 		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
-			Type:   "Min",
+			Type:   TYPE_MIN,
 			Id:     tData.GetId(),
 			Title:  tData.GetTitle(),
 			Rating: -element.Value,
