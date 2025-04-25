@@ -66,6 +66,10 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 			continue
 		}
 
+		if movie.GetBudget() == 0 || movie.GetRevenue() == 0 {
+			continue
+		}
+
 		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
 		mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
 
