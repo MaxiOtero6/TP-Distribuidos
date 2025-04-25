@@ -106,12 +106,10 @@
     },
     "Query3": {
         "max": {
-            "id": 125619,
             "title": "The forbidden education",
             "rating": 4.0
         },
         "min": {
-            "id": 128598,
             "title": "Left for Dead",
             "rating": 1.0
         }

@@ -125,6 +125,9 @@ def query3(ds: pd.DataFrame):
     mean_ranking_arg_post_2000_df = ranking_arg_post_2000_df.groupby(
         ["id", "title"])['rating'].mean().reset_index()
 
+    mean_ranking_arg_post_2000_df = mean_ranking_arg_post_2000_df.drop(columns=[
+                                                                       "id"])
+
     return (
         mean_ranking_arg_post_2000_df.iloc[mean_ranking_arg_post_2000_df['rating'].idxmax(
         )],
