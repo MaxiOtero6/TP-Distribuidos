@@ -1,5 +1,5 @@
-cd /test/
-ls .venv
+cd ./test
+ls .venv &> /dev/null
 
 if [ $? -ne 0 ]; then
     echo "Virtual environment not found. Creating a new one..."
@@ -8,7 +8,7 @@ if [ $? -ne 0 ]; then
     pip install -r requirements.txt
 fi
 
+source .venv/bin/activate
 echo "Running generator"
 python3 generate_expected.py
-
 cd ..

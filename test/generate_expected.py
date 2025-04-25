@@ -1,3 +1,5 @@
+import json
+from typing import Any
 import numpy as np  # linear algebra
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
@@ -89,7 +91,7 @@ movies_argentina_post_2000_df = movies_df_cleaned[
 ]
 
 
-def query1(ds):
+def query1(ds: pd.DataFrame):
     print("Query 1")
     movies_argentina_españa_00s_df = ds[
         (movies_df_cleaned['production_countries'].str.contains('Spain', case=False, na=False)) &
@@ -111,7 +113,7 @@ def query2():
     return top_5_countries
 
 
-def query3(ds):
+def query3(ds: pd.DataFrame):
     print("Query 3")
 
     movies_argentina_post_2000_df = ds.astype({
@@ -184,9 +186,26 @@ def query5():
     return average_rate_by_sentiment
 
 
+def save_json(results: dict[str, Any], filename: str):
+    with open(filename, "w") as f:
+        json.dump(results, f, indent=4)
+
+
 if __name__ == "__main__":
-    print(query1(movies_argentina_post_2000_df))
-    print(query2())
-    print(query3(movies_argentina_post_2000_df))
-    print(query4(movies_argentina_post_2000_df))
-    print(query5())
+    results: dict[str, Any] = {}
+
+    results["Query1"] = query1(
+        movies_argentina_post_2000_df).to_dict(orient="records")
+    results["Query2"] = query2().to_dict()
+
+    results["Query3"] = dict()
+    query3_tuple = query3(
+        movies_argentina_post_2000_df)
+    results["Query3"]["max"] = query3_tuple[0].to_dict()
+    results["Query3"]["min"] = query3_tuple[1].to_dict()
+
+    results["Query4"] = query4(
+        movies_argentina_post_2000_df).to_dict(orient="records")
+    results["Query5"] = query5().to_dict()
+
+    save_json(results, "expected_results.json")
