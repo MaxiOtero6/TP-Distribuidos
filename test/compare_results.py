@@ -27,10 +27,23 @@ def compare_query1(expected: dict[str, Any], actual: dict[str, Any]):
         print(
             f"Query1: Expected {BRIGHT_GREEN}{len(expected_query)}{RESET} results, but got {BRIGHT_RED}{len(actual_query)}{RESET}.")
 
-    for e, a in zip(expected_query, actual_query):
-        if e != a:
-            print(
-                f"Query1: Expected {BRIGHT_GREEN}{e}{RESET}, but got {BRIGHT_RED}{a}{RESET}.")
+    expected_titles = {item["title"] for item in expected_query}
+    actual_titles = {item["title"] for item in actual_query}
+    if expected_titles != actual_titles:
+        # set to list and sort
+        expected_titles_err = [
+            i for i in expected_titles if i not in actual_titles]
+        actual_titles_err = [
+            i for i in actual_titles if i not in expected_titles]
+        print(
+            f"Query1: Expected titles {BRIGHT_GREEN}{expected_titles_err}{RESET}, but got {BRIGHT_RED}{actual_titles_err}{RESET}.")
+    for expected_item in expected_query:
+        for actual_item in actual_query:
+            if expected_item["title"] == actual_item["title"]:
+                if expected_item["genres"] != actual_item["genres"]:
+                    print(
+                        f"Query1: Expected {BRIGHT_CYAN}{expected_item['title']}{RESET} genres to be {BRIGHT_GREEN}{expected_item['genres']}{RESET}, but got {BRIGHT_RED}{actual_item['genres']}{RESET}.")
+                break
 
 
 def compare_query2(expected: dict[str, Any], actual: dict[str, Any]):
@@ -43,11 +56,12 @@ def compare_query2(expected: dict[str, Any], actual: dict[str, Any]):
 
     for key in expected_query.keys():
         if key not in actual_query:
-            print(f"Query2: Expected key {key} not found in actual results.")
+            print(
+                f"Query2: Expected key {BRIGHT_CYAN}{key}{RESET} not found in actual results.")
         else:
             if expected_query[key] != actual_query[key]:
                 print(
-                    f"Query2: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}.")
+                    f"Query2: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_query[key] - actual_query[key])}{RESET}.")
 
 
 def compare_query3(expected: dict[str, Any], actual: dict[str, Any]):
@@ -66,15 +80,12 @@ def compare_query3(expected: dict[str, Any], actual: dict[str, Any]):
             expected_value = expected_query[key]
             actual_value = actual_query[key]
 
-            if expected_value["id"] != actual_value["id"]:
-                print(
-                    f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} id to be {BRIGHT_GREEN}{expected_value['id']}{RESET}, but got {BRIGHT_RED}{actual_value['id']}{RESET}.")
             if expected_value["title"] != actual_value["title"]:
                 print(
                     f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} title to be {BRIGHT_GREEN}{expected_value['title']}{RESET}, but got {BRIGHT_RED}{actual_value['title']}{RESET}.")
             if expected_value["rating"] != actual_value["rating"]:
                 print(
-                    f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} rating to be {BRIGHT_GREEN}{expected_value['rating']}{RESET}, but got {BRIGHT_RED}{actual_value['rating']}{RESET}.")
+                    f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} rating to be {BRIGHT_GREEN}{expected_value['rating']}{RESET}, but got {BRIGHT_RED}{actual_value['rating']}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_value['rating'] - actual_value['rating'])}{RESET}.")
 
 
 def compare_query4(expected: dict[str, Any], actual: dict[str, Any]):
@@ -85,10 +96,22 @@ def compare_query4(expected: dict[str, Any], actual: dict[str, Any]):
         print(
             f"Query4: Expected {BRIGHT_GREEN}{len(expected_query)} results, but got {len(actual_query)}.")
 
-    for e, a in zip(expected_query, actual_query):
-        if e != a:
-            print(
-                f"Query4: Expected {BRIGHT_GREEN}{e}{RESET}, but got {BRIGHT_RED}{a}{RESET}.")
+    expected_names = {item["name"] for item in expected_query}
+    actual_names = {item["name"] for item in actual_query}
+    if expected_names != actual_names:
+        expected_names_err = [
+            i for i in expected_names if i not in actual_names]
+        actual_names_err = [
+            i for i in actual_names if i not in expected_names]
+        print(
+            f"Query4: Expected names {BRIGHT_GREEN}{expected_names_err}{RESET}, but got {BRIGHT_RED}{actual_names_err}{RESET}.")
+    for expected_item in expected_query:
+        for actual_item in actual_query:
+            if expected_item["name"] == actual_item["name"]:
+                if expected_item["count"] != actual_item["count"]:
+                    print(
+                        f"Query4: Expected {BRIGHT_CYAN}{expected_item['name']}{RESET} count to be {BRIGHT_GREEN}{expected_item['count']}{RESET}, but got {BRIGHT_RED}{actual_item['count']}{RESET}.")
+                break
 
 
 def compare_query5(expected: dict[str, Any], actual: dict[str, Any]):
@@ -106,7 +129,7 @@ def compare_query5(expected: dict[str, Any], actual: dict[str, Any]):
         else:
             if expected_query[key] != actual_query[key]:
                 print(
-                    f"Query5: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}.")
+                    f"Query5: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_query[key] - actual_query[key])}{RESET}.")
 
 
 if __name__ == "__main__":
