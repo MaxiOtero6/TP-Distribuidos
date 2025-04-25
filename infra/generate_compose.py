@@ -7,6 +7,12 @@ NAME: str = "Movies Analysis"
 INSTANCE_SEPARATOR: str = "="
 MOVIES_NETWORK_NAME: str = "movies_network"
 
+RESULTS_OUTPUT_FILE_NAME: str = "actual_results"
+RESULTS_OUTPUT_FILE_EXTENSION: str = ".json"
+RESULTS_OUTPUT_DIR_PATH: str = os.path.join(
+    os.path.dirname(__file__), "..", "test"
+)
+
 
 def indent(text: str, level: int) -> str:
     return "  " * level + text
@@ -105,11 +111,15 @@ class ServiceType(Enum):
                 return Service(
                     container_name=f"client_{id}",
                     image="client:latest",
-                    environment={"CLIENT_ID": str(id)},
+                    environment={
+                        "CLIENT_ID": str(id),
+                        "CLIENT_OUTPUT_FILE": "./test/" + RESULTS_OUTPUT_FILE_NAME + f"_client_{id}{RESULTS_OUTPUT_FILE_EXTENSION}"
+                    },
                     networks=[MOVIES_NETWORK_NAME],
                     volumes={
                         "./client/config.yaml": "/app/config.yaml",
                         os.path.abspath("./.data/"): "/app/.data",
+                        os.path.abspath(RESULTS_OUTPUT_DIR_PATH): "/app/test/",
                     },
                     depends_on=depends_on,
                 )
