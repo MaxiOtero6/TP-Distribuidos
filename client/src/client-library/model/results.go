@@ -1,9 +1,9 @@
 package model
 
 type Query1 struct {
-	MovieId string
-	Title   string
-	Genres  []string
+	MovieId string   `json:"-"`
+	Title   string   `json:"title"`
+	Genres  []string `json:"genres"`
 }
 
 type Query2 struct {
@@ -17,9 +17,9 @@ type Query3 struct {
 }
 
 type Query4 struct {
-	ActorId        string
-	ActorName      string
-	Participations uint64
+	ActorId        string `json:"-"`
+	ActorName      string `json:"name"`
+	Participations uint64 `json:"count"`
 }
 
 type Query5 struct {

@@ -53,7 +53,7 @@ func InitConfig() (*viper.Viper, error) {
 
 	// Configure viper to read env variables with the CLI_ prefix
 	v.AutomaticEnv()
-	v.SetEnvPrefix("cli")
+	v.SetEnvPrefix("client")
 	// Use a replacer to replace env variables underscores with points. This let us
 	// use nested configurations in the config file and at the same time define
 	// env variables for the nested configurations
@@ -63,6 +63,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("id")
 	v.BindEnv("server", "address")
 	v.BindEnv("log", "level")
+	v.BindEnv("output", "file")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -157,6 +158,8 @@ func main() {
 		CreditsFilePath: v.GetString("data.credits"),
 	}
 
+	outputFilePath := v.GetString("output.file")
+
 	clientLibrary, err := library.NewLibrary(clientConfig)
 	if err != nil {
 		log.Criticalf("%s", err)
@@ -168,8 +171,9 @@ func main() {
 
 	log.Infof("action: processData | result: success")
 
+	clientLibrary.DumpResultsToJson(outputFilePath, results)
+
 	logResults(results)
 
 	clientLibrary.Stop()
-
 }
