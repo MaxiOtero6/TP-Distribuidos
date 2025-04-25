@@ -1,11 +1,11 @@
 cd ./test
 
-ls ./actual_results.json &> /dev/null
-if [ $? -ne 0 ]; then
-    echo "Actual results not found..."
-    echo "Run docker-compose up to generate actual results"
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <number_of_clients>"
     exit 1
 fi
+
+N_CLIENTS=$1
 
 ls ./expected_results.json &> /dev/null
 
@@ -15,7 +15,22 @@ if [ $? -ne 0 ]; then
     bash ../generate_expected.sh
 fi
 
-echo "Running comparison"
-python3 compare_results.py
+echo "Running comparisons"
+
+for i in $(seq 0 $((N_CLIENTS - 1))); do
+    echo ""
+    ls ./actual_results_client_${i}.json &> /dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "Actual results for client_${i} not found..."
+        echo "Run docker-compose up with CLIENT=${N_CLIENTS} in infra/config.ini (if you edit config, generate compose again) to generate actual results to all clients"
+        exit 1
+    fi
+
+    echo "Comparing actual results for client_${i}"
+    python3 compare_results.py ./expected_results.json ./actual_results_client_${i}.json
+done
+
+echo "All actual results found"
 
 cd ..

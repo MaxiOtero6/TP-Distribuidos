@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 from typing import Any
 
 QUERY1 = "Query1"
@@ -133,8 +135,12 @@ def compare_query5(expected: dict[str, Any], actual: dict[str, Any]):
 
 
 if __name__ == "__main__":
-    expected = load_json('expected_results.json')
-    actual = load_json('actual_results.json')
+    if len(sys.argv) != 3:
+        print("Usage: python compare_results.py <path_to_expected_results> <path_to_actual_results>")
+        sys.exit(1)
+
+    expected = load_json(sys.argv[1])
+    actual = load_json(sys.argv[2])
 
     compare_query1(expected, actual)
     compare_query2(expected, actual)
