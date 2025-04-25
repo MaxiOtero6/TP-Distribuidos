@@ -416,3 +416,7 @@ func (l *Library) Stop() {
 	l.isRunning = false
 	l.disconnectFromServer()
 }
+
+func (l *Library) DumpResultsToJson(filePath string, results *model.Results) {
+	utils.DumpResultsToJson(filePath, results)
+}

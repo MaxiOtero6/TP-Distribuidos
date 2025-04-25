@@ -178,9 +178,9 @@ func (p *ResultParser) handleResult5(result *protocol.Result5) {
 		var key string
 
 		if d.GetSentiment() {
-			key = "positive"
+			key = "POSITIVE"
 		} else {
-			key = "negative"
+			key = "NEGATIVE"
 		}
 
 		p.results.Query5[key] = &model.Query5{
