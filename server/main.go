@@ -10,6 +10,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/client_handler"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/server"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
@@ -18,6 +19,11 @@ import (
 var log = logging.MustGetLogger("log")
 
 const NODE_TYPE = "SERVER"
+
+type Instance interface {
+	Run() error
+	Stop()
+}
 
 // InitConfig Function that uses viper library to parse configuration parameters.
 // Viper is configured to read variables from both environment variables and the
@@ -85,17 +91,21 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func handleSigterm(signalChan chan os.Signal, server *server.Server, wg *sync.WaitGroup) {
+func handleSigterm(signalChan chan os.Signal, stoppable Instance, wg *sync.WaitGroup) {
 	defer wg.Done()
 	s := <-signalChan
-	server.Stop()
-	log.Infof("action: exit | result: success | signal: %v",
-		s.String(),
-	)
+
+	if s != nil {
+		stoppable.Stop()
+		log.Infof("action: exit | result: success | signal: %v",
+			s.String(),
+		)
+	}
 }
 
-func initServer(v *viper.Viper) *server.Server {
-	address := v.GetString("address")
+func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
+	const SOCKET_FD uintptr = 3
+
 	id := v.GetString("id")
 
 	clusterConfig := &model.WorkerClusterConfig{
@@ -128,13 +138,28 @@ func initServer(v *viper.Viper) *server.Server {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	s, err := server.NewServer(id, address, infraConfig)
+	c, err := client_handler.NewClienthandler(id, infraConfig, SOCKET_FD)
+
+	if err != nil {
+		log.Panicf("Failed to initialize client_handler: %s", err)
+	}
+
+	c.InitConfig(exchanges, queues, binds)
+
+	log.Infof("ClientHandler ready for server '%v'", c.ServerID)
+
+	return c
+}
+
+func initServer(v *viper.Viper) *server.Server {
+	address := v.GetString("address")
+	id := v.GetString("id")
+
+	s, err := server.NewServer(id, address)
 
 	if err != nil {
 		log.Panicf("Failed to initialize server: %s", err)
 	}
-
-	s.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Server '%v' ready", s.ID)
 
@@ -156,12 +181,22 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	s := initServer(v)
+	var instance Instance
+
+	if len(os.Args) == 1 {
+		instance = initServer(v)
+	} else if len(os.Args) == 2 {
+		instance = initClientHandler(v)
+	} else {
+		log.Panicf("Bad call to server. Usage for server: %s ; Usage for clientHandler: %s child", os.Args[0], os.Args[0])
+	}
 
 	wg.Add(1)
-	go handleSigterm(signalChan, s, &wg)
+	go handleSigterm(signalChan, instance, &wg)
 
-	s.Run()
+	instance.Run()
+
+	close(signalChan)
 
 	wg.Wait()
 
