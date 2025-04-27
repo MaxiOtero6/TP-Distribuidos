@@ -184,10 +184,10 @@ func (l *Library) sendCreditsFile() error {
 }
 
 func (l *Library) sendSync() error {
-
 	if !l.isRunning {
 		return nil
 	}
+
 	syncMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
@@ -335,6 +335,12 @@ func (l *Library) connectToServer() error {
 	}
 
 	log.Infof("action: ConnectToServer | result: success | address: %v", l.config.ServerAddress)
+
+	err = l.sendSync()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (l *Library) disconnectFromServer() {
