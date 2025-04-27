@@ -1,4 +1,4 @@
-package server
+package client_handler
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
@@ -6,7 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"
 )
 
-func (s *Server) processMoviesBatch(batch *protocol.Batch) []*model.Movie {
+func processMoviesBatch(batch *protocol.Batch) []*model.Movie {
 	var ret []*model.Movie
 
 	for _, row := range batch.Data {
@@ -19,7 +19,7 @@ func (s *Server) processMoviesBatch(batch *protocol.Batch) []*model.Movie {
 	return ret
 }
 
-func (s *Server) processCreditsBatch(batch *protocol.Batch) []*model.Actor {
+func processCreditsBatch(batch *protocol.Batch) []*model.Actor {
 	var ret []*model.Actor
 
 	for _, row := range batch.Data {
@@ -32,7 +32,7 @@ func (s *Server) processCreditsBatch(batch *protocol.Batch) []*model.Actor {
 	return ret
 }
 
-func (s *Server) processRatingsBatch(batch *protocol.Batch) []*model.Rating {
+func processRatingsBatch(batch *protocol.Batch) []*model.Rating {
 	var ret []*model.Rating
 
 	for _, row := range batch.Data {
