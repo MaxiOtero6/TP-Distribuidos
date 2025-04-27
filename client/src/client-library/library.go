@@ -146,7 +146,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
-		err = l.waitForSuccessServerResponse()
+		err = l.waitACK()
 		if err != nil {
 			log.Criticalf("action: batch_send | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)
 			return err
@@ -204,7 +204,7 @@ func (l *Library) sendSync() error {
 		return err
 	}
 
-	if err := l.waitForSuccessServerResponse(); err != nil {
+	if err := l.waitACK(); err != nil {
 		return err
 	}
 
@@ -295,7 +295,7 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 
 		if !ok {
 			l.sendDisconnectMessage()
-			if err := l.waitDisconnectACK() != nil; err {
+			if err := l.waitACK() != nil; err {
 				log.Errorf("action: waitDisconnectACK | result: fail | error: %v", err)
 			}
 			l.disconnectFromServer()
@@ -376,7 +376,7 @@ func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error)
 	return serverClientMessage.ServerClientMessage, nil
 }
 
-func (l *Library) waitForSuccessServerResponse() error {
+func (l *Library) waitACK() error {
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return err
@@ -395,6 +395,12 @@ func (l *Library) waitForSuccessServerResponse() error {
 	case *protocol.ServerClientMessage_SyncAck:
 		l.config.ClientId = resp.SyncAck.ClientId
 		log.Debugf("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
+
+	case *protocol.ServerClientMessage_FinishAck:
+		log.Debugf("action: receiveFinishAckResponse | result: success | clientId: %v", l.config.ClientId)
+
+	case *protocol.ServerClientMessage_DisconnectAck:
+		log.Debugf("action: receiveDisconnectAckResponse | result: success | clientId: %v", l.config.ClientId)
 
 	default:
 		log.Errorf("action: receiveResponse | result: fail | error: Unexpected response type received")
@@ -426,39 +432,9 @@ func (l *Library) sendResultMessage() error {
 	return nil
 }
 
-func (l *Library) waitFinishACK() error {
-	response, err := l.waitForServerResponse()
-	if err != nil {
-		return err
-	}
-
-	_, ok := response.GetMessage().(*protocol.ServerClientMessage_FinishAck)
-
-	if ok {
-		return nil
-	}
-
-	return fmt.Errorf("expected finishACK but unexpected response type received")
-}
-
-func (l *Library) waitDisconnectACK() error {
-	response, err := l.waitForServerResponse()
-	if err != nil {
-		return err
-	}
-
-	_, ok := response.GetMessage().(*protocol.ServerClientMessage_DisconnectAck)
-
-	if ok {
-		return nil
-	}
-
-	return fmt.Errorf("expected disconnectACK but unexpected response type received")
-}
-
 func (l *Library) Stop() {
 	l.sendFinishMessage()
-	if err := l.waitFinishACK() != nil; err {
+	if err := l.waitACK() != nil; err {
 		log.Errorf("action: waitFinishACK | result: fail | error: %v", err)
 	}
 
