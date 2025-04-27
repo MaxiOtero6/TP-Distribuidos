@@ -211,6 +211,9 @@ func (l *Library) sendSync() error {
 	return nil
 }
 func (l *Library) sendFinishMessage() error {
+	if l.socket == nil {
+		return nil
+	}
 
 	if !l.isRunning {
 		return nil
