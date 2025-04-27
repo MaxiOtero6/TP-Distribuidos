@@ -8,7 +8,9 @@ enum FileType {
     RATINGS = 2;
 }
 
-message Sync {}
+message Sync {
+    string client_id = 1;
+}
 
 message Finish {
     string client_id = 1;

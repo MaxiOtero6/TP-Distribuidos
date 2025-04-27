@@ -106,7 +106,11 @@ func (c *ClientHandler) handleConnection() error {
 }
 
 func (c *ClientHandler) handleConnectionMessage(syncMessage *protocol.Sync) {
-	clientID := generateUniqueID()
+	var clientID string = syncMessage.GetClientId()
+
+	if len(clientID) == 0 {
+		clientID = generateUniqueID()
+	}
 
 	idMessage := &protocol.Message{
 		Message: &protocol.Message_ServerClientMessage{

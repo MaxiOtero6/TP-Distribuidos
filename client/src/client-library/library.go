@@ -192,7 +192,9 @@ func (l *Library) sendSync() error {
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
 				Message: &protocol.ClientServerMessage_Sync{
-					Sync: &protocol.Sync{},
+					Sync: &protocol.Sync{
+						ClientId: l.config.ClientId,
+					},
 				},
 			},
 		},
