@@ -56,6 +56,8 @@ func (r *RabbitHandler) RegisterNewClient(clientId string) {
 		log.Panicf("Result exchange name is empty, do you call InitConfig?")
 	}
 
+	r.resultQueueName = "client_" + clientId
+	r.rabbitMQ.NewQueue(r.resultQueueName)
 	r.rabbitMQ.BindQueue(r.resultQueueName, r.resultExchangeName, clientId)
 }
 
@@ -206,6 +208,6 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 	return results
 }
 
-func (r *RabbitHandler) UnbindQueue(clientId string) {
-	r.rabbitMQ.UnbindQueue(r.resultQueueName, r.resultExchangeName, clientId)
+func (r *RabbitHandler) RemoveClient(clientId string) {
+	r.rabbitMQ.DeleteQueue(clientId)
 }
