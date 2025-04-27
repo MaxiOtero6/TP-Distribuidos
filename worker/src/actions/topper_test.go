@@ -27,6 +27,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: []*protocol.Epsilon_Data{
@@ -60,6 +61,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task1 := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: []*protocol.Epsilon_Data{
@@ -73,6 +75,7 @@ func TestTopperExecute(t *testing.T) {
 		}
 
 		task2 := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: []*protocol.Epsilon_Data{
@@ -107,6 +110,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: []*protocol.Theta_Data{
@@ -141,6 +145,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task1 := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: []*protocol.Theta_Data{
@@ -152,6 +157,7 @@ func TestTopperExecute(t *testing.T) {
 		}
 
 		task2 := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: []*protocol.Theta_Data{
@@ -187,6 +193,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: []*protocol.Lambda_Data{
@@ -233,6 +240,7 @@ func TestTopperExecute(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: []*protocol.Lambda_Data{
@@ -250,6 +258,7 @@ func TestTopperExecute(t *testing.T) {
 		}
 
 		task2 := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: []*protocol.Lambda_Data{
@@ -290,6 +299,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 
 	t.Run("Test Epsilon Result Stage with empty tasks", func(t *testing.T) {
 		emptyTask := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: []*protocol.Epsilon_Data{},
@@ -314,6 +324,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 		var testTopper = NewTopper(testInfraConfig)
 
 		emptyTask := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: []*protocol.Lambda_Data{},
@@ -337,6 +348,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 	t.Run("Test Theta Result Stage with empty tasks", func(t *testing.T) {
 
 		emptyTask := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: []*protocol.Theta_Data{},
@@ -364,6 +376,7 @@ func TestEOFArrival(t *testing.T) {
 	t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {
 
 		epsilonTask := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: []*protocol.Epsilon_Data{
@@ -378,6 +391,7 @@ func TestEOFArrival(t *testing.T) {
 		}
 
 		eofTask := &protocol.Task{
+			ClientId: CLIENT_ID,
 			Stage: &protocol.Task_OmegaEOF{
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
@@ -392,10 +406,10 @@ func TestEOFArrival(t *testing.T) {
 		tasks, err := testTopper.Execute(eofTask)
 		assert.NoError(t, err, "Expected no error during execution")
 
-		resultTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][""]
+		resultTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][CLIENT_ID]
 		resultData := resultTask.GetResult2().GetData()
 		circularEofTask := tasks[testInfraConfig.GetTopExchange()][EPSILON_STAGE][testInfraConfig.GetNodeId()]
-		resultEofTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][""]
+		resultEofTask := tasks[testInfraConfig.GetResultExchange()][RESULT_STAGE][CLIENT_ID]
 
 		assert.Len(t, resultData, 5, "Expected 5 results for EOF arrival")
 		assert.NotNil(t, circularEofTask, "Expected EOF task to be present in the tasks")

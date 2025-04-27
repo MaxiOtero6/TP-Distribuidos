@@ -13,6 +13,7 @@ const LAMBDA_TOP_K = 10
 const THETA_TOP_K = 1
 const TYPE_MAX = "Max"
 const TYPE_MIN = "Min"
+const TOPPER_STAGES_COUNT uint = 3
 
 // ParcilResult is a struct that holds the results of the different stages.
 
@@ -21,16 +22,32 @@ type result3 struct {
 	minHeap *heap.TopKHeap[float32, *protocol.Theta_Data]
 }
 
-type ParcialResults struct {
-	epsilonHeap *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
-	thetaData   result3
-	lamdaHeap   *heap.TopKHeap[uint64, *protocol.Lambda_Data]
+type PartialResults struct {
+	toDeleteCount uint
+	epsilonHeap   *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
+	thetaData     result3
+	lamdaHeap     *heap.TopKHeap[uint64, *protocol.Lambda_Data]
 }
 
 // Topper is a struct that implements the Action interface.
 type Topper struct {
 	infraConfig    *model.InfraConfig
-	parcialResults *ParcialResults
+	partialResults map[string]*PartialResults
+}
+
+func (t *Topper) makePartialResults(clientId string) {
+	if _, ok := t.partialResults[clientId]; ok {
+		return
+	}
+
+	t.partialResults[clientId] = &PartialResults{
+		epsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K),
+		thetaData: result3{
+			maxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
+			minHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
+		},
+		lamdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K),
+	}
 }
 
 // NewTopper creates a new Topper instance.
@@ -39,19 +56,12 @@ func NewTopper(infraConfig *model.InfraConfig) *Topper {
 	return &Topper{
 		infraConfig: infraConfig,
 
-		parcialResults: &ParcialResults{
-			epsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K),
-			thetaData: result3{
-				maxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
-				minHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
-			},
-			lamdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K),
-		},
+		partialResults: make(map[string]*PartialResults),
 	}
 }
 
-func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
-	epsilonHeap := t.parcialResults.epsilonHeap
+func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks Tasks) {
+	epsilonHeap := t.partialResults[clientId].epsilonHeap
 
 	for _, eData := range data {
 		investment := eData.GetTotalInvestment()
@@ -61,8 +71,8 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data) (tasks Tasks) {
 	return nil
 }
 
-func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
-	lamdaHeap := t.parcialResults.lamdaHeap
+func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tasks Tasks) {
+	lamdaHeap := t.partialResults[clientId].lamdaHeap
 
 	for _, lData := range data {
 		participations := lData.GetParticipations()
@@ -74,9 +84,9 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data) (tasks Tasks) {
 	return nil
 }
 
-func (t *Topper) thetaStage(data []*protocol.Theta_Data) (tasks Tasks) {
-	thetaMinHeap := t.parcialResults.thetaData.minHeap
-	thetaMaxHeap := t.parcialResults.thetaData.maxHeap
+func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks Tasks) {
+	thetaMinHeap := t.partialResults[clientId].thetaData.minHeap
+	thetaMaxHeap := t.partialResults[clientId].thetaData.maxHeap
 
 	for _, tData := range data {
 		avgRating := tData.GetAvgRating()
@@ -113,7 +123,7 @@ func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result2Data := make(map[string][]*protocol.Result2_Data)
 
-	resultHeap := t.parcialResults.epsilonHeap
+	resultHeap := t.partialResults[clientId].epsilonHeap
 
 	// Asign the data to the corresponding worker
 	nodeId := clientId
@@ -169,8 +179,8 @@ func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
 
-	resultHeapMax := t.parcialResults.thetaData.maxHeap
-	resultHeapMin := t.parcialResults.thetaData.minHeap
+	resultHeapMax := t.partialResults[clientId].thetaData.maxHeap
+	resultHeapMin := t.partialResults[clientId].thetaData.minHeap
 
 	nodeId := clientId
 
@@ -237,7 +247,7 @@ func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
 	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
 
-	resultHeap := t.parcialResults.lamdaHeap
+	resultHeap := t.partialResults[clientId].lamdaHeap
 
 	nodeId := clientId
 
@@ -278,6 +288,8 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
+
+	t.partialResults[clientId].toDeleteCount++
 
 	return nil
 }
@@ -328,7 +340,11 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		tasks[TOP_EXCHANGE][stage] = make(map[string]*protocol.Task)
 		tasks[TOP_EXCHANGE][stage][nextNode] = eofTask
 
-		t.addResultsToNextStage(tasks, stage, clientId)
+		if err := t.addResultsToNextStage(tasks, stage, clientId); err == nil {
+			if t.partialResults[clientId].toDeleteCount >= TOPPER_STAGES_COUNT {
+				delete(t.partialResults, clientId)
+			}
+		}
 	}
 
 	return tasks
@@ -341,18 +357,20 @@ func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	log.Debugf("stage %s", stage)
 	log.Debug(task)
 
+	t.makePartialResults(clientId)
+
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:
 		data := v.Epsilon.GetData()
-		return t.epsilonStage(data), nil
+		return t.epsilonStage(data, clientId), nil
 
 	case *protocol.Task_Theta:
 		data := v.Theta.GetData()
-		return t.thetaStage(data), nil
+		return t.thetaStage(data, clientId), nil
 
 	case *protocol.Task_Lambda:
 		data := v.Lambda.GetData()
-		return t.lambdaStage(data), nil
+		return t.lambdaStage(data, clientId), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()

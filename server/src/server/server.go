@@ -2,11 +2,11 @@ package server
 
 import (
 	"errors"
+	"os"
+	"os/exec"
+	"syscall"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
-	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/src/rabbit"
-	"github.com/google/uuid"
 	"github.com/op/go-logging"
 )
 
@@ -14,100 +14,111 @@ var log = logging.MustGetLogger("log")
 var ErrSignalReceived = errors.New("signal received")
 
 type Server struct {
-	ID            string
-	serverSocket  *client_server_communication.Socket
-	isRunning     bool
-	clientID      string
-	clientSocket  *client_server_communication.Socket
-	rabbitHandler *rabbit.RabbitHandler
+	ID           string
+	serverSocket *client_server_communication.Socket
+	isRunning    bool
+	clients      []*exec.Cmd
 }
 
-func NewServer(id string, address string, infraConfig *common_model.InfraConfig) (*Server, error) {
+func NewServer(id string, address string) (*Server, error) {
 	serverSocket, err := client_server_communication.CreateServerSocket(address)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
-		ID:            id,
-		serverSocket:  serverSocket,
-		isRunning:     true,
-		rabbitHandler: rabbit.NewRabbitHandler(infraConfig),
+		ID:           id,
+		serverSocket: serverSocket,
+		isRunning:    true,
+		clients:      make([]*exec.Cmd, 0),
 	}, nil
 }
 
-// InitConfig initializes the server with the given exchanges, queues, and binds
-func (s *Server) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	s.rabbitHandler.InitConfig(s.ID, exchanges, queues, binds)
-}
-
-func (s *Server) acceptConnections() {
+func (s *Server) acceptConnections() error {
 	for s.isRunning {
-
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
 			if !s.isRunning {
-				log.Infof("action: ShutdownServer | result: success | error: %v", err)
 				continue
 			} else {
 				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
-				continue
+				return err
 			}
 		}
+
+		defer clientSocket.Close()
 
 		log.Infof("Client connected")
-		s.clientSocket = clientSocket
 
-		err = s.handleConnection()
+		err = s.handleConnection(clientSocket)
 		if err != nil {
-			if !s.isRunning {
-				log.Infof("action: handleConnection | result: fail | error: %v", ErrSignalReceived)
-			} else if err == client_server_communication.ErrConnectionClosed {
-				log.Infof("action: handleConnection | result: fail | error: %v | clientId: %s", err, s.getClientID())
-			} else {
-				log.Errorf("action: handleConnection | result: fail | error: %v", err)
-			}
-
-			if s.clientSocket != nil {
-				s.clientSocket.Close()
-			}
-
-			s.clientSocket = nil
-			continue
+			log.Errorf("action: handleConnection | result: fail | error: %v", err)
 		}
 	}
+
+	return nil
 }
 
-func generateUniqueID() string {
-	return uuid.NewString()
+func (s *Server) handleConnection(clientSocket *client_server_communication.Socket) error {
+	cmd := exec.Command(os.Args[0], "child") // Fork the current binary
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	socketFD, err := clientSocket.GetFileDescriptor()
+
+	if err != nil {
+		log.Errorf("action: getFileDescriptor | result: fail | error: %v", err)
+		return err
+	}
+
+	cmd.ExtraFiles = []*os.File{socketFD}
+
+	err = cmd.Start()
+	if err != nil {
+		log.Errorf("action: forkChildProcess | result: fail | error: %v", err)
+		return err
+	}
+
+	log.Infof("Child process started with PID: %d", cmd.Process.Pid)
+
+	s.clients = append(s.clients, cmd)
+
+	return nil
 }
 
-func (s *Server) getClientID() string {
-	return s.clientID
-}
-
-func (s *Server) Run() {
-	s.acceptConnections()
+func (s *Server) Run() error {
+	return s.acceptConnections()
 }
 
 func (s *Server) Stop() {
-
 	s.isRunning = false
-
-	if s.clientSocket != nil {
-		s.clientSocket.Close()
-		s.clientSocket = nil
-		log.Infof("Client socket closed")
-	}
 
 	if s.serverSocket != nil {
 		s.serverSocket.Close()
 		s.serverSocket = nil
 		log.Info("Server socket closed")
 	}
-	if s.rabbitHandler != nil {
-		s.rabbitHandler.Close()
-		log.Infof("Rabbit handler closed")
+
+	// signal
+	for _, client := range s.clients {
+		log.Infof("Sending SIGTERM to child process with PID %d", client.Process.Pid)
+		err := client.Process.Signal(syscall.SIGTERM)
+
+		if err != nil {
+			log.Errorf("Failed to send SIGTERM to child process with PID %d: %v", client.Process.Pid, err)
+			continue
+		}
 	}
 
+	// wait
+	for _, client := range s.clients {
+		status, err := client.Process.Wait()
+
+		if err != nil {
+			log.Errorf("Failed to wait for child process with PID %d: %v", client.Process.Pid, err)
+			continue
+		}
+
+		log.Infof("Child process with PID %d terminated, exit code: %d", status.Pid(), status.ExitCode())
+	}
 }

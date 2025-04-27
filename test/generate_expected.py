@@ -17,6 +17,8 @@ MOVIES_PATH = os.path.join(os.path.dirname(
     __file__), '../.data/movies_metadata.csv')
 RATINGS_PATH = os.path.join(os.path.dirname(__file__), '../.data/ratings.csv')
 CREDITS_PATH = os.path.join(os.path.dirname(__file__), '../.data/credits.csv')
+EXPECTED_FILE = os.path.join(os.path.dirname(
+    __file__), "expected_results.json")
 
 print("Load movies_metadata.csv")
 movies_df = pd.read_csv(MOVIES_PATH, low_memory=False)
@@ -211,4 +213,4 @@ if __name__ == "__main__":
         movies_argentina_post_2000_df).to_dict(orient="records")
     results["Query5"] = query5().to_dict()
 
-    save_json(results, "expected_results.json")
+    save_json(results, EXPECTED_FILE)

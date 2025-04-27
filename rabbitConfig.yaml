@@ -27,14 +27,9 @@ rabbitmq:
         name: "resultExchange"
         kind: "direct"
 
-    queues:
-      resultQueue:
-        name: ""
-
     binds:
       resultQueue:
         exchange: "resultExchange"
-        queue: ""
 
   FILTER:
     exchanges:

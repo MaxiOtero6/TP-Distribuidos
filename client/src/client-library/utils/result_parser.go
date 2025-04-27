@@ -36,12 +36,8 @@ func (p *ResultParser) IsDone() bool {
 	return p.eofCount >= QUERIES_AMOUNT
 }
 
-// GetResults returns the parsed results if the ResultParser is done processing.
+// GetResults returns the parsed results at the moment.
 func (p *ResultParser) GetResults() *model.Results {
-	if !p.IsDone() {
-		return nil
-	}
-
 	return &p.results
 }
 

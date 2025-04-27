@@ -24,6 +24,10 @@ message SyncAck {
     string client_id = 1;
 }
 
+message FinishAck {}
+
+message DisconnectAck {}
+
 message ResultsResponse {
     
     message Result{
@@ -47,5 +51,7 @@ message ServerClientMessage{
         BatchAck batch_ack = 1;
         SyncAck sync_ack = 2;
         ResultsResponse results = 3;
+        FinishAck finish_ack = 4;
+        DisconnectAck disconnect_ack = 5;
     }
 }

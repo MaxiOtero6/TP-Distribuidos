@@ -9,40 +9,51 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
+const REDUCER_STAGES_COUNT uint = 8
+
 type ReducerPartialResults struct {
-	delta2  map[string]*protocol.Delta_2_Data
-	delta3  map[string]*protocol.Delta_3_Data
-	eta2    map[string]*protocol.Eta_2_Data
-	eta3    map[string]*protocol.Eta_3_Data
-	kappa2  map[string]*protocol.Kappa_2_Data
-	kappa3  map[string]*protocol.Kappa_3_Data
-	nu2Data map[string]*protocol.Nu_2_Data
-	nu3Data map[string]*protocol.Nu_3_Data
+	toDeleteCount uint
+	delta2        map[string]*protocol.Delta_2_Data
+	delta3        map[string]*protocol.Delta_3_Data
+	eta2          map[string]*protocol.Eta_2_Data
+	eta3          map[string]*protocol.Eta_3_Data
+	kappa2        map[string]*protocol.Kappa_2_Data
+	kappa3        map[string]*protocol.Kappa_3_Data
+	nu2Data       map[string]*protocol.Nu_2_Data
+	nu3Data       map[string]*protocol.Nu_3_Data
 }
 
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
 	infraConfig    *model.InfraConfig
-	partialResults *ReducerPartialResults
+	partialResults map[string]*ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+}
+
+func (r *Reducer) makePartialResults(clientId string) {
+	if _, ok := r.partialResults[clientId]; ok {
+		return
+	}
+
+	r.partialResults[clientId] = &ReducerPartialResults{
+		delta2:  make(map[string]*protocol.Delta_2_Data),
+		delta3:  make(map[string]*protocol.Delta_3_Data),
+		eta2:    make(map[string]*protocol.Eta_2_Data),
+		eta3:    make(map[string]*protocol.Eta_3_Data),
+		kappa2:  make(map[string]*protocol.Kappa_2_Data),
+		kappa3:  make(map[string]*protocol.Kappa_3_Data),
+		nu2Data: make(map[string]*protocol.Nu_2_Data),
+		nu3Data: make(map[string]*protocol.Nu_3_Data),
+	}
 }
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return &Reducer{
-		infraConfig: infraConfig,
-		partialResults: &ReducerPartialResults{
-			delta2:  make(map[string]*protocol.Delta_2_Data),
-			delta3:  make(map[string]*protocol.Delta_3_Data),
-			eta2:    make(map[string]*protocol.Eta_2_Data),
-			eta3:    make(map[string]*protocol.Eta_3_Data),
-			kappa2:  make(map[string]*protocol.Kappa_2_Data),
-			kappa3:  make(map[string]*protocol.Kappa_3_Data),
-			nu2Data: make(map[string]*protocol.Nu_2_Data),
-			nu3Data: make(map[string]*protocol.Nu_3_Data),
-		},
+		infraConfig:    infraConfig,
+		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 	}
@@ -67,8 +78,8 @@ Then it divides the resulting countries by hashing each country and send it to t
 		},
 	}
 */
-func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data) (tasks Tasks) {
-	dataMap := r.partialResults.delta2
+func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].delta2
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -103,8 +114,8 @@ Return example
 		},
 	}
 */
-func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data) (tasks Tasks) {
-	dataMap := r.partialResults.delta3
+func (r *Reducer) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].delta3
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -140,8 +151,8 @@ Return example
 		},
 	}
 */
-func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
-	dataMap := r.partialResults.eta2
+func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].eta2
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e2Data := range data {
@@ -165,8 +176,8 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data) (tasks Tasks) {
 
 /*
  */
-func (r *Reducer) eta3Stage(data []*protocol.Eta_3_Data) (tasks Tasks) {
-	dataMap := r.partialResults.eta3
+func (r *Reducer) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].eta3
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e3Data := range data {
@@ -205,8 +216,8 @@ Return example
 		},
 	}
 */
-func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
-	dataMap := r.partialResults.kappa2
+func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].kappa2
 
 	// Sum up the partial participations by actor
 	for _, k2Data := range data {
@@ -228,8 +239,8 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data) (tasks Tasks) {
 
 /*
  */
-func (r *Reducer) kappa3Stage(data []*protocol.Kappa_3_Data) (tasks Tasks) {
-	dataMap := r.partialResults.kappa3
+func (r *Reducer) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].kappa3
 
 	// Sum up the partial participations by actor
 	for _, k3Data := range data {
@@ -265,8 +276,8 @@ Return example
 		},
 	}
 */
-func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
-	dataMap := r.partialResults.nu2Data
+func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].nu2Data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu2Data := range data {
@@ -289,8 +300,8 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data) (tasks Tasks) {
 
 /*
  */
-func (r *Reducer) nu3Stage(data []*protocol.Nu_3_Data) (tasks Tasks) {
-	dataMap := r.partialResults.nu3Data
+func (r *Reducer) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks Tasks) {
+	dataMap := r.partialResults[clientId].nu3Data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu3Data := range data {
@@ -346,7 +357,7 @@ func (r *Reducer) getNextNodeId(nodeId string) (string, error) {
 }
 
 func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.delta2
+	dataMap := r.partialResults[clientId].delta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
@@ -381,7 +392,7 @@ func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.delta3
+	dataMap := r.partialResults[clientId].delta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
 
@@ -416,7 +427,7 @@ func (r *Reducer) delta3Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.eta2
+	dataMap := r.partialResults[clientId].eta2
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
@@ -453,7 +464,7 @@ func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.eta3
+	dataMap := r.partialResults[clientId].eta3
 
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
 
@@ -490,7 +501,7 @@ func (r *Reducer) eta3Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.kappa2
+	dataMap := r.partialResults[clientId].kappa2
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
 
@@ -524,7 +535,7 @@ func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.kappa3
+	dataMap := r.partialResults[clientId].kappa3
 	TOP_EXCHANGE := r.infraConfig.GetTopExchange()
 
 	if _, ok := tasks[TOP_EXCHANGE]; !ok {
@@ -558,7 +569,7 @@ func (r *Reducer) kappa3Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.nu2Data
+	dataMap := r.partialResults[clientId].nu2Data
 
 	REDUCE_EXCHANGE := r.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := r.infraConfig.GetReduceCount()
@@ -596,7 +607,7 @@ func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) nu3Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults.nu3Data
+	dataMap := r.partialResults[clientId].nu3Data
 
 	RESULT_EXCHANGE := r.infraConfig.GetResultExchange()
 
@@ -652,6 +663,8 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
+
+	r.partialResults[clientId].toDeleteCount++
 
 	return nil
 }
@@ -726,7 +739,12 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 		tasks[reduceExchange][stage][nextNode] = eofTask
 
 		// send the results
-		r.addResultsToNextStage(tasks, data.GetStage(), clientId)
+		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+			if r.partialResults[clientId].toDeleteCount >= REDUCER_STAGES_COUNT {
+				delete(r.partialResults, clientId)
+			}
+		}
+
 	}
 	return tasks
 }
@@ -735,38 +753,40 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 
+	r.makePartialResults(clientId)
+
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_2:
 		data := v.Delta_2.GetData()
-		return r.delta2Stage(data), nil
+		return r.delta2Stage(data, clientId), nil
 
 	case *protocol.Task_Delta_3:
 		data := v.Delta_3.GetData()
-		return r.delta3Stage(data), nil
+		return r.delta3Stage(data, clientId), nil
 
 	case *protocol.Task_Eta_2:
 		data := v.Eta_2.GetData()
-		return r.eta2Stage(data), nil
+		return r.eta2Stage(data, clientId), nil
 
 	case *protocol.Task_Eta_3:
 		data := v.Eta_3.GetData()
-		return r.eta3Stage(data), nil
+		return r.eta3Stage(data, clientId), nil
 
 	case *protocol.Task_Kappa_2:
 		data := v.Kappa_2.GetData()
-		return r.kappa2Stage(data), nil
+		return r.kappa2Stage(data, clientId), nil
 
 	case *protocol.Task_Kappa_3:
 		data := v.Kappa_3.GetData()
-		return r.kappa3Stage(data), nil
+		return r.kappa3Stage(data, clientId), nil
 
 	case *protocol.Task_Nu_2:
 		data := v.Nu_2.GetData()
-		return r.nu2Stage(data), nil
+		return r.nu2Stage(data, clientId), nil
 
 	case *protocol.Task_Nu_3:
 		data := v.Nu_3.GetData()
-		return r.nu3Stage(data), nil
+		return r.nu3Stage(data, clientId), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()

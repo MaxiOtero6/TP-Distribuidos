@@ -6,8 +6,9 @@ if [ $# -ne 1 ]; then
 fi
 
 N_CLIENTS=$1
+EXPECTED_FILE="./expected_results_10k.json"
 
-ls ./expected_results.json &> /dev/null
+ls ${EXPECTED_FILE} &> /dev/null
 
 if [ $? -ne 0 ]; then
     echo "Expected results not found..."
@@ -28,7 +29,7 @@ for i in $(seq 0 $((N_CLIENTS - 1))); do
     fi
 
     echo "Comparing actual results for client_${i}"
-    python3 compare_results.py ./expected_results.json ./actual_results_client_${i}.json
+    python3 compare_results.py ${EXPECTED_FILE} ./actual_results_client_${i}.json
 done
 
 echo "All actual results found"

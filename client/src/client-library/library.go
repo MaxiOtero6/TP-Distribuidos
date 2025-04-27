@@ -146,7 +146,7 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
-		err = l.waitForSuccessServerResponse()
+		err = l.waitACK()
 		if err != nil {
 			log.Criticalf("action: batch_send | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)
 			return err
@@ -184,15 +184,17 @@ func (l *Library) sendCreditsFile() error {
 }
 
 func (l *Library) sendSync() error {
-
 	if !l.isRunning {
 		return nil
 	}
+
 	syncMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
 				Message: &protocol.ClientServerMessage_Sync{
-					Sync: &protocol.Sync{},
+					Sync: &protocol.Sync{
+						ClientId: l.config.ClientId,
+					},
 				},
 			},
 		},
@@ -202,13 +204,17 @@ func (l *Library) sendSync() error {
 		return err
 	}
 
-	if err := l.waitForSuccessServerResponse(); err != nil {
+	if err := l.waitACK(); err != nil {
 		return err
 	}
 
 	return nil
 }
 func (l *Library) sendFinishMessage() error {
+	if l.socket == nil {
+		log.Debugf("action: sendFinishMessage | result: fail | error: socket is nil")
+		return nil
+	}
 
 	if !l.isRunning {
 		return nil
@@ -290,6 +296,9 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 
 		if !ok {
 			l.sendDisconnectMessage()
+			if err := l.waitACK() != nil; err {
+				log.Errorf("action: waitDisconnectACK | result: fail | error: %v", err)
+			}
 			l.disconnectFromServer()
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
@@ -333,6 +342,12 @@ func (l *Library) connectToServer() error {
 	}
 
 	log.Infof("action: ConnectToServer | result: success | address: %v", l.config.ServerAddress)
+
+	err = l.sendSync()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (l *Library) disconnectFromServer() {
@@ -358,10 +373,16 @@ func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error)
 		return nil, fmt.Errorf("unexpected message type: expected ServerClientMessage")
 	}
 
+	log.Debugf("action: waitForServerResponse | result: success")
 	return serverClientMessage.ServerClientMessage, nil
 }
 
-func (l *Library) waitForSuccessServerResponse() error {
+func (l *Library) waitACK() error {
+	if l.socket == nil {
+		log.Debugf("action: waitACK | result: fail | error: socket is nil")
+		return nil
+	}
+
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return err
@@ -380,6 +401,12 @@ func (l *Library) waitForSuccessServerResponse() error {
 	case *protocol.ServerClientMessage_SyncAck:
 		l.config.ClientId = resp.SyncAck.ClientId
 		log.Debugf("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
+
+	case *protocol.ServerClientMessage_FinishAck:
+		log.Debugf("action: receiveFinishAckResponse | result: success | clientId: %v", l.config.ClientId)
+
+	case *protocol.ServerClientMessage_DisconnectAck:
+		log.Debugf("action: receiveDisconnectAckResponse | result: success | clientId: %v", l.config.ClientId)
 
 	default:
 		log.Errorf("action: receiveResponse | result: fail | error: Unexpected response type received")
@@ -413,6 +440,10 @@ func (l *Library) sendResultMessage() error {
 
 func (l *Library) Stop() {
 	l.sendFinishMessage()
+	if err := l.waitACK() != nil; err {
+		log.Errorf("action: waitFinishACK | result: fail | error: %v", err)
+	}
+
 	l.isRunning = false
 	l.disconnectFromServer()
 }

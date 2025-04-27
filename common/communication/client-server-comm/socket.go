@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
@@ -59,6 +60,56 @@ func (s *Socket) Accept() (*Socket, error) {
 	clientSocket := &Socket{
 		conn:   conn,
 		reader: bufio.NewReader(conn),
+	}
+
+	return clientSocket, nil
+}
+
+// GetFileDescriptor returns the file descriptor of the socket connection
+// It returns as *os.File. This is useful for passing the file descriptor to
+// child processes or for using with system calls that require a file descriptor.
+// Note: This function is only valid for TCP connections. For other types of connections,
+// it may not work as expected.
+// It returns an error if the connection type is not *net.TCPConn.
+// The caller is responsible for closing the file descriptor when done
+// in the child process.
+func (s *Socket) GetFileDescriptor() (*os.File, error) {
+	switch c := s.conn.(type) {
+	case *net.TCPConn:
+		file, err := c.File()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return file, nil
+
+	default:
+		return nil, fmt.Errorf("connection type should be *net.TCPConn, got %T", c)
+	}
+}
+
+// NewClientSocketFromFile creates a new Socket from a file descriptor
+// It takes a file descriptor as input and returns a new Socket.
+func NewClientSocketFromFile(fd uintptr) (*Socket, error) {
+	file := os.NewFile(fd, "clientSocket")
+	if file == nil {
+		return nil, fmt.Errorf(
+			"failed to create file from file descriptor, fd %d is not valid", fd,
+		)
+	}
+
+	defer file.Close()
+
+	conn, err := net.FileConn(file)
+	if err != nil {
+		return nil, err
+	}
+
+	clientSocket := &Socket{
+		conn:     conn,
+		reader:   bufio.NewReader(conn),
+		listener: nil,
 	}
 
 	return clientSocket, nil

@@ -33,9 +33,40 @@ type JoinerPartialResults struct {
 // Joiner is a struct that implements the Action interface.
 type Joiner struct {
 	infraConfig    *model.InfraConfig
-	partialResults *JoinerPartialResults
+	partialResults map[string]*JoinerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+}
+
+func (j *Joiner) makePartialResults(clientId string) {
+	if _, ok := j.partialResults[clientId]; ok {
+		return
+	}
+
+	j.partialResults[clientId] = &JoinerPartialResults{
+		zetaData: StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{
+			smallTable: SmallTablePartialData[*protocol.Zeta_Data_Movie]{
+				data:  make(map[string]*protocol.Zeta_Data_Movie),
+				ready: false,
+			},
+			bigTable: BigTablePartialData[*protocol.Zeta_Data_Rating]{
+				data:  make(map[string][]*protocol.Zeta_Data_Rating),
+				ready: false,
+			},
+			generalEOF: false,
+		},
+		iotaData: StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{
+			smallTable: SmallTablePartialData[*protocol.Iota_Data_Movie]{
+				data:  make(map[string]*protocol.Iota_Data_Movie),
+				ready: false,
+			},
+			bigTable: BigTablePartialData[*protocol.Iota_Data_Actor]{
+				data:  make(map[string][]*protocol.Iota_Data_Actor),
+				ready: false,
+			},
+			generalEOF: false,
+		},
+	}
 }
 
 // NewJoiner creates a new Joiner instance.
@@ -44,30 +75,7 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		partialResults: &JoinerPartialResults{
-			zetaData: StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{
-				smallTable: SmallTablePartialData[*protocol.Zeta_Data_Movie]{
-					data:  make(map[string]*protocol.Zeta_Data_Movie),
-					ready: false,
-				},
-				bigTable: BigTablePartialData[*protocol.Zeta_Data_Rating]{
-					data:  make(map[string][]*protocol.Zeta_Data_Rating),
-					ready: false,
-				},
-				generalEOF: false,
-			},
-			iotaData: StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{
-				smallTable: SmallTablePartialData[*protocol.Iota_Data_Movie]{
-					data:  make(map[string]*protocol.Iota_Data_Movie),
-					ready: false,
-				},
-				bigTable: BigTablePartialData[*protocol.Iota_Data_Actor]{
-					data:  make(map[string][]*protocol.Iota_Data_Actor),
-					ready: false,
-				},
-				generalEOF: false,
-			},
-		},
+		partialResults: make(map[string]*JoinerPartialResults),
 	}
 }
 
@@ -75,7 +83,7 @@ func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Ze
 	joinedData := make([]*protocol.Eta_1_Data, 0)
 
 	for movieId, ratings := range ratingsData {
-		movieData, ok := j.partialResults.zetaData.smallTable.data[movieId]
+		movieData, ok := j.partialResults[clientId].zetaData.smallTable.data[movieId]
 		if !ok {
 			continue
 		}
@@ -122,8 +130,8 @@ func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Ze
 	}
 }
 
-func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data) (tasks Tasks) {
-	dataMap := j.partialResults.zetaData.smallTable.data
+func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (tasks Tasks) {
+	dataMap := j.partialResults[clientId].zetaData.smallTable.data
 
 	for _, zdata := range data {
 		if zdata.GetData().(*protocol.Zeta_Data_Movie_) == nil {
@@ -144,12 +152,12 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data) (tasks Tasks) {
 
 func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (tasks Tasks) {
 	var dataMap map[string][]*protocol.Zeta_Data_Rating
-	readyToJoin := j.partialResults.zetaData.smallTable.ready
+	readyToJoin := j.partialResults[clientId].zetaData.smallTable.ready
 
 	if readyToJoin {
 		dataMap = make(map[string][]*protocol.Zeta_Data_Rating)
 	} else {
-		dataMap = j.partialResults.zetaData.bigTable.data
+		dataMap = j.partialResults[clientId].zetaData.bigTable.data
 	}
 
 	for _, zdata := range data {
@@ -203,7 +211,7 @@ func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string) (tasks T
 
 	switch data[0].GetData().(type) {
 	case *protocol.Zeta_Data_Movie_:
-		return j.moviesZetaStage(data)
+		return j.moviesZetaStage(data, clientId)
 	case *protocol.Zeta_Data_Rating_:
 		return j.ratingsZetaStage(data, clientId)
 	default:
@@ -215,7 +223,7 @@ func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iot
 	joinedData := make([]*protocol.Kappa_1_Data, 0)
 
 	for movieId, actors := range actorsData {
-		_, ok := j.partialResults.iotaData.smallTable.data[movieId]
+		_, ok := j.partialResults[clientId].iotaData.smallTable.data[movieId]
 		if !ok {
 			continue
 		}
@@ -260,8 +268,8 @@ func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iot
 	}
 }
 
-func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
-	dataMap := j.partialResults.iotaData.smallTable.data
+func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string) (tasks Tasks) {
+	dataMap := j.partialResults[clientId].iotaData.smallTable.data
 	for _, idata := range data {
 		if idata.GetData().(*protocol.Iota_Data_Movie_) == nil {
 			continue
@@ -278,12 +286,12 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data) (tasks Tasks) {
 
 func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string) (tasks Tasks) {
 	var dataMap map[string][]*protocol.Iota_Data_Actor
-	readyToJoin := j.partialResults.iotaData.smallTable.ready
+	readyToJoin := j.partialResults[clientId].iotaData.smallTable.ready
 
 	if readyToJoin {
 		dataMap = make(map[string][]*protocol.Iota_Data_Actor)
 	} else {
-		dataMap = j.partialResults.iotaData.bigTable.data
+		dataMap = j.partialResults[clientId].iotaData.bigTable.data
 	}
 
 	for _, idata := range data {
@@ -338,7 +346,7 @@ func (j *Joiner) iotaStage(data []*protocol.Iota_Data, clientId string) (tasks T
 
 	switch data[0].GetData().(type) {
 	case *protocol.Iota_Data_Movie_:
-		return j.moviesIotaStage(data)
+		return j.moviesIotaStage(data, clientId)
 	case *protocol.Iota_Data_Actor_:
 		return j.actorsIotaStage(data, clientId)
 	default:
@@ -428,14 +436,14 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	if data.GetWorkerCreatorId() == j.infraConfig.GetNodeId() {
 		switch data.Stage {
 		case ZETA_STAGE:
-			if j.partialResults.zetaData.bigTable.ready && !j.partialResults.zetaData.generalEOF {
-				j.partialResults.zetaData.generalEOF = true
+			if j.partialResults[clientId].zetaData.bigTable.ready && !j.partialResults[clientId].zetaData.generalEOF {
+				j.partialResults[clientId].zetaData.generalEOF = true
 			} else {
 				return nil
 			}
 		case IOTA_STAGE:
-			if j.partialResults.iotaData.bigTable.ready && !j.partialResults.iotaData.generalEOF {
-				j.partialResults.iotaData.generalEOF = true
+			if j.partialResults[clientId].iotaData.bigTable.ready && !j.partialResults[clientId].iotaData.generalEOF {
+				j.partialResults[clientId].iotaData.generalEOF = true
 			} else {
 				return nil
 			}
@@ -453,11 +461,11 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 
 		switch data.Stage {
 		case ZETA_STAGE:
-			j.partialResults.zetaData.smallTable.ready = true
-			j.joinZetaData(tasks, j.partialResults.zetaData.bigTable.data, clientId)
+			j.partialResults[clientId].zetaData.smallTable.ready = true
+			j.joinZetaData(tasks, j.partialResults[clientId].zetaData.bigTable.data, clientId)
 		case IOTA_STAGE:
-			j.partialResults.iotaData.smallTable.ready = true
-			j.joinIotaData(tasks, j.partialResults.iotaData.bigTable.data, clientId)
+			j.partialResults[clientId].iotaData.smallTable.ready = true
+			j.joinIotaData(tasks, j.partialResults[clientId].iotaData.bigTable.data, clientId)
 		default:
 			return nil
 		}
@@ -471,14 +479,14 @@ func (j *Joiner) bigTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId st
 	if data.GetWorkerCreatorId() == j.infraConfig.GetNodeId() {
 		switch data.Stage {
 		case ZETA_STAGE:
-			if j.partialResults.zetaData.smallTable.ready && !j.partialResults.zetaData.generalEOF {
-				j.partialResults.zetaData.generalEOF = true
+			if j.partialResults[clientId].zetaData.smallTable.ready && !j.partialResults[clientId].zetaData.generalEOF {
+				j.partialResults[clientId].zetaData.generalEOF = true
 			} else {
 				return nil
 			}
 		case IOTA_STAGE:
-			if j.partialResults.iotaData.smallTable.ready && !j.partialResults.iotaData.generalEOF {
-				j.partialResults.iotaData.generalEOF = true
+			if j.partialResults[clientId].iotaData.smallTable.ready && !j.partialResults[clientId].iotaData.generalEOF {
+				j.partialResults[clientId].iotaData.generalEOF = true
 			} else {
 				return nil
 			}
@@ -496,9 +504,9 @@ func (j *Joiner) bigTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId st
 
 		switch data.Stage {
 		case ZETA_STAGE:
-			j.partialResults.zetaData.bigTable.ready = true
+			j.partialResults[clientId].zetaData.bigTable.ready = true
 		case IOTA_STAGE:
-			j.partialResults.iotaData.bigTable.ready = true
+			j.partialResults[clientId].iotaData.bigTable.ready = true
 		default:
 			return nil
 		}
@@ -516,25 +524,29 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 	} else {
 		switch data.Stage {
 		case ZETA_STAGE:
-			if !j.partialResults.zetaData.generalEOF {
+			if !j.partialResults[clientId].zetaData.generalEOF {
 				j.createEofTask(tasks, data, true, clientId)
 			} else if j.infraConfig.GetNodeId() < data.GetWorkerCreatorId() {
 				j.createEofTask(tasks, data, true, clientId)
-				j.partialResults.zetaData.generalEOF = false
+				j.partialResults[clientId].zetaData.generalEOF = false
 			} else {
 				return nil
 			}
 		case IOTA_STAGE:
-			if !j.partialResults.iotaData.generalEOF {
+			if !j.partialResults[clientId].iotaData.generalEOF {
 				j.createEofTask(tasks, data, true, clientId)
 			} else if j.infraConfig.GetNodeId() < data.GetWorkerCreatorId() {
 				j.createEofTask(tasks, data, true, clientId)
-				j.partialResults.iotaData.generalEOF = false
+				j.partialResults[clientId].iotaData.generalEOF = false
 			} else {
 				return nil
 			}
 		default:
 			return nil
+		}
+
+		if j.partialResults[clientId].zetaData.generalEOF && j.partialResults[clientId].iotaData.generalEOF {
+			delete(j.partialResults, clientId)
 		}
 	}
 
@@ -559,6 +571,8 @@ func (j *Joiner) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+
+	j.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Zeta:
