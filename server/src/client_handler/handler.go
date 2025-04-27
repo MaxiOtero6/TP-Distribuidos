@@ -201,7 +201,20 @@ func (c *ClientHandler) handleFinishMessage(finishMessage *protocol.Finish) {
 	c.rabbitHandler.RemoveClient(finishMessage.ClientId)
 	log.Infof("Queue removed for client ID: %s", finishMessage.ClientId)
 
-	// TODO: SEND ACKNOWLEDGEMENT
+	ackMessage := &protocol.Message{
+		Message: &protocol.Message_ServerClientMessage{
+			ServerClientMessage: &protocol.ServerClientMessage{
+				Message: &protocol.ServerClientMessage_FinishAck{
+					FinishAck: &protocol.FinishAck{},
+				},
+			},
+		},
+	}
+
+	if err := c.socket.Write(ackMessage); err != nil {
+		log.Errorf("Error sending finish acknowledgment: %v", err)
+		return
+	}
 
 	// Client finished, exit this child process gracefully
 	c.Stop()
@@ -210,7 +223,20 @@ func (c *ClientHandler) handleFinishMessage(finishMessage *protocol.Finish) {
 func (c *ClientHandler) handleDisconnectMessage(disconnectMessage *protocol.Disconnect) {
 	log.Infof("Received disconnect message from user: %v ", disconnectMessage.ClientId)
 
-	// TODO: SEND ACKNOWLEDGEMENT
+	ackMessage := &protocol.Message{
+		Message: &protocol.Message_ServerClientMessage{
+			ServerClientMessage: &protocol.ServerClientMessage{
+				Message: &protocol.ServerClientMessage_DisconnectAck{
+					DisconnectAck: &protocol.DisconnectAck{},
+				},
+			},
+		},
+	}
+
+	if err := c.socket.Write(ackMessage); err != nil {
+		log.Errorf("Error sending disconnect acknowledgment: %v", err)
+		return
+	}
 
 	// Client disconnected, exit this child process gracefully
 	c.Stop()
