@@ -129,11 +129,9 @@ func (c *ClientHandler) handleConnectionMessage(syncMessage *protocol.Sync) {
 		return
 	}
 
-	c.rabbitHandler.RegisterNewClient(clientID)
-
 	c.ClientID = clientID
-
 	log.Infof("Client connected with ID: %s", clientID)
+	c.rabbitHandler.RegisterNewClient(clientID)
 }
 
 func (c *ClientHandler) handleBatchMessage(batchMessage *protocol.Batch) error {
@@ -243,7 +241,7 @@ func (c *ClientHandler) handleDisconnectMessage(disconnectMessage *protocol.Disc
 }
 
 func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) error {
-	log.Debugf("Received result message from user: %v ", resultMessage.ClientId)
+	log.Infof("Received result message from user: %v ", resultMessage.ClientId)
 
 	results := c.rabbitHandler.GetResults(resultMessage.ClientId)
 

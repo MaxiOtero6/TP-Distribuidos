@@ -39,7 +39,6 @@ func (s *Server) acceptConnections() error {
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
 			if !s.isRunning {
-				log.Infof("action: ShutdownServer | result: success | error: %v", err)
 				continue
 			} else {
 				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
@@ -102,14 +101,13 @@ func (s *Server) Stop() {
 
 	// signal
 	for _, client := range s.clients {
+		log.Infof("Sending SIGTERM to child process with PID %d", client.Process.Pid)
 		err := client.Process.Signal(syscall.SIGTERM)
 
 		if err != nil {
 			log.Errorf("Failed to send SIGTERM to child process with PID %d: %v", client.Process.Pid, err)
 			continue
 		}
-
-		log.Infof("Sent SIGTERM to child process with PID %d", client.Process.Pid)
 	}
 
 	// wait
@@ -121,6 +119,6 @@ func (s *Server) Stop() {
 			continue
 		}
 
-		log.Infof("Child process with PID %d terminated, exit code: %d", client.Process.Pid, status)
+		log.Infof("Child process with PID %d terminated, exit code: %d", status.Pid(), status.ExitCode())
 	}
 }
