@@ -1,5 +1,3 @@
-from asyncio import queues
-from os import write
 import sys
 
 
@@ -63,10 +61,6 @@ TOP_QUEUE = {
     "name": ""
 }
 
-RESULT_QUEUE = {
-    "name": ""
-}
-
 BROADCAST_ID = ""
 
 
@@ -92,14 +86,9 @@ class Server:
         lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
         lines.append("")
-        lines.append(f'{" " * 4}queues:')
-        lines.append(f'{" " * 6}resultQueue:')
-        lines.append(f'{" " * 8}name: "{RESULT_QUEUE["name"]}"')
-        lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}resultQueue:')
         lines.append(f'{" " * 8}exchange: "{RESULT_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}queue: "{RESULT_QUEUE["name"]}"')
 
         return "\n".join(lines) + "\n"
 
@@ -283,16 +272,6 @@ class RabbitConfig:
             "reduceExchange": REDUCE_EXCHANGE,
             "topExchange": TOP_EXCHANGE,
             "resultExchange": RESULT_EXCHANGE
-        }
-
-        self.queues = {
-            "filterQueue": FILTER_QUEUE,
-            "overviewQueue": OVERVIEW_QUEUE,
-            "mapQueue": MAP_QUEUE,
-            "joinQueue": JOIN_QUEUE,
-            "reduceQueue": REDUCE_QUEUE,
-            "topQueue": TOP_QUEUE,
-            "resultQueue": RESULT_QUEUE
         }
 
     def __str__(self):
