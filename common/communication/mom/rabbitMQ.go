@@ -179,6 +179,24 @@ func (r *RabbitMQ) UnbindQueue(queueName string, exchangeName string, routingKey
 	log.Infof("Queue '%s' unbound from exchange '%s' with routing key '%s'", queueName, exchangeName, routingKey)
 }
 
+// DeleteQueue deletes the specified queue.
+// If the queue does not exist, an error is logged and the function returns.
+// The queue is deleted from the RabbitMQ server and removed from the local map of queues.
+// This removes all messages in the queue and binds to the queue.
+// It is important to note that this operation is irreversible and should be used with caution.
+func (r *RabbitMQ) DeleteQueue(queue string) {
+	q, ok := r.queues[queue]
+
+	if !ok {
+		log.Errorf("Queue '%s' does not exist", queue)
+		return
+	}
+
+	q.delete()
+	log.Infof("Queue '%s' deleted", queue)
+	delete(r.queues, queue)
+}
+
 // Close closes the RabbitMQ connection and channel.
 // It also closes all the queues and exchanges.
 // If an error occurs while closing the connection or channel, it is logged.

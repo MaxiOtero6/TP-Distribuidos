@@ -58,6 +58,20 @@ func newQueue(ch *amqp.Channel, name string) *queue {
 	return q
 }
 
+// delete deletes the queue from the RabbitMQ server.
+// It uses the channel's QueueDelete method to remove the queue.
+// If the queue deletion fails, an error is logged and the program panics.
+func (q *queue) delete() {
+	_, err := q.channel.QueueDelete(
+		q.amqpName,
+		false,
+		false,
+		q.noWait,
+	)
+
+	failOnError(err, fmt.Sprintf("Failed to delete the queue: '%v'", q.amqpName))
+}
+
 // bind binds the queue to an exchange with the specified routing key.
 func (q *queue) bind(exchangeName string, routingKey string) {
 	err := q.channel.QueueBind(
@@ -79,7 +93,6 @@ func (q *queue) unbind(exchangeName string, routingKey string) {
 		exchangeName,
 		nil,
 	)
-
 	failOnError(err, fmt.Sprintf("Failed to unbind the queue: '%v'", q.amqpName))
 }
 
