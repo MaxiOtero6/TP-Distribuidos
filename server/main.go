@@ -72,11 +72,17 @@ func InitConfig() (*viper.Viper, error) {
 // InitLogger Receives the log level to be set in go-logging as a string. This method
 // parses the string and set the level to the logger. If the level string is not
 // valid an error is returned
-func InitLogger(logLevel string) error {
+func InitLogger(logLevel string, isChild bool) error {
 	baseBackend := logging.NewLogBackend(os.Stdout, "", 0)
-	format := logging.MustStringFormatter(
-		`%{time:2006-01-02 15:04:05} %{level:.5s}     %{message}`,
-	)
+
+	prefix := ""
+	if isChild {
+		prefix = "ClientHandler [%{pid}] | "
+	}
+
+	formatStr := `%{time:2006-01-02 15:04:05} %{level:.5s}     ` + prefix + `%{message}`
+
+	format := logging.MustStringFormatter(formatStr)
 	backendFormatter := logging.NewBackendFormatter(baseBackend, format)
 
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
@@ -177,7 +183,9 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	if err := InitLogger(v.GetString("log.level")); err != nil {
+	isChild := len(os.Args) == 2 && os.Args[1] == "child"
+
+	if err := InitLogger(v.GetString("log.level"), isChild); err != nil {
 		log.Criticalf("%s", err)
 	}
 
@@ -185,7 +193,7 @@ func main() {
 
 	if len(os.Args) == 1 {
 		instance = initServer(v)
-	} else if len(os.Args) == 2 {
+	} else if isChild {
 		instance = initClientHandler(v)
 	} else {
 		log.Panicf("Bad call to server. Usage for server: %s ; Usage for clientHandler: %s child", os.Args[0], os.Args[0])
