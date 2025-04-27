@@ -295,6 +295,9 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 
 		if !ok {
 			l.sendDisconnectMessage()
+			if err := l.waitDisconnectACK() != nil; err {
+				log.Errorf("action: waitDisconnectACK | result: fail | error: %v", err)
+			}
 			l.disconnectFromServer()
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
@@ -369,6 +372,7 @@ func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error)
 		return nil, fmt.Errorf("unexpected message type: expected ServerClientMessage")
 	}
 
+	log.Debugf("action: waitForServerResponse | result: success")
 	return serverClientMessage.ServerClientMessage, nil
 }
 
@@ -422,8 +426,42 @@ func (l *Library) sendResultMessage() error {
 	return nil
 }
 
+func (l *Library) waitFinishACK() error {
+	response, err := l.waitForServerResponse()
+	if err != nil {
+		return err
+	}
+
+	_, ok := response.GetMessage().(*protocol.ServerClientMessage_FinishAck)
+
+	if ok {
+		return nil
+	}
+
+	return fmt.Errorf("expected finishACK but unexpected response type received")
+}
+
+func (l *Library) waitDisconnectACK() error {
+	response, err := l.waitForServerResponse()
+	if err != nil {
+		return err
+	}
+
+	_, ok := response.GetMessage().(*protocol.ServerClientMessage_DisconnectAck)
+
+	if ok {
+		return nil
+	}
+
+	return fmt.Errorf("expected disconnectACK but unexpected response type received")
+}
+
 func (l *Library) Stop() {
 	l.sendFinishMessage()
+	if err := l.waitFinishACK() != nil; err {
+		log.Errorf("action: waitFinishACK | result: fail | error: %v", err)
+	}
+
 	l.isRunning = false
 	l.disconnectFromServer()
 }
