@@ -212,6 +212,7 @@ func (l *Library) sendSync() error {
 }
 func (l *Library) sendFinishMessage() error {
 	if l.socket == nil {
+		log.Debugf("action: sendFinishMessage | result: fail | error: socket is nil")
 		return nil
 	}
 
@@ -377,6 +378,11 @@ func (l *Library) waitForServerResponse() (*protocol.ServerClientMessage, error)
 }
 
 func (l *Library) waitACK() error {
+	if l.socket == nil {
+		log.Debugf("action: waitACK | result: fail | error: socket is nil")
+		return nil
+	}
+
 	response, err := l.waitForServerResponse()
 	if err != nil {
 		return err
