@@ -209,5 +209,5 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 }
 
 func (r *RabbitHandler) RemoveClient(clientId string) {
-	r.rabbitMQ.DeleteQueue(clientId)
+	r.rabbitMQ.DeleteQueue(r.resultQueueName)
 }
