@@ -36,6 +36,8 @@ func NewServer(id string, address string) (*Server, error) {
 
 func (s *Server) acceptConnections() error {
 	for s.isRunning {
+		s.cleanupFinishedClientHandlers()
+
 		clientSocket, err := s.serverSocket.Accept()
 		if err != nil {
 			if !s.isRunning {
@@ -88,6 +90,28 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 
 func (s *Server) Run() error {
 	return s.acceptConnections()
+}
+
+func (s *Server) cleanupFinishedClientHandlers() {
+	activeClients := make([]*exec.Cmd, 0)
+
+	for _, client := range s.clients {
+		// Check if the process has finished
+		var status syscall.WaitStatus
+		wpid, err := syscall.Wait4(client.Process.Pid, &status, syscall.WNOHANG, nil)
+
+		if wpid == client.Process.Pid {
+			log.Infof("Child process with PID %d terminated, exit code: %d", wpid, status.ExitStatus())
+		} else if wpid == 0 {
+			// Process is still running
+			activeClients = append(activeClients, client)
+		} else {
+			log.Errorf("Unexpected PID %d returned from Wait4, expected %d, %v", wpid, client.Process.Pid, err)
+			activeClients = append(activeClients, client)
+		}
+	}
+
+	s.clients = activeClients
 }
 
 func (s *Server) Stop() {
