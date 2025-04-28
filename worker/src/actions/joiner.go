@@ -408,6 +408,7 @@ func (j *Joiner) createEofTask(tasks Tasks, eof *protocol.OmegaEOF_Data, ringEof
 		nodeId = utils.RandomHash(nextCount)
 
 		eof.Stage = nextStage
+		eof.WorkerCreatorId = ""
 	}
 
 	eofTask := &protocol.Task{
