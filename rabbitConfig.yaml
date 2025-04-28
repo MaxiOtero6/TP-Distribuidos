@@ -126,16 +126,8 @@ rabbitmq:
         name: "reduceExchange"
         kind: "direct"
 
-      resultExchange:
-        name: "resultExchange"
-        kind: "direct"
-
       mergeExchange:
         name: "mergeExchange"
-        kind: "direct"
-
-      topExchange:
-        name: "topExchange"
         kind: "direct"
 
     queues:
@@ -147,7 +139,7 @@ rabbitmq:
         exchange: "reduceExchange"
         queue: ""
 
-  REDUCER:
+  MERGER:
     exchanges:
       mergeExchange:
         name: "mergeExchange"
@@ -168,7 +160,7 @@ rabbitmq:
     binds:
       mergeQueue:
         exchange: "mergeExchange"
-        queue: "mergeExchange"
+        queue: ""
 
   TOPPER:
     exchanges:

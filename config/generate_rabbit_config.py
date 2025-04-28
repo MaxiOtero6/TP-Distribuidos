@@ -184,17 +184,9 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{REDUCE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{REDUCE_EXCHANGE["kind"]}"')
         lines.append("")
-        lines.append(f'{" " * 6}resultExchange:')
-        lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
-        lines.append("")
         lines.append(f'{" " * 6}mergeExchange:')
         lines.append(f'{" " * 8}name: "{MERGE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{MERGE_EXCHANGE["kind"]}"')
-        lines.append("")
-        lines.append(f'{" " * 6}topExchange:')
-        lines.append(f'{" " * 8}name: "{TOP_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{TOP_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
@@ -211,7 +203,7 @@ class Reduce:
 class Merge:
     def __str__(self) -> str:
         lines: list[str] = []
-        lines.append(f'{" " * 2}REDUCER:')
+        lines.append(f'{" " * 2}MERGER:')
         lines.append(f'{" " * 4}exchanges:')
         lines.append(f'{" " * 6}mergeExchange:')
         lines.append(f'{" " * 8}name: "{MERGE_EXCHANGE["name"]}"')
@@ -232,7 +224,7 @@ class Merge:
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}exchange: "{MERGE_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}queue: "{MERGE_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}queue: "{MERGE_QUEUE["name"]}"')
 
         return "\n".join(lines) + "\n"
 
