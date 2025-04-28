@@ -120,6 +120,7 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 		MapCount:      v.GetInt("map.count"),
 		JoinCount:     v.GetInt("join.count"),
 		ReduceCount:   v.GetInt("reduce.count"),
+		MergeCount:    v.GetInt("merge.count"),
 		TopCount:      v.GetInt("top.count"),
 	}
 
@@ -129,6 +130,7 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 		MapExchange:      v.GetString("consts.mapExchange"),
 		JoinExchange:     v.GetString("consts.joinExchange"),
 		ReduceExchange:   v.GetString("consts.reduceExchange"),
+		MergeExchange:    v.GetString("consts.mergeExchange"),
 		TopExchange:      v.GetString("consts.topExchange"),
 		ResultExchange:   v.GetString("consts.resultExchange"),
 		BroadcastID:      v.GetString("consts.broadcastId"),
