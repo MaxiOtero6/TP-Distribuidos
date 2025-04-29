@@ -38,7 +38,7 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 		},
 	}
 
-	err = saveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, originalData)
+	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, originalData)
 	assert.NoError(t, err, "Failed to save delta2 data")
 
 	expectedJSON := `[
