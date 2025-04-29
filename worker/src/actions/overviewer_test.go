@@ -30,6 +30,7 @@ func TestOverviewer(t *testing.T) {
 			ReduceExchange: "reduceExchange",
 			BroadcastID:    "",
 		},
+		"",
 	)
 
 	itemHash := func(workersCount int, item string) string {

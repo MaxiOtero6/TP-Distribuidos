@@ -26,7 +26,7 @@ func TestFilter(t *testing.T) {
 			JoinExchange:   "joinExchange",
 			ResultExchange: "resultExchange",
 			MapExchange:    "mapExchange",
-		})
+		}, "")
 
 	var testFilter = &Filter{
 		infraConfig: testFilterInfraConfig,

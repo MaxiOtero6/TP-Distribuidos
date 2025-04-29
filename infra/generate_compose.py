@@ -143,11 +143,8 @@ class ServiceType(Enum):
                 )
             case (
                 ServiceType.FILTER
-                | ServiceType.JOINER
-                | ServiceType.TOP
                 | ServiceType.OVERVIEW
                 | ServiceType.MAP
-                | ServiceType.REDUCE
             ):
                 worker_name = self.value.split("_", 1)[0].lower()
                 return Service(
@@ -182,6 +179,48 @@ class ServiceType(Enum):
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
                     },
                 )
+            
+            case (               
+                ServiceType.JOINER
+                | ServiceType.TOP
+                | ServiceType.REDUCE
+            ):
+                
+                worker_name = self.value.split("_", 1)[0].lower()
+                return Service(
+                    container_name=f"{worker_name}_{id}",
+                    image="worker:latest",
+                    environment={
+                        "WORKER_ID": str(id),
+                        "WORKER_TYPE": self.value,
+                        "WORKER_FILTER_COUNT": str(
+                            instances_per_service.get(ServiceType.FILTER, 0)
+                        ),
+                        "WORKER_OVERVIEW_COUNT": str(
+                            instances_per_service.get(ServiceType.OVERVIEW, 0)
+                        ),
+                        "WORKER_MAP_COUNT": str(
+                            instances_per_service.get(ServiceType.MAP, 0)
+                        ),
+                        "WORKER_JOIN_COUNT": str(
+                            instances_per_service.get(ServiceType.JOINER, 0)
+                        ),
+                        "WORKER_REDUCE_COUNT": str(
+                            instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "WORKER_TOP_COUNT": str(
+                            instances_per_service.get(ServiceType.TOP, 0)
+                        ),
+                    },
+                    networks=[MOVIES_NETWORK_NAME],
+                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
+                    volumes={
+                        "./worker/config.yaml": "/app/config.yaml",
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
+                        "partialData": "/app/data",
+                    },
+                )
+            
 
 
 class DockerCompose:
@@ -343,7 +382,7 @@ class Volume:
         lines: List[str] = []
         lines.append(indent(f"{self.volume_name}:", level))
 
-        return "\n".join(lines) + "\n"
+        return "\n".join(lines)
 
 
 def get_args() -> Tuple[str, str]:

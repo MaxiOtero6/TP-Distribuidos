@@ -107,7 +107,10 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		BroadcastID:      v.GetString("consts.broadcastId"),
 	}
 
-	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig)
+	// Set the volume base directory
+	volumeBaseDir := "/app/data"
+
+	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 
