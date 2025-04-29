@@ -20,7 +20,7 @@ func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, 
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	fileName := fmt.Sprintf("%s_%s.json", clientId, stage)
+	fileName := fmt.Sprintf("%s_%s.json", stage, clientId)
 	filePath := filepath.Join(dir, fileName)
 
 	marshaler := protojson.MarshalOptions{
