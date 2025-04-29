@@ -1,5 +1,10 @@
 package model
 
+import (
+	"fmt"
+	"path/filepath"
+)
+
 type WorkerClusterConfig struct {
 	FilterCount   int
 	OverviewCount int
@@ -35,16 +40,18 @@ type RabbitConfig struct {
 }
 
 type InfraConfig struct {
-	nodeID  string
-	workers *WorkerClusterConfig
-	rabbit  *RabbitConfig
+	nodeID        string
+	workers       *WorkerClusterConfig
+	rabbit        *RabbitConfig
+	volumeBaseDir string
 }
 
-func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig) *InfraConfig {
+func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig, volumeBaseDir string) *InfraConfig {
 	return &InfraConfig{
-		nodeID:  idNode,
-		workers: workerConfig,
-		rabbit:  rabbitConfig,
+		nodeID:        idNode,
+		workers:       workerConfig,
+		rabbit:        rabbitConfig,
+		volumeBaseDir: volumeBaseDir,
 	}
 }
 
@@ -157,4 +164,8 @@ func (i *InfraConfig) GetBroadcastID() string {
 
 func (i *InfraConfig) GetEofBroadcastRK() string {
 	return i.rabbit.EofBroadcastRK
+}
+
+func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) string {
+	return filepath.Join(i.volumeBaseDir, fmt.Sprintf("%s_%s", workerType, workerID))
 }

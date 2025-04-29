@@ -31,8 +31,19 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 
 	action := actions.NewAction(workerType, infraConfig)
 
+	workerId := infraConfig.GetNodeId()
+	workerDir := infraConfig.GetWorkerDirectory(workerType, workerId)
+
+	err := os.MkdirAll(workerDir, os.ModePerm)
+
+	if err != nil {
+		log.Errorf("Failed to create worker directory: %s", err)
+	}
+
+	log.Infof("Initialized worker directory: %s", workerDir)
+
 	return &Worker{
-		WorkerId:    infraConfig.GetNodeId(),
+		WorkerId:    workerId,
 		rabbitMQ:    rabbitMQ,
 		action:      action,
 		done:        signalChan,

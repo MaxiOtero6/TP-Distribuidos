@@ -138,7 +138,7 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
 	}
 
-	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig)
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 
