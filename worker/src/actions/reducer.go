@@ -87,6 +87,13 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (t
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
+	dirPath := r.GetWorkerDirectory()
+
+	err := utils.SaveDataToFile(dirPath, clientId, DELTA_STAGE_2, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", DELTA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -127,6 +134,13 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks
 		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
+	dirPath := r.GetWorkerDirectory()
+
+	err := utils.SaveDataToFile(dirPath, clientId, ETA_STAGE_2, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", ETA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -165,6 +179,12 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (t
 		dataMap[actorId].PartialParticipations += k2Data.GetPartialParticipations()
 	}
 
+	dirPath := r.GetWorkerDirectory()
+	err := utils.SaveDataToFile(dirPath, clientId, KAPPA_STAGE_2, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", KAPPA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -201,6 +221,12 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks T
 
 		dataMap[sentiment].Ratio += nu2Data.GetRatio()
 		dataMap[sentiment].Count += nu2Data.GetCount()
+	}
+
+	dirPath := r.GetWorkerDirectory()
+	err := utils.SaveDataToFile(dirPath, clientId, NU_STAGE_2, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", NU_STAGE_2, err)
 	}
 
 	return nil
@@ -463,6 +489,9 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
 			if r.partialResults[clientId].toDeleteCount >= REDUCER_STAGES_COUNT {
 				delete(r.partialResults, clientId)
+				if err := utils.DeletePartialResults(r.GetWorkerDirectory(), clientId); err != nil {
+					log.Errorf("Failed to delete partial results: %s", err)
+				}
 			}
 		}
 
@@ -500,4 +529,8 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (r *Reducer) GetWorkerDirectory() string {
+	return r.infraConfig.GetWorkerDirectory(string(model.ReducerAction), r.infraConfig.GetNodeId())
 }

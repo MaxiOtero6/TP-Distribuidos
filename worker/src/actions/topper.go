@@ -5,6 +5,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
 
@@ -68,6 +69,19 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (t
 		epsilonHeap.Insert(investment, eData)
 	}
 
+	// Prepare the data to be saved
+	convertedData := make(map[string]*protocol.Epsilon_Data)
+
+	for value, element := range epsilonHeap.GetTopK() {
+		convertedData[fmt.Sprintf("%d", value)] = element.Data
+	}
+
+	dirPath := t.GetWorkerDirectory()
+	err := utils.SaveDataToFile(dirPath, clientId, EPSILON_STAGE, convertedData)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", EPSILON_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -79,6 +93,19 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tas
 
 		lamdaHeap.Insert(participations, lData)
 
+	}
+
+	// Prepare the data to be saved
+	convertedData := make(map[string]*protocol.Lambda_Data)
+
+	for value, element := range lamdaHeap.GetTopK() {
+		convertedData[fmt.Sprintf("%d", value)] = element.Data
+	}
+
+	dirPath := t.GetWorkerDirectory()
+	err := utils.SaveDataToFile(dirPath, clientId, LAMBDA_STAGE, convertedData)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", LAMBDA_STAGE, err)
 	}
 
 	return nil
@@ -94,6 +121,22 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 		thetaMaxHeap.Insert(avgRating, tData)
 		thetaMinHeap.Insert(-avgRating, tData)
 	}
+
+	// Prepare the data to be saved
+	convertedData := make(map[string]*protocol.Theta_Data)
+
+	elementMax := thetaMaxHeap.GetTopK()[0]
+	elementMin := thetaMinHeap.GetTopK()[0]
+
+	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
+	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
+
+	dirPath := t.GetWorkerDirectory()
+	err := utils.SaveDataToFile(dirPath, clientId, THETA_STAGE, convertedData)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", THETA_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -106,11 +149,11 @@ It will simply return a map with empty data.
 Return example
 
 	{
-		"resultExchange": {
-			"result": {
-				"": Task,
-			}
-		},
+	    "resultExchange": {
+	        "result": {
+	            "": Task,
+	        }
+	    },
 	}
 */
 func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
@@ -162,11 +205,11 @@ It will simply return a map with empty data.
 Return example
 
 	{
-		"resultExchange": {
-			"result": {
-				"": Task
-			}
-		},
+	    "resultExchange": {
+	        "result": {
+	            "": Task
+	        }
+	    },
 	}
 */
 func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
@@ -230,11 +273,11 @@ It will simply return a map with empty data.
 Return example
 
 	{
-		"resultExchange": {
-			"result": {
-				"": Task
-			}
-		},
+	    "resultExchange": {
+	        "result": {
+	            "": Task
+	        }
+	    },
 	}
 */
 func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
@@ -343,6 +386,9 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		if err := t.addResultsToNextStage(tasks, stage, clientId); err == nil {
 			if t.partialResults[clientId].toDeleteCount >= TOPPER_STAGES_COUNT {
 				delete(t.partialResults, clientId)
+				if err := utils.DeletePartialResults(t.GetWorkerDirectory(), clientId); err != nil {
+					log.Errorf("Failed to delete partial results: %s", err)
+				}
 			}
 		}
 	}
@@ -379,4 +425,8 @@ func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (t *Topper) GetWorkerDirectory() string {
+	return t.infraConfig.GetWorkerDirectory(string(model.TopperAction), t.infraConfig.GetNodeId())
 }
