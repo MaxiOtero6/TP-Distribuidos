@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -20,7 +21,7 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 
-	//defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
+	defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
 
 	originalData := map[string]*protocol.Delta_2_Data{
 		"country1": {
@@ -60,6 +61,17 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 	assert.NoError(t, err, "Failed to read the saved file")
 
 	// Comparar el contenido del archivo con el JSON esperado
-	assert.JSONEq(t, expectedJSON, string(fileContent), "File content does not match expected JSON")
+	//assert.JSONEq(t, expectedJSON, string(fileContent), "File content does not match expected JSON")
+
+	// Deserializar ambos JSON
+	var expected, actual []map[string]interface{}
+	err = json.Unmarshal([]byte(expectedJSON), &expected)
+	assert.NoError(t, err, "Failed to unmarshal expected JSON")
+
+	err = json.Unmarshal(fileContent, &actual)
+	assert.NoError(t, err, "Failed to unmarshal actual JSON")
+
+	// Validar que ambos contengan los mismos elementos, sin importar el orden
+	assert.ElementsMatch(t, expected, actual, "File content does not match expected JSON")
 
 }
