@@ -18,6 +18,7 @@ var testInfraConfig = model.NewInfraConfig(
 		ResultExchange: "resultExchange",
 		TopExchange:    "topExchange",
 	},
+	"",
 )
 
 func TestTopperExecute(t *testing.T) {
