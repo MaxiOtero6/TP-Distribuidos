@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -13,23 +14,51 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, data map[string]T) error {
+// func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, fileType string, data map[string]T) error {
 
-	err := os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
+// 	err := os.MkdirAll(dir, os.ModePerm)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to create directory: %w", err)
+// 	}
 
-	fileName := fmt.Sprintf("%s_%s.json", stage, clientId)
-	filePath := filepath.Join(dir, fileName)
+// 	var fileName string
+// 	if fileType == "" {
+// 		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
+// 	} else {
+// 		fileName = fmt.Sprintf("%s_%s_%s.json", stage, fileType, clientId)
+// 	}
 
-	marshaler := protojson.MarshalOptions{
-		Indent:          "  ",  // Pretty print
-		EmitUnpopulated: false, // Include unpopulated fields
-	}
+// 	filePath := filepath.Join(dir, fileName)
 
+// 	marshaler := protojson.MarshalOptions{
+// 		Indent:          "  ",  // Pretty print
+// 		EmitUnpopulated: false, // Include unpopulated fields
+// 	}
+
+// 	var jsonArray []json.RawMessage
+// 	for _, msg := range data {
+// 		marshaledData, err := marshaler.Marshal(msg)
+// 		if err != nil {
+// 			return fmt.Errorf("error marshaling data to JSON: %w", err)
+// 		}
+// 		jsonArray = append(jsonArray, marshaledData)
+// 	}
+
+// 	finalJSON, err := json.MarshalIndent(jsonArray, "", "  ")
+// 	if err != nil {
+// 		return fmt.Errorf("error marshaling JSON array: %w", err)
+// 	}
+
+// 	err = os.WriteFile(filePath, finalJSON, 0644)
+// 	if err != nil {
+// 		return fmt.Errorf("error writing data to file: %w", err)
+// 	}
+// 	return nil
+// }
+
+func processTypedMap[T proto.Message](typedMap map[string]T, filePath string, marshaler protojson.MarshalOptions) error {
 	var jsonArray []json.RawMessage
-	for _, msg := range data {
+	for _, msg := range typedMap {
 		marshaledData, err := marshaler.Marshal(msg)
 		if err != nil {
 			return fmt.Errorf("error marshaling data to JSON: %w", err)
@@ -47,6 +76,108 @@ func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, 
 		return fmt.Errorf("error writing data to file: %w", err)
 	}
 	return nil
+}
+
+func processTypedMap2[T proto.Message](v map[string][]T, filePath string, marshaler protojson.MarshalOptions) error {
+	groupedData := make(map[string][]json.RawMessage)
+	for key, slice := range v {
+		for _, msg := range slice {
+			marshaledData, err := marshaler.Marshal(msg)
+			if err != nil {
+				return fmt.Errorf("error marshaling data to JSON: %w", err)
+			}
+			//jsonArray = append(jsonArray, marshaledData)
+			groupedData[key] = append(groupedData[key], marshaledData)
+		}
+	}
+
+	// Serializar el mapa agrupado como JSON
+	finalJSON, err := json.MarshalIndent(groupedData, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling grouped JSON: %w", err)
+	}
+
+	err = os.WriteFile(filePath, finalJSON, 0644)
+	if err != nil {
+		return fmt.Errorf("error writing grouped data to file: %w", err)
+	}
+	return nil
+}
+
+func SaveDataToFile(dir string, clientId string, stage string, fileType string, data interface{}) error {
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	var fileName string
+	if fileType == "" {
+		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
+	} else {
+		fileName = fmt.Sprintf("%s_%s_%s.json", stage, fileType, clientId)
+	}
+
+	filePath := filepath.Join(dir, fileName)
+
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ",  // Pretty print
+		EmitUnpopulated: false, // Include unpopulated fields
+	}
+
+	//var jsonArray []json.RawMessage
+	// Procesar los datos según su tipo
+
+	log.Infof("Processing data of type %T", data)
+
+	switch v := data.(type) {
+	case map[string]*protocol.Epsilon_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Lambda_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Theta_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Delta_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Delta_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Nu_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Nu_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Kappa_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Kappa_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Eta_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Eta_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Zeta_Data_Movie:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Iota_Data_Movie:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string][]*protocol.Zeta_Data_Rating:
+		return processTypedMap2(v, filePath, marshaler)
+
+	case map[string][]*protocol.Iota_Data_Actor:
+		return processTypedMap2(v, filePath, marshaler)
+
+	default:
+		return fmt.Errorf("unsupported data type: %T", data)
+	}
 }
 
 func DeletePartialResults(dir string, clientId string) error {
