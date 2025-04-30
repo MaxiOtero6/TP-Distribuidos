@@ -187,13 +187,17 @@ class ServiceType(Enum):
             ):
                 
                 worker_name = self.value.split("_", 1)[0].lower()
+                volume_name=f"{worker_name}_{id}_data"
+                mount_path=f"/app/data/{worker_name}_{id}"
+
                 return Service(
                     container_name=f"{worker_name}_{id}",
                     image="worker:latest",
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
-                        "WORKER_FILTER_COUNT": str(
+                        "WORKER_DATA_DIR": mount_path,
+                         "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
                         "WORKER_OVERVIEW_COUNT": str(
@@ -217,7 +221,7 @@ class ServiceType(Enum):
                     volumes={
                         "./worker/config.yaml": "/app/config.yaml",
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
-                        "partialData": "/app/data",
+                        volume_name: mount_path,
                     },
                 )
             
