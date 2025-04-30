@@ -9,6 +9,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
+const JOINER_BIG_TABLE string = "bigTable"
+const JOINER_SMALL_TABLE string = "smallTable"
+const JOINER_FILE_TYPE string = ""
+
 type SmallTablePartialData[T any] struct {
 	data  map[string]T
 	ready bool
@@ -147,6 +151,11 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (t
 		}
 	}
 
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, JOINER_SMALL_TABLE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -184,6 +193,11 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (
 		j.joinZetaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
+		dataMap = j.partialResults[clientId].zetaData.bigTable.data
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, JOINER_BIG_TABLE, dataMap)
+		if err != nil {
+			log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
+		}
 		return nil
 	}
 }
@@ -218,13 +232,6 @@ func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string) (tasks T
 	default:
 		return nil
 	}
-
-	// dirPath := j.GetWorkerDirectory()
-
-	// err := utils.SaveDataToFile(dirPath, clientId, DELTA_STAGE_2, data)
-	// if err != nil {
-	// 	log.Errorf("Failed to save %s data: %s", DELTA_STAGE_2, err)
-	// }
 }
 
 func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) {
@@ -289,6 +296,12 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string) (t
 			MovieId: movieId,
 		}
 	}
+
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, JOINER_SMALL_TABLE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -326,6 +339,11 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		j.joinIotaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, JOINER_BIG_TABLE, dataMap)
+		if err != nil {
+			log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
+		}
+
 		return nil
 	}
 
@@ -601,8 +619,4 @@ func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
-}
-
-func (j *Joiner) GetWorkerDirectory() string {
-	return j.infraConfig.GetDirectory()
 }
