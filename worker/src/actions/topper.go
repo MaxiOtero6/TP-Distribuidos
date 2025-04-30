@@ -15,6 +15,7 @@ const THETA_TOP_K = 1
 const TYPE_MAX = "Max"
 const TYPE_MIN = "Min"
 const TOPPER_STAGES_COUNT uint = 3
+const TOPPER_FILE_TYPE string = ""
 
 // ParcilResult is a struct that holds the results of the different stages.
 
@@ -76,7 +77,7 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (t
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, EPSILON_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, EPSILON_STAGE, TOPPER_FILE_TYPE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", EPSILON_STAGE, err)
 	}
@@ -101,7 +102,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tas
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, LAMBDA_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, LAMBDA_STAGE, TOPPER_FILE_TYPE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", LAMBDA_STAGE, err)
 	}
@@ -129,7 +130,7 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
 	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, THETA_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, THETA_STAGE, TOPPER_FILE_TYPE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", THETA_STAGE, err)
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 const REDUCER_STAGES_COUNT uint = 4
+const REDUCER_FILE_TYPE string = ""
 
 type ReducerPartialResults struct {
 	toDeleteCount uint
@@ -87,7 +88,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (t
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, DELTA_STAGE_2, dataMap)
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, DELTA_STAGE_2, REDUCER_FILE_TYPE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", DELTA_STAGE_2, err)
 	}
@@ -132,7 +133,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks
 		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, ETA_STAGE_2, dataMap)
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, ETA_STAGE_2, REDUCER_FILE_TYPE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", ETA_STAGE_2, err)
 	}
@@ -175,7 +176,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (t
 		dataMap[actorId].PartialParticipations += k2Data.GetPartialParticipations()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, KAPPA_STAGE_2, dataMap)
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, KAPPA_STAGE_2, REDUCER_FILE_TYPE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", KAPPA_STAGE_2, err)
 	}
@@ -218,7 +219,7 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks T
 		dataMap[sentiment].Count += nu2Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, NU_STAGE_2, dataMap)
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, NU_STAGE_2, REDUCER_FILE_TYPE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", NU_STAGE_2, err)
 	}
