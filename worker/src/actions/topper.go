@@ -76,8 +76,7 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (t
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	dirPath := t.GetWorkerDirectory()
-	err := utils.SaveDataToFile(dirPath, clientId, EPSILON_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, EPSILON_STAGE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", EPSILON_STAGE, err)
 	}
@@ -102,8 +101,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tas
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	dirPath := t.GetWorkerDirectory()
-	err := utils.SaveDataToFile(dirPath, clientId, LAMBDA_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, LAMBDA_STAGE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", LAMBDA_STAGE, err)
 	}
@@ -131,8 +129,7 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
 	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
 
-	dirPath := t.GetWorkerDirectory()
-	err := utils.SaveDataToFile(dirPath, clientId, THETA_STAGE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, THETA_STAGE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", THETA_STAGE, err)
 	}
@@ -386,7 +383,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		if err := t.addResultsToNextStage(tasks, stage, clientId); err == nil {
 			if t.partialResults[clientId].toDeleteCount >= TOPPER_STAGES_COUNT {
 				delete(t.partialResults, clientId)
-				if err := utils.DeletePartialResults(t.GetWorkerDirectory(), clientId); err != nil {
+				if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId); err != nil {
 					log.Errorf("Failed to delete partial results: %s", err)
 				}
 			}
@@ -425,8 +422,4 @@ func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
-}
-
-func (t *Topper) GetWorkerDirectory() string {
-	return t.infraConfig.GetWorkerDirectory(string(model.TopperAction), t.infraConfig.GetNodeId())
 }

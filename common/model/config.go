@@ -169,3 +169,7 @@ func (i *InfraConfig) GetEofBroadcastRK() string {
 func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) string {
 	return filepath.Join(i.volumeBaseDir, fmt.Sprintf("%s_%s", workerType, workerID))
 }
+
+func (i *InfraConfig) GetDirectory() string {
+	return i.volumeBaseDir
+}
