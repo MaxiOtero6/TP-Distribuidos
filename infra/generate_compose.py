@@ -197,7 +197,7 @@ class ServiceType(Enum):
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
                         "WORKER_DATA_DIR": mount_path,
-                         "WORKER_FILTER_COUNT": str(
+                        "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
                         "WORKER_OVERVIEW_COUNT": str(

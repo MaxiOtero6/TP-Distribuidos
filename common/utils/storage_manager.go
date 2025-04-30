@@ -51,7 +51,7 @@ func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, 
 
 func DeletePartialResults(dir string, clientId string) error {
 
-	filePattern := fmt.Sprintf("%s_*.json", clientId)
+	filePattern := fmt.Sprintf("*%s*.json", clientId)
 	files, err := filepath.Glob(filepath.Join(dir, filePattern))
 	if err != nil {
 		return fmt.Errorf("error finding files with pattern %s: %w", filePattern, err)

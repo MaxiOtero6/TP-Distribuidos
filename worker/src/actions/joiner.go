@@ -214,9 +214,17 @@ func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string) (tasks T
 		return j.moviesZetaStage(data, clientId)
 	case *protocol.Zeta_Data_Rating_:
 		return j.ratingsZetaStage(data, clientId)
+
 	default:
 		return nil
 	}
+
+	// dirPath := j.GetWorkerDirectory()
+
+	// err := utils.SaveDataToFile(dirPath, clientId, DELTA_STAGE_2, data)
+	// if err != nil {
+	// 	log.Errorf("Failed to save %s data: %s", DELTA_STAGE_2, err)
+	// }
 }
 
 func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) {
@@ -343,6 +351,8 @@ func (j *Joiner) iotaStage(data []*protocol.Iota_Data, clientId string) (tasks T
 	if data == nil {
 		return nil
 	}
+
+	tasks = make(Tasks)
 
 	switch data[0].GetData().(type) {
 	case *protocol.Iota_Data_Movie_:
@@ -591,4 +601,8 @@ func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (j *Joiner) GetWorkerDirectory() string {
+	return j.infraConfig.GetDirectory()
 }

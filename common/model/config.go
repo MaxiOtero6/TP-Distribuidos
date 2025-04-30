@@ -1,10 +1,5 @@
 package model
 
-import (
-	"fmt"
-	"path/filepath"
-)
-
 type WorkerClusterConfig struct {
 	FilterCount   int
 	OverviewCount int
@@ -122,6 +117,6 @@ func (i *InfraConfig) GetBroadcastID() string {
 	return i.rabbit.BroadcastID
 }
 
-func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) string {
-	return filepath.Join(i.volumeBaseDir, fmt.Sprintf("%s_%s", workerType, workerID))
+func (i *InfraConfig) GetDirectory() string {
+	return i.volumeBaseDir
 }
