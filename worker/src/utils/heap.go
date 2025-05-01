@@ -75,3 +75,11 @@ func (h *TopKHeap[V, D]) GetTopK() []*Element[V, D] {
 
 	return result
 }
+
+func (h *TopKHeap[V, D]) Delete() {
+	for i := range h.heap {
+		h.heap[i] = nil
+	}
+	h.heap = nil
+	h.k = 0
+}

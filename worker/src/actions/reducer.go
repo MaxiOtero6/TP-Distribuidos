@@ -412,8 +412,6 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
 
-	r.partialResults[clientId].toDeleteCount++
-
 	return nil
 }
 
@@ -482,11 +480,11 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 
 		// send the results
 		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-			if r.partialResults[clientId].toDeleteCount >= REDUCER_STAGES_COUNT {
-				delete(r.partialResults, clientId)
-				if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, "", ANY_SOURCE); err != nil {
-					log.Errorf("Failed to delete partial results: %s", err)
-				}
+			if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+			if err := r.deleteStage(clientId, data.GetStage()); err != nil {
+				log.Errorf("Failed to delete stage: %s", err)
 			}
 		}
 
@@ -524,4 +522,35 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (r *Reducer) deleteStage(clientId string, stage string) error {
+
+	log.Infof("Deleting stage %s for client %s", stage, clientId)
+
+	if anStage, ok := r.partialResults[clientId]; ok {
+		switch stage {
+		case DELTA_STAGE_2:
+			anStage.delta2 = nil
+		case DELTA_STAGE_3:
+			anStage.delta3 = nil
+		case ETA_STAGE_2:
+			anStage.eta2 = nil
+		case ETA_STAGE_3:
+			anStage.eta3 = nil
+		case KAPPA_STAGE_2:
+			anStage.kappa2 = nil
+		case KAPPA_STAGE_3:
+			anStage.kappa3 = nil
+		case NU_STAGE_2:
+			anStage.nu2Data = nil
+		case NU_STAGE_3:
+			anStage.nu3Data = nil
+		default:
+			log.Errorf("Invalid stage: %s", stage)
+			return fmt.Errorf("invalid stage: %s", stage)
+
+		}
+	}
+	return nil
 }
