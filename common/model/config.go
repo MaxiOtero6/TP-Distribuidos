@@ -30,6 +30,7 @@ type RabbitConfig struct {
 	TopExchange      string
 	ResultExchange   string
 	BroadcastID      string
+	EofBroadcastRK   string
 }
 
 type InfraConfig struct {
@@ -124,4 +125,8 @@ func (i *InfraConfig) GetResultExchange() string {
 
 func (i *InfraConfig) GetBroadcastID() string {
 	return i.rabbit.BroadcastID
+}
+
+func (i *InfraConfig) GetEofBroadcastRK() string {
+	return i.rabbit.EofBroadcastRK
 }

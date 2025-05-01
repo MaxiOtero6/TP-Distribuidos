@@ -107,6 +107,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		TopExchange:      v.GetString("consts.topExchange"),
 		ResultExchange:   v.GetString("consts.resultExchange"),
 		BroadcastID:      v.GetString("consts.broadcastId"),
+		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
 	}
 
 	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig)
