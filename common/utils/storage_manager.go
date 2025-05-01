@@ -14,47 +14,74 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-// func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, fileType string, data map[string]T) error {
+func LoadDataFromFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
+	var fileName string
+	if sourceType == "" {
+		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
+	} else {
+		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
+	}
 
-// 	err := os.MkdirAll(dir, os.ModePerm)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create directory: %w", err)
-// 	}
+	filePath := filepath.Join(dir, fileName)
 
-// 	var fileName string
-// 	if fileType == "" {
-// 		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
-// 	} else {
-// 		fileName = fmt.Sprintf("%s_%s_%s.json", stage, fileType, clientId)
-// 	}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("error opening file %s: %w", filePath, err)
+	}
+	defer file.Close()
 
-// 	filePath := filepath.Join(dir, fileName)
+	decoder := json.NewDecoder(file)
 
-// 	marshaler := protojson.MarshalOptions{
-// 		Indent:          "  ",  // Pretty print
-// 		EmitUnpopulated: false, // Include unpopulated fields
-// 	}
+	switch v := data.(type) {
+	case *map[string]*protocol.Epsilon_Data:
+		return decoder.Decode(v)
 
-// 	var jsonArray []json.RawMessage
-// 	for _, msg := range data {
-// 		marshaledData, err := marshaler.Marshal(msg)
-// 		if err != nil {
-// 			return fmt.Errorf("error marshaling data to JSON: %w", err)
-// 		}
-// 		jsonArray = append(jsonArray, marshaledData)
-// 	}
+	case *map[string]*protocol.Lambda_Data:
+		return decoder.Decode(v)
 
-// 	finalJSON, err := json.MarshalIndent(jsonArray, "", "  ")
-// 	if err != nil {
-// 		return fmt.Errorf("error marshaling JSON array: %w", err)
-// 	}
+	case *map[string]*protocol.Theta_Data:
+		return decoder.Decode(v)
 
-// 	err = os.WriteFile(filePath, finalJSON, 0644)
-// 	if err != nil {
-// 		return fmt.Errorf("error writing data to file: %w", err)
-// 	}
-// 	return nil
-// }
+	case *map[string]*protocol.Delta_2_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Delta_3_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Nu_2_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Nu_3_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Kappa_2_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Kappa_3_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Eta_2_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Eta_3_Data:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Zeta_Data_Movie:
+		return decoder.Decode(v)
+
+	case *map[string]*protocol.Iota_Data_Movie:
+		return decoder.Decode(v)
+
+	case *map[string][]*protocol.Zeta_Data_Rating:
+		return decoder.Decode(v)
+
+	case *map[string][]*protocol.Iota_Data_Actor:
+		return decoder.Decode(v)
+
+	default:
+		return fmt.Errorf("unsupported data type: %T", data)
+	}
+}
 
 func processTypedMap[T proto.Message](typedMap map[string]T, filePath string, marshaler protojson.MarshalOptions) error {
 	var jsonArray []json.RawMessage
