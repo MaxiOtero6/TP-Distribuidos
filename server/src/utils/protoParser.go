@@ -56,9 +56,7 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string)
 	var alphaData = make(map[string][]*protocol.Alpha_Data)
 
 	for _, movie := range movies {
-		idHash := utils.GetWorkerIdFromHash(filtersCount, movie.Id)
-
-		alphaData[idHash] = append(alphaData[idHash], &protocol.Alpha_Data{
+		alphaData[""] = append(alphaData[""], &protocol.Alpha_Data{
 			Id:            movie.Id,
 			Title:         movie.Title,
 			ProdCountries: movie.ProdCountries,
@@ -86,9 +84,7 @@ func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string)
 	var gammaData = make(map[string][]*protocol.Gamma_Data)
 
 	for _, movie := range movies {
-		idHash := utils.GetWorkerIdFromHash(filtersCount, movie.Id)
-
-		gammaData[idHash] = append(gammaData[idHash], &protocol.Gamma_Data{
+		gammaData[""] = append(gammaData[""], &protocol.Gamma_Data{
 			Id:            movie.Id,
 			Budget:        movie.Budget,
 			ProdCountries: movie.ProdCountries,
@@ -177,9 +173,7 @@ func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string) (
 	var muData = make(map[string][]*protocol.Mu_Data)
 
 	for _, movie := range movies {
-		idHash := utils.GetWorkerIdFromHash(overviewCount, movie.Id)
-
-		muData[idHash] = append(muData[idHash], &protocol.Mu_Data{
+		muData[""] = append(muData[""], &protocol.Mu_Data{
 			Id:       movie.Id,
 			Title:    movie.Title,
 			Revenue:  movie.Revenue,

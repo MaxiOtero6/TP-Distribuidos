@@ -101,12 +101,12 @@ func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Ze
 	eta1Data := make(map[string][]*protocol.Eta_1_Data)
 
 	for _, data := range joinedData {
-		nodeId := utils.RandomHash(j.infraConfig.GetMapCount())
+		// nodeId := utils.RandomHash(j.infraConfig.GetMapCount())
 
-		if _, ok := eta1Data[nodeId]; !ok {
-			eta1Data[nodeId] = make([]*protocol.Eta_1_Data, 0)
+		if _, ok := eta1Data[""]; !ok {
+			eta1Data[""] = make([]*protocol.Eta_1_Data, 0)
 		}
-		eta1Data[nodeId] = append(eta1Data[nodeId], data)
+		eta1Data[""] = append(eta1Data[""], data)
 	}
 
 	// create the tasks
@@ -240,12 +240,12 @@ func (j *Joiner) joinIotaData(tasks Tasks, actorsData map[string][]*protocol.Iot
 	kappa1Data := make(map[string][]*protocol.Kappa_1_Data)
 
 	for _, data := range joinedData {
-		nodeId := utils.RandomHash(j.infraConfig.GetMapCount())
+		// nodeId := utils.RandomHash(j.infraConfig.GetMapCount())
 
-		if _, ok := kappa1Data[nodeId]; !ok {
-			kappa1Data[nodeId] = make([]*protocol.Kappa_1_Data, 0)
+		if _, ok := kappa1Data[""]; !ok {
+			kappa1Data[""] = make([]*protocol.Kappa_1_Data, 0)
 		}
-		kappa1Data[nodeId] = append(kappa1Data[nodeId], data)
+		kappa1Data[""] = append(kappa1Data[""], data)
 	}
 
 	nextExchange := j.infraConfig.GetMapExchange()

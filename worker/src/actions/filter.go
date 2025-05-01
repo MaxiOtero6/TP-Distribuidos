@@ -71,7 +71,6 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
 	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
 	JOIN_COUNT := f.infraConfig.GetJoinCount()
-	FILTER_COUNT := f.infraConfig.GetFilterCount()
 
 	tasks = make(Tasks)
 	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -97,9 +96,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 			continue
 		}
 
-		filterIdHash := f.itemHashFunc(FILTER_COUNT, movie.GetId())
-
-		betaData[filterIdHash] = append(betaData[filterIdHash], &protocol.Beta_Data{
+		betaData[""] = append(betaData[""], &protocol.Beta_Data{
 			Id:            movie.GetId(),
 			Title:         movie.GetTitle(),
 			ReleaseYear:   movie.GetReleaseYear(),
@@ -243,7 +240,6 @@ Return example
 */
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks Tasks) {
 	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
-	MAP_COUNT := f.infraConfig.GetMapCount()
 
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -265,9 +261,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 			continue
 		}
 
-		mapIdHash := f.itemHashFunc(MAP_COUNT, movie.GetId())
-
-		delta1Data[mapIdHash] = append(delta1Data[mapIdHash], &protocol.Delta_1_Data{
+		delta1Data[""] = append(delta1Data[""], &protocol.Delta_1_Data{
 			Country: countries[0],
 			Budget:  movie.GetBudget(),
 		})

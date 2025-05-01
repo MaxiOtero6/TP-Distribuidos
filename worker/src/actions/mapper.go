@@ -45,7 +45,6 @@ Return example
 */
 func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
-	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -68,13 +67,13 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (ta
 	}
 
 	for _, d2Data := range dataMap {
-		nodeId := m.randomHashFunc(REDUCE_COUNT)
+		// nodeId := m.randomHashFunc(REDUCE_COUNT)
 
-		if _, ok := delta2Data[nodeId]; !ok {
-			delta2Data[nodeId] = make([]*protocol.Delta_2_Data, 0)
+		if _, ok := delta2Data[""]; !ok {
+			delta2Data[""] = make([]*protocol.Delta_2_Data, 0)
 		}
 
-		delta2Data[nodeId] = append(delta2Data[nodeId], d2Data)
+		delta2Data[""] = append(delta2Data[""], d2Data)
 	}
 
 	for nodeId, data := range delta2Data {
@@ -110,7 +109,6 @@ Return example
 */
 func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
-	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -136,13 +134,13 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks 
 	}
 
 	for _, e2Data := range dataMap {
-		nodeId := m.randomHashFunc(REDUCE_COUNT)
+		// nodeId := m.randomHashFunc(REDUCE_COUNT)
 
-		if _, ok := eta2Data[nodeId]; !ok {
-			eta2Data[nodeId] = make([]*protocol.Eta_2_Data, 0)
+		if _, ok := eta2Data[""]; !ok {
+			eta2Data[""] = make([]*protocol.Eta_2_Data, 0)
 		}
 
-		eta2Data[nodeId] = append(eta2Data[nodeId], e2Data)
+		eta2Data[""] = append(eta2Data[""], e2Data)
 	}
 
 	for nodeId, data := range eta2Data {
@@ -178,7 +176,6 @@ Return example
 */
 func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
-	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -202,13 +199,13 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (ta
 	}
 
 	for _, k2Data := range dataMap {
-		nodeId := m.randomHashFunc(REDUCE_COUNT)
+		// nodeId := m.randomHashFunc(REDUCE_COUNT)
 
-		if _, ok := kappa2Data[nodeId]; !ok {
-			kappa2Data[nodeId] = make([]*protocol.Kappa_2_Data, 0)
+		if _, ok := kappa2Data[""]; !ok {
+			kappa2Data[""] = make([]*protocol.Kappa_2_Data, 0)
 		}
 
-		kappa2Data[nodeId] = append(kappa2Data[nodeId], k2Data)
+		kappa2Data[""] = append(kappa2Data[""], k2Data)
 	}
 
 	for nodeId, data := range kappa2Data {
@@ -244,7 +241,6 @@ Return example
 */
 func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
-	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
 	tasks = make(Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -269,13 +265,13 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 	}
 
 	for _, n2Data := range dataMap {
-		nodeId := m.randomHashFunc(REDUCE_COUNT)
+		// nodeId := m.randomHashFunc(REDUCE_COUNT)
 
-		if _, ok := nu2Data[nodeId]; !ok {
-			nu2Data[nodeId] = make([]*protocol.Nu_2_Data, 0)
+		if _, ok := nu2Data[""]; !ok {
+			nu2Data[""] = make([]*protocol.Nu_2_Data, 0)
 		}
 
-		nu2Data[nodeId] = append(nu2Data[nodeId], n2Data)
+		nu2Data[""] = append(nu2Data[""], n2Data)
 	}
 
 	for nodeId, data := range nu2Data {

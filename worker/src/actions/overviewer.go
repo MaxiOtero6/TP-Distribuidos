@@ -54,7 +54,6 @@ Return example
 */
 func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks Tasks) {
 	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
-	MAP_COUNT := o.infraConfig.GetMapCount()
 
 	tasks = make(Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
@@ -71,11 +70,11 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 		}
 
 		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
-		mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
+		// mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[mapIdHash] = append(nuData[mapIdHash], &protocol.Nu_1_Data{
+		nuData[""] = append(nuData[""], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
