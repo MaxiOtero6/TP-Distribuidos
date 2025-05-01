@@ -671,7 +671,7 @@ func (j *Joiner) deletePartialResult(clientId string) {
 // It does not delete the entire partial result for the key, only the data for the specified stage.
 func (j *Joiner) DeleteStage(clientId string, stage string) {
 
-	log.Infof("Deleting both tables for clientId: %s and stage: %s", clientId, stage)
+	log.Infof("Deleting stage: %s for clientId: %s", stage, clientId)
 
 	if clientData, ok := j.partialResults[clientId]; ok {
 		switch stage {

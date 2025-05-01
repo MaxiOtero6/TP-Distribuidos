@@ -24,10 +24,9 @@ type result3 struct {
 }
 
 type PartialResults struct {
-	toDeleteCount uint
-	epsilonHeap   *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
-	thetaData     result3
-	lamdaHeap     *heap.TopKHeap[uint64, *protocol.Lambda_Data]
+	epsilonHeap *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
+	thetaData   result3
+	lamdaHeap   *heap.TopKHeap[uint64, *protocol.Lambda_Data]
 }
 
 // Topper is a struct that implements the Action interface.
@@ -321,15 +320,16 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	switch stage {
 	case EPSILON_STAGE:
 		t.epsilonResultStage(tasks, clientId)
+		t.partialResults[clientId].epsilonHeap.Delete()
 	case LAMBDA_STAGE:
 		t.lambdaResultStage(tasks, clientId)
+		t.partialResults[clientId].lamdaHeap.Delete()
 	case THETA_STAGE:
 		t.thetaResultStage(tasks, clientId)
+		t.partialResults[clientId].thetaData.maxHeap.Delete()
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
-
-	t.partialResults[clientId].toDeleteCount++
 
 	return nil
 }
@@ -381,11 +381,8 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		tasks[TOP_EXCHANGE][stage][nextNode] = eofTask
 
 		if err := t.addResultsToNextStage(tasks, stage, clientId); err == nil {
-			if t.partialResults[clientId].toDeleteCount >= TOPPER_STAGES_COUNT {
-				delete(t.partialResults, clientId)
-				if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, "", ANY_SOURCE); err != nil {
-					log.Errorf("Failed to delete partial results: %s", err)
-				}
+			if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
 			}
 		}
 	}
