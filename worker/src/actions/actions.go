@@ -60,37 +60,24 @@ const RESULT_STAGE string = "result"
 const TEST_WORKER_COUNT int = 1
 const TEST_WORKER_ID string = "0"
 
-// ActionType represents the type of action to be performed.
-type ActionType string
-
-const (
-	FilterAction     ActionType = "FILTER"
-	OverviewerAction ActionType = "OVERVIEWER"
-	MapperAction     ActionType = "MAPPER"
-	JoinerAction     ActionType = "JOINER"
-	ReducerAction    ActionType = "REDUCER"
-	MergerAction     ActionType = "MERGER"
-	TopperAction     ActionType = "TOPPER"
-)
-
 // NewAction creates a new action based on the worker type.
 func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
-	kind := ActionType(workerType)
+	kind := model.ActionType(workerType)
 
 	switch kind {
-	case FilterAction:
+	case model.FilterAction:
 		return NewFilter(infraConfig)
-	case OverviewerAction:
+	case model.OverviewerAction:
 		return NewOverviewer(infraConfig)
-	case MapperAction:
+	case model.MapperAction:
 		return NewMapper(infraConfig)
-	case JoinerAction:
+	case model.JoinerAction:
 		return NewJoiner(infraConfig)
-	case ReducerAction:
+	case model.ReducerAction:
 		return NewReducer(infraConfig)
-	case MergerAction:
+	case model.MergerAction:
 		return NewMerger(infraConfig)
-	case TopperAction:
+	case model.TopperAction:
 		return NewTopper(infraConfig)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
