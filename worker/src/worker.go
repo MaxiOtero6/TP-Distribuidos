@@ -20,6 +20,7 @@ type Worker struct {
 	action      actions.Action
 	done        chan os.Signal
 	consumeChan mom.ConsumerChan
+	eofChan     mom.ConsumerChan
 }
 
 // NewWorker creates a new worker with the given id, type, and infraConfig
@@ -46,12 +47,13 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 1 {
-		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
+	if len(binds) != 2 {
+		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof), got %d", len(binds))
 	}
 
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
+	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])
 }
 
 // Run starts the worker and listens for messages on the consume channel
@@ -64,7 +66,7 @@ func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]s
 // and exit
 // It panics if the consume channel is nil
 func (w *Worker) Run() {
-	if w.consumeChan == nil {
+	if w.consumeChan == nil || w.eofChan == nil {
 		log.Panicf("Consume channel is nil, did you call InitConfig?")
 	}
 
@@ -77,7 +79,15 @@ outer:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
 
-		case message := <-w.consumeChan:
+		// case message := <-w.eofChan:
+		// 	return
+
+		case message, ok := <-w.consumeChan:
+			if !ok {
+				log.Warningf("Worker %s consume channel closed", w.WorkerId)
+				break outer
+			}
+			
 			taskRaw := message.Body
 
 			task := &protocol.Task{}

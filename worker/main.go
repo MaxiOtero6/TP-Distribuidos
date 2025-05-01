@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -82,6 +83,62 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
+func appendEOFInfra(
+	eofExchangeName string,
+	queues []map[string]string,
+	binds []map[string]string,
+	workerId string,
+	workerType string,
+	workerCount int,
+	eofBroadcastRK string,
+) ([]map[string]string, []map[string]string) {
+	if len(binds) != 1 {
+		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
+	}
+
+	if len(queues) != 1 {
+		log.Panicf("For workers is expected to load one queue from the config file, got %d", len(binds))
+	}
+
+	const TTL = 30000 // 30 seconds
+
+	wIdInt, err := strconv.Atoi(workerId)
+
+	if err != nil {
+		log.Panicf("Failed to convert workerId to int: %s", err)
+	}
+
+	nextWorkerId := fmt.Sprintf("%d", (wIdInt+1)%workerCount)
+	qName := fmt.Sprintf("%s_%d_queue", workerType, wIdInt)
+	eofQName := "eof_" + qName
+
+	if len(queues[0]["name"]) == 0 {
+		queues[0]["name"] = qName
+	}
+
+	queues[0]["dlx_routingKey"] = nextWorkerId
+
+	queues = append(queues, map[string]string{
+		"name":           eofQName,
+		"dlx_exchange":   eofExchangeName,
+		"dlx_routingKey": nextWorkerId,
+		"ttl":            fmt.Sprintf("%d", TTL),
+	})
+
+	// Add the EOF_RK to the worker queues binds
+	binds[0]["extraRK"] = eofBroadcastRK
+	binds[0]["queue"] = qName
+
+	binds = append(binds, map[string]string{
+		"queue":    eofQName,
+		"exchange": eofExchangeName,
+	})
+
+	log.Warningf("Queues %v\nBinds %v", queues, binds)
+
+	return queues, binds
+}
+
 func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	workerType := v.GetString("type")
 
@@ -120,6 +177,16 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
+
+	queues, binds = appendEOFInfra(
+		infraConfig.GetEofExchange(),
+		queues,
+		binds,
+		nodeId,
+		workerType,
+		infraConfig.GetWorkersCountByType(workerType),
+		infraConfig.GetEofBroadcastRK(),
+	)
 
 	w := worker.NewWorker(workerType, infraConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)
