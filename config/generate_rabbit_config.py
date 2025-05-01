@@ -1,65 +1,35 @@
 import sys
 
 
-FILTER_EXCHANGE = {
-    "name": "filterExchange",
-    "kind": "direct"
-}
+FILTER_EXCHANGE = {"name": "filterExchange", "kind": "direct"}
 
-OVERVIEW_EXCHANGE = {
-    "name": "overviewExchange",
-    "kind": "direct"
-}
+OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "direct"}
 
-MAP_EXCHANGE = {
-    "name": "mapExchange",
-    "kind": "direct"
-}
+MAP_EXCHANGE = {"name": "mapExchange", "kind": "direct"}
 
-JOIN_EXCHANGE = {
-    "name": "joinExchange",
-    "kind": "direct"
-}
+JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
 
-REDUCE_EXCHANGE = {
-    "name": "reduceExchange",
-    "kind": "direct"
-}
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
 
-TOP_EXCHANGE = {
-    "name": "topExchange",
-    "kind": "direct"
-}
+MERGE_EXCHANGE = {"name": "mergeExchange", "kind": "direct"}
 
-RESULT_EXCHANGE = {
-    "name": "resultExchange",
-    "kind": "direct"
-}
+TOP_EXCHANGE = {"name": "topExchange", "kind": "direct"}
 
-FILTER_QUEUE = {
-    "name": ""
-}
+RESULT_EXCHANGE = {"name": "resultExchange", "kind": "direct"}
 
-OVERVIEW_QUEUE = {
-    "name": ""
-}
+FILTER_QUEUE = {"name": ""}
 
-MAP_QUEUE = {
-    "name": ""
-}
+OVERVIEW_QUEUE = {"name": ""}
 
-JOIN_QUEUE = {
-    "name": ""
-}
+MAP_QUEUE = {"name": ""}
 
+JOIN_QUEUE = {"name": ""}
 
-REDUCE_QUEUE = {
-    "name": ""
-}
+REDUCE_QUEUE = {"name": ""}
 
-TOP_QUEUE = {
-    "name": ""
-}
+MERGE_QUEUE = {"name": ""}
+
+TOP_QUEUE = {"name": ""}
 
 BROADCAST_ID = ""
 
@@ -214,13 +184,9 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{REDUCE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{REDUCE_EXCHANGE["kind"]}"')
         lines.append("")
-        lines.append(f'{" " * 6}resultExchange:')
-        lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
-        lines.append("")
-        lines.append(f'{" " * 6}topExchange:')
-        lines.append(f'{" " * 8}name: "{TOP_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{TOP_EXCHANGE["kind"]}"')
+        lines.append(f'{" " * 6}mergeExchange:')
+        lines.append(f'{" " * 8}name: "{MERGE_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{MERGE_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
@@ -230,6 +196,35 @@ class Reduce:
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}exchange: "{REDUCE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}queue: "{REDUCE_QUEUE["name"]}"')
+
+        return "\n".join(lines) + "\n"
+
+
+class Merge:
+    def __str__(self) -> str:
+        lines: list[str] = []
+        lines.append(f'{" " * 2}MERGER:')
+        lines.append(f'{" " * 4}exchanges:')
+        lines.append(f'{" " * 6}mergeExchange:')
+        lines.append(f'{" " * 8}name: "{MERGE_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{MERGE_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}resultExchange:')
+        lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}topExchange:')
+        lines.append(f'{" " * 8}name: "{TOP_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{TOP_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 4}queues:')
+        lines.append(f'{" " * 6}mergeQueue:')
+        lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
+        lines.append("")
+        lines.append(f'{" " * 4}binds:')
+        lines.append(f'{" " * 6}mergeQueue:')
+        lines.append(f'{" " * 8}exchange: "{MERGE_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}queue: "{MERGE_QUEUE["name"]}"')
 
         return "\n".join(lines) + "\n"
 
@@ -270,8 +265,9 @@ class RabbitConfig:
             "mapExchange": MAP_EXCHANGE,
             "joinExchange": JOIN_EXCHANGE,
             "reduceExchange": REDUCE_EXCHANGE,
+            "mergeExchange": MERGE_EXCHANGE,
             "topExchange": TOP_EXCHANGE,
-            "resultExchange": RESULT_EXCHANGE
+            "resultExchange": RESULT_EXCHANGE,
         }
 
     def __str__(self):
@@ -290,6 +286,7 @@ class RabbitConfig:
         lines.append(str(Map()))
         lines.append(str(Join()))
         lines.append(str(Reduce()))
+        lines.append(str(Merge()))
         lines.append(str(Top()))
 
         return "\n".join(lines) + "\n"

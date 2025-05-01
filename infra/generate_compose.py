@@ -9,25 +9,11 @@ MOVIES_NETWORK_NAME: str = "movies_network"
 
 RESULTS_OUTPUT_FILE_NAME: str = "actual_results"
 RESULTS_OUTPUT_FILE_EXTENSION: str = ".json"
-RESULTS_OUTPUT_DIR_PATH: str = os.path.join(
-    os.path.dirname(__file__), "..", "test"
-)
+RESULTS_OUTPUT_DIR_PATH: str = os.path.join(os.path.dirname(__file__), "..", "test")
 
 
 def indent(text: str, level: int) -> str:
     return "  " * level + text
-
-
-class WorkerType(Enum):
-    FILTER = "filter"
-    JOINER = "joiner"
-    TOP = "top"
-    OVERVIEW = "sentiment"
-    MAP = "map"
-    REDUCE = "reduce"
-
-    def __str__(self) -> str:
-        return self.value
 
 
 class ServiceType(Enum):
@@ -40,6 +26,7 @@ class ServiceType(Enum):
     OVERVIEW = "OVERVIEWER"
     MAP = "MAPPER"
     REDUCE = "REDUCER"
+    MERGE = "MERGER"
 
     def to_service(
         self, id: int, instances_per_service: Dict["ServiceType", int]
@@ -50,20 +37,15 @@ class ServiceType(Enum):
 
                 filter_count = instances_per_service.get(ServiceType.FILTER, 0)
                 for i in range(filter_count):
-                    depends_on[f"filter_{i}"] = {
-                        "condition": "service_started"}
+                    depends_on[f"filter_{i}"] = {"condition": "service_started"}
 
-                overview_count = instances_per_service.get(
-                    ServiceType.OVERVIEW, 0)
+                overview_count = instances_per_service.get(ServiceType.OVERVIEW, 0)
                 for i in range(overview_count):
-                    depends_on[f"overviewer_{i}"] = {
-                        "condition": "service_started"}
+                    depends_on[f"overviewer_{i}"] = {"condition": "service_started"}
 
-                joiner_count = instances_per_service.get(
-                    ServiceType.JOINER, 0)
+                joiner_count = instances_per_service.get(ServiceType.JOINER, 0)
                 for i in range(joiner_count):
-                    depends_on[f"joiner_{i}"] = {
-                        "condition": "service_started"}
+                    depends_on[f"joiner_{i}"] = {"condition": "service_started"}
 
                 return Service(
                     container_name=f"server_{id}",
@@ -85,6 +67,9 @@ class ServiceType(Enum):
                         ),
                         "SERVER_REDUCE_COUNT": str(
                             instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "SERVER_MERGE_COUNT": str(
+                            instances_per_service.get(ServiceType.MERGE, 0)
                         ),
                         "SERVER_TOP_COUNT": str(
                             instances_per_service.get(ServiceType.TOP, 0)
@@ -113,7 +98,9 @@ class ServiceType(Enum):
                     image="client:latest",
                     environment={
                         "CLIENT_ID": str(id),
-                        "CLIENT_OUTPUT_FILE": "./test/" + RESULTS_OUTPUT_FILE_NAME + f"_client_{id}{RESULTS_OUTPUT_FILE_EXTENSION}"
+                        "CLIENT_OUTPUT_FILE": "./test/"
+                        + RESULTS_OUTPUT_FILE_NAME
+                        + f"_client_{id}{RESULTS_OUTPUT_FILE_EXTENSION}",
                     },
                     networks=[MOVIES_NETWORK_NAME],
                     volumes={
@@ -167,6 +154,9 @@ class ServiceType(Enum):
                         ),
                         "WORKER_REDUCE_COUNT": str(
                             instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "WORKER_MERGE_COUNT": str(
+                            instances_per_service.get(ServiceType.MERGE, 0)
                         ),
                         "WORKER_TOP_COUNT": str(
                             instances_per_service.get(ServiceType.TOP, 0)
@@ -306,8 +296,7 @@ class Service:
     def __str__(self) -> str:
         level = self.indent_level
         lines = [indent(f"{self.container_name}:", level)]
-        lines.append(
-            indent(f"container_name: {self.container_name}", level + 1))
+        lines.append(indent(f"container_name: {self.container_name}", level + 1))
         lines.append(indent(f"image: {self.image}", level + 1))
         if self.entrypoint:
             lines.append(indent(f"entrypoint: {self.entrypoint}", level + 1))
@@ -459,8 +448,7 @@ def write_to_file(output_file: str, compose: DockerCompose) -> None:
 def main() -> None:
     n_instances_path, output_file_path = get_args()
     instances_per_service = read_instances(n_instances_path)
-    docker_compose: DockerCompose = generate_docker_compose(
-        instances_per_service)
+    docker_compose: DockerCompose = generate_docker_compose(instances_per_service)
     write_to_file(output_file_path, docker_compose)
 
 

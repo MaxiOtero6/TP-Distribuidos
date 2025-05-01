@@ -4,6 +4,7 @@ consts:
   mapExchange: "mapExchange"
   joinExchange: "joinExchange"
   reduceExchange: "reduceExchange"
+  mergeExchange: "mergeExchange"
   topExchange: "topExchange"
   resultExchange: "resultExchange"
   broadcastId: ""
@@ -125,12 +126,8 @@ rabbitmq:
         name: "reduceExchange"
         kind: "direct"
 
-      resultExchange:
-        name: "resultExchange"
-        kind: "direct"
-
-      topExchange:
-        name: "topExchange"
+      mergeExchange:
+        name: "mergeExchange"
         kind: "direct"
 
     queues:
@@ -140,6 +137,29 @@ rabbitmq:
     binds:
       reduceQueue:
         exchange: "reduceExchange"
+        queue: ""
+
+  MERGER:
+    exchanges:
+      mergeExchange:
+        name: "mergeExchange"
+        kind: "direct"
+
+      resultExchange:
+        name: "resultExchange"
+        kind: "direct"
+
+      topExchange:
+        name: "topExchange"
+        kind: "direct"
+
+    queues:
+      mergeQueue:
+        name: ""
+
+    binds:
+      mergeQueue:
+        exchange: "mergeExchange"
         queue: ""
 
   TOPPER:

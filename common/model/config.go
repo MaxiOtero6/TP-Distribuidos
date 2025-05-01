@@ -6,6 +6,7 @@ type WorkerClusterConfig struct {
 	MapCount      int
 	JoinCount     int
 	ReduceCount   int
+	MergeCount    int
 	TopCount      int
 }
 
@@ -15,6 +16,7 @@ func (w *WorkerClusterConfig) TotalWorkers() int {
 		w.MapCount +
 		w.JoinCount +
 		w.ReduceCount +
+		w.MergeCount +
 		w.TopCount
 }
 
@@ -24,6 +26,7 @@ type RabbitConfig struct {
 	MapExchange      string
 	JoinExchange     string
 	ReduceExchange   string
+	MergeExchange    string
 	TopExchange      string
 	ResultExchange   string
 	BroadcastID      string
@@ -77,6 +80,10 @@ func (i *InfraConfig) GetReduceCount() int {
 	return i.workers.ReduceCount
 }
 
+func (i *InfraConfig) GetMergeCount() int {
+	return i.workers.MergeCount
+}
+
 func (i *InfraConfig) GetTopCount() int {
 	return i.workers.TopCount
 }
@@ -103,6 +110,10 @@ func (i *InfraConfig) GetJoinExchange() string {
 
 func (i *InfraConfig) GetReduceExchange() string {
 	return i.rabbit.ReduceExchange
+}
+
+func (i *InfraConfig) GetMergeExchange() string {
+	return i.rabbit.MergeExchange
 }
 
 func (i *InfraConfig) GetTopExchange() string {

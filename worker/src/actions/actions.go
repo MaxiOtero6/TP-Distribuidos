@@ -74,6 +74,7 @@ const (
 	MapperAction     ActionType = "MAPPER"
 	JoinerAction     ActionType = "JOINER"
 	ReducerAction    ActionType = "REDUCER"
+	MergerAction     ActionType = "MERGER"
 	TopperAction     ActionType = "TOPPER"
 )
 
@@ -92,6 +93,8 @@ func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 		return NewJoiner(infraConfig)
 	case ReducerAction:
 		return NewReducer(infraConfig)
+	case MergerAction:
+		return NewMerger(infraConfig)
 	case TopperAction:
 		return NewTopper(infraConfig)
 	default:
