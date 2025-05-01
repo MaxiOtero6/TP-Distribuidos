@@ -72,6 +72,10 @@ func (r *RabbitMQ) InitConfig(
 
 	for _, bind := range binds {
 		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
+
+		if rk, ok := bind["extraRK"]; ok {
+			r.BindQueue(bind["queue"], bind["exchange"], rk)
+		}
 	}
 }
 
