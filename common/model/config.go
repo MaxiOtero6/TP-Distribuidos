@@ -29,6 +29,7 @@ type RabbitConfig struct {
 	MergeExchange    string
 	TopExchange      string
 	ResultExchange   string
+	EofExchange      string
 	BroadcastID      string
 	EofBroadcastRK   string
 }
@@ -121,6 +122,10 @@ func (i *InfraConfig) GetTopExchange() string {
 
 func (i *InfraConfig) GetResultExchange() string {
 	return i.rabbit.ResultExchange
+}
+
+func (i *InfraConfig) GetEofExchange() string {
+	return i.rabbit.EofExchange
 }
 
 func (i *InfraConfig) GetBroadcastID() string {

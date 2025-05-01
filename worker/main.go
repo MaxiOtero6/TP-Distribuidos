@@ -106,6 +106,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		MergeExchange:    v.GetString("consts.mergeExchange"),
 		TopExchange:      v.GetString("consts.topExchange"),
 		ResultExchange:   v.GetString("consts.resultExchange"),
+		EofExchange:      v.GetString("consts.eofExchange"),
 		BroadcastID:      v.GetString("consts.broadcastId"),
 		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
 	}
