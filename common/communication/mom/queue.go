@@ -21,7 +21,7 @@ type queue struct {
 	autoDeleted bool
 	exclusive   bool
 	noWait      bool
-	args        []string
+	args        amqp.Table
 }
 
 // newQueue creates a new RabbitMQ queue with the specified name.
@@ -31,7 +31,41 @@ type queue struct {
 // The queue is durable, auto-deleted, and not exclusive by default.
 // The noWait property is set to false, and no additional arguments are passed.
 // The queue name is the name used to identify the queue on the RabbitMQ server.
-func newQueue(ch *amqp.Channel, name string) *queue {
+func newQueue(ch *amqp.Channel, name string, args map[string]any) *queue {
+	qArgs := amqp.Table{}
+
+	if v, ok := args["DLXexchange"]; ok {
+		if val, ok := v.(string); ok {
+			qArgs["x-dead-letter-exchange"] = val
+		} else {
+			log.Warningf("DLXexchange is not a string: %v", v)
+		}
+	}
+
+	if v, ok := args["DLXroutingKey"]; ok {
+		if val, ok := v.(string); ok {
+			qArgs["x-dead-letter-routing-key"] = val
+		} else {
+			log.Warningf("DLXroutingKey is not a string: %v", v)
+		}
+	}
+
+	if v, ok := args["ttl"]; ok {
+		if val, ok := v.(int); ok {
+			qArgs["x-message-ttl"] = val
+		} else {
+			log.Warningf("ttl is not an int: %v", v)
+		}
+	}
+
+	if v, ok := args["expires"]; ok {
+		if val, ok := v.(int); ok {
+			qArgs["x-expires"] = val
+		} else {
+			log.Warningf("expires is not an int: %v", v)
+		}
+	}
+
 	q := &queue{
 		channel:     ch,
 		name:        name,
@@ -39,7 +73,7 @@ func newQueue(ch *amqp.Channel, name string) *queue {
 		autoDeleted: false,
 		exclusive:   false,
 		noWait:      false,
-		args:        nil,
+		args:        qArgs,
 	}
 
 	amqpQ, err := ch.QueueDeclare(
@@ -48,7 +82,7 @@ func newQueue(ch *amqp.Channel, name string) *queue {
 		q.autoDeleted,
 		q.exclusive,
 		q.noWait,
-		nil,
+		qArgs,
 	)
 
 	q.amqpName = amqpQ.Name
