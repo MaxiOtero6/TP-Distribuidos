@@ -35,11 +35,11 @@ type queue struct {
 func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
 	qArgs := amqp.Table{}
 
-	if v, ok := args["DLXexchange"]; ok {
+	if v, ok := args["dlx_exchange"]; ok {
 		qArgs["x-dead-letter-exchange"] = v
 	}
 
-	if v, ok := args["DLXroutingKey"]; ok {
+	if v, ok := args["dlx_routingKey"]; ok {
 		qArgs["x-dead-letter-routing-key"] = v
 	}
 

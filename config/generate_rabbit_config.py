@@ -29,17 +29,17 @@ MAP_QUEUE = {"name": "mapQueue"}
 
 REDUCE_QUEUE = {"name": "reduceQueue"}
 
-# DLXroutingKey generated in the worker's code
-JOIN_QUEUE = {"name": "", "DLXexchange": "joinExchange", "ttl": PACKET_TTL}
+# dlx_routingKey generated in the worker's code
+JOIN_QUEUE = {"name": "", "dlx_exchange": "joinExchange", "ttl": PACKET_TTL}
 
-# DLXroutingKey generated in the worker's code
-MERGE_QUEUE = {"name": "", "DLXexchange": "mergeExchange", "ttl": PACKET_TTL}
+# dlx_routingKey generated in the worker's code
+MERGE_QUEUE = {"name": "", "dlx_exchange": "mergeExchange", "ttl": PACKET_TTL}
 
-# DLXroutingKey generated in the worker's code
-TOP_QUEUE = {"name": "", "DLXexchange": "topExchange", "ttl": PACKET_TTL}
+# dlx_routingKey generated in the worker's code
+TOP_QUEUE = {"name": "", "dlx_exchange": "topExchange", "ttl": PACKET_TTL}
 
-# This queue is generated in the worker's code due to anonymous queue name and dynamics DLXroutingKeys
-# EOF_QUEUE = {"name": "", "DLXexchange": "eofExchange", "ttl": PACKET_TTL}
+# This queue is generated in the worker's code due to anonymous queue name and dynamics dlx_routingKeys
+# EOF_QUEUE = {"name": "", "dlx_exchange": "eofExchange", "ttl": PACKET_TTL}
 
 BROADCAST_ID = ""
 
@@ -223,7 +223,7 @@ class Join:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}joinQueue:')
         lines.append(f'{" " * 8}name: "{JOIN_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}DLXexchange: "{JOIN_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}dlx_exchange: "{JOIN_QUEUE["dlx_exchange"]}"')
         lines.append(f'{" " * 8}ttl: "{JOIN_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
@@ -258,7 +258,7 @@ class Merge:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}DLXexchange: "{MERGE_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}dlx_exchange: "{MERGE_QUEUE["dlx_exchange"]}"')
         lines.append(f'{" " * 8}ttl: "{MERGE_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
@@ -289,7 +289,7 @@ class Top:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}name: "{TOP_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}DLXexchange: "{TOP_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}dlx_exchange: "{TOP_QUEUE["dlx_exchange"]}"')
         lines.append(f'{" " * 8}ttl: "{TOP_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
@@ -314,6 +314,7 @@ class RabbitConfig:
             "mergeExchange": MERGE_EXCHANGE,
             "topExchange": TOP_EXCHANGE,
             "resultExchange": RESULT_EXCHANGE,
+            "eofExchange": EOF_EXCHANGE,
         }
 
     def __str__(self):
