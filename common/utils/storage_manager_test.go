@@ -12,6 +12,7 @@ import (
 const CLIENT_ID = "test_client"
 const DIR = "prueba"
 const DELTA_STAGE_2 = "delta2"
+const ANY_SOURCE = ""
 
 func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 
@@ -38,7 +39,7 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 		},
 	}
 
-	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, originalData)
+	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, originalData)
 	assert.NoError(t, err, "Failed to save delta2 data")
 
 	expectedJSON := `[

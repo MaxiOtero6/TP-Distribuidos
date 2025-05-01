@@ -60,6 +60,11 @@ const RESULT_STAGE string = "result"
 const TEST_WORKER_COUNT int = 1
 const TEST_WORKER_ID string = "0"
 
+// Source const
+const BIG_TABLE_SOURCE string = "bigTable"
+const SMALL_TABLE_SOURCE string = "smallTable"
+const ANY_SOURCE string = ""
+
 // NewAction creates a new action based on the worker type.
 func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 	kind := model.ActionType(workerType)
