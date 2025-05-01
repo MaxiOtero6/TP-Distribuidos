@@ -104,17 +104,17 @@ func processTypedMap2[T proto.Message](v map[string][]T, filePath string, marsha
 	return nil
 }
 
-func SaveDataToFile(dir string, clientId string, stage string, fileType string, data interface{}) error {
+func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	var fileName string
-	if fileType == "" {
+	if sourceType == "" {
 		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
 	} else {
-		fileName = fmt.Sprintf("%s_%s_%s.json", stage, fileType, clientId)
+		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
 	}
 
 	filePath := filepath.Join(dir, fileName)
@@ -123,11 +123,6 @@ func SaveDataToFile(dir string, clientId string, stage string, fileType string, 
 		Indent:          "  ",  // Pretty print
 		EmitUnpopulated: false, // Include unpopulated fields
 	}
-
-	//var jsonArray []json.RawMessage
-	// Procesar los datos según su tipo
-
-	log.Infof("Processing data of type %T", data)
 
 	switch v := data.(type) {
 	case map[string]*protocol.Epsilon_Data:
@@ -180,9 +175,11 @@ func SaveDataToFile(dir string, clientId string, stage string, fileType string, 
 	}
 }
 
-func DeletePartialResults(dir string, clientId string) error {
+func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
 
-	filePattern := fmt.Sprintf("*%s*.json", clientId)
+	log.Infof("Deleting partial results for client: %s | in stage: %s | source type: %s", clientId, stage, sourceType)
+
+	filePattern := fmt.Sprintf("%s*%s*%s*.json", stage, sourceType, clientId)
 	files, err := filepath.Glob(filepath.Join(dir, filePattern))
 	if err != nil {
 		return fmt.Errorf("error finding files with pattern %s: %w", filePattern, err)
