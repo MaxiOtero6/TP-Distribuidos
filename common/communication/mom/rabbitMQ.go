@@ -62,7 +62,7 @@ func (r *RabbitMQ) InitConfig(
 	}
 
 	for _, queue := range queues {
-		r.NewQueue(queue["name"], map[string]any{
+		r.NewQueue(queue["name"], map[string]string{
 			"DLXexchange":   queue["DLXexchange"],
 			"DLXroutingKey": queue["DLXroutingKey"],
 			"ttl":           queue["ttl"],
@@ -77,7 +77,7 @@ func (r *RabbitMQ) InitConfig(
 
 // NewQueue creates a new RabbitMQ queue with the specified name.
 // If a queue with the same name already exists, an error is logged and the function returns.
-func (r *RabbitMQ) NewQueue(name string, args map[string]any) {
+func (r *RabbitMQ) NewQueue(name string, args map[string]string) {
 	if _, ok := r.queues[name]; ok {
 		log.Errorf("Queue '%s' already exists", name)
 		return

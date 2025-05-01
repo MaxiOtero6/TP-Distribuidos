@@ -2,6 +2,7 @@ package mom
 
 import (
 	"fmt"
+	"strconv"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -31,27 +32,19 @@ type queue struct {
 // The queue is durable, auto-deleted, and not exclusive by default.
 // The noWait property is set to false, and no additional arguments are passed.
 // The queue name is the name used to identify the queue on the RabbitMQ server.
-func newQueue(ch *amqp.Channel, name string, args map[string]any) *queue {
+func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
 	qArgs := amqp.Table{}
 
 	if v, ok := args["DLXexchange"]; ok {
-		if val, ok := v.(string); ok {
-			qArgs["x-dead-letter-exchange"] = val
-		} else {
-			log.Warningf("DLXexchange is not a string: %v", v)
-		}
+		qArgs["x-dead-letter-exchange"] = v
 	}
 
 	if v, ok := args["DLXroutingKey"]; ok {
-		if val, ok := v.(string); ok {
-			qArgs["x-dead-letter-routing-key"] = val
-		} else {
-			log.Warningf("DLXroutingKey is not a string: %v", v)
-		}
+		qArgs["x-dead-letter-routing-key"] = v
 	}
 
 	if v, ok := args["ttl"]; ok {
-		if val, ok := v.(int); ok {
+		if val, err := strconv.Atoi(v); err == nil {
 			qArgs["x-message-ttl"] = val
 		} else {
 			log.Warningf("ttl is not an int: %v", v)
@@ -59,7 +52,7 @@ func newQueue(ch *amqp.Channel, name string, args map[string]any) *queue {
 	}
 
 	if v, ok := args["expires"]; ok {
-		if val, ok := v.(int); ok {
+		if val, err := strconv.Atoi(v); err == nil {
 			qArgs["x-expires"] = val
 		} else {
 			log.Warningf("expires is not an int: %v", v)
