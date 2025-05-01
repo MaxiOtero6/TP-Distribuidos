@@ -127,14 +127,12 @@ func appendEOFInfra(
 
 	// Add the EOF_RK to the worker queues binds
 	binds[0]["extraRK"] = eofBroadcastRK
-	binds[0]["queue"] = qName
+	binds[0]["queue"] = queues[0]["name"]
 
 	binds = append(binds, map[string]string{
 		"queue":    eofQName,
 		"exchange": eofExchangeName,
 	})
-
-	log.Warningf("Queues %v\nBinds %v", queues, binds)
 
 	return queues, binds
 }
