@@ -9,10 +9,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
-const JOINER_BIG_TABLE string = "bigTable"
-const JOINER_SMALL_TABLE string = "smallTable"
-const JOINER_FILE_TYPE string = ""
-
 type SmallTablePartialData[T any] struct {
 	data  map[string]T
 	ready bool
@@ -151,7 +147,7 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (t
 		}
 	}
 
-	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, JOINER_SMALL_TABLE, dataMap)
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, SMALL_TABLE_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
 	}
@@ -194,7 +190,7 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (
 		return tasks
 	} else {
 		dataMap = j.partialResults[clientId].zetaData.bigTable.data
-		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, JOINER_BIG_TABLE, dataMap)
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, BIG_TABLE_SOURCE, dataMap)
 		if err != nil {
 			log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
 		}
@@ -297,7 +293,7 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		}
 	}
 
-	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, JOINER_SMALL_TABLE, dataMap)
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, SMALL_TABLE_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
 	}
@@ -339,7 +335,7 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		j.joinIotaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
-		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, JOINER_BIG_TABLE, dataMap)
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, BIG_TABLE_SOURCE, dataMap)
 		if err != nil {
 			log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
 		}
@@ -488,15 +484,40 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	} else {
 		j.createEofTask(tasks, data, true, clientId)
 
+		var bigTableReady bool
+		var dataStage string
+
 		switch data.Stage {
 		case ZETA_STAGE:
 			j.partialResults[clientId].zetaData.smallTable.ready = true
 			j.joinZetaData(tasks, j.partialResults[clientId].zetaData.bigTable.data, clientId)
+
+			bigTableReady = j.partialResults[clientId].zetaData.bigTable.ready
+			dataStage = data.Stage
+
 		case IOTA_STAGE:
 			j.partialResults[clientId].iotaData.smallTable.ready = true
 			j.joinIotaData(tasks, j.partialResults[clientId].iotaData.bigTable.data, clientId)
+
+			bigTableReady = j.partialResults[clientId].iotaData.bigTable.ready
+			dataStage = data.Stage
 		default:
 			return nil
+		}
+
+		log.Debugf("Big table ready: %v", bigTableReady)
+		log.Debugf("Data stage: %s", dataStage)
+
+		if bigTableReady {
+			// delete both tables
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+		} else {
+			// delete only the big table
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, BIG_TABLE_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
 		}
 	}
 	return tasks
@@ -531,13 +552,27 @@ func (j *Joiner) bigTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId st
 	} else {
 		j.createEofTask(tasks, data, true, clientId)
 
+		var smallTableReady bool
+		var dataStage string
+
 		switch data.Stage {
 		case ZETA_STAGE:
 			j.partialResults[clientId].zetaData.bigTable.ready = true
+			smallTableReady = j.partialResults[clientId].zetaData.smallTable.ready
+			dataStage = data.Stage
 		case IOTA_STAGE:
 			j.partialResults[clientId].iotaData.bigTable.ready = true
+			smallTableReady = j.partialResults[clientId].iotaData.smallTable.ready
+			dataStage = data.Stage
 		default:
 			return nil
+		}
+
+		if smallTableReady {
+			// delete both tables
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
 		}
 	}
 
