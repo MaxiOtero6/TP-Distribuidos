@@ -76,3 +76,40 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 	assert.ElementsMatch(t, expected, actual, "File content does not match expected JSON")
 
 }
+
+func TestLoadDataFromFile(t *testing.T) {
+	// Create a temporary directory for the test
+	tempDir, err := os.MkdirTemp("", "test_load_data")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
+
+	// Original data to save
+	originalData := map[string]*protocol.Delta_2_Data{
+		"country1": {
+			Country:       "country1",
+			PartialBudget: 100,
+		},
+		"country2": {
+			Country:       "country2",
+			PartialBudget: 200,
+		},
+		"country3": {
+			Country:       "country3",
+			PartialBudget: 300,
+		},
+	}
+
+	// Save the data to a file
+	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, originalData)
+	assert.NoError(t, err, "Failed to save data to file")
+
+	// Load the data back from the file
+	loadedData := make(map[string]*protocol.Delta_2_Data)
+	err = LoadDataFromFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, &loadedData)
+	assert.NoError(t, err, "Failed to load data from file")
+
+	// Assert that the loaded data matches the original data
+	assert.Equal(t, originalData, loadedData, "Loaded data does not match original data")
+}
