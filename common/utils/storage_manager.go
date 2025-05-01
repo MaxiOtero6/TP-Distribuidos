@@ -177,8 +177,6 @@ func SaveDataToFile(dir string, clientId string, stage string, sourceType string
 
 func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
 
-	log.Infof("Deleting partial results for client: %s | in stage: %s | source type: %s", clientId, stage, sourceType)
-
 	filePattern := fmt.Sprintf("%s*%s*%s*.json", stage, sourceType, clientId)
 	files, err := filepath.Glob(filepath.Join(dir, filePattern))
 	if err != nil {
