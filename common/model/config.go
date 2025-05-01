@@ -48,6 +48,29 @@ func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConf
 	}
 }
 
+func (i *InfraConfig) GetWorkersCountByType(workerType string) int {
+	kind := ActionType(workerType)
+
+	switch kind {
+	case FilterAction:
+		return i.workers.FilterCount
+	case OverviewerAction:
+		return i.workers.OverviewCount
+	case MapperAction:
+		return i.workers.MapCount
+	case JoinerAction:
+		return i.workers.JoinCount
+	case ReducerAction:
+		return i.workers.ReduceCount
+	case MergerAction:
+		return i.workers.MergeCount
+	case TopperAction:
+		return i.workers.TopCount
+	default:
+		return 0
+	}
+}
+
 func (i *InfraConfig) GetNodeId() string {
 	return i.nodeID
 }
