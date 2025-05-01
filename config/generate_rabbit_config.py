@@ -1,15 +1,16 @@
 import sys
 
+PACKET_TTL = 120000  # 2 minutes
 
-FILTER_EXCHANGE = {"name": "filterExchange", "kind": "direct"}
+FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 
-OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "direct"}
+OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
 
-MAP_EXCHANGE = {"name": "mapExchange", "kind": "direct"}
+MAP_EXCHANGE = {"name": "mapExchange", "kind": "fanout"}
+
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "fanout"}
 
 JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
-
-REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
 
 MERGE_EXCHANGE = {"name": "mergeExchange", "kind": "direct"}
 
@@ -17,21 +18,32 @@ TOP_EXCHANGE = {"name": "topExchange", "kind": "direct"}
 
 RESULT_EXCHANGE = {"name": "resultExchange", "kind": "direct"}
 
-FILTER_QUEUE = {"name": ""}
+EOF_EXCHANGE = {"name": "eofExchange", "kind": "direct"}
 
-OVERVIEW_QUEUE = {"name": ""}
 
-MAP_QUEUE = {"name": ""}
+FILTER_QUEUE = {"name": "filterQueue"}
 
-JOIN_QUEUE = {"name": ""}
+OVERVIEW_QUEUE = {"name": "overviewQueue"}
 
-REDUCE_QUEUE = {"name": ""}
+MAP_QUEUE = {"name": "mapQueue"}
 
-MERGE_QUEUE = {"name": ""}
+REDUCE_QUEUE = {"name": "reduceQueue"}
 
-TOP_QUEUE = {"name": ""}
+# DLXroutingKey generated in the worker's code
+JOIN_QUEUE = {"name": "", "DLXexchange": "joinExchange", "ttl": PACKET_TTL}
+
+# DLXroutingKey generated in the worker's code
+MERGE_QUEUE = {"name": "", "DLXexchange": "mergeExchange", "ttl": PACKET_TTL}
+
+# DLXroutingKey generated in the worker's code
+TOP_QUEUE = {"name": "", "DLXexchange": "topExchange", "ttl": PACKET_TTL}
+
+# This queue is generated in the worker's code due to anonymous queue name and dynamics DLXroutingKeys
+# EOF_QUEUE = {"name": "", "DLXexchange": "eofExchange", "ttl": PACKET_TTL}
 
 BROADCAST_ID = ""
+
+BROADCAST_EOF_ROUTING_KEY = "eof"
 
 
 class Server:
@@ -84,6 +96,10 @@ class Filter:
         lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}filterQueue:')
         lines.append(f'{" " * 8}name: "{FILTER_QUEUE["name"]}"')
@@ -113,6 +129,10 @@ class Overview:
         lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}overviewQueue:')
         lines.append(f'{" " * 8}name: "{OVERVIEW_QUEUE["name"]}"')
@@ -138,6 +158,10 @@ class Map:
         lines.append(f'{" " * 8}name: "{REDUCE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{REDUCE_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mapQueue:')
         lines.append(f'{" " * 8}name: "{MAP_QUEUE["name"]}"')
@@ -146,31 +170,6 @@ class Map:
         lines.append(f'{" " * 6}mapQueue:')
         lines.append(f'{" " * 8}exchange: "{MAP_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}queue: "{MAP_QUEUE["name"]}"')
-
-        return "\n".join(lines) + "\n"
-
-
-class Join:
-    def __str__(self) -> str:
-        lines: list[str] = []
-        lines.append(f'{" " * 2}JOINER:')
-        lines.append(f'{" " * 4}exchanges:')
-        lines.append(f'{" " * 6}joinExchange:')
-        lines.append(f'{" " * 8}name: "{JOIN_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{JOIN_EXCHANGE["kind"]}"')
-        lines.append("")
-        lines.append(f'{" " * 6}mapExchange:')
-        lines.append(f'{" " * 8}name: "{MAP_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}kind: "{MAP_EXCHANGE["kind"]}"')
-        lines.append("")
-        lines.append(f'{" " * 4}queues:')
-        lines.append(f'{" " * 6}joinQueue:')
-        lines.append(f'{" " * 8}name: "{JOIN_QUEUE["name"]}"')
-        lines.append("")
-        lines.append(f'{" " * 4}binds:')
-        lines.append(f'{" " * 6}joinQueue:')
-        lines.append(f'{" " * 8}exchange: "{JOIN_EXCHANGE["name"]}"')
-        lines.append(f'{" " * 8}queue: "{JOIN_QUEUE["name"]}"')
 
         return "\n".join(lines) + "\n"
 
@@ -188,6 +187,10 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{MERGE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{MERGE_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}name: "{REDUCE_QUEUE["name"]}"')
@@ -196,6 +199,37 @@ class Reduce:
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}exchange: "{REDUCE_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}queue: "{REDUCE_QUEUE["name"]}"')
+
+        return "\n".join(lines) + "\n"
+
+
+class Join:
+    def __str__(self) -> str:
+        lines: list[str] = []
+        lines.append(f'{" " * 2}JOINER:')
+        lines.append(f'{" " * 4}exchanges:')
+        lines.append(f'{" " * 6}joinExchange:')
+        lines.append(f'{" " * 8}name: "{JOIN_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{JOIN_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}mapExchange:')
+        lines.append(f'{" " * 8}name: "{MAP_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{MAP_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 4}queues:')
+        lines.append(f'{" " * 6}joinQueue:')
+        lines.append(f'{" " * 8}name: "{JOIN_QUEUE["name"]}"')
+        lines.append(f'{" " * 8}DLXexchange: "{JOIN_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}ttl: "{JOIN_QUEUE["ttl"]}"')
+        lines.append("")
+        lines.append(f'{" " * 4}binds:')
+        lines.append(f'{" " * 6}joinQueue:')
+        lines.append(f'{" " * 8}exchange: "{JOIN_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}queue: "{JOIN_QUEUE["name"]}"')
 
         return "\n".join(lines) + "\n"
 
@@ -217,9 +251,15 @@ class Merge:
         lines.append(f'{" " * 8}name: "{TOP_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{TOP_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
+        lines.append(f'{" " * 8}DLXexchange: "{MERGE_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}ttl: "{MERGE_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}mergeQueue:')
@@ -242,9 +282,15 @@ class Top:
         lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}eofExchange:')
+        lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}name: "{TOP_QUEUE["name"]}"')
+        lines.append(f'{" " * 8}DLXexchange: "{TOP_QUEUE["DLXexchange"]}"')
+        lines.append(f'{" " * 8}ttl: "{TOP_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}topQueue:')
@@ -278,6 +324,9 @@ class RabbitConfig:
             lines.append(f'{" " * 2}{k}: "{v["name"]}"')
 
         lines.append(f'{" " * 2}broadcastId: "{BROADCAST_ID}"\n')
+        lines.append(
+            f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n'
+        )
 
         lines.append("rabbitmq:")
         lines.append(str(Server()))
