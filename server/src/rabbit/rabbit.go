@@ -57,7 +57,12 @@ func (r *RabbitHandler) RegisterNewClient(clientId string) {
 	}
 
 	r.resultQueueName = "client_" + clientId
-	r.rabbitMQ.NewQueue(r.resultQueueName)
+
+	args := map[string]any{
+		"expires": 600000, // 10 minutes
+	}
+
+	r.rabbitMQ.NewQueue(r.resultQueueName, args)
 	r.rabbitMQ.BindQueue(r.resultQueueName, r.resultExchangeName, clientId)
 }
 
