@@ -122,6 +122,11 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	// Prepare the data to be saved
 	convertedData := make(map[string]*protocol.Theta_Data)
 
+	if len(thetaMaxHeap.GetTopK()) == 0 || len(thetaMinHeap.GetTopK()) == 0 {
+		log.Errorf("No data found for %s stage", THETA_STAGE)
+		return nil
+	}
+
 	elementMax := thetaMaxHeap.GetTopK()[0]
 	elementMin := thetaMinHeap.GetTopK()[0]
 

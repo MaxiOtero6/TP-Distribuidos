@@ -10,6 +10,7 @@ import (
 
 const HARDCODED_WORKER_ID = "0"
 const CLIENT_ID = "testClientId"
+const VOLUMEN_DIRECTORY = "testVolumeDirectory"
 
 var testInfraConfig = model.NewInfraConfig(
 	HARDCODED_WORKER_ID,
@@ -18,7 +19,7 @@ var testInfraConfig = model.NewInfraConfig(
 		ResultExchange: "resultExchange",
 		TopExchange:    "topExchange",
 	},
-	"",
+	VOLUMEN_DIRECTORY,
 )
 
 func TestTopperExecute(t *testing.T) {
