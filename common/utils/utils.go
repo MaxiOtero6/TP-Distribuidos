@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/spf13/viper"
@@ -26,6 +27,18 @@ var randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
 func RandomHash(workersCount int) string {
 	// Use the package-level random source
 	return fmt.Sprint(randomSource.Intn(workersCount))
+}
+
+func GetNextNodeId(nodeId string, workerCount int) (string, error) {
+	currentNodeId, err := strconv.Atoi(nodeId)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
+	}
+
+	nextNodeIdInt := (currentNodeId + 1) % workerCount
+
+	nextNodeId := fmt.Sprintf("%d", nextNodeIdInt)
+	return nextNodeId, nil
 }
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
