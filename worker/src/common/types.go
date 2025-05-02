@@ -8,4 +8,5 @@ type NextStageData struct {
 	Stage       string
 	Exchange    string
 	WorkerCount int
+	RoutingKey  string
 }

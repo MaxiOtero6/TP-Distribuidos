@@ -22,6 +22,6 @@ type IEOFHandler interface {
 	// It returns a map of tasks for the next stages.
 	HandleRing(
 		data *protocol.RingEOF, clientId string,
-		nextStageFunc func(stage string) ([]NextStageData, error), eofStatus bool,
+		nextStageFunc func(stage string, clientId string) ([]NextStageData, error), eofStatus bool,
 	) (tasks Tasks)
 }

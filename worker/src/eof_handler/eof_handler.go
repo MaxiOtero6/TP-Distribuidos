@@ -10,20 +10,17 @@ type EOFHandler struct {
 	workerID     string
 	workerCount  int
 	eofExchange  string
-	broadcastID  string
 	nextWorkerID string
 }
 
 func NewEOFHandler(
 	workerID string, workerCount int,
-	eofExchange string, broadcastID string,
-	nextWorkerID string,
+	eofExchange string, nextWorkerID string,
 ) *EOFHandler {
 	return &EOFHandler{
 		workerID:     workerID,
 		workerCount:  workerCount,
 		eofExchange:  eofExchange,
-		broadcastID:  broadcastID,
 		nextWorkerID: nextWorkerID,
 	}
 }
@@ -50,7 +47,7 @@ func (h *EOFHandler) InitRing(stage string, eofType string) (tasks Tasks) {
 
 func (h *EOFHandler) HandleRing(
 	data *protocol.RingEOF, clientId string,
-	nextStageFunc func(stage string) ([]NextStageData, error),
+	nextStageFunc func(stage string, clientId string) ([]NextStageData, error),
 	eofStatus bool,
 ) (tasks Tasks) {
 	// Filter to only circulate one RingEOF message
@@ -113,11 +110,11 @@ func (h *EOFHandler) handleAllNotReady(data *protocol.RingEOF, clientId string) 
 
 func (h *EOFHandler) handleSendToNextStage(
 	data *protocol.RingEOF, clientId string,
-	nextStageFunc func(stage string) ([]NextStageData, error),
+	nextStageFunc func(stage string, clientId string) ([]NextStageData, error),
 ) Tasks {
 	tasks := make(Tasks)
 
-	nextDataStages, err := nextStageFunc(data.GetStage())
+	nextDataStages, err := nextStageFunc(data.GetStage(), clientId)
 	if err != nil {
 		log.Errorf("Failed to get next stage data: %s", err)
 		return nil
@@ -137,11 +134,7 @@ func (h *EOFHandler) handleSendToNextStage(
 			},
 		}
 
-		randomNode := h.broadcastID
-
-		if nextDataStage.Stage == RESULT_STAGE {
-			randomNode = clientId
-		}
+		routingKey := nextDataStage.RoutingKey
 
 		if _, exists := tasks[nextDataStage.Exchange]; !exists {
 			tasks[nextDataStage.Exchange] = make(map[string]map[string]*protocol.Task)
@@ -151,7 +144,7 @@ func (h *EOFHandler) handleSendToNextStage(
 			tasks[nextDataStage.Exchange][nextDataStage.Stage] = make(map[string]*protocol.Task)
 		}
 
-		tasks[nextDataStage.Exchange][nextDataStage.Stage][randomNode] = nextStageEOF
+		tasks[nextDataStage.Exchange][nextDataStage.Stage][routingKey] = nextStageEOF
 	}
 
 	return tasks
