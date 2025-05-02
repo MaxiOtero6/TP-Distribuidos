@@ -174,6 +174,7 @@ class ServiceType(Enum):
                 ServiceType.JOINER
                 | ServiceType.TOP
                 | ServiceType.REDUCE
+                | ServiceType.MERGE
             ):
                 
                 worker_name = self.value.split("_", 1)[0].lower()
@@ -204,6 +205,9 @@ class ServiceType(Enum):
                         ),
                         "WORKER_TOP_COUNT": str(
                             instances_per_service.get(ServiceType.TOP, 0)
+                        ),
+                        "WORKER_MERGE_COUNT": str(
+                            instances_per_service.get(ServiceType.MERGE, 0)
                         ),
                     },
                     networks=[MOVIES_NETWORK_NAME],
