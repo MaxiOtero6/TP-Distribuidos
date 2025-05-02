@@ -11,11 +11,11 @@ import (
 )
 
 func TestMapper(t *testing.T) {
-	HARDCODED_WORKER_ID := "0"
+	BROADCAST_ID := ""
 	CLIENT_ID := "testClientId"
 
 	var testInfraConfig = model.NewInfraConfig(
-		HARDCODED_WORKER_ID,
+		BROADCAST_ID,
 		&model.WorkerClusterConfig{
 			ReduceCount: 2,
 		},
@@ -33,7 +33,7 @@ func TestMapper(t *testing.T) {
 	}
 
 	randomHash := func(workersCount int) string {
-		return HARDCODED_WORKER_ID
+		return BROADCAST_ID
 	}
 
 	t.Run("TestDelta1Stage", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestMapper(t *testing.T) {
 
 		t.Run("Test Delta1Stage with one reducer", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 1,
 				},
@@ -67,13 +67,13 @@ func TestMapper(t *testing.T) {
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
 			assert.Len(t, tasks[REDUCE_EXCHANGE][DELTA_STAGE_2], 1) // ReduceCount is 1
 
-			resultData := tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][HARDCODED_WORKER_ID].GetDelta_2().GetData()
+			resultData := tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][BROADCAST_ID].GetDelta_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 countries
 		})
 
 		t.Run("Test Delta1Stage with multiple reducers", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 2,
 				},
@@ -105,7 +105,7 @@ func TestMapper(t *testing.T) {
 
 		t.Run("Test Delta1Stage with empty data", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 2,
 				},
@@ -134,7 +134,7 @@ func TestMapper(t *testing.T) {
 
 		t.Run("Test Eta1Stage with one reducer", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 1,
 				},
@@ -159,7 +159,7 @@ func TestMapper(t *testing.T) {
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
 			assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][HARDCODED_WORKER_ID].GetEta_2().GetData()
+			resultData := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 movies
 		})
 
@@ -182,7 +182,7 @@ func TestMapper(t *testing.T) {
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
 			assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 1) // randomHash set to "0"
 
-			result0Data := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][HARDCODED_WORKER_ID].GetEta_2().GetData()
+			result0Data := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
 			assert.Len(t, result0Data, 2) // Should contain 2 movies
 		})
 
@@ -208,7 +208,7 @@ func TestMapper(t *testing.T) {
 
 		t.Run("Test Kappa1Stage with one reducer", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 1,
 				},
@@ -233,7 +233,7 @@ func TestMapper(t *testing.T) {
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
 			assert.Len(t, tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][HARDCODED_WORKER_ID].GetKappa_2().GetData()
+			resultData := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 actors
 
 		})
@@ -255,7 +255,7 @@ func TestMapper(t *testing.T) {
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
-			result0Data := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][HARDCODED_WORKER_ID].GetKappa_2().GetData()
+			result0Data := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
 			assert.Len(t, result0Data, 2) // Should contain 2 actors
 		})
 
@@ -281,7 +281,7 @@ func TestMapper(t *testing.T) {
 
 		t.Run("Test Nu1Stage with one reducer", func(t *testing.T) {
 			infra := model.NewInfraConfig(
-				HARDCODED_WORKER_ID,
+				BROADCAST_ID,
 				&model.WorkerClusterConfig{
 					ReduceCount: 1,
 				},
@@ -305,7 +305,7 @@ func TestMapper(t *testing.T) {
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
 			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][NU_STAGE_2][HARDCODED_WORKER_ID].GetNu_2().GetData()
+			resultData := tasks[REDUCE_EXCHANGE][NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 movies
 		})
 
@@ -326,7 +326,7 @@ func TestMapper(t *testing.T) {
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
 			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2][HARDCODED_WORKER_ID].GetNu_2().GetData(), 2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData(), 2)
 		})
 
 		t.Run("Test Nu1Stage with empty data", func(t *testing.T) {

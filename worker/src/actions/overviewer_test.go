@@ -13,12 +13,12 @@ import (
 )
 
 func TestOverviewer(t *testing.T) {
-	HARDCODED_WORKER_ID := "0"
+	BROADCAST_ID := ""
 	MAP_EXCHANGE := "mapExchange"
 	CLIENT_ID := "testClientId"
 
 	var testInfraConfig = model.NewInfraConfig(
-		HARDCODED_WORKER_ID,
+		BROADCAST_ID,
 		&model.WorkerClusterConfig{
 			MapCount: 1,
 		},
@@ -39,7 +39,7 @@ func TestOverviewer(t *testing.T) {
 	}
 
 	randomHash := func(workersCount int) string {
-		return HARDCODED_WORKER_ID
+		return BROADCAST_ID
 	}
 
 	var sentimentModel, _ = sentiment.Restore()
@@ -67,13 +67,13 @@ func TestOverviewer(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
-			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData(), 1)
+			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData(), 1)
 
-			assert.Equal(t, "1", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetId())
-			assert.Equal(t, "Movie 1", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetTitle())
-			assert.Equal(t, uint64(1000), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetRevenue())
-			assert.Equal(t, uint64(500), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetBudget())
-			assert.Equal(t, true, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetSentiment())
+			assert.Equal(t, "1", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetId())
+			assert.Equal(t, "Movie 1", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetTitle())
+			assert.Equal(t, uint64(1000), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetRevenue())
+			assert.Equal(t, uint64(500), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetBudget())
+			assert.Equal(t, true, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetSentiment())
 		})
 
 		t.Run("Process many valid Mu_Data", func(t *testing.T) {
@@ -98,19 +98,19 @@ func TestOverviewer(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
-			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData(), 2)
+			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData(), 2)
 
-			assert.Equal(t, "1", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetId())
-			assert.Equal(t, "Movie 1", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetTitle())
-			assert.Equal(t, uint64(1000), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetRevenue())
-			assert.Equal(t, uint64(500), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetBudget())
-			assert.Equal(t, true, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[0].GetSentiment())
+			assert.Equal(t, "1", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetId())
+			assert.Equal(t, "Movie 1", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetTitle())
+			assert.Equal(t, uint64(1000), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetRevenue())
+			assert.Equal(t, uint64(500), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetBudget())
+			assert.Equal(t, true, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[0].GetSentiment())
 
-			assert.Equal(t, "2", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[1].GetId())
-			assert.Equal(t, "Movie 2", result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[1].GetTitle())
-			assert.Equal(t, uint64(1100), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[1].GetRevenue())
-			assert.Equal(t, uint64(600), result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[1].GetBudget())
-			assert.Equal(t, false, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData()[1].GetSentiment())
+			assert.Equal(t, "2", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[1].GetId())
+			assert.Equal(t, "Movie 2", result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[1].GetTitle())
+			assert.Equal(t, uint64(1100), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[1].GetRevenue())
+			assert.Equal(t, uint64(600), result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[1].GetBudget())
+			assert.Equal(t, false, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData()[1].GetSentiment())
 		})
 
 		t.Run("Handle nil Mu_Data", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestOverviewer(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
-			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData(), 0)
+			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData(), 0)
 		})
 
 		t.Run("Handle empty Mu_Data", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestOverviewer(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], NU_STAGE_1)
-			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][HARDCODED_WORKER_ID].GetNu_1().GetData(), 0)
+			assert.Len(t, result[MAP_EXCHANGE][NU_STAGE_1][BROADCAST_ID].GetNu_1().GetData(), 0)
 		})
 	})
 

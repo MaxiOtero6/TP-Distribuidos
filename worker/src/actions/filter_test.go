@@ -11,11 +11,11 @@ import (
 )
 
 func TestFilter(t *testing.T) {
-	HARDCODED_WORKER_ID := "0"
+	BROADCAST_ID := ""
 	CLIENT_ID := "test-client-id"
 
 	var testFilterInfraConfig = model.NewInfraConfig(
-		HARDCODED_WORKER_ID,
+		BROADCAST_ID,
 		&model.WorkerClusterConfig{
 			JoinCount:   1,
 			FilterCount: 1,
@@ -34,7 +34,7 @@ func TestFilter(t *testing.T) {
 			itemInt, _ := strconv.Atoi(item)
 			return fmt.Sprintf("%d", itemInt%workersCount)
 		},
-		randomHashFunc: func(workersCount int) string { return HARDCODED_WORKER_ID },
+		randomHashFunc: func(workersCount int) string { return BROADCAST_ID },
 	}
 
 	t.Run("Test alpha stage", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 0 destination ID")
 			assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-			beta := result[FILTER_EXCHANGE][BETA_STAGE][HARDCODED_WORKER_ID].GetBeta().GetData()
+			beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 			assert.Len(t, beta, 0, "Expected empty slice")
 
 			iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
@@ -69,7 +69,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 0 destination ID")
 			assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 0 destination ID")
 
-			beta := result[FILTER_EXCHANGE][BETA_STAGE][HARDCODED_WORKER_ID].GetBeta().GetData()
+			beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 			assert.Len(t, beta, 0, "Expected empty slice")
 
 			iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
@@ -128,7 +128,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 1, "Expected 1 destination ID")
 			assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 1, "Expected 1 destination ID")
 
-			betaData := result[FILTER_EXCHANGE][BETA_STAGE][HARDCODED_WORKER_ID].GetBeta().GetData()
+			betaData := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 			assert.Len(t, betaData, 2, "Expected 2 movies")
 
 			assert.Equal(t, "1", betaData[0].GetId(), "Expected movie ID 1")
@@ -193,7 +193,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[JOIN_EXCHANGE][IOTA_STAGE], 0, "Expected 1 destination ID")
 			assert.Len(t, result[JOIN_EXCHANGE][ZETA_STAGE], 0, "Expected 1 destination ID")
 
-			beta := result[FILTER_EXCHANGE][BETA_STAGE][HARDCODED_WORKER_ID].GetBeta().GetData()
+			beta := result[FILTER_EXCHANGE][BETA_STAGE][BROADCAST_ID].GetBeta().GetData()
 			assert.Len(t, beta, 0, "Expected empty slice")
 
 			iotaData := result[JOIN_EXCHANGE][IOTA_STAGE][TEST_WORKER_ID].GetIota().GetData()
@@ -329,7 +329,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-			res := result[MAP_EXCHANGE][DELTA_STAGE_1][HARDCODED_WORKER_ID].GetDelta_1().GetData()
+			res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 
@@ -339,7 +339,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-			res := result[MAP_EXCHANGE][DELTA_STAGE_1][HARDCODED_WORKER_ID].GetDelta_1().GetData()
+			res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 
@@ -378,7 +378,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 1, "Expected 1 destination ID")
 
-			res := result[MAP_EXCHANGE][DELTA_STAGE_1][HARDCODED_WORKER_ID].GetDelta_1().GetData()
+			res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 			assert.Len(t, res, 2, "Expected 2 movies")
 
 			assert.Equal(t, uint64(2005), res[0].GetBudget(), "Expected movie budget 2005")
@@ -413,7 +413,7 @@ func TestFilter(t *testing.T) {
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][DELTA_STAGE_1], 0, "Expected 0 destination ID")
 
-			res := result[MAP_EXCHANGE][DELTA_STAGE_1][HARDCODED_WORKER_ID].GetDelta_1().GetData()
+			res := result[MAP_EXCHANGE][DELTA_STAGE_1][BROADCAST_ID].GetDelta_1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 	})

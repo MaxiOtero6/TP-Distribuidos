@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1",
+    "title": "Movie A",
+    "avgRating": 10
+  },
+  {
+    "id": "3",
+    "title": "Movie C",
+    "avgRating": 2
+  }
+]
