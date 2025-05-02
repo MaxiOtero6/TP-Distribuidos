@@ -11,8 +11,41 @@ import (
 
 const CLIENT_ID = "test_client"
 const DIR = "prueba"
-const DELTA_STAGE_2 = "delta2"
-const ANY_SOURCE = ""
+
+func assertSerializationWithCustomComparison(
+	t *testing.T,
+	testCases []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	},
+) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Crear un directorio temporal para la prueba
+			tempDir, err := os.MkdirTemp("", "test_serialization")
+			if err != nil {
+				t.Fatalf("Failed to create temp directory: %v", err)
+			}
+			defer os.RemoveAll(tempDir) // Limpiar el directorio temporal después de la prueba
+
+			// Guardar los datos en un archivo
+			err = SaveDataToFile(tempDir, tc.clientID, tc.stage, tc.source, tc.data)
+			assert.NoError(t, err, "Failed to save data to file")
+
+			// Leer los datos del archivo
+			loadedData, err := LoadDataFromFile(tempDir, tc.clientID, tc.stage, tc.source)
+			assert.NoError(t, err, "Failed to load data from file")
+
+			// Usar la función de comparación personalizada
+			assert.True(t, tc.comparator(tc.data, loadedData), "Loaded data does not match original data")
+		})
+	}
+}
 
 func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 
@@ -57,7 +90,8 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
         }
     ]`
 
-	filePath := tempDir + "/" + CLIENT_ID + "_" + DELTA_STAGE_2 + ".json"
+	filePath := tempDir + "/" + DELTA_STAGE_2 + "_" + CLIENT_ID + ".json"
+	log.Infof("File path: %s", filePath)
 	fileContent, err := os.ReadFile(filePath)
 	assert.NoError(t, err, "Failed to read the saved file")
 
@@ -77,39 +111,211 @@ func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
 
 }
 
-func TestLoadDataFromFile(t *testing.T) {
-	// Create a temporary directory for the test
-	tempDir, err := os.MkdirTemp("", "test_load_data")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
+func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
+		{
+			name: "Delta_2_Data",
+			data: map[string]*protocol.Delta_2_Data{
+				"country1": {Country: "country1", PartialBudget: 100},
+				"country2": {Country: "country2", PartialBudget: 200},
+				"country3": {Country: "country3", PartialBudget: 300},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      DELTA_STAGE_2,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Delta_3_Data",
+			data: map[string]*protocol.Delta_3_Data{
+				"country1": {Country: "country1", PartialBudget: 100},
+				"country2": {Country: "country2", PartialBudget: 200},
+				"country3": {Country: "country3", PartialBudget: 300},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      DELTA_STAGE_3,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
 	}
-	defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
 
-	// Original data to save
-	originalData := map[string]*protocol.Delta_2_Data{
-		"country1": {
-			Country:       "country1",
-			PartialBudget: 100,
+	assertSerializationWithCustomComparison(t, testCases)
+}
+
+func TestSerializationAndDeserializationForNuStage(t *testing.T) {
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
+		{
+			name: "Nu_2_Data",
+			data: map[string]*protocol.Nu_2_Data{
+				"true":  {Sentiment: true, Ratio: 0.5, Count: 100},
+				"false": {Sentiment: false, Ratio: 0.5, Count: 200},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      NU_STAGE_2,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
 		},
-		"country2": {
-			Country:       "country2",
-			PartialBudget: 200,
-		},
-		"country3": {
-			Country:       "country3",
-			PartialBudget: 300,
+		{
+			name: "Nu_3_Data",
+			data: map[string]*protocol.Nu_3_Data{
+				"true":  {Sentiment: true, Ratio: 0.5, Count: 100},
+				"false": {Sentiment: false, Ratio: 0.5, Count: 200},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      NU_STAGE_3,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
 		},
 	}
 
-	// Save the data to a file
-	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, originalData)
-	assert.NoError(t, err, "Failed to save data to file")
+	assertSerializationWithCustomComparison(t, testCases)
+}
 
-	// Load the data back from the file
-	loadedData := make(map[string]*protocol.Delta_2_Data)
-	err = LoadDataFromFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, &loadedData)
-	assert.NoError(t, err, "Failed to load data from file")
+func TestSerializationAndDeserializationForEtaStage(t *testing.T) {
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
+		{
+			name: "Eta_2_Data",
+			data: map[string]*protocol.Eta_2_Data{
+				"MovieId1": {MovieId: "MovieId1", Title: "Title1", Rating: 4.5, Count: 100},
+				"MovieId2": {MovieId: "MovieId2", Title: "Title2", Rating: 3.5, Count: 200},
+				"MovieId3": {MovieId: "MovieId3", Title: "Title3", Rating: 5.0, Count: 300},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      ETA_STAGE_2,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
 
-	// Assert that the loaded data matches the original data
-	assert.Equal(t, originalData, loadedData, "Loaded data does not match original data")
+		{
+			name: "Eta_3_Data",
+			data: map[string]*protocol.Eta_3_Data{
+				"MovieId1": {MovieId: "MovieId1", Title: "Title1", Rating: 4.5, Count: 100},
+				"MovieId2": {MovieId: "MovieId2", Title: "Title2", Rating: 3.5, Count: 200},
+				"MovieId3": {MovieId: "MovieId3", Title: "Title3", Rating: 5.0, Count: 300},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      ETA_STAGE_3,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+	}
+
+	assertSerializationWithCustomComparison(t, testCases)
+}
+
+func TestSerializationAndDeserializationForAllStages(t *testing.T) {
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
+		{
+			name: "Epsilon_Data",
+			data: map[string]*protocol.Epsilon_Data{
+				"country1": {ProdCountry: "country1", TotalInvestment: 1000},
+				"country2": {ProdCountry: "country2", TotalInvestment: 2000},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      EPSILON_STAGE,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Lambda_Data",
+			data: map[string]*protocol.Lambda_Data{
+				"actor1": {ActorId: "actor1", ActorName: "Actor One", Participations: 10},
+				"actor2": {ActorId: "actor2", ActorName: "Actor Two", Participations: 20},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      LAMBDA_STAGE,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Theta_Data",
+			data: map[string]*protocol.Theta_Data{
+				"movie1": {Id: "movie1", Title: "Movie One", AvgRating: 4.5},
+				"movie2": {Id: "movie2", Title: "Movie Two", AvgRating: 3.8},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      THETA_STAGE,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Kappa_2_Data",
+			data: map[string]*protocol.Kappa_2_Data{
+				"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 5},
+				"actor2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 15},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      KAPPA_STAGE_2,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Kappa_3_Data",
+			data: map[string]*protocol.Kappa_3_Data{
+				"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 8},
+				"actor2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 12},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      KAPPA_STAGE_3,
+			source:     ANY_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Zeta_Data_Movie",
+			data: map[string]*protocol.Zeta_Data_Movie{
+				"movie1": {MovieId: "movie1", Title: "Movie One"},
+				"movie2": {MovieId: "movie2", Title: "Movie Two"},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      ZETA_STAGE,
+			source:     SMALL_TABLE_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+	}
+
+	assertSerializationWithCustomComparison(t, testCases)
 }
