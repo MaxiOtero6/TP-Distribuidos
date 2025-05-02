@@ -84,8 +84,6 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (ta
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	log.Infof("delta3Stage: %v", dataMap)
-
 	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, DELTA_STAGE_3, ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", DELTA_STAGE_3, err)
