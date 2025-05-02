@@ -2,11 +2,11 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
 const MERGER_STAGES_COUNT uint = 4
@@ -25,6 +25,7 @@ type Merger struct {
 	partialResults map[string]*MergerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
 func (m *Merger) makePartialResults(clientId string) {
@@ -42,12 +43,13 @@ func (m *Merger) makePartialResults(clientId string) {
 
 // NewMerger creates a new Merger instance.
 // It initializes the worker count and returns a pointer to the Merger struct.
-func NewMerger(infraConfig *model.InfraConfig) *Merger {
+func NewMerger(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Merger {
 	return &Merger{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*MergerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -179,30 +181,48 @@ func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks Ta
 	return nil
 }
 
-func (m *Merger) getNextStageData(stage string) (string, string, int, error) {
+func (m *Merger) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
 	switch stage {
 	case DELTA_STAGE_3:
-		return EPSILON_STAGE, m.infraConfig.GetTopExchange(), m.infraConfig.GetTopCount(), nil
+		return []NextStageData{
+			{
+				Stage:       EPSILON_STAGE,
+				Exchange:    m.infraConfig.GetTopExchange(),
+				WorkerCount: m.infraConfig.GetTopCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
 	case ETA_STAGE_3:
-		return THETA_STAGE, m.infraConfig.GetTopExchange(), m.infraConfig.GetTopCount(), nil
+		return []NextStageData{
+			{
+				Stage:       THETA_STAGE,
+				Exchange:    m.infraConfig.GetTopExchange(),
+				WorkerCount: m.infraConfig.GetTopCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
 	case KAPPA_STAGE_3:
-		return LAMBDA_STAGE, m.infraConfig.GetTopExchange(), m.infraConfig.GetTopCount(), nil
+		return []NextStageData{
+			{
+				Stage:       LAMBDA_STAGE,
+				Exchange:    m.infraConfig.GetTopExchange(),
+				WorkerCount: m.infraConfig.GetTopCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
 	case NU_STAGE_3:
-		return RESULT_STAGE, m.infraConfig.GetResultExchange(), 1, nil
+		return []NextStageData{
+			{
+				Stage:       RESULT_STAGE,
+				Exchange:    m.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
+			},
+		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+		return []NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
-}
-
-func (m *Merger) getNextNodeId(nodeId string) (string, error) {
-	nodeIdInt, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert nodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (nodeIdInt+1)%m.infraConfig.GetMergeCount())
-	return nextNodeId, nil
 }
 
 func (m *Merger) delta3Results(tasks Tasks, clientId string) {
@@ -366,91 +386,30 @@ func (m *Merger) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	return nil
 }
 
-/*
- */
 func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
-	log.Debugf("omegaEOFStage: %v", data)
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == m.infraConfig.GetNodeId() {
-		nextStage, nextExchange, nextStageCount, err := m.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
+	tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+
+	if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+		if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
+			delete(m.partialResults, clientId)
 		}
 
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           nextStage,
-					},
-				},
-			},
+		if err := utils.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
+			log.Errorf("Failed to delete partial results: %s", err)
 		}
-
-		var nodeId string
-
-		if nextStage == RESULT_STAGE {
-			nodeId = clientId
-		} else if nextExchange == m.infraConfig.GetTopExchange() {
-			nodeId = m.itemHashFunc(m.infraConfig.GetTopCount(), nextStage)
-		} else {
-			nodeId = m.randomHashFunc(nextStageCount)
+		if err := m.deleteStage(clientId, data.GetStage()); err != nil {
+			log.Errorf("Failed to delete stage: %s", err)
 		}
-
-		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][nodeId] = nextStageEOF
-
-	} else { // if the creator is not the same as the worker, send the stage results and EOF to the next node
-		nextRingEOF := data
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = m.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := m.getNextNodeId(m.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		mergeExchange := m.infraConfig.GetMergeExchange()
-		stage := data.GetStage()
-
-		tasks[mergeExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[mergeExchange][stage] = make(map[string]*protocol.Task)
-		tasks[mergeExchange][stage][nextNode] = eofTask
-
-		// send the results
-		if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-			if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
-				delete(m.partialResults, clientId)
-			}
-
-			if err := utils.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
-				log.Errorf("Failed to delete partial results: %s", err)
-			}
-			if err := m.deleteStage(clientId, data.GetStage()); err != nil {
-				log.Errorf("Failed to delete stage: %s", err)
-			}
-		}
-
 	}
+
 	return tasks
+}
+
+func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+	// For filters eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, true)
 }
 
 func (m *Merger) Execute(task *protocol.Task) (Tasks, error) {
@@ -479,6 +438,9 @@ func (m *Merger) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return m.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return m.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

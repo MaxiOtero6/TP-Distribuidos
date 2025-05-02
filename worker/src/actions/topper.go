@@ -6,6 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
 
@@ -33,6 +34,7 @@ type PartialResults struct {
 type Topper struct {
 	infraConfig    *model.InfraConfig
 	partialResults map[string]*PartialResults
+	eofHandler     eof_handler.IEOFHandler
 }
 
 func (t *Topper) makePartialResults(clientId string) {
@@ -52,11 +54,11 @@ func (t *Topper) makePartialResults(clientId string) {
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(infraConfig *model.InfraConfig) *Topper {
+func NewTopper(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Topper {
 	return &Topper{
-		infraConfig: infraConfig,
-
+		infraConfig:    infraConfig,
 		partialResults: make(map[string]*PartialResults),
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -339,60 +341,58 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	return nil
 }
 
+func (t *Topper) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
+	switch stage {
+	case EPSILON_STAGE:
+		return []NextStageData{
+			{
+				Stage:       RESULT_STAGE,
+				Exchange:    t.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
+			},
+		}, nil
+	case THETA_STAGE:
+		return []NextStageData{
+			{
+				Stage:       RESULT_STAGE,
+				Exchange:    t.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
+			},
+		}, nil
+	case LAMBDA_STAGE:
+		return []NextStageData{
+			{
+				Stage:       RESULT_STAGE,
+				Exchange:    t.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
+			},
+		}, nil
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return []NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
 func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
+	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType())
 
-	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
-	TOP_EXCHANGE := t.infraConfig.GetTopExchange()
-
-	if data.GetWorkerCreatorId() == t.infraConfig.GetNodeId() {
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           RESULT_STAGE,
-					},
-				},
-			},
-		}
-
-		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-		tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][clientId] = nextStageEOF
-
-	} else {
-		nextRingEOF := data
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = t.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode := t.infraConfig.GetNodeId()
-		stage := data.GetStage()
-
-		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-		tasks[TOP_EXCHANGE][stage] = make(map[string]*protocol.Task)
-		tasks[TOP_EXCHANGE][stage][nextNode] = eofTask
-
-		if err := t.addResultsToNextStage(tasks, stage, clientId); err == nil {
-			if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
-				log.Errorf("Failed to delete partial results: %s", err)
-			}
+	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
+			log.Errorf("Failed to delete partial results: %s", err)
 		}
 	}
 
 	return tasks
+}
+
+func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+	// For filters eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
 }
 
 func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
@@ -420,6 +420,9 @@ func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return t.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return t.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

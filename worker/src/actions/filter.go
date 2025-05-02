@@ -2,20 +2,14 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
-
-type FilterStageData struct {
-	NextStage    string
-	NextExchange string
-	WorkerCount  int
-}
 
 // Filter is a struct that implements the Action interface.
 // It filters movies based on certain criteria.
@@ -24,13 +18,15 @@ type Filter struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
-func NewFilter(infraConfig *model.InfraConfig) *Filter {
+func NewFilter(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Filter {
 	return &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -281,52 +277,47 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 	return tasks
 }
 
-func (f *Filter) getNextNodeId(nodeId string) (string, error) {
-	currentNodeId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%f.infraConfig.GetFilterCount())
-	return nextNodeId, nil
-}
-
-func (f *Filter) getNextStageData(stage string) ([]FilterStageData, error) {
+func (f *Filter) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
 	switch stage {
 	case ALPHA_STAGE:
-		return []FilterStageData{
+		return []NextStageData{
 			{
-				NextStage:    BETA_STAGE,
-				NextExchange: f.infraConfig.GetFilterExchange(),
-				WorkerCount:  f.infraConfig.GetFilterCount(),
+				Stage:       BETA_STAGE,
+				Exchange:    f.infraConfig.GetFilterExchange(),
+				WorkerCount: f.infraConfig.GetFilterCount(),
+				RoutingKey:  f.infraConfig.GetBroadcastID(),
 			},
 			{
-				NextStage:    ZETA_STAGE,
-				NextExchange: f.infraConfig.GetJoinExchange(),
-				WorkerCount:  f.infraConfig.GetJoinCount(),
+				Stage:       ZETA_STAGE,
+				Exchange:    f.infraConfig.GetJoinExchange(),
+				WorkerCount: f.infraConfig.GetJoinCount(),
+				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 			{
-				NextStage:    IOTA_STAGE,
-				NextExchange: f.infraConfig.GetJoinExchange(),
-				WorkerCount:  f.infraConfig.GetJoinCount(),
+				Stage:       IOTA_STAGE,
+				Exchange:    f.infraConfig.GetJoinExchange(),
+				WorkerCount: f.infraConfig.GetJoinCount(),
+				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 
 	case BETA_STAGE:
-		return []FilterStageData{
+		return []NextStageData{
 			{
-				NextStage:    RESULT_STAGE,
-				NextExchange: f.infraConfig.GetResultExchange(),
-				WorkerCount:  1,
+				Stage:       RESULT_STAGE,
+				Exchange:    f.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
 			},
 		}, nil
 
 	case GAMMA_STAGE:
-		return []FilterStageData{
+		return []NextStageData{
 			{
-				NextStage:    DELTA_STAGE_1,
-				NextExchange: f.infraConfig.GetMapExchange(),
-				WorkerCount:  f.infraConfig.GetMapCount(),
+				Stage:       DELTA_STAGE_1,
+				Exchange:    f.infraConfig.GetMapExchange(),
+				WorkerCount: f.infraConfig.GetMapCount(),
+				RoutingKey:  f.infraConfig.GetBroadcastID(),
 			},
 		}, nil
 
@@ -337,80 +328,14 @@ func (f *Filter) getNextStageData(stage string) ([]FilterStageData, error) {
 }
 
 func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
+	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+}
 
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == f.infraConfig.GetNodeId() {
-		nextDataStages, err := f.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
-		}
-
-		for _, nextDataStage := range nextDataStages {
-
-			nextStageEOF := &protocol.Task{
-				ClientId: clientId,
-				Stage: &protocol.Task_OmegaEOF{
-					OmegaEOF: &protocol.OmegaEOF{
-						Data: &protocol.OmegaEOF_Data{
-							WorkerCreatorId: "",
-							Stage:           nextDataStage.NextStage,
-							EofType:         data.GetEofType(),
-						},
-					},
-				},
-			}
-
-			randomNode := f.randomHashFunc(nextDataStage.WorkerCount)
-
-			if nextDataStage.NextStage == RESULT_STAGE {
-				randomNode = clientId
-			}
-
-			if _, exists := tasks[nextDataStage.NextExchange]; !exists {
-				tasks[nextDataStage.NextExchange] = make(map[string]map[string]*protocol.Task)
-			}
-			if _, exists := tasks[nextDataStage.NextExchange][nextDataStage.NextStage]; !exists {
-				tasks[nextDataStage.NextExchange][nextDataStage.NextStage] = make(map[string]*protocol.Task)
-			}
-
-			log.Debugf("EOF type: %s", data.GetEofType())
-			tasks[nextDataStage.NextExchange][nextDataStage.NextStage][randomNode] = nextStageEOF
-		}
-
-	} else { // if the creator is not the same as the worker, send EOF to the next node
-		nextRingEOF := data
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = f.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := f.getNextNodeId(f.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		filterExchange := f.infraConfig.GetFilterExchange()
-		stage := data.GetStage()
-
-		tasks[filterExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[filterExchange][stage] = make(map[string]*protocol.Task)
-		tasks[filterExchange][stage][nextNode] = eofTask
-
-	}
-	return tasks
+func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+	// For filters eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return f.eofHandler.HandleRing(data, clientId, f.getNextStageData, true)
 }
 
 // Execute executes the action.
@@ -424,15 +349,21 @@ func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Alpha:
 		data := v.Alpha.GetData()
 		return f.alphaStage(data, clientId), nil
+
 	case *protocol.Task_Beta:
 		data := v.Beta.GetData()
 		return f.betaStage(data, clientId), nil
+
 	case *protocol.Task_Gamma:
 		data := v.Gamma.GetData()
 		return f.gammaStage(data, clientId), nil
+
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return f.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return f.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

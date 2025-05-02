@@ -2,11 +2,11 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
 // Mapper is a struct that implements the Action interface.
@@ -14,15 +14,17 @@ type Mapper struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, itemId string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(infraConfig *model.InfraConfig) *Mapper {
+func NewMapper(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Mapper {
 	return &Mapper{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -288,95 +290,59 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 	return tasks
 }
 
-func (m *Mapper) getNextNodeId(nodeId string) (string, error) {
-	currentNodeId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%m.infraConfig.GetMapCount())
-	return nextNodeId, nil
-}
-
-func (m *Mapper) getNextStageData(stage string) (string, string, int, error) {
+func (m *Mapper) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
 	switch stage {
 	case DELTA_STAGE_1:
-		return DELTA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+		return []NextStageData{
+			{
+				Stage:       DELTA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetBroadcastID(),
+			},
+		}, nil
 	case ETA_STAGE_1:
-		return ETA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+		return []NextStageData{
+			{
+				Stage:       ETA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetBroadcastID(),
+			},
+		}, nil
 	case KAPPA_STAGE_1:
-		return KAPPA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+		return []NextStageData{
+			{
+				Stage:       KAPPA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetBroadcastID(),
+			},
+		}, nil
 	case NU_STAGE_1:
-		return NU_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+		return []NextStageData{
+			{
+				Stage:       NU_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetBroadcastID(),
+			},
+		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+		return []NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
 func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
+	return m.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+}
 
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == m.infraConfig.GetNodeId() {
-		nextStage, nextExchange, nextStageCount, err := m.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
-		}
-
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           nextStage,
-					},
-				},
-			},
-		}
-
-		randomNode := m.randomHashFunc(nextStageCount)
-
-		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
-
-	} else { // if the creator is not the same as the worker, send EOF to the next node
-		nextRingEOF := data
-
-		log.Debugf("workerCreatorId: %s", data.GetWorkerCreatorId())
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = m.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := m.getNextNodeId(m.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		mapExchange := m.infraConfig.GetMapExchange()
-		stage := data.GetStage()
-
-		tasks[mapExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[mapExchange][stage] = make(map[string]*protocol.Task)
-		tasks[mapExchange][stage][nextNode] = eofTask
-
-	}
-	return tasks
+func (m *Mapper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+	// For mappers eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, true)
 }
 
 func (m *Mapper) Execute(task *protocol.Task) (Tasks, error) {
@@ -403,6 +369,9 @@ func (m *Mapper) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return m.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return m.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

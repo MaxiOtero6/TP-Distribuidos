@@ -3,7 +3,9 @@ package actions
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/op/go-logging"
 )
 
@@ -71,21 +73,36 @@ const ANY_SOURCE string = common.ANY_SOURCE
 func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 	kind := model.ActionType(workerType)
 
+	nextNodeId, err := utils.GetNextNodeId(
+		infraConfig.GetNodeId(),
+		infraConfig.GetFilterCount(),
+	)
+	if err != nil {
+		log.Panicf("Failed to get next node id, self id %s: %s", infraConfig.GetNodeId(), err)
+	}
+
+	eofHandler := eof_handler.NewEOFHandler(
+		infraConfig.GetNodeId(),
+		infraConfig.GetFilterCount(),
+		infraConfig.GetEofExchange(),
+		nextNodeId,
+	)
+
 	switch kind {
 	case model.FilterAction:
-		return NewFilter(infraConfig)
+		return NewFilter(infraConfig, eofHandler)
 	case model.OverviewerAction:
-		return NewOverviewer(infraConfig)
+		return NewOverviewer(infraConfig, eofHandler)
 	case model.MapperAction:
-		return NewMapper(infraConfig)
+		return NewMapper(infraConfig, eofHandler)
 	case model.JoinerAction:
-		return NewJoiner(infraConfig)
+		return NewJoiner(infraConfig, eofHandler)
 	case model.ReducerAction:
-		return NewReducer(infraConfig)
+		return NewReducer(infraConfig, eofHandler)
 	case model.MergerAction:
-		return NewMerger(infraConfig)
+		return NewMerger(infraConfig, eofHandler)
 	case model.TopperAction:
-		return NewTopper(infraConfig)
+		return NewTopper(infraConfig, eofHandler)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil
