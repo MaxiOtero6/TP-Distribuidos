@@ -532,20 +532,12 @@ func (r *Reducer) deleteStage(clientId string, stage string) error {
 		switch stage {
 		case DELTA_STAGE_2:
 			anStage.delta2 = nil
-		case DELTA_STAGE_3:
-			anStage.delta3 = nil
 		case ETA_STAGE_2:
 			anStage.eta2 = nil
-		case ETA_STAGE_3:
-			anStage.eta3 = nil
 		case KAPPA_STAGE_2:
 			anStage.kappa2 = nil
-		case KAPPA_STAGE_3:
-			anStage.kappa3 = nil
 		case NU_STAGE_2:
 			anStage.nu2Data = nil
-		case NU_STAGE_3:
-			anStage.nu3Data = nil
 		default:
 			log.Errorf("Invalid stage: %s", stage)
 			return fmt.Errorf("invalid stage: %s", stage)
