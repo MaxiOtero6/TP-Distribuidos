@@ -37,7 +37,7 @@ func assertSerializationWithCustomComparison(
 			err = SaveDataToFile(tempDir, tc.clientID, tc.stage, tc.source, tc.data)
 			assert.NoError(t, err, "Failed to save data to file")
 
-			// Leer los datos del archivo
+			//Leer los datos del archivo
 			loadedData, err := LoadDataFromFile(tempDir, tc.clientID, tc.stage, tc.source)
 			assert.NoError(t, err, "Failed to load data from file")
 
@@ -233,6 +233,45 @@ func TestSerializationAndDeserializationForEtaStage(t *testing.T) {
 	assertSerializationWithCustomComparison(t, testCases)
 }
 
+func TestSerializationAndDeserializationForSmallTableSource(t *testing.T) {
+
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
+		{
+			name: "Iota_Data_movie",
+			data: map[string]*protocol.Iota_Data_Movie{
+				"movieId1": {MovieId: "movieId1"},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      IOTA_STAGE,
+			source:     SMALL_TABLE_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+		{
+			name: "Zeta_Data_Movie",
+			data: map[string]*protocol.Zeta_Data_Movie{
+				"movie1": {MovieId: "movie1", Title: "Movie One"},
+				"movie2": {MovieId: "movie2", Title: "Movie Two"},
+			},
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      ZETA_STAGE,
+			source:     SMALL_TABLE_SOURCE,
+			comparator: compareProtobufMaps,
+		},
+	}
+
+	assertSerializationWithCustomComparison(t, testCases)
+}
+
 func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -303,17 +342,61 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			source:     ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
+	}
+
+	assertSerializationWithCustomComparison(t, testCases)
+}
+
+func TestSerializationAndDeserializationForBigTableSource(t *testing.T) {
+	testCases := []struct {
+		name       string
+		data       interface{}
+		dir        string
+		clientID   string
+		stage      string
+		source     string
+		comparator func(expected, actual interface{}) bool
+	}{
 		{
-			name: "Zeta_Data_Movie",
-			data: map[string]*protocol.Zeta_Data_Movie{
-				"movie1": {MovieId: "movie1", Title: "Movie One"},
-				"movie2": {MovieId: "movie2", Title: "Movie Two"},
+			name: "Iota_Data_Actor",
+			data: map[string][]*protocol.Iota_Data_Actor{
+				"movieId1": {
+					{MovieId: "movieId1", ActorId: "actorId1", ActorName: "Actor One"},
+					{MovieId: "movieId2", ActorId: "actorId2", ActorName: "Actor Two"},
+				},
+				"movieId2": {
+					{MovieId: "movieId1", ActorId: "actorId3", ActorName: "Actor Three"},
+					{MovieId: "movieId2", ActorId: "actorId4", ActorName: "Actor Four"},
+				},
+			},
+
+			dir:        DIR,
+			clientID:   CLIENT_ID,
+			stage:      IOTA_STAGE,
+			source:     BIG_TABLE_SOURCE,
+			comparator: CompareProtobufMapsOfArrays,
+		},
+		{
+			name: "Zeta_Data_Actor",
+			data: map[string][]*protocol.Zeta_Data_Rating{
+				"movieId1": {
+					{MovieId: "movieId1", Rating: 4.5},
+					{MovieId: "movieId1", Rating: 3.5},
+				},
+				"movieId2": {
+					{MovieId: "movieId2", Rating: 5.0},
+					{MovieId: "movieId2", Rating: 4.0},
+				},
+				"movieId3": {
+					{MovieId: "movieId3", Rating: 4.0},
+					{MovieId: "movieId3", Rating: 3.0},
+				},
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
 			stage:      ZETA_STAGE,
-			source:     SMALL_TABLE_SOURCE,
-			comparator: compareProtobufMaps,
+			source:     BIG_TABLE_SOURCE,
+			comparator: CompareProtobufMapsOfArrays,
 		},
 	}
 

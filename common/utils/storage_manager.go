@@ -117,6 +117,28 @@ func decodeZetaDataMovie(decoder *json.Decoder) (map[string]*protocol.Zeta_Data_
 	return result, nil
 }
 
+func decodeZetaDataRating(decoder *json.Decoder) (map[string][]*protocol.Zeta_Data_Rating, error) {
+	var tempMap map[string][]struct {
+		MovieId string  `json:"movieId"`
+		Rating  float32 `json:"rating"`
+	}
+	if err := decoder.Decode(&tempMap); err != nil {
+		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+	}
+
+	result := make(map[string][]*protocol.Zeta_Data_Rating)
+	for _, item := range tempMap {
+		for _, item := range item {
+			result[item.MovieId] = append(result[item.MovieId], &protocol.Zeta_Data_Rating{
+				MovieId: item.MovieId,
+				Rating:  item.Rating,
+			})
+
+		}
+	}
+	return result, nil
+}
+
 func decodeEpsilonData(decoder *json.Decoder) (map[string]*protocol.Epsilon_Data, error) {
 	var tempArray []struct {
 		ProdCountry     string `json:"prodCountry"`
@@ -341,22 +363,23 @@ func decodeIotaDataMovie(decoder *json.Decoder) (map[string]*protocol.Iota_Data_
 	return result, nil
 }
 
-func decodeIotaDataActor(decoder *json.Decoder) (map[string]*protocol.Iota_Data_Actor, error) {
-	var tempArray []struct {
+func decodeIotaDataActor(decoder *json.Decoder) (map[string][]*protocol.Iota_Data_Actor, error) {
+	var tempMap map[string][]struct {
 		MovieId   string `json:"movieId"`
 		ActorId   string `json:"actorId"`
 		ActorName string `json:"actorName"`
 	}
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+	if err := decoder.Decode(&tempMap); err != nil {
+		return nil, fmt.Errorf("error decoding JSON map: %w", err)
 	}
-
-	result := make(map[string]*protocol.Iota_Data_Actor)
-	for _, item := range tempArray {
-		result[item.MovieId] = &protocol.Iota_Data_Actor{
-			MovieId:   item.MovieId,
-			ActorId:   item.ActorId,
-			ActorName: item.ActorName,
+	result := make(map[string][]*protocol.Iota_Data_Actor)
+	for movieId, items := range tempMap {
+		for _, item := range items {
+			result[movieId] = append(result[movieId], &protocol.Iota_Data_Actor{
+				MovieId:   item.MovieId,
+				ActorId:   item.ActorId,
+				ActorName: item.ActorName,
+			})
 		}
 	}
 	return result, nil
@@ -492,18 +515,31 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		return loadedData, nil
 
 	case ZETA_STAGE:
+		var loadedData interface{}
+
 		if sourceType == SMALL_TABLE_SOURCE {
-			loadedData := make(map[string]*protocol.Zeta_Data_Movie)
+
+			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
 			decodedData, err := decodeZetaDataMovie(decoder)
 
 			if err != nil {
 				return nil, err
 			}
 			loadedData = decodedData
-			return loadedData, nil
+
+		} else if sourceType == BIG_TABLE_SOURCE {
+			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
+			decodedData, err := decodeZetaDataRating(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
 		} else {
 			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
 		}
+
+		return loadedData, nil
 
 	case IOTA_STAGE:
 		if sourceType == SMALL_TABLE_SOURCE {
@@ -516,14 +552,21 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 			loadedData = decodedData
 			return loadedData, nil
 		} else if sourceType == BIG_TABLE_SOURCE {
+			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
+			decodedData, err := decodeIotaDataActor(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
+			return loadedData, nil
+		} else {
 			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
 		}
 
 	default:
 		return nil, fmt.Errorf("unsupported data stage: %s", stage)
 	}
-
-	return nil, fmt.Errorf("unsupported data stage: %s", stage)
 }
 
 func processTypedMap[T proto.Message](typedMap map[string]T, filePath string, marshaler protojson.MarshalOptions) error {
@@ -557,12 +600,9 @@ func processTypedMap2[T proto.Message](v map[string][]T, filePath string, marsha
 			if err != nil {
 				return fmt.Errorf("error marshaling data to JSON: %w", err)
 			}
-			//jsonArray = append(jsonArray, marshaledData)
 			groupedData[key] = append(groupedData[key], marshaledData)
 		}
 	}
-
-	// Serializar el mapa agrupado como JSON
 	finalJSON, err := json.MarshalIndent(groupedData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling grouped JSON: %w", err)
@@ -673,33 +713,87 @@ func compareProtobufMaps(expected, actual interface{}) bool {
 	expectedVal := reflect.ValueOf(expected)
 	actualVal := reflect.ValueOf(actual)
 
-	// Verificar que ambos sean mapas
+	// Verify that both are maps
 	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
 		log.Error("The provided values are not maps")
 		return false
 	}
 
-	// Verificar que tengan el mismo tamaño
+	// Verify that they have the same size
 	if expectedVal.Len() != actualVal.Len() {
 		log.Error("The maps have different lengths")
 		return false
 	}
 
-	// Iterar sobre las claves del mapa esperado
+	// Iterate over the keys of the expected map
 	for _, key := range expectedVal.MapKeys() {
 		expectedValue := expectedVal.MapIndex(key).Interface()
 		actualValue := actualVal.MapIndex(key)
 
-		// Verificar que la clave exista en el mapa actual
+		// Verify that the key exists in the actual map
 		if !actualValue.IsValid() {
 			log.Errorf("Key %v not found in actual map", key)
 			return false
 		}
 
-		// Usar proto.Equal para comparar los valores
+		// Verify that the values are equal using proto.Equal
 		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
 			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
 			return false
+		}
+	}
+
+	return true
+}
+
+func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Verify that both are maps
+	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
+		log.Error("The provided values are not maps")
+		return false
+	}
+
+	// Verify that they have the same size
+	if expectedVal.Len() != actualVal.Len() {
+		log.Error("The maps have different lengths")
+		return false
+	}
+
+	// Iterate over the keys of the expected map
+	for _, key := range expectedVal.MapKeys() {
+		expectedValue := expectedVal.MapIndex(key).Interface()
+		actualValue := actualVal.MapIndex(key)
+
+		// Verify that the key exists in the actual map
+		if !actualValue.IsValid() {
+			log.Errorf("Key %v not found in actual map", key)
+			return false
+		}
+
+		// Verify that the values are slices
+		expectedSlice := reflect.ValueOf(expectedValue)
+		actualSlice := reflect.ValueOf(actualValue.Interface())
+
+		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
+			log.Errorf("Values for key %v are not slices", key)
+			return false
+		}
+
+		// Verify that the slices have the same length
+		if expectedSlice.Len() != actualSlice.Len() {
+			log.Errorf("Slices for key %v have different lengths", key)
+			return false
+		}
+
+		// Compare the elements of the slices
+		for i := 0; i < expectedSlice.Len(); i++ {
+			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
+				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
+				return false
+			}
 		}
 	}
 
