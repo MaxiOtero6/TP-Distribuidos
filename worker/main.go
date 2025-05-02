@@ -87,6 +87,8 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 
 	nodeId := v.GetString("id")
 
+	volumeBaseDir := v.GetString("data.dir")
+
 	clusterConfig := &model.WorkerClusterConfig{
 		FilterCount:   v.GetInt("filter.count"),
 		OverviewCount: v.GetInt("overview.count"),
@@ -109,9 +111,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		BroadcastID:      v.GetString("consts.broadcastId"),
 	}
 
-	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig)
+	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
 
-	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
+	log.Infof("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v\n\tVolumeBaseDir: %s", infraConfig.GetWorkers(), infraConfig.GetRabbit(), volumeBaseDir)
 
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 

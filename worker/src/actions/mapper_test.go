@@ -24,6 +24,7 @@ func TestMapper(t *testing.T) {
 			ReduceExchange: "reduceExchange",
 			BroadcastID:    "",
 		},
+		"",
 	)
 
 	itemHash := func(workersCount int, item string) string {
@@ -45,6 +46,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 1,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 
 			mapper := &Mapper{
@@ -76,6 +78,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 2,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 
 			mapper := &Mapper{
@@ -107,6 +110,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 2,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 
 			mapper := &Mapper{
@@ -135,6 +139,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 1,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 
 			mapper := &Mapper{
@@ -208,6 +213,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 1,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 
 			mapper := &Mapper{
@@ -280,6 +286,7 @@ func TestMapper(t *testing.T) {
 					ReduceCount: 1,
 				},
 				testInfraConfig.GetRabbit(),
+				"",
 			)
 			mapper := &Mapper{
 				infraConfig:    infra,

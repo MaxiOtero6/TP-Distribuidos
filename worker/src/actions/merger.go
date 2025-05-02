@@ -84,6 +84,11 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (ta
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
+	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, DELTA_STAGE_3, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", DELTA_STAGE_3, err)
+	}
+
 	return nil
 }
 
@@ -109,6 +114,11 @@ func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks 
 		dataMap[movieId].Count += e3Data.GetCount()
 	}
 
+	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, ETA_STAGE_3, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", ETA_STAGE_3, err)
+	}
+
 	return nil
 }
 
@@ -130,6 +140,11 @@ func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (ta
 		}
 
 		dataMap[actorId].PartialParticipations += k3Data.GetPartialParticipations()
+	}
+
+	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, KAPPA_STAGE_3, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", KAPPA_STAGE_3, err)
 	}
 
 	return nil
@@ -154,6 +169,11 @@ func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks Ta
 
 		dataMap[sentiment].Ratio += nu3Data.GetRatio()
 		dataMap[sentiment].Count += nu3Data.GetCount()
+	}
+
+	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, NU_STAGE_3, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", NU_STAGE_3, err)
 	}
 
 	return nil
@@ -420,6 +440,13 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 			if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
 				delete(m.partialResults, clientId)
 			}
+
+			if err := utils.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+			if err := m.deleteStage(clientId, data.GetStage()); err != nil {
+				log.Errorf("Failed to delete stage: %s", err)
+			}
 		}
 
 	}
@@ -456,4 +483,26 @@ func (m *Merger) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (m *Merger) deleteStage(clientId string, stage string) error {
+
+	log.Infof("Deleting stage %s for client %s", stage, clientId)
+
+	if anStage, ok := m.partialResults[clientId]; ok {
+		switch stage {
+		case DELTA_STAGE_3:
+			anStage.delta3 = nil
+		case ETA_STAGE_3:
+			anStage.eta3 = nil
+		case KAPPA_STAGE_3:
+			anStage.kappa3 = nil
+		case NU_STAGE_3:
+			anStage.nu3Data = nil
+		default:
+			log.Errorf("Invalid stage: %s", stage)
+			return fmt.Errorf("invalid stage: %s", stage)
+		}
+	}
+	return nil
 }

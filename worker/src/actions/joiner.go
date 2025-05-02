@@ -147,6 +147,11 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (t
 		}
 	}
 
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, SMALL_TABLE_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -184,6 +189,11 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (
 		j.joinZetaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
+		dataMap = j.partialResults[clientId].zetaData.bigTable.data
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, ZETA_STAGE, BIG_TABLE_SOURCE, dataMap)
+		if err != nil {
+			log.Errorf("Failed to save %s data: %s", ZETA_STAGE, err)
+		}
 		return nil
 	}
 }
@@ -214,6 +224,7 @@ func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string) (tasks T
 		return j.moviesZetaStage(data, clientId)
 	case *protocol.Zeta_Data_Rating_:
 		return j.ratingsZetaStage(data, clientId)
+
 	default:
 		return nil
 	}
@@ -281,6 +292,12 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string) (t
 			MovieId: movieId,
 		}
 	}
+
+	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, SMALL_TABLE_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
+	}
+
 	return nil
 }
 
@@ -318,6 +335,11 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		j.joinIotaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
+		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, IOTA_STAGE, BIG_TABLE_SOURCE, dataMap)
+		if err != nil {
+			log.Errorf("Failed to save %s data: %s", IOTA_STAGE, err)
+		}
+
 		return nil
 	}
 
@@ -343,6 +365,8 @@ func (j *Joiner) iotaStage(data []*protocol.Iota_Data, clientId string) (tasks T
 	if data == nil {
 		return nil
 	}
+
+	tasks = make(Tasks)
 
 	switch data[0].GetData().(type) {
 	case *protocol.Iota_Data_Movie_:
@@ -460,15 +484,43 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	} else {
 		j.createEofTask(tasks, data, true, clientId)
 
+		var bigTableReady bool
+		var dataStage string
+
 		switch data.Stage {
 		case ZETA_STAGE:
 			j.partialResults[clientId].zetaData.smallTable.ready = true
 			j.joinZetaData(tasks, j.partialResults[clientId].zetaData.bigTable.data, clientId)
+
+			bigTableReady = j.partialResults[clientId].zetaData.bigTable.ready
+			dataStage = data.Stage
+
 		case IOTA_STAGE:
 			j.partialResults[clientId].iotaData.smallTable.ready = true
 			j.joinIotaData(tasks, j.partialResults[clientId].iotaData.bigTable.data, clientId)
+
+			bigTableReady = j.partialResults[clientId].iotaData.bigTable.ready
+			dataStage = data.Stage
 		default:
 			return nil
+		}
+
+		log.Debugf("Big table ready: %v", bigTableReady)
+		log.Debugf("Data stage: %s", dataStage)
+
+		if bigTableReady {
+			// delete both tables
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+			j.DeleteStage(clientId, dataStage)
+
+		} else {
+			// delete only the big table
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, BIG_TABLE_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+			j.DeleteTableType(clientId, dataStage, BIG_TABLE_SOURCE)
 		}
 	}
 	return tasks
@@ -503,13 +555,30 @@ func (j *Joiner) bigTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId st
 	} else {
 		j.createEofTask(tasks, data, true, clientId)
 
+		var smallTableReady bool
+		var dataStage string
+
 		switch data.Stage {
 		case ZETA_STAGE:
 			j.partialResults[clientId].zetaData.bigTable.ready = true
+			smallTableReady = j.partialResults[clientId].zetaData.smallTable.ready
+			dataStage = data.Stage
 		case IOTA_STAGE:
 			j.partialResults[clientId].iotaData.bigTable.ready = true
+			smallTableReady = j.partialResults[clientId].iotaData.smallTable.ready
+			dataStage = data.Stage
 		default:
 			return nil
+		}
+
+		if smallTableReady {
+			// delete small table
+			if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+
+			j.DeleteTableType(clientId, dataStage, SMALL_TABLE_SOURCE)
+
 		}
 	}
 
@@ -522,6 +591,7 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 	if data.GetWorkerCreatorId() == j.infraConfig.GetNodeId() {
 		data.EofType = ""
 		j.createEofTask(tasks, data, false, clientId)
+
 	} else {
 		switch data.Stage {
 		case ZETA_STAGE:
@@ -547,15 +617,13 @@ func (j *Joiner) generalOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId str
 		}
 
 		if j.partialResults[clientId].zetaData.generalEOF && j.partialResults[clientId].iotaData.generalEOF {
-			delete(j.partialResults, clientId)
+			j.deletePartialResult(clientId)
 		}
 	}
 
 	return tasks
 }
 
-/*
- */
 func (j *Joiner) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	switch data.EofType {
 	case SMALL_TABLE:
@@ -590,5 +658,58 @@ func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
+	}
+}
+
+// Delete partialResult by clientId
+func (j *Joiner) deletePartialResult(clientId string) {
+	delete(j.partialResults, clientId)
+	log.Infof("Deleted partial result for clientId: %s", clientId)
+}
+
+// This function clears the data for the specified stage (zeta or iota) for the given key.
+// It does not delete the entire partial result for the key, only the data for the specified stage.
+func (j *Joiner) DeleteStage(clientId string, stage string) {
+
+	log.Infof("Deleting stage: %s for clientId: %s", stage, clientId)
+
+	if clientData, ok := j.partialResults[clientId]; ok {
+		switch stage {
+		case ZETA_STAGE:
+			clientData.zetaData = StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{}
+		case IOTA_STAGE:
+			clientData.iotaData = StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{}
+		default:
+			log.Errorf("Invalid stage: %s", stage)
+		}
+	}
+
+}
+
+// This function clears the data for the specified table type (small or big) for the given key and stage.
+// It does not delete the entire partial result for the key, only the data for the specified table type.
+func (j *Joiner) DeleteTableType(clientId, stage, tableType string) {
+
+	log.Infof("Deleting table type: %s for stage: %s and for clientId: %s", tableType, stage, clientId)
+
+	if clientData, ok := j.partialResults[clientId]; ok {
+		switch stage {
+		case ZETA_STAGE:
+			if tableType == SMALL_TABLE {
+				clientData.zetaData.smallTable = SmallTablePartialData[*protocol.Zeta_Data_Movie]{}
+			} else if tableType == BIG_TABLE {
+				clientData.zetaData.bigTable = BigTablePartialData[*protocol.Zeta_Data_Rating]{}
+			}
+
+		case IOTA_STAGE:
+			if tableType == SMALL_TABLE {
+				clientData.iotaData.smallTable = SmallTablePartialData[*protocol.Iota_Data_Movie]{}
+			} else if tableType == BIG_TABLE {
+				clientData.iotaData.bigTable = BigTablePartialData[*protocol.Iota_Data_Actor]{}
+			}
+
+		default:
+			log.Errorf("Invalid stage: %s", stage)
+		}
 	}
 }

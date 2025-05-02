@@ -9,14 +9,11 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 )
 
-const REDUCER_STAGES_COUNT uint = 4
-
 type ReducerPartialResults struct {
-	toDeleteCount uint
-	delta2        map[string]*protocol.Delta_2_Data
-	eta2          map[string]*protocol.Eta_2_Data
-	kappa2        map[string]*protocol.Kappa_2_Data
-	nu2Data       map[string]*protocol.Nu_2_Data
+	delta2  map[string]*protocol.Delta_2_Data
+	eta2    map[string]*protocol.Eta_2_Data
+	kappa2  map[string]*protocol.Kappa_2_Data
+	nu2Data map[string]*protocol.Nu_2_Data
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -87,6 +84,11 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (t
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, DELTA_STAGE_2, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", DELTA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -127,6 +129,11 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks
 		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, ETA_STAGE_2, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", ETA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -165,6 +172,11 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (t
 		dataMap[actorId].PartialParticipations += k2Data.GetPartialParticipations()
 	}
 
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, KAPPA_STAGE_2, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", KAPPA_STAGE_2, err)
+	}
+
 	return nil
 }
 
@@ -201,6 +213,11 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks T
 
 		dataMap[sentiment].Ratio += nu2Data.GetRatio()
 		dataMap[sentiment].Count += nu2Data.GetCount()
+	}
+
+	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, NU_STAGE_2, ANY_SOURCE, dataMap)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", NU_STAGE_2, err)
 	}
 
 	return nil
@@ -391,8 +408,6 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
 
-	r.partialResults[clientId].toDeleteCount++
-
 	return nil
 }
 
@@ -461,8 +476,11 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 
 		// send the results
 		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-			if r.partialResults[clientId].toDeleteCount >= REDUCER_STAGES_COUNT {
-				delete(r.partialResults, clientId)
+			if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
+				log.Errorf("Failed to delete partial results: %s", err)
+			}
+			if err := r.deleteStage(clientId, data.GetStage()); err != nil {
+				log.Errorf("Failed to delete stage: %s", err)
 			}
 		}
 
@@ -500,4 +518,27 @@ func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (r *Reducer) deleteStage(clientId string, stage string) error {
+
+	log.Infof("Deleting stage %s for client %s", stage, clientId)
+
+	if anStage, ok := r.partialResults[clientId]; ok {
+		switch stage {
+		case DELTA_STAGE_2:
+			anStage.delta2 = nil
+		case ETA_STAGE_2:
+			anStage.eta2 = nil
+		case KAPPA_STAGE_2:
+			anStage.kappa2 = nil
+		case NU_STAGE_2:
+			anStage.nu2Data = nil
+		default:
+			log.Errorf("Invalid stage: %s", stage)
+			return fmt.Errorf("invalid stage: %s", stage)
+
+		}
+	}
+	return nil
 }

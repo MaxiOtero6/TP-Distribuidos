@@ -33,16 +33,18 @@ type RabbitConfig struct {
 }
 
 type InfraConfig struct {
-	nodeID  string
-	workers *WorkerClusterConfig
-	rabbit  *RabbitConfig
+	nodeID        string
+	workers       *WorkerClusterConfig
+	rabbit        *RabbitConfig
+	volumeBaseDir string
 }
 
-func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig) *InfraConfig {
+func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig, volumeBaseDir string) *InfraConfig {
 	return &InfraConfig{
-		nodeID:  idNode,
-		workers: workerConfig,
-		rabbit:  rabbitConfig,
+		nodeID:        idNode,
+		workers:       workerConfig,
+		rabbit:        rabbitConfig,
+		volumeBaseDir: volumeBaseDir,
 	}
 }
 
@@ -124,4 +126,8 @@ func (i *InfraConfig) GetResultExchange() string {
 
 func (i *InfraConfig) GetBroadcastID() string {
 	return i.rabbit.BroadcastID
+}
+
+func (i *InfraConfig) GetDirectory() string {
+	return i.volumeBaseDir
 }

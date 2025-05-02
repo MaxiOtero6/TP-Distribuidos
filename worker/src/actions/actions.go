@@ -60,6 +60,11 @@ const RESULT_STAGE string = "result"
 const TEST_WORKER_COUNT int = 1
 const TEST_WORKER_ID string = "0"
 
+// Source const
+const BIG_TABLE_SOURCE string = "bigTable"
+const SMALL_TABLE_SOURCE string = "smallTable"
+const ANY_SOURCE string = ""
+
 // ActionType represents the type of action to be performed.
 type ActionType string
 
