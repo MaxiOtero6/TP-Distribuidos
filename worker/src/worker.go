@@ -8,6 +8,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/op/go-logging"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -74,43 +75,49 @@ func (w *Worker) Run() {
 
 outer:
 	for {
+		var message amqp.Delivery
+		var ok bool
+
 		select {
 		case <-w.done:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
 
-		// case message := <-w.eofChan:
-		// 	return
+		case message, ok = <-w.eofChan:
+			if !ok {
+				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
+				break outer
+			}
 
-		case message, ok := <-w.consumeChan:
+		case message, ok = <-w.consumeChan:
 			if !ok {
 				log.Warningf("Worker %s consume channel closed", w.WorkerId)
 				break outer
 			}
-			
-			taskRaw := message.Body
-
-			task := &protocol.Task{}
-
-			err := proto.Unmarshal(taskRaw, task)
-
-			if err != nil {
-				log.Errorf("Failed to unmarshal task: %s", err)
-				continue
-			}
-
-			//log.Debugf("Task value: %v", task.GetResult1().GetData())
-
-			subTasks, err := w.action.Execute(task)
-
-			if err != nil {
-				log.Errorf("Failed to execute task: %s", err)
-				continue
-			}
-
-			w.sendSubTasks(subTasks)
-			message.Ack(false)
 		}
+
+		taskRaw := message.Body
+
+		task := &protocol.Task{}
+
+		err := proto.Unmarshal(taskRaw, task)
+
+		if err != nil {
+			log.Errorf("Failed to unmarshal task: %s", err)
+			continue
+		}
+
+		//log.Debugf("Task value: %v", task.GetResult1().GetData())
+
+		subTasks, err := w.action.Execute(task)
+
+		if err != nil {
+			log.Errorf("Failed to execute task: %s", err)
+			continue
+		}
+
+		w.sendSubTasks(subTasks)
+		message.Ack(false)
 	}
 
 	log.Infof("Worker stop running gracefully")
