@@ -7,6 +7,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/op/go-logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/protobuf/proto"
@@ -128,7 +129,7 @@ outer:
 // It logs the task, exchange, and routing key for debugging purposes
 // This function is nil-safe, meaning it will not panic if the input is nil
 // It will simply return without doing anything
-func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
+func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 	for exchange, stages := range subTasks {
 		for _, stage := range stages {
 			for routingKey, task := range stage {
