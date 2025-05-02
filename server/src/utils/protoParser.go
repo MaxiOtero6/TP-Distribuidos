@@ -40,9 +40,8 @@ func GetEOFTask(workersCount int, clientId string, stage string) map[string]*pro
 		Stage: &protocol.Task_OmegaEOF{
 			OmegaEOF: &protocol.OmegaEOF{
 				Data: &protocol.OmegaEOF_Data{
-					Stage:           stage,
-					WorkerCreatorId: "",
-					EofType:         EofType,
+					Stage:   stage,
+					EofType: EofType,
 				},
 			},
 		},
