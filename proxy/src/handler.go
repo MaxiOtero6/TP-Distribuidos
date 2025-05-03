@@ -103,7 +103,6 @@ func (h *Handler) handleConnection() error {
 	serverSocket, err := h.selectServer()
 	if err != nil {
 		log.Errorf("action: selectServer | result: fail | error: %v", err)
-		//Enviar mensaje de error al cliente
 		return err
 	}
 

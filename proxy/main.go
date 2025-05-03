@@ -97,7 +97,6 @@ func handleSigterm(signalChan chan os.Signal, stoppable Instance, wg *sync.WaitG
 
 func initConnectionHandler(v *viper.Viper) *client_server_communication.ConnectionHandler {
 	address := v.GetString("address")
-	log.Infof("Proxy address: %s", address)
 
 	s, err := client_server_communication.NewConnectionHandler(NODE_TYPE, address)
 
@@ -130,7 +129,6 @@ func initHandler(v *viper.Viper) *proxy.Handler {
 	const SOCKET_FD uintptr = 3
 
 	serverAddresses := loadServerConfig(v)
-	log.Infof("Server addresses: %s", serverAddresses)
 
 	handler, err := proxy.NewHandler(serverAddresses, SOCKET_FD)
 	if err != nil {
