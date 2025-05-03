@@ -8,17 +8,15 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/src/client_handler"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/src/server"
+	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
+	proxy "github.com/MaxiOtero6/TP-Distribuidos/proxy/src"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
 
 var log = logging.MustGetLogger("log")
 
-const NODE_TYPE = "SERVER"
+const NODE_TYPE = "PROXY"
 
 type Instance interface {
 	Run() error
@@ -35,7 +33,7 @@ func InitConfig() (*viper.Viper, error) {
 
 	// Configure viper to read env variables with the CLI_ prefix
 	v.AutomaticEnv()
-	v.SetEnvPrefix("server")
+	v.SetEnvPrefix("proxy")
 	// Use a replacer to replace env variables underscores with points. This let us
 	// use nested configurations in the config file and at the same time define
 	// env variables for the nested configurations
@@ -54,18 +52,6 @@ func InitConfig() (*viper.Viper, error) {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead\n")
 	}
 
-	rabbitConfig := viper.New()
-	rabbitConfig.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	rabbitConfig.SetConfigFile("./rabbitConfig.yaml")
-	if err := rabbitConfig.ReadInConfig(); err != nil {
-		fmt.Printf("Rabbit configuration could not be read.\n")
-	}
-
-	// Merge the rabbit-specific config with the main config
-	if err := v.MergeConfigMap(rabbitConfig.AllSettings()); err != nil {
-		return nil, fmt.Errorf("failed to merge rabbit-specific config: %w", err)
-	}
-
 	return v, nil
 }
 
@@ -77,7 +63,7 @@ func InitLogger(logLevel string, isChild bool) error {
 
 	prefix := ""
 	if isChild {
-		prefix = "ClientHandler [%{pid}] | "
+		prefix = "Handler [%{pid}] | "
 	}
 
 	formatStr := `%{time:2006-01-02 15:04:05} %{level:.5s}     ` + prefix + `%{message}`
@@ -109,71 +95,49 @@ func handleSigterm(signalChan chan os.Signal, stoppable Instance, wg *sync.WaitG
 	}
 }
 
-func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
-	const SOCKET_FD uintptr = 3
+func initConnectionHandler(v *viper.Viper) *client_server_communication.ConnectionHandler {
+	address := v.GetString("address")
+	log.Infof("Proxy address: %s", address)
 
-	id := v.GetString("id")
-
-	clusterConfig := &model.WorkerClusterConfig{
-		FilterCount:   v.GetInt("filter.count"),
-		OverviewCount: v.GetInt("overview.count"),
-		MapCount:      v.GetInt("map.count"),
-		JoinCount:     v.GetInt("join.count"),
-		ReduceCount:   v.GetInt("reduce.count"),
-		MergeCount:    v.GetInt("merge.count"),
-		TopCount:      v.GetInt("top.count"),
-	}
-
-	rabbitConfig := &model.RabbitConfig{
-		FilterExchange:   v.GetString("consts.filterExchange"),
-		OverviewExchange: v.GetString("consts.overviewExchange"),
-		MapExchange:      v.GetString("consts.mapExchange"),
-		JoinExchange:     v.GetString("consts.joinExchange"),
-		ReduceExchange:   v.GetString("consts.reduceExchange"),
-		MergeExchange:    v.GetString("consts.mergeExchange"),
-		TopExchange:      v.GetString("consts.topExchange"),
-		ResultExchange:   v.GetString("consts.resultExchange"),
-		BroadcastID:      v.GetString("consts.broadcastId"),
-	}
-
-	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
-
-	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
-
-	exchanges, queues, binds, err := utils.GetRabbitConfig(NODE_TYPE, v)
+	s, err := client_server_communication.NewConnectionHandler(NODE_TYPE, address)
 
 	if err != nil {
-		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
+		log.Panicf("Failed to initialize proxy: %s", err)
 	}
 
-	c, err := client_handler.NewClienthandler(id, infraConfig, SOCKET_FD)
-
-	if err != nil {
-		log.Panicf("Failed to initialize client_handler: %s", err)
-	}
-
-	c.InitConfig(exchanges, queues, binds)
-
-	log.Infof("ClientHandler ready for server '%v'", c.ServerID)
-
-	return c
-}
-
-func initServer(v *viper.Viper) *server.Server {
-	id := v.GetString("id")
-	port := v.GetString("port")
-
-	address := fmt.Sprintf("server_%s:%s", id, port)
-
-	s, err := server.NewServer(id, address)
-
-	if err != nil {
-		log.Panicf("Failed to initialize server: %s", err)
-	}
-
-	log.Infof("Server '%v' ready", s.ID)
+	log.Infof("Proxy '%v' ready", s.ID)
 
 	return s
+}
+
+func loadServerConfig(v *viper.Viper) []string {
+	serverAmount := v.GetInt("server.count")
+	if serverAmount == 0 {
+		log.Panicf("Server amount not set")
+	}
+
+	serverAddress := make([]string, 0, serverAmount)
+	basePort := 8080
+	for i := 0; i < serverAmount; i++ {
+		port := basePort + i
+		serverAddress = append(serverAddress, fmt.Sprintf("server_%d:%d", i, port))
+	}
+
+	return serverAddress
+}
+
+func initHandler(v *viper.Viper) *proxy.Handler {
+	const SOCKET_FD uintptr = 3
+
+	serverAddresses := loadServerConfig(v)
+	log.Infof("Server addresses: %s", serverAddresses)
+
+	handler, err := proxy.NewHandler(serverAddresses, SOCKET_FD)
+	if err != nil {
+		log.Panicf("Failed to initialize client handler: %s", err)
+	}
+
+	return handler
 }
 
 func main() {
@@ -186,7 +150,6 @@ func main() {
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-
 	isChild := len(os.Args) == 2 && os.Args[1] == "child"
 
 	if err := InitLogger(v.GetString("log.level"), isChild); err != nil {
@@ -196,9 +159,9 @@ func main() {
 	var instance Instance
 
 	if len(os.Args) == 1 {
-		instance = initServer(v)
+		instance = initConnectionHandler(v)
 	} else if isChild {
-		instance = initClientHandler(v)
+		instance = initHandler(v)
 	} else {
 		log.Panicf("Bad call to server. Usage for server: %s ; Usage for clientHandler: %s child", os.Args[0], os.Args[0])
 	}
