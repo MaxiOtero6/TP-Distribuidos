@@ -8,10 +8,10 @@ import (
 	"sync"
 	"syscall"
 
+	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/client_handler"
-	"github.com/MaxiOtero6/TP-Distribuidos/server/src/server"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -159,13 +159,13 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 	return c
 }
 
-func initServer(v *viper.Viper) *server.Server {
+func initServer(v *viper.Viper) *client_server_communication.ConnectionHandler {
 	id := v.GetString("id")
 	port := v.GetString("port")
 
 	address := fmt.Sprintf("server_%s:%s", id, port)
 
-	s, err := server.NewServer(id, address)
+	s, err := client_server_communication.NewConnectionHandler(id, address)
 
 	if err != nil {
 		log.Panicf("Failed to initialize server: %s", err)
