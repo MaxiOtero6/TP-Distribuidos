@@ -377,7 +377,7 @@ func (t *Topper) getNextStageData(stage string, clientId string) ([]NextStageDat
 }
 
 func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
 	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
 		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
@@ -389,9 +389,10 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 }
 
 func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
-	// For filters eofStatus is always true
+	// For toppers eofStatus is always true
 	// because one of them receives the EOF and init the ring
 	// and the others just declare that they are alive
+	// Only one topper resolves the query for a client
 	return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
 }
 
