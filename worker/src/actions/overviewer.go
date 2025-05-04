@@ -117,7 +117,7 @@ func (o *Overviewer) getNextStageData(stage string, clientId string) ([]NextStag
 }
 
 func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
 func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
