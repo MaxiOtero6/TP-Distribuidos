@@ -8,7 +8,7 @@ OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
 
 MAP_EXCHANGE = {"name": "mapExchange", "kind": "fanout"}
 
-REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "fanout"}
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
 
 JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
 
@@ -27,16 +27,20 @@ OVERVIEW_QUEUE = {"name": "overviewQueue"}
 
 MAP_QUEUE = {"name": "mapQueue"}
 
-REDUCE_QUEUE = {"name": "reduceQueue"}
+REDUCE_QUEUE = {"name": "",
+                "dlx_exchange": REDUCE_EXCHANGE["name"], "ttl": PACKET_TTL}
 
 # dlx_routingKey generated in the worker's code
-JOIN_QUEUE = {"name": "", "dlx_exchange": "joinExchange", "ttl": PACKET_TTL}
+JOIN_QUEUE = {"name": "",
+              "dlx_exchange": JOIN_EXCHANGE["name"], "ttl": PACKET_TTL}
 
 # dlx_routingKey generated in the worker's code
-MERGE_QUEUE = {"name": "", "dlx_exchange": "mergeExchange", "ttl": PACKET_TTL}
+MERGE_QUEUE = {"name": "",
+               "dlx_exchange": MERGE_EXCHANGE["name"], "ttl": PACKET_TTL}
 
 # dlx_routingKey generated in the worker's code
-TOP_QUEUE = {"name": "", "dlx_exchange": "topExchange", "ttl": PACKET_TTL}
+TOP_QUEUE = {"name": "",
+             "dlx_exchange": TOP_EXCHANGE["name"], "ttl": PACKET_TTL}
 
 # This queue is generated in the worker's code due to anonymous queue name and dynamics dlx_routingKeys
 # EOF_QUEUE = {"name": "", "dlx_exchange": "eofExchange", "ttl": PACKET_TTL}
@@ -194,6 +198,9 @@ class Reduce:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}name: "{REDUCE_QUEUE["name"]}"')
+        lines.append(
+            f'{" " * 8}dlx_exchange: "{REDUCE_QUEUE["dlx_exchange"]}"')
+        lines.append(f'{" " * 8}ttl: "{REDUCE_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}reduceQueue:')
