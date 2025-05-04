@@ -17,11 +17,14 @@ type NextStageData = common.NextStageData
 type IEOFHandler interface {
 	// InitRing initializes the ring for the EOF handler.
 	// It returns a map of tasks for the next stages.
-	InitRing(stage string, eofType string) (tasks Tasks)
+	InitRing(stage string, eofType string, clientId string) (tasks Tasks)
 	// HandleRing handles the ring for the EOF handler.
 	// It returns a map of tasks for the next stages.
 	HandleRing(
 		data *protocol.RingEOF, clientId string,
 		nextStageFunc func(stage string, clientId string) ([]NextStageData, error), eofStatus bool,
 	) (tasks Tasks)
+	// IgnoreDuplicates ables the EOF handler to ignore duplicates.
+	// It is useful when you expect to receive the same RingEOF from multiple workers.
+	IgnoreDuplicates()
 }

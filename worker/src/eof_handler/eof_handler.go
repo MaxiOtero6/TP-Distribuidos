@@ -7,37 +7,52 @@ import (
 )
 
 type EOFHandler struct {
-	workerID     string
-	workerCount  int
-	eofExchange  string
-	nextWorkerID string
+	workerID         string
+	workerType       string
+	workerCount      int
+	eofExchange      string
+	nextWorkerID     string
+	ignoreDuplicates bool
+	discartedReadies map[string]map[string][]string
 }
 
 func NewEOFHandler(
-	workerID string, workerCount int,
+	workerID string, workerType string, workerCount int,
 	eofExchange string, nextWorkerID string,
 ) *EOFHandler {
 	return &EOFHandler{
-		workerID:     workerID,
-		workerCount:  workerCount,
-		eofExchange:  eofExchange,
-		nextWorkerID: nextWorkerID,
+		workerID:         workerID,
+		workerType:       workerType,
+		workerCount:      workerCount,
+		eofExchange:      eofExchange,
+		nextWorkerID:     nextWorkerID,
+		discartedReadies: make(map[string]map[string][]string),
 	}
 }
 
-func (h *EOFHandler) InitRing(stage string, eofType string) (tasks Tasks) {
+func (h *EOFHandler) IgnoreDuplicates() {
+	h.ignoreDuplicates = true
+}
+
+func (h *EOFHandler) InitRing(stage string, eofType string, clientId string) (tasks Tasks) {
+	log.Debugf(
+		"action: ringEOF | stage: %v | clientId: %v | Initializing RingEOF for stage %s and EOF type %s",
+		stage, clientId, stage, eofType,
+	)
+
 	tasks = make(Tasks)
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
 	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
 
-	tasks[h.eofExchange][RING_STAGE][h.nextWorkerID] = &protocol.Task{
-		ClientId: h.workerID,
+	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
+		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: &protocol.RingEOF{
-				Alive:   []string{h.workerID},
-				Ready:   []string{h.workerID},
-				Stage:   stage,
-				EofType: eofType,
+				Alive:     []string{h.workerID},
+				Ready:     []string{h.workerID},
+				Stage:     stage,
+				EofType:   eofType,
+				CreatorId: h.workerID,
 			},
 		},
 	}
@@ -51,22 +66,46 @@ func (h *EOFHandler) HandleRing(
 	eofStatus bool,
 ) (tasks Tasks) {
 	// Filter to only circulate one RingEOF message
-	if h.workerID > data.GetCreatorId() {
-		log.Debugf("Ignoring RingEOF message from %s", data.GetCreatorId())
+	if h.ignoreDuplicates && !(h.workerID <= data.GetCreatorId()) {
+		log.Debugf("action: ringEOF | stage: %v | clientId: %v | Ignoring RingEOF message from %s", data.GetStage(), clientId, data.GetCreatorId())
+
+		if _, exists := h.discartedReadies[clientId]; !exists {
+			h.discartedReadies[clientId] = make(map[string][]string)
+		}
+
+		h.discartedReadies[clientId][data.GetStage()] = append(h.discartedReadies[clientId][data.GetStage()], data.GetReady()...)
 		return nil
 	}
 
+	if len(h.discartedReadies[clientId]) > 0 {
+		log.Debugf("action: ringEOF | stage: %v | clientId: %v | Appending discarded readies: %v", data.GetStage(), clientId, h.discartedReadies[clientId][data.GetStage()])
+
+		for _, id := range h.discartedReadies[clientId][data.GetStage()] {
+			if !slices.Contains(data.GetReady(), id) {
+				data.Ready = append(data.Ready, id)
+			}
+		}
+
+		delete(h.discartedReadies[clientId], data.GetStage())
+
+		if len(h.discartedReadies[clientId]) == 0 {
+			delete(h.discartedReadies, clientId)
+		}
+
+		log.Debugf("action: ringEOF | stage: %v | clientId: %v | Readies after appending: %v", data.GetStage(), clientId, data.GetReady())
+	}
+
 	if !slices.Contains(data.Alive, h.workerID) {
-		log.Debugf("Im not alive, adding myself to the list")
+		log.Debugf("action: ringEOF | stage: %v | clientId: %v | Im not alive, adding myself to the list", data.GetStage(), clientId)
 		return h.handleSelfNotAlive(data, clientId, eofStatus)
 	}
 
 	if !(len(data.Ready) == h.workerCount) {
-		log.Debugf("A lap finished, but not all workers are ready. Resetting alive list")
+		log.Debugf("action: ringEOF | stage: %v | clientId: %v | A lap finished, but not all workers are ready %v. Resetting alive list", data.GetStage(), clientId, data.GetReady())
 		return h.handleAllNotReady(data, clientId)
 	}
 
-	log.Debugf("All workers are ready, sending to next stage")
+	log.Debugf("action: ringEOF | stage: %v | clientId: %v | All workers are ready, sending to next stage", data.GetStage(), clientId)
 	return h.handleSendToNextStage(data, clientId, nextStageFunc)
 }
 
@@ -76,12 +115,14 @@ func (h *EOFHandler) handleSelfNotAlive(data *protocol.RingEOF, clientId string,
 	data.Alive = append(data.Alive, h.workerID)
 
 	if eofStatus {
-		data.Ready = append(data.Ready, h.workerID)
+		if !slices.Contains(data.GetReady(), h.workerID) {
+			data.Ready = append(data.Ready, h.workerID)
+		}
 	}
 
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
 	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE][h.nextWorkerID] = &protocol.Task{
+	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: data,
@@ -98,7 +139,7 @@ func (h *EOFHandler) handleAllNotReady(data *protocol.RingEOF, clientId string) 
 
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
 	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE][h.nextWorkerID] = &protocol.Task{
+	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: data,
@@ -116,7 +157,7 @@ func (h *EOFHandler) handleSendToNextStage(
 
 	nextDataStages, err := nextStageFunc(data.GetStage(), clientId)
 	if err != nil {
-		log.Errorf("Failed to get next stage data: %s", err)
+		log.Errorf("action: ringEOF | stage: %v | clientId: %v | Failed to get next stage data: %s", data.GetStage(), clientId, err)
 		return nil
 	}
 
