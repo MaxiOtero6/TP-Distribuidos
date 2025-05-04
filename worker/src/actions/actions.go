@@ -107,7 +107,6 @@ func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 		eofHandler.IgnoreDuplicates()
 		return NewJoiner(infraConfig, eofHandler)
 	case model.ReducerAction:
-		eofHandler.IgnoreDuplicates()
 		return NewReducer(infraConfig, eofHandler)
 	case model.MergerAction:
 		eofHandler.IgnoreDuplicates()

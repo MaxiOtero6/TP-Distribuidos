@@ -101,7 +101,7 @@ rabbitmq:
 
       reduceExchange:
         name: "reduceExchange"
-        kind: "direct"
+        kind: "fanout"
 
       eofExchange:
         name: "eofExchange"
@@ -145,7 +145,7 @@ rabbitmq:
     exchanges:
       reduceExchange:
         name: "reduceExchange"
-        kind: "direct"
+        kind: "fanout"
 
       mergeExchange:
         name: "mergeExchange"
@@ -157,14 +157,12 @@ rabbitmq:
 
     queues:
       reduceQueue:
-        name: ""
-        dlx_exchange: "reduceExchange"
-        ttl: "120000"
+        name: "reduceQueue"
 
     binds:
       reduceQueue:
         exchange: "reduceExchange"
-        queue: ""
+        queue: "reduceQueue"
 
   MERGER:
     exchanges:

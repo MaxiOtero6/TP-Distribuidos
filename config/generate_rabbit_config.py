@@ -8,7 +8,7 @@ OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
 
 MAP_EXCHANGE = {"name": "mapExchange", "kind": "fanout"}
 
-REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "fanout"}
 
 JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
 
@@ -27,8 +27,7 @@ OVERVIEW_QUEUE = {"name": "overviewQueue"}
 
 MAP_QUEUE = {"name": "mapQueue"}
 
-REDUCE_QUEUE = {"name": "",
-                "dlx_exchange": REDUCE_EXCHANGE["name"], "ttl": PACKET_TTL}
+REDUCE_QUEUE = {"name": "reduceQueue"}
 
 # dlx_routingKey generated in the worker's code
 JOIN_QUEUE = {"name": "",
@@ -198,9 +197,6 @@ class Reduce:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}name: "{REDUCE_QUEUE["name"]}"')
-        lines.append(
-            f'{" " * 8}dlx_exchange: "{REDUCE_QUEUE["dlx_exchange"]}"')
-        lines.append(f'{" " * 8}ttl: "{REDUCE_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}reduceQueue:')
