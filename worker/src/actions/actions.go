@@ -98,23 +98,23 @@ func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 
 	switch kind {
 	case model.FilterAction:
-		return NewFilter(workerType, infraConfig, eofHandler)
+		return NewFilter(infraConfig, eofHandler)
 	case model.OverviewerAction:
-		return NewOverviewer(workerType, infraConfig, eofHandler)
+		return NewOverviewer(infraConfig, eofHandler)
 	case model.MapperAction:
-		return NewMapper(workerType, infraConfig, eofHandler)
+		return NewMapper(infraConfig, eofHandler)
 	case model.JoinerAction:
 		eofHandler.IgnoreDuplicates()
-		return NewJoiner(workerType, infraConfig, eofHandler)
+		return NewJoiner(infraConfig, eofHandler)
 	case model.ReducerAction:
 		eofHandler.IgnoreDuplicates()
-		return NewReducer(workerType, infraConfig, eofHandler)
+		return NewReducer(infraConfig, eofHandler)
 	case model.MergerAction:
 		eofHandler.IgnoreDuplicates()
-		return NewMerger(workerType, infraConfig, eofHandler)
+		return NewMerger(infraConfig, eofHandler)
 	case model.TopperAction:
 		eofHandler.IgnoreDuplicates()
-		return NewTopper(workerType, infraConfig, eofHandler)
+		return NewTopper(infraConfig, eofHandler)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil

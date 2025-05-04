@@ -328,7 +328,7 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]NextStageDat
 }
 
 func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
 func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
