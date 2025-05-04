@@ -14,10 +14,10 @@ const REDUCER_FILE_TYPE string = ""
 
 type ReducerPartialResults struct {
 	toDeleteCount uint
-	delta2        map[string]*protocol.Delta_2_Data
-	eta2          map[string]*protocol.Eta_2_Data
-	kappa2        map[string]*protocol.Kappa_2_Data
-	nu2Data       map[string]*protocol.Nu_2_Data
+	delta2        PartialData[*protocol.Delta_2_Data]
+	eta2          PartialData[*protocol.Eta_2_Data]
+	kappa2        PartialData[*protocol.Kappa_2_Data]
+	nu2Data       PartialData[*protocol.Nu_2_Data]
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -35,10 +35,22 @@ func (r *Reducer) makePartialResults(clientId string) {
 	}
 
 	r.partialResults[clientId] = &ReducerPartialResults{
-		delta2:  make(map[string]*protocol.Delta_2_Data),
-		eta2:    make(map[string]*protocol.Eta_2_Data),
-		kappa2:  make(map[string]*protocol.Kappa_2_Data),
-		nu2Data: make(map[string]*protocol.Nu_2_Data),
+		delta2: PartialData[*protocol.Delta_2_Data]{
+			data:  make(map[string]*protocol.Delta_2_Data),
+			ready: false,
+		},
+		eta2: PartialData[*protocol.Eta_2_Data]{
+			data:  make(map[string]*protocol.Eta_2_Data),
+			ready: false,
+		},
+		kappa2: PartialData[*protocol.Kappa_2_Data]{
+			data:  make(map[string]*protocol.Kappa_2_Data),
+			ready: false,
+		},
+		nu2Data: PartialData[*protocol.Nu_2_Data]{
+			data:  make(map[string]*protocol.Nu_2_Data),
+			ready: false,
+		},
 	}
 }
 
@@ -74,7 +86,7 @@ Then it divides the resulting countries by hashing each country and send it to t
 	}
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (tasks Tasks) {
-	dataMap := r.partialResults[clientId].delta2
+	dataMap := r.partialResults[clientId].delta2.data
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -116,7 +128,7 @@ Return example
 	}
 */
 func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks Tasks) {
-	dataMap := r.partialResults[clientId].eta2
+	dataMap := r.partialResults[clientId].eta2.data
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e2Data := range data {
@@ -161,7 +173,7 @@ Return example
 	}
 */
 func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (tasks Tasks) {
-	dataMap := r.partialResults[clientId].kappa2
+	dataMap := r.partialResults[clientId].kappa2.data
 
 	// Sum up the partial participations by actor
 	for _, k2Data := range data {
@@ -203,7 +215,7 @@ Return example
 	}
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks Tasks) {
-	dataMap := r.partialResults[clientId].nu2Data
+	dataMap := r.partialResults[clientId].nu2Data.data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu2Data := range data {
@@ -237,7 +249,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]NextStageDa
 				Stage:       DELTA_STAGE_3,
 				Exchange:    r.infraConfig.GetMergeExchange(),
 				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetBroadcastID(),
+				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 	case ETA_STAGE_2:
@@ -246,7 +258,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]NextStageDa
 				Stage:       ETA_STAGE_3,
 				Exchange:    r.infraConfig.GetMergeExchange(),
 				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetBroadcastID(),
+				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 	case KAPPA_STAGE_2:
@@ -255,7 +267,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]NextStageDa
 				Stage:       KAPPA_STAGE_3,
 				Exchange:    r.infraConfig.GetMergeExchange(),
 				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetBroadcastID(),
+				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 	case NU_STAGE_2:
@@ -264,7 +276,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]NextStageDa
 				Stage:       NU_STAGE_3,
 				Exchange:    r.infraConfig.GetMergeExchange(),
 				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetBroadcastID(),
+				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 	default:
@@ -274,7 +286,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]NextStageDa
 }
 
 func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].delta2
+	dataMap := r.partialResults[clientId].delta2.data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -309,7 +321,7 @@ func (r *Reducer) delta2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].eta2
+	dataMap := r.partialResults[clientId].eta2.data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -346,7 +358,7 @@ func (r *Reducer) eta2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].kappa2
+	dataMap := r.partialResults[clientId].kappa2.data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -381,7 +393,7 @@ func (r *Reducer) kappa2Results(tasks Tasks, clientId string) {
 }
 
 func (r *Reducer) nu2Results(tasks Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].nu2Data
+	dataMap := r.partialResults[clientId].nu2Data.data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -436,7 +448,18 @@ func (r *Reducer) addResultsToNextStage(tasks Tasks, stage string, clientId stri
 }
 
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+	tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+
+	switch data.GetStage() {
+	case DELTA_STAGE_2:
+		r.partialResults[clientId].delta2.ready = true
+	case ETA_STAGE_2:
+		r.partialResults[clientId].eta2.ready = true
+	case KAPPA_STAGE_2:
+		r.partialResults[clientId].kappa2.ready = true
+	case NU_STAGE_2:
+		r.partialResults[clientId].nu2Data.ready = true
+	}
 
 	if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
 		if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
@@ -451,10 +474,20 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 }
 
 func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
-	// For filters eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return r.eofHandler.HandleRing(data, clientId, r.getNextStageData, true)
+	var ready bool
+
+	switch data.GetStage() {
+	case DELTA_STAGE_2:
+		ready = r.partialResults[clientId].delta2.ready
+	case ETA_STAGE_2:
+		ready = r.partialResults[clientId].eta2.ready
+	case KAPPA_STAGE_2:
+		ready = r.partialResults[clientId].kappa2.ready
+	case NU_STAGE_2:
+		ready = r.partialResults[clientId].nu2Data.ready
+	}
+
+	return r.eofHandler.HandleRing(data, clientId, r.getNextStageData, ready)
 }
 
 func (r *Reducer) Execute(task *protocol.Task) (Tasks, error) {
@@ -499,13 +532,13 @@ func (r *Reducer) deleteStage(clientId string, stage string) error {
 	if anStage, ok := r.partialResults[clientId]; ok {
 		switch stage {
 		case DELTA_STAGE_2:
-			anStage.delta2 = nil
+			anStage.delta2.data = nil
 		case ETA_STAGE_2:
-			anStage.eta2 = nil
+			anStage.eta2.data = nil
 		case KAPPA_STAGE_2:
-			anStage.kappa2 = nil
+			anStage.kappa2.data = nil
 		case NU_STAGE_2:
-			anStage.nu2Data = nil
+			anStage.nu2Data.data = nil
 		default:
 			log.Errorf("Invalid stage: %s", stage)
 			return fmt.Errorf("invalid stage: %s", stage)
