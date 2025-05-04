@@ -269,25 +269,25 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 	for l.isRunning && !resultParser.IsDone() {
 
 		if l.retryNumber > MAX_RETRIES {
-			return nil, fmt.Errorf("timeout")
+			return resultParser.GetResults(), fmt.Errorf("timeout")
 		}
 
 		if l.socket == nil {
 			if err := l.connectToServer(); err != nil {
-				return nil, err
+				return resultParser.GetResults(), err
 			}
 		}
 
 		start := time.Now()
 		err := l.sendResultMessage()
 		if err != nil {
-			return nil, err
+			return resultParser.GetResults(), err
 		}
 
 		ok, response, err := l.waitForResultServerResponse()
 
 		if err != nil {
-			return nil, err
+			return resultParser.GetResults(), err
 		}
 
 		jitter := time.Since(start)
