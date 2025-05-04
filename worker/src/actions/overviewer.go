@@ -22,7 +22,7 @@ type Overviewer struct {
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)

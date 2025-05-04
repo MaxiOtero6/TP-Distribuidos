@@ -54,7 +54,7 @@ func (t *Topper) makePartialResults(clientId string) {
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Topper {
+func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Topper {
 	return &Topper{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*PartialResults),

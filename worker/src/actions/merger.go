@@ -55,7 +55,7 @@ func (m *Merger) makePartialResults(clientId string) {
 
 // NewMerger creates a new Merger instance.
 // It initializes the worker count and returns a pointer to the Merger struct.
-func NewMerger(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Merger {
+func NewMerger(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Merger {
 	return &Merger{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*MergerPartialResults),

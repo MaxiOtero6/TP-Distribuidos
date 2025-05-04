@@ -61,7 +61,7 @@ func (j *Joiner) makePartialResults(clientId string) {
 }
 
 // NewJoiner creates a new Joiner instance.
-func NewJoiner(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Joiner {
+func NewJoiner(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Joiner {
 	return &Joiner{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,

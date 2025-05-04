@@ -21,7 +21,7 @@ type Filter struct {
 	eofHandler     eof_handler.IEOFHandler
 }
 
-func NewFilter(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Filter {
+func NewFilter(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Filter {
 	return &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,

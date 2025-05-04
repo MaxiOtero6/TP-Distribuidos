@@ -56,7 +56,7 @@ func (r *Reducer) makePartialResults(clientId string) {
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
-func NewReducer(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Reducer {
+func NewReducer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Reducer {
 	return &Reducer{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*ReducerPartialResults),

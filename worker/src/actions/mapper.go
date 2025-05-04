@@ -19,7 +19,7 @@ type Mapper struct {
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(infraConfig *model.InfraConfig, eofHandler *eof_handler.EOFHandler) *Mapper {
+func NewMapper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Mapper {
 	return &Mapper{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
