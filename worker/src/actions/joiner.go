@@ -487,8 +487,6 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Ta
 		ready = j.partialResults[clientId].iotaData.ready
 	}
 
-	log.Warningf("action: ringEOF | stage: %v | ready: %v", data.GetStage(), ready)
-
 	if ready {
 		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
