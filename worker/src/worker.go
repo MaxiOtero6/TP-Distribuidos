@@ -76,52 +76,58 @@ func (w *Worker) Run() {
 
 outer:
 	for {
-		var message amqp.Delivery
-		var ok bool
-
 		select {
 		case <-w.done:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
 
-		case message, ok = <-w.eofChan:
+		case message, ok := <-w.eofChan:
 			if !ok {
 				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
 				break outer
 			}
+			w.handleMessage(&message)
 
-		case message, ok = <-w.consumeChan:
+		case message, ok := <-w.consumeChan:
 			if !ok {
 				log.Warningf("Worker %s consume channel closed", w.WorkerId)
 				break outer
 			}
+			w.handleMessage(&message)
 		}
-
-		taskRaw := message.Body
-
-		task := &protocol.Task{}
-
-		err := proto.Unmarshal(taskRaw, task)
-
-		if err != nil {
-			log.Errorf("Failed to unmarshal task: %s", err)
-			continue
-		}
-
-		//log.Debugf("Task value: %v", task.GetResult1().GetData())
-
-		subTasks, err := w.action.Execute(task)
-
-		if err != nil {
-			log.Errorf("Failed to execute task: %s", err)
-			continue
-		}
-
-		w.sendSubTasks(subTasks)
-		message.Ack(false)
 	}
 
 	log.Infof("Worker stop running gracefully")
+}
+
+// handleMessage handles the incoming message from the RabbitMQ
+// It unmarshals the task from the message body and executes it using the action struct
+// It also sends the subTasks to the RabbitMQ for each exchange and routing key
+// If the task fails to unmarshal or execute, it logs the error and continues to the next message
+// It also acknowledges the message after processing it
+func (w *Worker) handleMessage(message *amqp.Delivery) {
+	taskRaw := message.Body
+
+	task := &protocol.Task{}
+
+	err := proto.Unmarshal(taskRaw, task)
+
+	if err != nil {
+		log.Errorf("Failed to unmarshal task: %s", err)
+		message.Reject(false)
+		return
+	}
+
+	subTasks, err := w.action.Execute(task)
+
+	if err != nil {
+		log.Errorf("Failed to execute task: %s", err)
+		message.Reject(false)
+		return
+	}
+
+	w.sendSubTasks(subTasks)
+	message.Ack(false)
 }
 
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
