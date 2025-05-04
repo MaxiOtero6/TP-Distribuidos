@@ -9,19 +9,9 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
-type SmallTablePartialData[T any] struct {
-	data  map[string]T
-	ready bool
-}
-
-type BigTablePartialData[T any] struct {
-	data  map[string][]T
-	ready bool
-}
-
 type StageData[S any, B any] struct {
-	smallTable SmallTablePartialData[S]
-	bigTable   BigTablePartialData[B]
+	smallTable PartialData[S]
+	bigTable   PartialData[[]B]
 	ready      bool
 }
 
@@ -46,22 +36,22 @@ func (j *Joiner) makePartialResults(clientId string) {
 
 	j.partialResults[clientId] = &JoinerPartialResults{
 		zetaData: StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{
-			smallTable: SmallTablePartialData[*protocol.Zeta_Data_Movie]{
+			smallTable: PartialData[*protocol.Zeta_Data_Movie]{
 				data:  make(map[string]*protocol.Zeta_Data_Movie),
 				ready: false,
 			},
-			bigTable: BigTablePartialData[*protocol.Zeta_Data_Rating]{
+			bigTable: PartialData[[]*protocol.Zeta_Data_Rating]{
 				data:  make(map[string][]*protocol.Zeta_Data_Rating),
 				ready: false,
 			},
 			ready: false,
 		},
 		iotaData: StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{
-			smallTable: SmallTablePartialData[*protocol.Iota_Data_Movie]{
+			smallTable: PartialData[*protocol.Iota_Data_Movie]{
 				data:  make(map[string]*protocol.Iota_Data_Movie),
 				ready: false,
 			},
-			bigTable: BigTablePartialData[*protocol.Iota_Data_Actor]{
+			bigTable: PartialData[[]*protocol.Iota_Data_Actor]{
 				data:  make(map[string][]*protocol.Iota_Data_Actor),
 				ready: false,
 			},
@@ -414,7 +404,8 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	switch data.Stage {
 	case ZETA_STAGE:
 		if j.partialResults[clientId].zetaData.bigTable.ready {
-			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+			j.partialResults[clientId].zetaData.ready = true
+			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 		}
 
 		j.partialResults[clientId].zetaData.smallTable.ready = true
@@ -425,7 +416,8 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 
 	case IOTA_STAGE:
 		if j.partialResults[clientId].iotaData.bigTable.ready {
-			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+			j.partialResults[clientId].iotaData.ready = true
+			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 		}
 
 		j.partialResults[clientId].iotaData.smallTable.ready = true
@@ -440,57 +432,35 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	log.Debugf("Big table ready: %v", bigTableReady)
 	log.Debugf("Data stage: %s", dataStage)
 
-	if bigTableReady {
-		// delete both tables
-		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-		j.DeleteStage(clientId, dataStage)
-
-	} else {
-		// delete only the big table
-		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, BIG_TABLE_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-		j.DeleteTableType(clientId, dataStage, BIG_TABLE_SOURCE)
+	// delete only the big table
+	if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, BIG_TABLE_SOURCE); err != nil {
+		log.Errorf("Failed to delete partial results: %s", err)
 	}
+	j.DeleteTableType(clientId, dataStage, BIG_TABLE_SOURCE)
 
 	return tasks
 }
 
 func (j *Joiner) bigTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
 	tasks = make(Tasks)
-	var smallTableReady bool
-	var dataStage string
 
 	switch data.Stage {
 	case ZETA_STAGE:
 		if j.partialResults[clientId].zetaData.smallTable.ready {
-			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+			j.partialResults[clientId].zetaData.ready = true
+			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 		}
 
 		j.partialResults[clientId].zetaData.bigTable.ready = true
-		smallTableReady = j.partialResults[clientId].zetaData.smallTable.ready
-		dataStage = data.Stage
 	case IOTA_STAGE:
 		if j.partialResults[clientId].iotaData.smallTable.ready {
-			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+			j.partialResults[clientId].iotaData.ready = true
+			tasks = j.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 		}
 
 		j.partialResults[clientId].iotaData.bigTable.ready = true
-		smallTableReady = j.partialResults[clientId].iotaData.smallTable.ready
-		dataStage = data.Stage
 	default:
 		return nil
-	}
-
-	if smallTableReady {
-		// delete small table
-		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-
-		j.DeleteTableType(clientId, dataStage, SMALL_TABLE_SOURCE)
 	}
 
 	return tasks
@@ -508,14 +478,33 @@ func (j *Joiner) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 }
 
 func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
-	if j.partialResults[clientId].zetaData.ready && j.partialResults[clientId].iotaData.ready {
-		j.deletePartialResult(clientId)
+	var ready bool
+
+	switch data.Stage {
+	case ZETA_STAGE:
+		ready = j.partialResults[clientId].zetaData.ready
+	case IOTA_STAGE:
+		ready = j.partialResults[clientId].iotaData.ready
 	}
 
-	// For filters eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return j.eofHandler.HandleRing(data, clientId, j.getNextStageData, true)
+	log.Warningf("action: ringEOF | stage: %v | ready: %v", data.GetStage(), ready)
+
+	if ready {
+		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, data.GetStage(), ANY_SOURCE); err != nil {
+			log.Errorf("Failed to delete partial results: %s", err)
+		}
+
+		j.DeleteStage(clientId, data.GetStage())
+
+		if len(j.partialResults[clientId].zetaData.smallTable.data) == 0 &&
+			len(j.partialResults[clientId].iotaData.smallTable.data) == 0 &&
+			len(j.partialResults[clientId].zetaData.bigTable.data) == 0 &&
+			len(j.partialResults[clientId].iotaData.bigTable.data) == 0 {
+			j.deletePartialResult(clientId)
+		}
+	}
+
+	return j.eofHandler.HandleRing(data, clientId, j.getNextStageData, ready)
 }
 
 func (j *Joiner) Execute(task *protocol.Task) (Tasks, error) {
@@ -580,16 +569,16 @@ func (j *Joiner) DeleteTableType(clientId, stage, tableType string) {
 		switch stage {
 		case ZETA_STAGE:
 			if tableType == SMALL_TABLE {
-				clientData.zetaData.smallTable = SmallTablePartialData[*protocol.Zeta_Data_Movie]{}
+				clientData.zetaData.smallTable = PartialData[*protocol.Zeta_Data_Movie]{}
 			} else if tableType == BIG_TABLE {
-				clientData.zetaData.bigTable = BigTablePartialData[*protocol.Zeta_Data_Rating]{}
+				clientData.zetaData.bigTable = PartialData[[]*protocol.Zeta_Data_Rating]{}
 			}
 
 		case IOTA_STAGE:
 			if tableType == SMALL_TABLE {
-				clientData.iotaData.smallTable = SmallTablePartialData[*protocol.Iota_Data_Movie]{}
+				clientData.iotaData.smallTable = PartialData[*protocol.Iota_Data_Movie]{}
 			} else if tableType == BIG_TABLE {
-				clientData.iotaData.bigTable = BigTablePartialData[*protocol.Iota_Data_Actor]{}
+				clientData.iotaData.bigTable = PartialData[[]*protocol.Iota_Data_Actor]{}
 			}
 
 		default:
