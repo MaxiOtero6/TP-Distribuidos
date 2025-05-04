@@ -13,10 +13,10 @@ const MERGER_STAGES_COUNT uint = 4
 
 type MergerPartialResults struct {
 	toDeleteCount uint
-	delta3        map[string]*protocol.Delta_3_Data
-	eta3          map[string]*protocol.Eta_3_Data
-	kappa3        map[string]*protocol.Kappa_3_Data
-	nu3Data       map[string]*protocol.Nu_3_Data
+	delta3        PartialData[*protocol.Delta_3_Data]
+	eta3          PartialData[*protocol.Eta_3_Data]
+	kappa3        PartialData[*protocol.Kappa_3_Data]
+	nu3Data       PartialData[*protocol.Nu_3_Data]
 }
 
 // Merger is a struct that implements the Action interface.
@@ -34,10 +34,22 @@ func (m *Merger) makePartialResults(clientId string) {
 	}
 
 	m.partialResults[clientId] = &MergerPartialResults{
-		delta3:  make(map[string]*protocol.Delta_3_Data),
-		eta3:    make(map[string]*protocol.Eta_3_Data),
-		kappa3:  make(map[string]*protocol.Kappa_3_Data),
-		nu3Data: make(map[string]*protocol.Nu_3_Data),
+		delta3: PartialData[*protocol.Delta_3_Data]{
+			data:  make(map[string]*protocol.Delta_3_Data),
+			ready: false,
+		},
+		eta3: PartialData[*protocol.Eta_3_Data]{
+			data:  make(map[string]*protocol.Eta_3_Data),
+			ready: false,
+		},
+		kappa3: PartialData[*protocol.Kappa_3_Data]{
+			data:  make(map[string]*protocol.Kappa_3_Data),
+			ready: false,
+		},
+		nu3Data: PartialData[*protocol.Nu_3_Data]{
+			data:  make(map[string]*protocol.Nu_3_Data),
+			ready: false,
+		},
 	}
 }
 
@@ -70,7 +82,7 @@ Return example
 	}
 */
 func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (tasks Tasks) {
-	dataMap := m.partialResults[clientId].delta3
+	dataMap := m.partialResults[clientId].delta3.data
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -97,7 +109,7 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (ta
 /*
  */
 func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks Tasks) {
-	dataMap := m.partialResults[clientId].eta3
+	dataMap := m.partialResults[clientId].eta3.data
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e3Data := range data {
@@ -127,7 +139,7 @@ func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks 
 /*
  */
 func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (tasks Tasks) {
-	dataMap := m.partialResults[clientId].kappa3
+	dataMap := m.partialResults[clientId].kappa3.data
 
 	// Sum up the partial participations by actor
 	for _, k3Data := range data {
@@ -155,7 +167,7 @@ func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (ta
 /*
  */
 func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks Tasks) {
-	dataMap := m.partialResults[clientId].nu3Data
+	dataMap := m.partialResults[clientId].nu3Data.data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu3Data := range data {
@@ -226,7 +238,7 @@ func (m *Merger) getNextStageData(stage string, clientId string) ([]NextStageDat
 }
 
 func (m *Merger) delta3Results(tasks Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].delta3
+	dataMap := m.partialResults[clientId].delta3.data
 
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
@@ -261,7 +273,7 @@ func (m *Merger) delta3Results(tasks Tasks, clientId string) {
 }
 
 func (m *Merger) eta3Results(tasks Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].eta3
+	dataMap := m.partialResults[clientId].eta3.data
 
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
@@ -298,7 +310,7 @@ func (m *Merger) eta3Results(tasks Tasks, clientId string) {
 }
 
 func (m *Merger) kappa3Results(tasks Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].kappa3
+	dataMap := m.partialResults[clientId].kappa3.data
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
 	if _, ok := tasks[TOP_EXCHANGE]; !ok {
@@ -332,7 +344,7 @@ func (m *Merger) kappa3Results(tasks Tasks, clientId string) {
 }
 
 func (m *Merger) nu3Results(tasks Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].nu3Data
+	dataMap := m.partialResults[clientId].nu3Data.data
 
 	RESULT_EXCHANGE := m.infraConfig.GetResultExchange()
 
@@ -387,7 +399,18 @@ func (m *Merger) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 }
 
 func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType())
+	tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+
+	switch data.GetStage() {
+	case DELTA_STAGE_3:
+		m.partialResults[clientId].delta3.ready = true
+	case ETA_STAGE_3:
+		m.partialResults[clientId].eta3.ready = true
+	case KAPPA_STAGE_3:
+		m.partialResults[clientId].kappa3.ready = true
+	case NU_STAGE_3:
+		m.partialResults[clientId].nu3Data.ready = true
+	}
 
 	if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
 		if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
@@ -406,10 +429,20 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 }
 
 func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
-	// For filters eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, true)
+	var ready bool
+
+	switch data.GetStage() {
+	case DELTA_STAGE_3:
+		ready = m.partialResults[clientId].delta3.ready
+	case ETA_STAGE_3:
+		ready = m.partialResults[clientId].eta3.ready
+	case KAPPA_STAGE_3:
+		ready = m.partialResults[clientId].kappa3.ready
+	case NU_STAGE_3:
+		ready = m.partialResults[clientId].nu3Data.ready
+	}
+
+	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, ready)
 }
 
 func (m *Merger) Execute(task *protocol.Task) (Tasks, error) {
@@ -454,13 +487,13 @@ func (m *Merger) deleteStage(clientId string, stage string) error {
 	if anStage, ok := m.partialResults[clientId]; ok {
 		switch stage {
 		case DELTA_STAGE_3:
-			anStage.delta3 = nil
+			anStage.delta3.data = nil
 		case ETA_STAGE_3:
-			anStage.eta3 = nil
+			anStage.eta3.data = nil
 		case KAPPA_STAGE_3:
-			anStage.kappa3 = nil
+			anStage.kappa3.data = nil
 		case NU_STAGE_3:
-			anStage.nu3Data = nil
+			anStage.nu3Data.data = nil
 		default:
 			log.Errorf("Invalid stage: %s", stage)
 			return fmt.Errorf("invalid stage: %s", stage)
