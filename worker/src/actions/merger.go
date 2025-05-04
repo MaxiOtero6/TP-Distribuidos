@@ -482,7 +482,7 @@ func (m *Merger) Execute(task *protocol.Task) (Tasks, error) {
 
 func (m *Merger) deleteStage(clientId string, stage string) error {
 
-	log.Infof("Deleting stage %s for client %s", stage, clientId)
+	log.Debugf("Deleting stage %s for client %s", stage, clientId)
 
 	if anStage, ok := m.partialResults[clientId]; ok {
 		switch stage {

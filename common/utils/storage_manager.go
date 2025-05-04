@@ -698,12 +698,12 @@ func DeletePartialResults(dir string, clientId string, stage string, sourceType 
 		err := os.Remove(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Infof("File %s does not exist, nothing to delete", filePath)
+				log.Debugf("File %s does not exist, nothing to delete", filePath)
 				continue
 			}
 			return fmt.Errorf("error deleting file %s: %w", filePath, err)
 		}
-		log.Infof("File %s deleted successfully", filePath)
+		log.Debugf("File %s deleted successfully", filePath)
 	}
 
 	return nil
