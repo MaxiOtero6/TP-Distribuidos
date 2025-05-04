@@ -1,6 +1,8 @@
 package mom
 
 import (
+	"strings"
+
 	"github.com/op/go-logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -71,11 +73,15 @@ func (r *RabbitMQ) InitConfig(
 	}
 
 	for _, bind := range binds {
-		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
-
 		if rk, ok := bind["extraRK"]; ok {
 			r.BindQueue(bind["queue"], bind["exchange"], rk)
 		}
+
+		if strings.Contains(bind["queue"], "eof") {
+			continue
+		}
+
+		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
 	}
 }
 
