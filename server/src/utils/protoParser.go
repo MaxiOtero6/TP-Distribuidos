@@ -17,10 +17,11 @@ const SMALL_TABLE string = "small"
 const BIG_TABLE string = "big"
 const GENERAL string = "general"
 
+const EOF_BROADCAST_RK string = "eof"
+
 func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
 	tasks := make(map[string]*protocol.Task)
 
-	funnyEOFHash := utils.GetWorkerIdFromHash(workersCount, "EOF")
 	var EofType string
 
 	switch stage {
@@ -35,7 +36,7 @@ func GetEOFTask(workersCount int, clientId string, stage string) map[string]*pro
 		EofType = GENERAL
 	}
 
-	tasks[funnyEOFHash] = &protocol.Task{
+	tasks[EOF_BROADCAST_RK] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_OmegaEOF{
 			OmegaEOF: &protocol.OmegaEOF{
