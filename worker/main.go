@@ -114,9 +114,8 @@ func appendEOFInfra(
 
 	if len(queues[0]["name"]) == 0 {
 		queues[0]["name"] = qName
+		queues[0]["dlx_routingKey"] = nextWorkerId
 	}
-
-	queues[0]["dlx_routingKey"] = nextWorkerId
 
 	queues = append(queues, map[string]string{
 		"name":           eofQName,
@@ -132,6 +131,7 @@ func appendEOFInfra(
 	binds = append(binds, map[string]string{
 		"queue":    eofQName,
 		"exchange": eofExchangeName,
+		"extraRK":  workerType + "_" + workerId,
 	})
 
 	return queues, binds
