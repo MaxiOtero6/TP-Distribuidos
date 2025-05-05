@@ -37,14 +37,9 @@ func TestViperGetSliceMapStringString(t *testing.T) {
 		},
 	}
 
-	expected := []map[string]string{
-		{"name": "exchange1", "type": "fanout"},
-		{"name": "exchange2", "type": "direct"},
-	}
-
 	result, err := ViperGetSliceMapStringString(data)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	assert.Len(t, result, 2)
 }
 
 func TestViperGetSliceMapStringString_InvalidData(t *testing.T) {

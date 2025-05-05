@@ -2,6 +2,7 @@ package mom
 
 import (
 	"fmt"
+	"strconv"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -21,7 +22,7 @@ type queue struct {
 	autoDeleted bool
 	exclusive   bool
 	noWait      bool
-	args        []string
+	args        amqp.Table
 }
 
 // newQueue creates a new RabbitMQ queue with the specified name.
@@ -31,7 +32,33 @@ type queue struct {
 // The queue is durable, auto-deleted, and not exclusive by default.
 // The noWait property is set to false, and no additional arguments are passed.
 // The queue name is the name used to identify the queue on the RabbitMQ server.
-func newQueue(ch *amqp.Channel, name string) *queue {
+func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
+	qArgs := amqp.Table{}
+
+	if v, ok := args["dlx_exchange"]; ok {
+		qArgs["x-dead-letter-exchange"] = v
+	}
+
+	if v, ok := args["dlx_routingKey"]; ok {
+		qArgs["x-dead-letter-routing-key"] = v
+	}
+
+	if v, ok := args["ttl"]; ok {
+		if val, err := strconv.Atoi(v); err == nil {
+			qArgs["x-message-ttl"] = val
+		} else {
+			log.Warningf("ttl is not an int: %v", v)
+		}
+	}
+
+	if v, ok := args["expires"]; ok {
+		if val, err := strconv.Atoi(v); err == nil {
+			qArgs["x-expires"] = val
+		} else {
+			log.Warningf("expires is not an int: %v", v)
+		}
+	}
+
 	q := &queue{
 		channel:     ch,
 		name:        name,
@@ -39,7 +66,7 @@ func newQueue(ch *amqp.Channel, name string) *queue {
 		autoDeleted: false,
 		exclusive:   false,
 		noWait:      false,
-		args:        nil,
+		args:        qArgs,
 	}
 
 	amqpQ, err := ch.QueueDeclare(
@@ -48,7 +75,7 @@ func newQueue(ch *amqp.Channel, name string) *queue {
 		q.autoDeleted,
 		q.exclusive,
 		q.noWait,
-		nil,
+		qArgs,
 	)
 
 	q.amqpName = amqpQ.Name

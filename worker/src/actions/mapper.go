@@ -2,11 +2,12 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
 // Mapper is a struct that implements the Action interface.
@@ -14,15 +15,17 @@ type Mapper struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, itemId string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(infraConfig *model.InfraConfig) *Mapper {
+func NewMapper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Mapper {
 	return &Mapper{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -43,13 +46,13 @@ Return example
 		},
 	}
 */
-func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (tasks Tasks) {
+func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (tasks common.Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][DELTA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][common.DELTA_STAGE_2] = make(map[string]*protocol.Task)
 	delta2Data := make(map[string][]*protocol.Delta_2_Data)
 
 	dataMap := make(map[string]*protocol.Delta_2_Data)
@@ -78,7 +81,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string) (ta
 	}
 
 	for nodeId, data := range delta2Data {
-		tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][nodeId] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][common.DELTA_STAGE_2][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Delta_2{
 				Delta_2: &protocol.Delta_2{
@@ -108,13 +111,13 @@ Return example
 		},
 	}
 */
-func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks Tasks) {
+func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks common.Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][ETA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][common.ETA_STAGE_2] = make(map[string]*protocol.Task)
 	eta2Data := make(map[string][]*protocol.Eta_2_Data)
 
 	dataMap := make(map[string]*protocol.Eta_2_Data)
@@ -146,7 +149,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string) (tasks 
 	}
 
 	for nodeId, data := range eta2Data {
-		tasks[REDUCE_EXCHANGE][ETA_STAGE_2][nodeId] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][common.ETA_STAGE_2][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Eta_2{
 				Eta_2: &protocol.Eta_2{
@@ -176,13 +179,13 @@ Return example
 		},
 	}
 */
-func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (tasks Tasks) {
+func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (tasks common.Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][common.KAPPA_STAGE_2] = make(map[string]*protocol.Task)
 	kappa2Data := make(map[string][]*protocol.Kappa_2_Data)
 
 	dataMap := make(map[string]*protocol.Kappa_2_Data)
@@ -212,7 +215,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string) (ta
 	}
 
 	for nodeId, data := range kappa2Data {
-		tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][nodeId] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][common.KAPPA_STAGE_2][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Kappa_2{
 				Kappa_2: &protocol.Kappa_2{
@@ -242,13 +245,13 @@ Return example
 		},
 	}
 */
-func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Tasks) {
+func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks common.Tasks) {
 	REDUCE_EXCHANGE := m.infraConfig.GetReduceExchange()
 	REDUCE_COUNT := m.infraConfig.GetReduceCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[REDUCE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[REDUCE_EXCHANGE][NU_STAGE_2] = make(map[string]*protocol.Task)
+	tasks[REDUCE_EXCHANGE][common.NU_STAGE_2] = make(map[string]*protocol.Task)
 	nu2Data := make(map[string][]*protocol.Nu_2_Data)
 
 	dataMap := make(map[string]*protocol.Nu_2_Data)
@@ -279,7 +282,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 	}
 
 	for nodeId, data := range nu2Data {
-		tasks[REDUCE_EXCHANGE][NU_STAGE_2][nodeId] = &protocol.Task{
+		tasks[REDUCE_EXCHANGE][common.NU_STAGE_2][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_2{
 				Nu_2: &protocol.Nu_2{
@@ -292,98 +295,62 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string) (tasks Ta
 	return tasks
 }
 
-func (m *Mapper) getNextNodeId(nodeId string) (string, error) {
-	currentNodeId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%m.infraConfig.GetMapCount())
-	return nextNodeId, nil
-}
-
-func (m *Mapper) getNextStageData(stage string) (string, string, int, error) {
+func (m *Mapper) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case DELTA_STAGE_1:
-		return DELTA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
-	case ETA_STAGE_1:
-		return ETA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
-	case KAPPA_STAGE_1:
-		return KAPPA_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
-	case NU_STAGE_1:
-		return NU_STAGE_2, m.infraConfig.GetReduceExchange(), m.infraConfig.GetReduceCount(), nil
+	case common.DELTA_STAGE_1:
+		return []common.NextStageData{
+			{
+				Stage:       common.DELTA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
+	case common.ETA_STAGE_1:
+		return []common.NextStageData{
+			{
+				Stage:       common.ETA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
+	case common.KAPPA_STAGE_1:
+		return []common.NextStageData{
+			{
+				Stage:       common.KAPPA_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
+	case common.NU_STAGE_1:
+		return []common.NextStageData{
+			{
+				Stage:       common.NU_STAGE_2,
+				Exchange:    m.infraConfig.GetReduceExchange(),
+				WorkerCount: m.infraConfig.GetReduceCount(),
+				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+			},
+		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
-func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
-
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == m.infraConfig.GetNodeId() {
-		nextStage, nextExchange, nextStageCount, err := m.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
-		}
-
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           nextStage,
-					},
-				},
-			},
-		}
-
-		randomNode := m.randomHashFunc(nextStageCount)
-
-		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
-
-	} else { // if the creator is not the same as the worker, send EOF to the next node
-		nextRingEOF := data
-
-		log.Debugf("workerCreatorId: %s", data.GetWorkerCreatorId())
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = m.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := m.getNextNodeId(m.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		mapExchange := m.infraConfig.GetMapExchange()
-		stage := data.GetStage()
-
-		tasks[mapExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[mapExchange][stage] = make(map[string]*protocol.Task)
-		tasks[mapExchange][stage][nextNode] = eofTask
-
-	}
-	return tasks
+func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
+	return m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
-func (m *Mapper) Execute(task *protocol.Task) (Tasks, error) {
+func (m *Mapper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
+	// For mappers eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, true)
+}
+
+func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 
@@ -407,6 +374,9 @@ func (m *Mapper) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return m.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return m.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

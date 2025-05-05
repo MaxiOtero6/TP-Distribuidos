@@ -7,7 +7,6 @@ option go_package = "common/communication/protocol";
 message OmegaEOF {
     message Data {
         string stage = 1;
-        string worker_creator_id = 2;
         string eofType = 3;
     }
 

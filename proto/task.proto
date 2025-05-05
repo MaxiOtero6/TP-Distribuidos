@@ -21,6 +21,7 @@ import "proto/stages/result3.proto";
 import "proto/stages/result4.proto";
 import "proto/stages/result5.proto";
 import "proto/stages/omegaEOF.proto";
+import "proto/ringEOF.proto";
 
 message Task {
     oneof Stage {
@@ -51,7 +52,8 @@ message Task {
         Result4 result4 = 25;
         Result5 result5 = 26;
         OmegaEOF omegaEOF = 27;
+        RingEOF ringEOF = 28;
     }
     
-    string clientId = 28;
+    string clientId = 29;
 }

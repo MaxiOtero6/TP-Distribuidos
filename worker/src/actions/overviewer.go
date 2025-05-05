@@ -2,11 +2,12 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/cdipaolo/sentiment"
 )
 
@@ -16,12 +17,13 @@ type Overviewer struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
@@ -32,6 +34,7 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -52,13 +55,12 @@ Return example
 		}
 	}
 */
-func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks Tasks) {
+func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks common.Tasks) {
 	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
-	MAP_COUNT := o.infraConfig.GetMapCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][common.NU_STAGE_1] = make(map[string]*protocol.Task)
 	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
@@ -71,11 +73,11 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 		}
 
 		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
-		mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
+		// mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
 
 		// true: POSITIVE
 		// false: NEGATIVE
-		nuData[mapIdHash] = append(nuData[mapIdHash], &protocol.Nu_1_Data{
+		nuData[""] = append(nuData[""], &protocol.Nu_1_Data{
 			Id:        movie.GetId(),
 			Title:     movie.GetTitle(),
 			Revenue:   movie.GetRevenue(),
@@ -85,7 +87,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 	}
 
 	for nodeId, data := range nuData {
-		tasks[MAP_EXCHANGE][NU_STAGE_1][nodeId] = &protocol.Task{
+		tasks[MAP_EXCHANGE][common.NU_STAGE_1][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
@@ -98,90 +100,35 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 	return tasks
 }
 
-func (o *Overviewer) getNextNodeId(nodeId string) (string, error) {
-	currentNodeId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%o.infraConfig.GetOverviewCount())
-	return nextNodeId, nil
-}
-
-func (o *Overviewer) getNextStageData(stage string) (string, string, int, error) {
+func (o *Overviewer) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case MU_STAGE:
-		return NU_STAGE_1, o.infraConfig.GetMapExchange(), o.infraConfig.GetMapCount(), nil
+	case common.MU_STAGE:
+		return []common.NextStageData{
+			{
+				Stage:       common.NU_STAGE_1,
+				Exchange:    o.infraConfig.GetMapExchange(),
+				WorkerCount: o.infraConfig.GetMapCount(),
+				RoutingKey:  o.infraConfig.GetBroadcastID(),
+			},
+		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return "", "", 0, fmt.Errorf("invalid stage: %s", stage)
+		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
-func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
-
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == o.infraConfig.GetNodeId() {
-		nextStage, nextExchange, nextStageCount, err := o.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
-		}
-
-		nextStageEOF := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						WorkerCreatorId: "",
-						Stage:           nextStage,
-					},
-				},
-			},
-		}
-
-		randomNode := o.randomHashFunc(nextStageCount)
-
-		tasks[nextExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[nextExchange][nextStage] = make(map[string]*protocol.Task)
-		tasks[nextExchange][nextStage][randomNode] = nextStageEOF
-
-	} else { // if the creator is not the same as the worker, send EOF to the next node
-		nextRingEOF := data
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = o.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := o.getNextNodeId(o.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		overviewExchange := o.infraConfig.GetOverviewExchange()
-		stage := data.GetStage()
-
-		tasks[overviewExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[overviewExchange][stage] = make(map[string]*protocol.Task)
-		tasks[overviewExchange][stage][nextNode] = eofTask
-
-	}
-	return tasks
+func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
+	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
-func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
+func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
+	// For overviewers eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return o.eofHandler.HandleRing(data, clientId, o.getNextStageData, true)
+}
+
+func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 
@@ -189,9 +136,14 @@ func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Mu:
 		data := v.Mu.GetData()
 		return o.muStage(data, clientId), nil
+
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return o.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return o.ringEOFStage(v.RingEOF, clientId), nil
+
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}

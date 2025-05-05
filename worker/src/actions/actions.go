@@ -3,100 +3,66 @@ package actions
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("log")
 
-type Tasks map[string]map[string]map[string]*protocol.Task
+type PartialData[T any] struct {
+	data  map[string]T
+	ready bool
+}
 
 type Action interface {
 	// Execute executes the action.
 	// It returns a map of tasks for the next stages.
 	// It returns an error if the action fails.
-	Execute(task *protocol.Task) (Tasks, error)
+	Execute(task *protocol.Task) (common.Tasks, error)
 }
-
-// EOF Types
-const SMALL_TABLE string = "small"
-const BIG_TABLE string = "big"
-const GENERAL string = "general"
-
-// Query 1
-const ALPHA_STAGE string = "alpha"
-const BETA_STAGE string = "beta"
-
-// Query 2
-const GAMMA_STAGE string = "gamma"
-const DELTA_STAGE_1 string = "delta_1"
-const DELTA_STAGE_2 string = "delta_2"
-const DELTA_STAGE_3 string = "delta_3"
-const EPSILON_STAGE string = "epsilon"
-
-// Query 3
-const ZETA_STAGE string = "zeta"
-const ETA_STAGE_1 string = "eta_1"
-const ETA_STAGE_2 string = "eta_2"
-const ETA_STAGE_3 string = "eta_3"
-const THETA_STAGE string = "theta"
-
-// Query 4
-const IOTA_STAGE string = "iota"
-const KAPPA_STAGE_1 string = "kappa_1"
-const KAPPA_STAGE_2 string = "kappa_2"
-const KAPPA_STAGE_3 string = "kappa_3"
-const LAMBDA_STAGE string = "lambda"
-
-// Query 5
-const MU_STAGE string = "mu"
-const NU_STAGE_1 string = "nu_1"
-const NU_STAGE_2 string = "nu_2"
-const NU_STAGE_3 string = "nu_3"
-
-// Results
-const RESULT_STAGE string = "result"
-
-// Consts for tests
-const TEST_WORKER_COUNT int = 1
-const TEST_WORKER_ID string = "0"
-
-// Source const
-const BIG_TABLE_SOURCE string = "bigTable"
-const SMALL_TABLE_SOURCE string = "smallTable"
-const ANY_SOURCE string = ""
-
-// ActionType represents the type of action to be performed.
-type ActionType string
-
-const (
-	FilterAction     ActionType = "FILTER"
-	OverviewerAction ActionType = "OVERVIEWER"
-	MapperAction     ActionType = "MAPPER"
-	JoinerAction     ActionType = "JOINER"
-	ReducerAction    ActionType = "REDUCER"
-	MergerAction     ActionType = "MERGER"
-	TopperAction     ActionType = "TOPPER"
-)
 
 // NewAction creates a new action based on the worker type.
 func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
-	kind := ActionType(workerType)
+	kind := model.ActionType(workerType)
+
+	workerCount := infraConfig.GetWorkersCountByType(workerType)
+
+	nextNodeId, err := utils.GetNextNodeId(
+		infraConfig.GetNodeId(),
+		workerCount,
+	)
+	if err != nil {
+		log.Panicf("Failed to get next node id, self id %s: %s", infraConfig.GetNodeId(), err)
+	}
+
+	eofHandler := eof_handler.NewEOFHandler(
+		infraConfig.GetNodeId(),
+		workerType,
+		workerCount,
+		infraConfig.GetEofExchange(),
+		nextNodeId,
+	)
 
 	switch kind {
-	case FilterAction:
-		return NewFilter(infraConfig)
-	case OverviewerAction:
-		return NewOverviewer(infraConfig)
-	case MapperAction:
-		return NewMapper(infraConfig)
-	case JoinerAction:
-		return NewJoiner(infraConfig)
-	case ReducerAction:
-		return NewReducer(infraConfig)
-	case MergerAction:
-		return NewMerger(infraConfig)
-	case TopperAction:
-		return NewTopper(infraConfig)
+	case model.FilterAction:
+		return NewFilter(infraConfig, eofHandler)
+	case model.OverviewerAction:
+		return NewOverviewer(infraConfig, eofHandler)
+	case model.MapperAction:
+		return NewMapper(infraConfig, eofHandler)
+	case model.JoinerAction:
+		eofHandler.IgnoreDuplicates()
+		return NewJoiner(infraConfig, eofHandler)
+	case model.ReducerAction:
+		return NewReducer(infraConfig, eofHandler)
+	case model.MergerAction:
+		eofHandler.IgnoreDuplicates()
+		return NewMerger(infraConfig, eofHandler)
+	case model.TopperAction:
+		eofHandler.IgnoreDuplicates()
+		return NewTopper(infraConfig, eofHandler)
 	default:
 		log.Panicf("Unknown worker type: %s", workerType)
 		return nil

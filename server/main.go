@@ -133,7 +133,9 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 		MergeExchange:    v.GetString("consts.mergeExchange"),
 		TopExchange:      v.GetString("consts.topExchange"),
 		ResultExchange:   v.GetString("consts.resultExchange"),
+		EofExchange:      v.GetString("consts.eofExchange"),
 		BroadcastID:      v.GetString("consts.broadcastId"),
+		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
 	}
 
 	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")

@@ -7,18 +7,21 @@ consts:
   mergeExchange: "mergeExchange"
   topExchange: "topExchange"
   resultExchange: "resultExchange"
+  eofExchange: "eofExchange"
   broadcastId: ""
+
+  eofBroadcastRK: "eof"
 
 rabbitmq:
   SERVER:
     exchanges:
       filterExchange:
         name: "filterExchange"
-        kind: "direct"
+        kind: "fanout"
 
       overviewExchange:
         name: "overviewExchange"
-        kind: "direct"
+        kind: "fanout"
 
       joinExchange:
         name: "joinExchange"
@@ -36,7 +39,7 @@ rabbitmq:
     exchanges:
       filterExchange:
         name: "filterExchange"
-        kind: "direct"
+        kind: "fanout"
 
       joinExchange:
         name: "joinExchange"
@@ -44,62 +47,74 @@ rabbitmq:
 
       mapExchange:
         name: "mapExchange"
-        kind: "direct"
+        kind: "fanout"
 
       resultExchange:
         name: "resultExchange"
         kind: "direct"
 
+      eofExchange:
+        name: "eofExchange"
+        kind: "direct"
+
     queues:
       filterQueue:
-        name: ""
+        name: "filterQueue"
 
     binds:
       filterQueue:
         exchange: "filterExchange"
-        queue: ""
+        queue: "filterQueue"
 
   OVERVIEWER:
     exchanges:
       overviewExchange:
         name: "overviewExchange"
-        kind: "direct"
+        kind: "fanout"
 
       mapExchange:
         name: "mapExchange"
-        kind: "direct"
+        kind: "fanout"
 
       resultExchange:
         name: "resultExchange"
         kind: "direct"
 
+      eofExchange:
+        name: "eofExchange"
+        kind: "direct"
+
     queues:
       overviewQueue:
-        name: ""
+        name: "overviewQueue"
 
     binds:
       overviewQueue:
         exchange: "overviewExchange"
-        queue: ""
+        queue: "overviewQueue"
 
   MAPPER:
     exchanges:
       mapExchange:
         name: "mapExchange"
-        kind: "direct"
+        kind: "fanout"
 
       reduceExchange:
         name: "reduceExchange"
+        kind: "fanout"
+
+      eofExchange:
+        name: "eofExchange"
         kind: "direct"
 
     queues:
       mapQueue:
-        name: ""
+        name: "mapQueue"
 
     binds:
       mapQueue:
         exchange: "mapExchange"
-        queue: ""
+        queue: "mapQueue"
 
   JOINER:
     exchanges:
@@ -109,11 +124,17 @@ rabbitmq:
 
       mapExchange:
         name: "mapExchange"
+        kind: "fanout"
+
+      eofExchange:
+        name: "eofExchange"
         kind: "direct"
 
     queues:
       joinQueue:
         name: ""
+        dlx_exchange: "joinExchange"
+        ttl: "120000"
 
     binds:
       joinQueue:
@@ -124,20 +145,24 @@ rabbitmq:
     exchanges:
       reduceExchange:
         name: "reduceExchange"
-        kind: "direct"
+        kind: "fanout"
 
       mergeExchange:
         name: "mergeExchange"
         kind: "direct"
 
+      eofExchange:
+        name: "eofExchange"
+        kind: "direct"
+
     queues:
       reduceQueue:
-        name: ""
+        name: "reduceQueue"
 
     binds:
       reduceQueue:
         exchange: "reduceExchange"
-        queue: ""
+        queue: "reduceQueue"
 
   MERGER:
     exchanges:
@@ -153,9 +178,15 @@ rabbitmq:
         name: "topExchange"
         kind: "direct"
 
+      eofExchange:
+        name: "eofExchange"
+        kind: "direct"
+
     queues:
       mergeQueue:
         name: ""
+        dlx_exchange: "mergeExchange"
+        ttl: "120000"
 
     binds:
       mergeQueue:
@@ -172,9 +203,15 @@ rabbitmq:
         name: "resultExchange"
         kind: "direct"
 
+      eofExchange:
+        name: "eofExchange"
+        kind: "direct"
+
     queues:
       topQueue:
         name: ""
+        dlx_exchange: "topExchange"
+        ttl: "120000"
 
     binds:
       topQueue:

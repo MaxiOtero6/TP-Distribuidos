@@ -1,5 +1,10 @@
 package model
 
+import (
+	"fmt"
+	"path/filepath"
+)
+
 type WorkerClusterConfig struct {
 	FilterCount   int
 	OverviewCount int
@@ -29,7 +34,9 @@ type RabbitConfig struct {
 	MergeExchange    string
 	TopExchange      string
 	ResultExchange   string
+	EofExchange      string
 	BroadcastID      string
+	EofBroadcastRK   string
 }
 
 type InfraConfig struct {
@@ -45,6 +52,29 @@ func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConf
 		workers:       workerConfig,
 		rabbit:        rabbitConfig,
 		volumeBaseDir: volumeBaseDir,
+	}
+}
+
+func (i *InfraConfig) GetWorkersCountByType(workerType string) int {
+	kind := ActionType(workerType)
+
+	switch kind {
+	case FilterAction:
+		return i.workers.FilterCount
+	case OverviewerAction:
+		return i.workers.OverviewCount
+	case MapperAction:
+		return i.workers.MapCount
+	case JoinerAction:
+		return i.workers.JoinCount
+	case ReducerAction:
+		return i.workers.ReduceCount
+	case MergerAction:
+		return i.workers.MergeCount
+	case TopperAction:
+		return i.workers.TopCount
+	default:
+		return 0
 	}
 }
 
@@ -124,8 +154,20 @@ func (i *InfraConfig) GetResultExchange() string {
 	return i.rabbit.ResultExchange
 }
 
+func (i *InfraConfig) GetEofExchange() string {
+	return i.rabbit.EofExchange
+}
+
 func (i *InfraConfig) GetBroadcastID() string {
 	return i.rabbit.BroadcastID
+}
+
+func (i *InfraConfig) GetEofBroadcastRK() string {
+	return i.rabbit.EofBroadcastRK
+}
+
+func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) string {
+	return filepath.Join(i.volumeBaseDir, fmt.Sprintf("%s_%s", workerType, workerID))
 }
 
 func (i *InfraConfig) GetDirectory() string {
