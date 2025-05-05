@@ -82,6 +82,58 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
+func appendEOFInfra(
+	eofExchangeName string,
+	queues []map[string]string,
+	binds []map[string]string,
+	workerId string,
+	workerType string,
+	workerCount int,
+	eofBroadcastRK string,
+) ([]map[string]string, []map[string]string) {
+	if len(binds) != 1 {
+		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
+	}
+
+	if len(queues) != 1 {
+		log.Panicf("For workers is expected to load one queue from the config file, got %d", len(binds))
+	}
+
+	const TTL = 30000 // 30 seconds
+
+	nextWorkerId, err := utils.GetNextNodeId(workerId, workerCount)
+	if err != nil {
+		log.Panicf("Failed to get next node id, self id %s: %s", workerId, err)
+	}
+
+	qName := fmt.Sprintf("%s_%s_queue", workerType, workerId)
+	eofQName := "eof_" + qName
+
+	if len(queues[0]["name"]) == 0 {
+		queues[0]["name"] = qName
+		queues[0]["dlx_routingKey"] = nextWorkerId
+	}
+
+	queues = append(queues, map[string]string{
+		"name":           eofQName,
+		"dlx_exchange":   eofExchangeName,
+		"dlx_routingKey": nextWorkerId,
+		"ttl":            fmt.Sprintf("%d", TTL),
+	})
+
+	// Add the EOF_RK to the worker queues binds
+	binds[0]["extraRK"] = eofBroadcastRK
+	binds[0]["queue"] = queues[0]["name"]
+
+	binds = append(binds, map[string]string{
+		"queue":    eofQName,
+		"exchange": eofExchangeName,
+		"extraRK":  workerType + "_" + workerId,
+	})
+
+	return queues, binds
+}
+
 func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	workerType := v.GetString("type")
 
@@ -108,7 +160,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		MergeExchange:    v.GetString("consts.mergeExchange"),
 		TopExchange:      v.GetString("consts.topExchange"),
 		ResultExchange:   v.GetString("consts.resultExchange"),
+		EofExchange:      v.GetString("consts.eofExchange"),
 		BroadcastID:      v.GetString("consts.broadcastId"),
+		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
 	}
 
 	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
@@ -120,6 +174,16 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
+
+	queues, binds = appendEOFInfra(
+		infraConfig.GetEofExchange(),
+		queues,
+		binds,
+		nodeId,
+		workerType,
+		infraConfig.GetWorkersCountByType(workerType),
+		infraConfig.GetEofBroadcastRK(),
+	)
 
 	w := worker.NewWorker(workerType, infraConfig, signalChan)
 	w.InitConfig(exchanges, queues, binds)

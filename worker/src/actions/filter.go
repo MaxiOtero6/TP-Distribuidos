@@ -2,20 +2,15 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
 
 	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
-
-type FilterStageData struct {
-	NextStage    string
-	NextExchange string
-	WorkerCount  int
-}
 
 // Filter is a struct that implements the Action interface.
 // It filters movies based on certain criteria.
@@ -24,13 +19,15 @@ type Filter struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     eof_handler.IEOFHandler
 }
 
-func NewFilter(infraConfig *model.InfraConfig) *Filter {
+func NewFilter(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Filter {
 	return &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     eofHandler,
 	}
 }
 
@@ -67,18 +64,17 @@ Return example
 		}
 	}
 */
-func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks Tasks) {
+func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks common.Tasks) {
 	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
 	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
 	JOIN_COUNT := f.infraConfig.GetJoinCount()
-	FILTER_COUNT := f.infraConfig.GetFilterCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[JOIN_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[FILTER_EXCHANGE][BETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][ZETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][IOTA_STAGE] = make(map[string]*protocol.Task)
+	tasks[FILTER_EXCHANGE][common.BETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][common.ZETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][common.IOTA_STAGE] = make(map[string]*protocol.Task)
 
 	betaData := make(map[string][]*protocol.Beta_Data)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
@@ -97,9 +93,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 			continue
 		}
 
-		filterIdHash := f.itemHashFunc(FILTER_COUNT, movie.GetId())
-
-		betaData[filterIdHash] = append(betaData[filterIdHash], &protocol.Beta_Data{
+		betaData[""] = append(betaData[""], &protocol.Beta_Data{
 			Id:            movie.GetId(),
 			Title:         movie.GetTitle(),
 			ReleaseYear:   movie.GetReleaseYear(),
@@ -128,7 +122,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range betaData {
-		tasks[FILTER_EXCHANGE][BETA_STAGE][nodeId] = &protocol.Task{
+		tasks[FILTER_EXCHANGE][common.BETA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Beta{
 				Beta: &protocol.Beta{
@@ -139,7 +133,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range zetaData {
-		tasks[JOIN_EXCHANGE][ZETA_STAGE][nodeId] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][common.ZETA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
@@ -150,7 +144,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range iotaData {
-		tasks[JOIN_EXCHANGE][IOTA_STAGE][nodeId] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][common.IOTA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
@@ -180,12 +174,12 @@ Return example
 		},
 	}
 */
-func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks Tasks) {
+func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks common.Tasks) {
 	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
 	resData := make(map[string][]*protocol.Result1_Data)
 
 	for _, movie := range data {
@@ -210,7 +204,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks T
 	}
 
 	for nodeId, data := range resData {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result1{
 				Result1: &protocol.Result1{
@@ -241,13 +235,12 @@ Return example
 		},
 	}
 */
-func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks Tasks) {
+func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks common.Tasks) {
 	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
-	MAP_COUNT := f.infraConfig.GetMapCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][common.DELTA_STAGE_1] = make(map[string]*protocol.Task)
 	delta1Data := make(map[string][]*protocol.Delta_1_Data)
 
 	for _, movie := range data {
@@ -265,16 +258,14 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 			continue
 		}
 
-		mapIdHash := f.itemHashFunc(MAP_COUNT, movie.GetId())
-
-		delta1Data[mapIdHash] = append(delta1Data[mapIdHash], &protocol.Delta_1_Data{
+		delta1Data[""] = append(delta1Data[""], &protocol.Delta_1_Data{
 			Country: countries[0],
 			Budget:  movie.GetBudget(),
 		})
 	}
 
 	for nodeId, data := range delta1Data {
-		tasks[MAP_EXCHANGE][DELTA_STAGE_1][nodeId] = &protocol.Task{
+		tasks[MAP_EXCHANGE][common.DELTA_STAGE_1][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{
@@ -287,52 +278,47 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 	return tasks
 }
 
-func (f *Filter) getNextNodeId(nodeId string) (string, error) {
-	currentNodeId, err := strconv.Atoi(nodeId)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
-	}
-
-	nextNodeId := fmt.Sprintf("%d", (currentNodeId+1)%f.infraConfig.GetFilterCount())
-	return nextNodeId, nil
-}
-
-func (f *Filter) getNextStageData(stage string) ([]FilterStageData, error) {
+func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case ALPHA_STAGE:
-		return []FilterStageData{
+	case common.ALPHA_STAGE:
+		return []common.NextStageData{
 			{
-				NextStage:    BETA_STAGE,
-				NextExchange: f.infraConfig.GetFilterExchange(),
-				WorkerCount:  f.infraConfig.GetFilterCount(),
+				Stage:       common.BETA_STAGE,
+				Exchange:    f.infraConfig.GetFilterExchange(),
+				WorkerCount: f.infraConfig.GetFilterCount(),
+				RoutingKey:  f.infraConfig.GetBroadcastID(),
 			},
 			{
-				NextStage:    ZETA_STAGE,
-				NextExchange: f.infraConfig.GetJoinExchange(),
-				WorkerCount:  f.infraConfig.GetJoinCount(),
+				Stage:       common.ZETA_STAGE,
+				Exchange:    f.infraConfig.GetJoinExchange(),
+				WorkerCount: f.infraConfig.GetJoinCount(),
+				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 			{
-				NextStage:    IOTA_STAGE,
-				NextExchange: f.infraConfig.GetJoinExchange(),
-				WorkerCount:  f.infraConfig.GetJoinCount(),
-			},
-		}, nil
-
-	case BETA_STAGE:
-		return []FilterStageData{
-			{
-				NextStage:    RESULT_STAGE,
-				NextExchange: f.infraConfig.GetResultExchange(),
-				WorkerCount:  1,
+				Stage:       common.IOTA_STAGE,
+				Exchange:    f.infraConfig.GetJoinExchange(),
+				WorkerCount: f.infraConfig.GetJoinCount(),
+				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 
-	case GAMMA_STAGE:
-		return []FilterStageData{
+	case common.BETA_STAGE:
+		return []common.NextStageData{
 			{
-				NextStage:    DELTA_STAGE_1,
-				NextExchange: f.infraConfig.GetMapExchange(),
-				WorkerCount:  f.infraConfig.GetMapCount(),
+				Stage:       common.RESULT_STAGE,
+				Exchange:    f.infraConfig.GetResultExchange(),
+				WorkerCount: 1,
+				RoutingKey:  clientId,
+			},
+		}, nil
+
+	case common.GAMMA_STAGE:
+		return []common.NextStageData{
+			{
+				Stage:       common.DELTA_STAGE_1,
+				Exchange:    f.infraConfig.GetMapExchange(),
+				WorkerCount: f.infraConfig.GetMapCount(),
+				RoutingKey:  f.infraConfig.GetBroadcastID(),
 			},
 		}, nil
 
@@ -342,87 +328,21 @@ func (f *Filter) getNextStageData(stage string) ([]FilterStageData, error) {
 	}
 }
 
-func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
-	tasks = make(Tasks)
+func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
+	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+}
 
-	// if the creator is the same as the worker, send the EOF to the next stage
-	if data.GetWorkerCreatorId() == f.infraConfig.GetNodeId() {
-		nextDataStages, err := f.getNextStageData(data.GetStage())
-		if err != nil {
-			log.Errorf("Failed to get next stage data: %s", err)
-			return nil
-		}
-
-		for _, nextDataStage := range nextDataStages {
-
-			nextStageEOF := &protocol.Task{
-				ClientId: clientId,
-				Stage: &protocol.Task_OmegaEOF{
-					OmegaEOF: &protocol.OmegaEOF{
-						Data: &protocol.OmegaEOF_Data{
-							WorkerCreatorId: "",
-							Stage:           nextDataStage.NextStage,
-							EofType:         data.GetEofType(),
-						},
-					},
-				},
-			}
-
-			randomNode := f.randomHashFunc(nextDataStage.WorkerCount)
-
-			if nextDataStage.NextStage == RESULT_STAGE {
-				randomNode = clientId
-			}
-
-			if _, exists := tasks[nextDataStage.NextExchange]; !exists {
-				tasks[nextDataStage.NextExchange] = make(map[string]map[string]*protocol.Task)
-			}
-			if _, exists := tasks[nextDataStage.NextExchange][nextDataStage.NextStage]; !exists {
-				tasks[nextDataStage.NextExchange][nextDataStage.NextStage] = make(map[string]*protocol.Task)
-			}
-
-			log.Debugf("EOF type: %s", data.GetEofType())
-			tasks[nextDataStage.NextExchange][nextDataStage.NextStage][randomNode] = nextStageEOF
-		}
-
-	} else { // if the creator is not the same as the worker, send EOF to the next node
-		nextRingEOF := data
-
-		if data.GetWorkerCreatorId() == "" {
-			nextRingEOF.WorkerCreatorId = f.infraConfig.GetNodeId()
-		}
-
-		eofTask := &protocol.Task{
-			ClientId: clientId,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: nextRingEOF,
-				},
-			},
-		}
-
-		nextNode, err := f.getNextNodeId(f.infraConfig.GetNodeId())
-
-		if err != nil {
-			log.Errorf("Failed to get next node id: %s", err)
-			return nil
-		}
-
-		filterExchange := f.infraConfig.GetFilterExchange()
-		stage := data.GetStage()
-
-		tasks[filterExchange] = make(map[string]map[string]*protocol.Task)
-		tasks[filterExchange][stage] = make(map[string]*protocol.Task)
-		tasks[filterExchange][stage][nextNode] = eofTask
-
-	}
-	return tasks
+func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
+	// For filters eofStatus is always true
+	// because one of them receives the EOF and init the ring
+	// and the others just declare that they are alive
+	return f.eofHandler.HandleRing(data, clientId, f.getNextStageData, true)
 }
 
 // Execute executes the action.
 // It returns a map of tasks for the next stages.
 // It returns an error if the action fails.
-func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
+func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 
@@ -430,15 +350,21 @@ func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
 	case *protocol.Task_Alpha:
 		data := v.Alpha.GetData()
 		return f.alphaStage(data, clientId), nil
+
 	case *protocol.Task_Beta:
 		data := v.Beta.GetData()
 		return f.betaStage(data, clientId), nil
+
 	case *protocol.Task_Gamma:
 		data := v.Gamma.GetData()
 		return f.gammaStage(data, clientId), nil
+
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		return f.omegaEOFStage(data, clientId), nil
+
+	case *protocol.Task_RingEOF:
+		return f.ringEOFStage(v.RingEOF, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

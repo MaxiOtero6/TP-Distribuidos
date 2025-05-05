@@ -7,7 +7,9 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/op/go-logging"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,6 +22,7 @@ type Worker struct {
 	action      actions.Action
 	done        chan os.Signal
 	consumeChan mom.ConsumerChan
+	eofChan     mom.ConsumerChan
 }
 
 // NewWorker creates a new worker with the given id, type, and infraConfig
@@ -46,12 +49,13 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 1 {
-		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
+	if len(binds) != 2 {
+		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof), got %d", len(binds))
 	}
 
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
+	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])
 }
 
 // Run starts the worker and listens for messages on the consume channel
@@ -64,7 +68,7 @@ func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]s
 // and exit
 // It panics if the consume channel is nil
 func (w *Worker) Run() {
-	if w.consumeChan == nil {
+	if w.consumeChan == nil || w.eofChan == nil {
 		log.Panicf("Consume channel is nil, did you call InitConfig?")
 	}
 
@@ -77,33 +81,53 @@ outer:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
 
-		case message := <-w.consumeChan:
-			taskRaw := message.Body
-
-			task := &protocol.Task{}
-
-			err := proto.Unmarshal(taskRaw, task)
-
-			if err != nil {
-				log.Errorf("Failed to unmarshal task: %s", err)
-				continue
+		case message, ok := <-w.eofChan:
+			if !ok {
+				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
+				break outer
 			}
+			w.handleMessage(&message)
 
-			//log.Debugf("Task value: %v", task.GetResult1().GetData())
-
-			subTasks, err := w.action.Execute(task)
-
-			if err != nil {
-				log.Errorf("Failed to execute task: %s", err)
-				continue
+		case message, ok := <-w.consumeChan:
+			if !ok {
+				log.Warningf("Worker %s consume channel closed", w.WorkerId)
+				break outer
 			}
-
-			w.sendSubTasks(subTasks)
-			message.Ack(false)
+			w.handleMessage(&message)
 		}
 	}
 
 	log.Infof("Worker stop running gracefully")
+}
+
+// handleMessage handles the incoming message from the RabbitMQ
+// It unmarshals the task from the message body and executes it using the action struct
+// It also sends the subTasks to the RabbitMQ for each exchange and routing key
+// If the task fails to unmarshal or execute, it logs the error and continues to the next message
+// It also acknowledges the message after processing it
+func (w *Worker) handleMessage(message *amqp.Delivery) {
+	taskRaw := message.Body
+
+	task := &protocol.Task{}
+
+	err := proto.Unmarshal(taskRaw, task)
+
+	if err != nil {
+		log.Errorf("Failed to unmarshal task: %s", err)
+		message.Reject(false)
+		return
+	}
+
+	subTasks, err := w.action.Execute(task)
+
+	if err != nil {
+		log.Errorf("Failed to execute task: %s", err)
+		message.Reject(false)
+		return
+	}
+
+	w.sendSubTasks(subTasks)
+	message.Ack(false)
 }
 
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
@@ -111,7 +135,7 @@ outer:
 // It logs the task, exchange, and routing key for debugging purposes
 // This function is nil-safe, meaning it will not panic if the input is nil
 // It will simply return without doing anything
-func (w *Worker) sendSubTasks(subTasks actions.Tasks) {
+func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 	for exchange, stages := range subTasks {
 		for _, stage := range stages {
 			for routingKey, task := range stage {

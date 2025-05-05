@@ -1,12 +1,14 @@
 cd ./test
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <number_of_clients>"
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <number_of_clients> <expected_results_file_name_not_path>"
+    echo "Example: $0 1 expected_results.json"
+    echo "Example: $0 4 expected_results_10k.json"
     exit 1
 fi
 
 N_CLIENTS=$1
-EXPECTED_FILE="./expected_results_10k.json"
+EXPECTED_FILE=$2
 
 ls ${EXPECTED_FILE} &> /dev/null
 

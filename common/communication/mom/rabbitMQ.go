@@ -1,6 +1,8 @@
 package mom
 
 import (
+	"strings"
+
 	"github.com/op/go-logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -62,23 +64,36 @@ func (r *RabbitMQ) InitConfig(
 	}
 
 	for _, queue := range queues {
-		r.NewQueue(queue["name"])
+		r.NewQueue(queue["name"], map[string]string{
+			"dlx_exchange":   queue["dlx_exchange"],
+			"dlx_routingKey": queue["dlx_routingKey"],
+			"ttl":            queue["ttl"],
+			"expires":        queue["expires"],
+		})
 	}
 
 	for _, bind := range binds {
+		if rk, ok := bind["extraRK"]; ok {
+			r.BindQueue(bind["queue"], bind["exchange"], rk)
+		}
+
+		if strings.Contains(bind["queue"], "eof") {
+			continue
+		}
+
 		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
 	}
 }
 
 // NewQueue creates a new RabbitMQ queue with the specified name.
 // If a queue with the same name already exists, an error is logged and the function returns.
-func (r *RabbitMQ) NewQueue(name string) {
+func (r *RabbitMQ) NewQueue(name string, args map[string]string) {
 	if _, ok := r.queues[name]; ok {
 		log.Errorf("Queue '%s' already exists", name)
 		return
 	}
 
-	r.queues[name] = newQueue(r.ch, name)
+	r.queues[name] = newQueue(r.ch, name, args)
 	log.Infof("Queue '%s' created", name)
 }
 

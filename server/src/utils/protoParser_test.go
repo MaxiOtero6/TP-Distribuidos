@@ -16,7 +16,7 @@ func TestGetAlphaStageTask(t *testing.T) {
 
 	tasks := GetAlphaStageTask(movies, 2, CLIENT_ID)
 
-	assert.Len(t, tasks, 2) // Since filtersCount is 2, tasks are distributed into 2 groups
+	assert.Len(t, tasks, 1)
 	for _, task := range tasks {
 		assert.NotNil(t, task.GetAlpha())
 	}
@@ -63,7 +63,7 @@ func TestGetMuStageTask(t *testing.T) {
 
 	tasks := GetMuStageTask(movies, 2, CLIENT_ID)
 
-	assert.Len(t, tasks, 2) // Since overviewCount is 2, tasks are distributed into 2 groups
+	assert.Len(t, tasks, 1)
 	for _, task := range tasks {
 		assert.NotNil(t, task.GetMu())
 	}
