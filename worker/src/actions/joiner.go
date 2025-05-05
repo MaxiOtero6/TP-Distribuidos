@@ -71,12 +71,16 @@ func (j *Joiner) makePartialResults(clientId string) {
 
 // NewJoiner creates a new Joiner instance.
 func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
-	return &Joiner{
+	joiner := &Joiner{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 		partialResults: make(map[string]*JoinerPartialResults),
 	}
+
+	go utils.StartCleanupRoutine(infraConfig.GetDirectory())
+
+	return joiner
 }
 
 func (j *Joiner) joinZetaData(tasks Tasks, ratingsData map[string][]*protocol.Zeta_Data_Rating, clientId string) {

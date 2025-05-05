@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
@@ -49,6 +50,8 @@ const NU_STAGE_3 string = "nu_3"
 const BIG_TABLE_SOURCE string = "bigTable"
 const SMALL_TABLE_SOURCE string = "smallTable"
 const ANY_SOURCE string = ""
+
+const CLEANUP_INTERVAL = 10 * time.Minute
 
 var log = logging.MustGetLogger("log")
 
@@ -798,4 +801,49 @@ func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
 	}
 
 	return true
+}
+
+func cleanUpOldFiles(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("error reading directory %s: %w", dir, err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := filepath.Join(dir, file.Name())
+
+		info, err := os.Stat(filePath)
+		if err != nil {
+			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
+			continue
+		}
+		// Delete files older than CLEANUP_INTERVAL
+		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
+			log.Infof("Deleting old file: %s", filePath)
+			if err := os.Remove(filePath); err != nil {
+				log.Errorf("Failed to delete file %s: %s", filePath, err)
+			}
+		}
+	}
+	return nil
+}
+
+func StartCleanupRoutine(dir string) {
+	ticker := time.NewTicker(CLEANUP_INTERVAL)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := cleanUpOldFiles(dir)
+			if err != nil {
+				log.Errorf("Error during cleanup: %s", err)
+			}
+
+		}
+	}
 }

@@ -53,11 +53,14 @@ func (t *Topper) makePartialResults(clientId string) {
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
 func NewTopper(infraConfig *model.InfraConfig) *Topper {
-	return &Topper{
+	topper := &Topper{
 		infraConfig: infraConfig,
 
 		partialResults: make(map[string]*PartialResults),
 	}
+	go utils.StartCleanupRoutine(infraConfig.GetDirectory())
+
+	return topper
 }
 
 func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks Tasks) {

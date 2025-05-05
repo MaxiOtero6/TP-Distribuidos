@@ -40,12 +40,17 @@ func (r *Reducer) makePartialResults(clientId string) {
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
-	return &Reducer{
+
+	reducer := &Reducer{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 	}
+
+	go utils.StartCleanupRoutine(infraConfig.GetDirectory())
+
+	return reducer
 }
 
 /*
