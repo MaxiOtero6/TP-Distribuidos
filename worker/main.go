@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -102,14 +101,12 @@ func appendEOFInfra(
 
 	const TTL = 30000 // 30 seconds
 
-	wIdInt, err := strconv.Atoi(workerId)
-
+	nextWorkerId, err := utils.GetNextNodeId(workerId, workerCount)
 	if err != nil {
-		log.Panicf("Failed to convert workerId to int: %s", err)
+		log.Panicf("Failed to get next node id, self id %s: %s", workerId, err)
 	}
 
-	nextWorkerId := fmt.Sprintf("%d", (wIdInt+1)%workerCount)
-	qName := fmt.Sprintf("%s_%d_queue", workerType, wIdInt)
+	qName := fmt.Sprintf("%s_%s_queue", workerType, workerId)
 	eofQName := "eof_" + qName
 
 	if len(queues[0]["name"]) == 0 {
