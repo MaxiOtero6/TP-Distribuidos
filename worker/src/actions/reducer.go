@@ -461,6 +461,8 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks T
 			if err := r.deleteStage(clientId, data.GetStage()); err != nil {
 				log.Errorf("Failed to delete stage: %s", err)
 			}
+		} else {
+			log.Errorf("Failed to add results to next stage: %s", err)
 		}
 	}
 

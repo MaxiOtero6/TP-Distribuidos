@@ -423,6 +423,8 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		if err := m.deleteStage(clientId, data.GetStage()); err != nil {
 			log.Errorf("Failed to delete stage: %s", err)
 		}
+	} else {
+		log.Errorf("Failed to add results to next stage: %s", err)
 	}
 
 	return tasks

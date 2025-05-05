@@ -383,6 +383,8 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
+	} else {
+		log.Errorf("Failed to add results to next stage: %s", err)
 	}
 
 	return tasks
@@ -399,9 +401,6 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Ta
 func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
-
-	log.Debugf("stage %s", stage)
-	log.Debug(task)
 
 	t.makePartialResults(clientId)
 
