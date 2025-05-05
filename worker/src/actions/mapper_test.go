@@ -7,6 +7,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	c "github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,10 +65,10 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][DELTA_STAGE_2], 1) // ReduceCount is 1
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.DELTA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2], 1) // ReduceCount is 1
 
-			resultData := tasks[REDUCE_EXCHANGE][DELTA_STAGE_2][BROADCAST_ID].GetDelta_2().GetData()
+			resultData := tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2][BROADCAST_ID].GetDelta_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 countries
 		})
 
@@ -96,10 +97,10 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.DELTA_STAGE_2)
 
-			if len(tasks[REDUCE_EXCHANGE][DELTA_STAGE_2]) > 2 || len(tasks[REDUCE_EXCHANGE][DELTA_STAGE_2]) == 0 {
-				assert.Fail(t, "Because of random behaviour, it should be 1 or $ReduceCount tasks, got %v", len(tasks[REDUCE_EXCHANGE][DELTA_STAGE_2]))
+			if len(tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2]) > 2 || len(tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2]) == 0 {
+				assert.Fail(t, "Because of random behaviour, it should be 1 or $ReduceCount tasks, got %v", len(tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2]))
 			}
 		})
 
@@ -124,8 +125,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.delta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][DELTA_STAGE_2], 0) // Empty data should return no tasks
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.DELTA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.DELTA_STAGE_2], 0) // Empty data should return no tasks
 		})
 	})
 
@@ -157,9 +158,9 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.ETA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.ETA_STAGE_2], 1) // ReduceCount is 1
+			resultData := tasks[REDUCE_EXCHANGE][c.ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 movies
 		})
 
@@ -179,10 +180,10 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 1) // randomHash set to "0"
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.ETA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.ETA_STAGE_2], 1) // randomHash set to "0"
 
-			result0Data := tasks[REDUCE_EXCHANGE][ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
+			result0Data := tasks[REDUCE_EXCHANGE][c.ETA_STAGE_2][BROADCAST_ID].GetEta_2().GetData()
 			assert.Len(t, result0Data, 2) // Should contain 2 movies
 		})
 
@@ -198,8 +199,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.eta1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][ETA_STAGE_2], 0) // Empty data should return no tasks
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.ETA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.ETA_STAGE_2], 0) // Empty data should return no tasks
 		})
 	})
 
@@ -231,9 +232,9 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.KAPPA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.KAPPA_STAGE_2], 1) // ReduceCount is 1
+			resultData := tasks[REDUCE_EXCHANGE][c.KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 actors
 
 		})
@@ -254,8 +255,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
-			result0Data := tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.KAPPA_STAGE_2)
+			result0Data := tasks[REDUCE_EXCHANGE][c.KAPPA_STAGE_2][BROADCAST_ID].GetKappa_2().GetData()
 			assert.Len(t, result0Data, 2) // Should contain 2 actors
 		})
 
@@ -271,8 +272,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.kappa1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][KAPPA_STAGE_2], 0) // Empty data should return no tasks
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.KAPPA_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.KAPPA_STAGE_2], 0) // Empty data should return no tasks
 		})
 	})
 
@@ -303,9 +304,9 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2], 1) // ReduceCount is 1
-			resultData := tasks[REDUCE_EXCHANGE][NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData()
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.NU_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.NU_STAGE_2], 1) // ReduceCount is 1
+			resultData := tasks[REDUCE_EXCHANGE][c.NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData()
 			assert.Len(t, resultData, 2) // Should contain 2 movies
 		})
 
@@ -325,8 +326,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData(), 2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.NU_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.NU_STAGE_2][BROADCAST_ID].GetNu_2().GetData(), 2)
 		})
 
 		t.Run("Test Nu1Stage with empty data", func(t *testing.T) {
@@ -341,8 +342,8 @@ func TestMapper(t *testing.T) {
 			tasks := mapper.nu1Stage(data, CLIENT_ID)
 
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
-			assert.Len(t, tasks[REDUCE_EXCHANGE][NU_STAGE_2], 0) // Empty data should return no tasks
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.NU_STAGE_2)
+			assert.Len(t, tasks[REDUCE_EXCHANGE][c.NU_STAGE_2], 0) // Empty data should return no tasks
 		})
 	})
 
@@ -371,7 +372,7 @@ func TestMapper(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], DELTA_STAGE_2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.DELTA_STAGE_2)
 		})
 
 		t.Run("Test ExecuteMapper with Eta_1 stage", func(t *testing.T) {
@@ -396,7 +397,7 @@ func TestMapper(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], ETA_STAGE_2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.ETA_STAGE_2)
 		})
 
 		t.Run("Test ExecuteMapper with Kappa_1 stage", func(t *testing.T) {
@@ -421,7 +422,7 @@ func TestMapper(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], KAPPA_STAGE_2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.KAPPA_STAGE_2)
 		})
 
 		t.Run("Test ExecuteMapper with Nu_1 stage", func(t *testing.T) {
@@ -446,7 +447,7 @@ func TestMapper(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Contains(t, tasks, REDUCE_EXCHANGE)
-			assert.Contains(t, tasks[REDUCE_EXCHANGE], NU_STAGE_2)
+			assert.Contains(t, tasks[REDUCE_EXCHANGE], c.NU_STAGE_2)
 		})
 
 		t.Run("Test ExecuteMapper with unknown stage", func(t *testing.T) {

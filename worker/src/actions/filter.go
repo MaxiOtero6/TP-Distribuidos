@@ -8,6 +8,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
@@ -63,17 +64,17 @@ Return example
 		}
 	}
 */
-func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks Tasks) {
+func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks common.Tasks) {
 	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
 	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
 	JOIN_COUNT := f.infraConfig.GetJoinCount()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	tasks[JOIN_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[FILTER_EXCHANGE][BETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][ZETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][IOTA_STAGE] = make(map[string]*protocol.Task)
+	tasks[FILTER_EXCHANGE][common.BETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][common.ZETA_STAGE] = make(map[string]*protocol.Task)
+	tasks[JOIN_EXCHANGE][common.IOTA_STAGE] = make(map[string]*protocol.Task)
 
 	betaData := make(map[string][]*protocol.Beta_Data)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
@@ -121,7 +122,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range betaData {
-		tasks[FILTER_EXCHANGE][BETA_STAGE][nodeId] = &protocol.Task{
+		tasks[FILTER_EXCHANGE][common.BETA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Beta{
 				Beta: &protocol.Beta{
@@ -132,7 +133,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range zetaData {
-		tasks[JOIN_EXCHANGE][ZETA_STAGE][nodeId] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][common.ZETA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
@@ -143,7 +144,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range iotaData {
-		tasks[JOIN_EXCHANGE][IOTA_STAGE][nodeId] = &protocol.Task{
+		tasks[JOIN_EXCHANGE][common.IOTA_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
@@ -173,12 +174,12 @@ Return example
 		},
 	}
 */
-func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks Tasks) {
+func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks common.Tasks) {
 	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
 	resData := make(map[string][]*protocol.Result1_Data)
 
 	for _, movie := range data {
@@ -203,7 +204,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks T
 	}
 
 	for nodeId, data := range resData {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][nodeId] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result1{
 				Result1: &protocol.Result1{
@@ -234,12 +235,12 @@ Return example
 		},
 	}
 */
-func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks Tasks) {
+func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks common.Tasks) {
 	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][DELTA_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][common.DELTA_STAGE_1] = make(map[string]*protocol.Task)
 	delta1Data := make(map[string][]*protocol.Delta_1_Data)
 
 	for _, movie := range data {
@@ -264,7 +265,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 	}
 
 	for nodeId, data := range delta1Data {
-		tasks[MAP_EXCHANGE][DELTA_STAGE_1][nodeId] = &protocol.Task{
+		tasks[MAP_EXCHANGE][common.DELTA_STAGE_1][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{
@@ -277,44 +278,44 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks
 	return tasks
 }
 
-func (f *Filter) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
+func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case ALPHA_STAGE:
-		return []NextStageData{
+	case common.ALPHA_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       BETA_STAGE,
+				Stage:       common.BETA_STAGE,
 				Exchange:    f.infraConfig.GetFilterExchange(),
 				WorkerCount: f.infraConfig.GetFilterCount(),
 				RoutingKey:  f.infraConfig.GetBroadcastID(),
 			},
 			{
-				Stage:       ZETA_STAGE,
+				Stage:       common.ZETA_STAGE,
 				Exchange:    f.infraConfig.GetJoinExchange(),
 				WorkerCount: f.infraConfig.GetJoinCount(),
 				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 			{
-				Stage:       IOTA_STAGE,
+				Stage:       common.IOTA_STAGE,
 				Exchange:    f.infraConfig.GetJoinExchange(),
 				WorkerCount: f.infraConfig.GetJoinCount(),
 				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
 
-	case BETA_STAGE:
-		return []NextStageData{
+	case common.BETA_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       RESULT_STAGE,
+				Stage:       common.RESULT_STAGE,
 				Exchange:    f.infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
 		}, nil
 
-	case GAMMA_STAGE:
-		return []NextStageData{
+	case common.GAMMA_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       DELTA_STAGE_1,
+				Stage:       common.DELTA_STAGE_1,
 				Exchange:    f.infraConfig.GetMapExchange(),
 				WorkerCount: f.infraConfig.GetMapCount(),
 				RoutingKey:  f.infraConfig.GetBroadcastID(),
@@ -327,11 +328,11 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]NextStageDat
 	}
 }
 
-func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
+func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
 	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
-func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
 	// For filters eofStatus is always true
 	// because one of them receives the EOF and init the ring
 	// and the others just declare that they are alive
@@ -341,7 +342,7 @@ func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Ta
 // Execute executes the action.
 // It returns a map of tasks for the next stages.
 // It returns an error if the action fails.
-func (f *Filter) Execute(task *protocol.Task) (Tasks, error) {
+func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 

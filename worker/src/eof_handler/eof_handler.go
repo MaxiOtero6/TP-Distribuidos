@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 )
 
 type EOFHandler struct {
@@ -34,17 +35,17 @@ func (h *EOFHandler) IgnoreDuplicates() {
 	h.ignoreDuplicates = true
 }
 
-func (h *EOFHandler) InitRing(stage string, eofType string, clientId string) (tasks Tasks) {
+func (h *EOFHandler) InitRing(stage string, eofType string, clientId string) (tasks common.Tasks) {
 	log.Debugf(
 		"action: ringEOF | stage: %v | clientId: %v | Initializing RingEOF for stage %s and EOF type %s",
 		stage, clientId, stage, eofType,
 	)
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
+	tasks[h.eofExchange][common.RING_STAGE] = make(map[string]*protocol.Task)
 
-	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
+	tasks[h.eofExchange][common.RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: &protocol.RingEOF{
@@ -62,9 +63,9 @@ func (h *EOFHandler) InitRing(stage string, eofType string, clientId string) (ta
 
 func (h *EOFHandler) HandleRing(
 	data *protocol.RingEOF, clientId string,
-	nextStageFunc func(stage string, clientId string) ([]NextStageData, error),
+	nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error),
 	eofStatus bool,
-) (tasks Tasks) {
+) (tasks common.Tasks) {
 	// Filter to only circulate one RingEOF message
 	if h.ignoreDuplicates && !(h.workerID <= data.GetCreatorId()) {
 		log.Debugf("action: ringEOF | stage: %v | clientId: %v | Ignoring RingEOF message from %s", data.GetStage(), clientId, data.GetCreatorId())
@@ -109,8 +110,8 @@ func (h *EOFHandler) HandleRing(
 	return h.handleSendToNextStage(data, clientId, nextStageFunc)
 }
 
-func (h *EOFHandler) handleSelfNotAlive(data *protocol.RingEOF, clientId string, eofStatus bool) Tasks {
-	tasks := make(Tasks)
+func (h *EOFHandler) handleSelfNotAlive(data *protocol.RingEOF, clientId string, eofStatus bool) common.Tasks {
+	tasks := make(common.Tasks)
 
 	data.Alive = append(data.Alive, h.workerID)
 
@@ -121,8 +122,8 @@ func (h *EOFHandler) handleSelfNotAlive(data *protocol.RingEOF, clientId string,
 	}
 
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
+	tasks[h.eofExchange][common.RING_STAGE] = make(map[string]*protocol.Task)
+	tasks[h.eofExchange][common.RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: data,
@@ -132,14 +133,14 @@ func (h *EOFHandler) handleSelfNotAlive(data *protocol.RingEOF, clientId string,
 	return tasks
 }
 
-func (h *EOFHandler) handleAllNotReady(data *protocol.RingEOF, clientId string) Tasks {
-	tasks := make(Tasks)
+func (h *EOFHandler) handleAllNotReady(data *protocol.RingEOF, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
 
 	data.Alive = []string{h.workerID}
 
 	tasks[h.eofExchange] = make(map[string]map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE] = make(map[string]*protocol.Task)
-	tasks[h.eofExchange][RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
+	tasks[h.eofExchange][common.RING_STAGE] = make(map[string]*protocol.Task)
+	tasks[h.eofExchange][common.RING_STAGE][h.workerType+"_"+h.nextWorkerID] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_RingEOF{
 			RingEOF: data,
@@ -151,9 +152,9 @@ func (h *EOFHandler) handleAllNotReady(data *protocol.RingEOF, clientId string) 
 
 func (h *EOFHandler) handleSendToNextStage(
 	data *protocol.RingEOF, clientId string,
-	nextStageFunc func(stage string, clientId string) ([]NextStageData, error),
-) Tasks {
-	tasks := make(Tasks)
+	nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error),
+) common.Tasks {
+	tasks := make(common.Tasks)
 
 	nextDataStages, err := nextStageFunc(data.GetStage(), clientId)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
@@ -62,7 +63,7 @@ func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandle
 	}
 }
 
-func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks Tasks) {
+func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks common.Tasks) {
 	epsilonHeap := t.partialResults[clientId].epsilonHeap
 
 	for _, eData := range data {
@@ -77,15 +78,15 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (t
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, EPSILON_STAGE, ANY_SOURCE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.EPSILON_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
-		log.Errorf("Failed to save %s data: %s", EPSILON_STAGE, err)
+		log.Errorf("Failed to save %s data: %s", common.EPSILON_STAGE, err)
 	}
 
 	return nil
 }
 
-func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tasks Tasks) {
+func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tasks common.Tasks) {
 	lamdaHeap := t.partialResults[clientId].lamdaHeap
 
 	for _, lData := range data {
@@ -102,15 +103,15 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tas
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, LAMBDA_STAGE, ANY_SOURCE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.LAMBDA_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
-		log.Errorf("Failed to save %s data: %s", LAMBDA_STAGE, err)
+		log.Errorf("Failed to save %s data: %s", common.LAMBDA_STAGE, err)
 	}
 
 	return nil
 }
 
-func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks Tasks) {
+func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks common.Tasks) {
 	thetaMinHeap := t.partialResults[clientId].thetaData.minHeap
 	thetaMaxHeap := t.partialResults[clientId].thetaData.maxHeap
 
@@ -125,7 +126,7 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	convertedData := make(map[string]*protocol.Theta_Data)
 
 	if len(thetaMaxHeap.GetTopK()) == 0 || len(thetaMinHeap.GetTopK()) == 0 {
-		log.Errorf("No data found for %s stage", THETA_STAGE)
+		log.Errorf("No data found for %s stage", common.THETA_STAGE)
 		return nil
 	}
 
@@ -135,9 +136,9 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
 	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, THETA_STAGE, ANY_SOURCE, convertedData)
+	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.THETA_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
-		log.Errorf("Failed to save %s data: %s", THETA_STAGE, err)
+		log.Errorf("Failed to save %s data: %s", common.THETA_STAGE, err)
 	}
 
 	return nil
@@ -159,14 +160,14 @@ Return example
 	    },
 	}
 */
-func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
+func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
 	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
 		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	}
 
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
 	result2Data := make(map[string][]*protocol.Result2_Data)
 
 	resultHeap := t.partialResults[clientId].epsilonHeap
@@ -187,7 +188,7 @@ func (t *Topper) epsilonResultStage(tasks Tasks, clientId string) {
 	}
 
 	for id, data := range result2Data {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result2{
 				Result2: &protocol.Result2{
@@ -215,14 +216,14 @@ Return example
 	    },
 	}
 */
-func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
+func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
 	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
 		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	}
 
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
 	result3Data := make(map[string][]*protocol.Result3_Data)
 
 	resultHeapMax := t.partialResults[clientId].thetaData.maxHeap
@@ -256,7 +257,7 @@ func (t *Topper) thetaResultStage(tasks Tasks, clientId string) {
 	}
 
 	for id, data := range result3Data {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result3{
 				Result3: &protocol.Result3{
@@ -283,14 +284,14 @@ Return example
 	    },
 	}
 */
-func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
+func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
 	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
 
 	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
 		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
 	}
 
-	tasks[RESULT_EXCHANGE][RESULT_STAGE] = make(map[string]*protocol.Task)
+	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
 	result4Data := make(map[string][]*protocol.Result4_Data)
 
 	resultHeap := t.partialResults[clientId].lamdaHeap
@@ -312,7 +313,7 @@ func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
 	}
 
 	for id, data := range result4Data {
-		tasks[RESULT_EXCHANGE][RESULT_STAGE][id] = &protocol.Task{
+		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result4{
 				Result4: &protocol.Result4{
@@ -323,15 +324,15 @@ func (t *Topper) lambdaResultStage(tasks Tasks, clientId string) {
 	}
 }
 
-func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId string) error {
+func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
 	switch stage {
-	case EPSILON_STAGE:
+	case common.EPSILON_STAGE:
 		t.epsilonResultStage(tasks, clientId)
 		t.partialResults[clientId].epsilonHeap.Delete()
-	case LAMBDA_STAGE:
+	case common.LAMBDA_STAGE:
 		t.lambdaResultStage(tasks, clientId)
 		t.partialResults[clientId].lamdaHeap.Delete()
-	case THETA_STAGE:
+	case common.THETA_STAGE:
 		t.thetaResultStage(tasks, clientId)
 		t.partialResults[clientId].thetaData.maxHeap.Delete()
 	default:
@@ -341,30 +342,30 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	return nil
 }
 
-func (t *Topper) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
+func (t *Topper) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case EPSILON_STAGE:
-		return []NextStageData{
+	case common.EPSILON_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       RESULT_STAGE,
+				Stage:       common.RESULT_STAGE,
 				Exchange:    t.infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
 		}, nil
-	case THETA_STAGE:
-		return []NextStageData{
+	case common.THETA_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       RESULT_STAGE,
+				Stage:       common.RESULT_STAGE,
 				Exchange:    t.infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
 		}, nil
-	case LAMBDA_STAGE:
-		return []NextStageData{
+	case common.LAMBDA_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       RESULT_STAGE,
+				Stage:       common.RESULT_STAGE,
 				Exchange:    t.infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -372,15 +373,15 @@ func (t *Topper) getNextStageData(stage string, clientId string) ([]NextStageDat
 		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return []NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
+		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
-func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
+func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
 	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
 	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, ANY_SOURCE); err != nil {
+		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
 	} else {
@@ -390,7 +391,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 	return tasks
 }
 
-func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
 	// For toppers eofStatus is always true
 	// because one of them receives the EOF and init the ring
 	// and the others just declare that they are alive
@@ -398,7 +399,7 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Ta
 	return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
 }
 
-func (t *Topper) Execute(task *protocol.Task) (Tasks, error) {
+func (t *Topper) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 

@@ -8,22 +8,16 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-const RING_STAGE string = common.RING_STAGE
-const RESULT_STAGE string = common.RESULT_STAGE
-
-type Tasks = common.Tasks
-type NextStageData = common.NextStageData
-
 type IEOFHandler interface {
 	// InitRing initializes the ring for the EOF handler.
 	// It returns a map of tasks for the next stages.
-	InitRing(stage string, eofType string, clientId string) (tasks Tasks)
+	InitRing(stage string, eofType string, clientId string) (tasks common.Tasks)
 	// HandleRing handles the ring for the EOF handler.
 	// It returns a map of tasks for the next stages.
 	HandleRing(
 		data *protocol.RingEOF, clientId string,
-		nextStageFunc func(stage string, clientId string) ([]NextStageData, error), eofStatus bool,
-	) (tasks Tasks)
+		nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error), eofStatus bool,
+	) (tasks common.Tasks)
 	// IgnoreDuplicates ables the EOF handler to ignore duplicates.
 	// It is useful when you expect to receive the same RingEOF from multiple workers.
 	IgnoreDuplicates()

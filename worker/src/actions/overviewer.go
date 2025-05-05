@@ -6,6 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/cdipaolo/sentiment"
 )
@@ -54,12 +55,12 @@ Return example
 		}
 	}
 */
-func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks Tasks) {
+func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks common.Tasks) {
 	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
 
-	tasks = make(Tasks)
+	tasks = make(common.Tasks)
 	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][NU_STAGE_1] = make(map[string]*protocol.Task)
+	tasks[MAP_EXCHANGE][common.NU_STAGE_1] = make(map[string]*protocol.Task)
 	nuData := make(map[string][]*protocol.Nu_1_Data)
 
 	for _, movie := range data {
@@ -86,7 +87,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 	}
 
 	for nodeId, data := range nuData {
-		tasks[MAP_EXCHANGE][NU_STAGE_1][nodeId] = &protocol.Task{
+		tasks[MAP_EXCHANGE][common.NU_STAGE_1][nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
@@ -99,12 +100,12 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks T
 	return tasks
 }
 
-func (o *Overviewer) getNextStageData(stage string, clientId string) ([]NextStageData, error) {
+func (o *Overviewer) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	switch stage {
-	case MU_STAGE:
-		return []NextStageData{
+	case common.MU_STAGE:
+		return []common.NextStageData{
 			{
-				Stage:       NU_STAGE_1,
+				Stage:       common.NU_STAGE_1,
 				Exchange:    o.infraConfig.GetMapExchange(),
 				WorkerCount: o.infraConfig.GetMapCount(),
 				RoutingKey:  o.infraConfig.GetBroadcastID(),
@@ -112,22 +113,22 @@ func (o *Overviewer) getNextStageData(stage string, clientId string) ([]NextStag
 		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return []NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
+		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
-func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks Tasks) {
+func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
 	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 }
 
-func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks Tasks) {
+func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
 	// For overviewers eofStatus is always true
 	// because one of them receives the EOF and init the ring
 	// and the others just declare that they are alive
 	return o.eofHandler.HandleRing(data, clientId, o.getNextStageData, true)
 }
 
-func (o *Overviewer) Execute(task *protocol.Task) (Tasks, error) {
+func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 
