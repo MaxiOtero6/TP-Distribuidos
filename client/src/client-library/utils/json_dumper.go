@@ -107,6 +107,10 @@ func DumpResultsToJson(filePath string, results *model.Results) {
 	// Optional: Set indentation for more readable JSON output
 	encoder.SetIndent("", "  ")
 
+	if results == nil {
+		log.Warningf("Results are nil, nothing to write to file '%s'", filePath)
+		return
+	}
 	adaptedResults := adaptResults(results)
 
 	err = encoder.Encode(adaptedResults)
