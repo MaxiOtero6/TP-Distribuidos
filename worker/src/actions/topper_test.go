@@ -96,17 +96,6 @@ func TestTopperExecute(t *testing.T) {
 			},
 		}
 
-		eofTask := &protocol.Task{
-			ClientId: CLIENT_ID,
-			Stage: &protocol.Task_OmegaEOF{
-				OmegaEOF: &protocol.OmegaEOF{
-					Data: &protocol.OmegaEOF_Data{
-						Stage: c.EPSILON_STAGE,
-					},
-				},
-			},
-		}
-
 		_, err := testTopper.Execute(task1)
 		assert.NoError(t, err, "Expected no error during first execution")
 
@@ -123,9 +112,6 @@ func TestTopperExecute(t *testing.T) {
 		assert.Equal(t, "USA", resultData[0].GetCountry(), "Expected USA to have the highest investment")
 		assert.Equal(t, "Argentina", resultData[4].GetCountry(), "Expected Argentina to have the lowest investment")
 		assert.Equal(t, uint64(200), resultData[4].GetTotalInvestment(), "Expected Argentina to have highest investment")
-
-		//Execute EOF task and delete all the data
-		_, err = testTopper.Execute(eofTask)
 
 	})
 
