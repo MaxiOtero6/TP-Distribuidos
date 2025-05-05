@@ -3,6 +3,8 @@ package actions
 import (
 	"testing"
 
+	"os"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/stretchr/testify/assert"
@@ -12,17 +14,23 @@ const HARDCODED_WORKER_ID = "0"
 const CLIENT_ID = "testClientId"
 const VOLUMEN_DIRECTORY = "testVolumeDirectory"
 
-var testInfraConfig = model.NewInfraConfig(
-	HARDCODED_WORKER_ID,
-	&model.WorkerClusterConfig{},
-	&model.RabbitConfig{
-		ResultExchange: "resultExchange",
-		TopExchange:    "topExchange",
-	},
-	VOLUMEN_DIRECTORY,
-)
-
 func TestTopperExecute(t *testing.T) {
+
+	tempDir, err := os.MkdirTemp("", "test_serialization")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	var testInfraConfig = model.NewInfraConfig(
+		HARDCODED_WORKER_ID,
+		&model.WorkerClusterConfig{},
+		&model.RabbitConfig{
+			ResultExchange: "resultExchange",
+			TopExchange:    "topExchange",
+		},
+		tempDir,
+	)
 
 	t.Run("Test Epsilon Stage with single task", func(t *testing.T) {
 
@@ -55,7 +63,6 @@ func TestTopperExecute(t *testing.T) {
 		assert.Len(t, resultData, 5, "Expected 5 countries in the result")
 		assert.Equal(t, "USA", resultData[0].GetCountry(), "Expected USA to have the highest investment")
 		assert.Equal(t, "Italy", resultData[4].GetCountry(), "Expected Argentina to have the lowest investment")
-
 	})
 
 	t.Run("Test Epsilon Stage with multiple tasks", func(t *testing.T) {
@@ -88,6 +95,18 @@ func TestTopperExecute(t *testing.T) {
 			},
 		}
 
+		eofTask := &protocol.Task{
+			ClientId: CLIENT_ID,
+			Stage: &protocol.Task_OmegaEOF{
+				OmegaEOF: &protocol.OmegaEOF{
+					Data: &protocol.OmegaEOF_Data{
+						Stage:           EPSILON_STAGE,
+						WorkerCreatorId: "",
+					},
+				},
+			},
+		}
+
 		_, err := testTopper.Execute(task1)
 		assert.NoError(t, err, "Expected no error during first execution")
 
@@ -104,6 +123,9 @@ func TestTopperExecute(t *testing.T) {
 		assert.Equal(t, "USA", resultData[0].GetCountry(), "Expected USA to have the highest investment")
 		assert.Equal(t, "Argentina", resultData[4].GetCountry(), "Expected Argentina to have the lowest investment")
 		assert.Equal(t, uint64(200), resultData[4].GetTotalInvestment(), "Expected Argentina to have highest investment")
+
+		//Execute EOF task and delete all the data
+		_, err = testTopper.Execute(eofTask)
 
 	})
 
@@ -297,6 +319,22 @@ func TestTopperExecute(t *testing.T) {
 
 func TestResultStagesWithEmptyTasks(t *testing.T) {
 
+	tempDir, err := os.MkdirTemp("", "test_serialization")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	var testInfraConfig = model.NewInfraConfig(
+		HARDCODED_WORKER_ID,
+		&model.WorkerClusterConfig{},
+		&model.RabbitConfig{
+			ResultExchange: "resultExchange",
+			TopExchange:    "topExchange",
+		},
+		tempDir,
+	)
+
 	var testTopper = NewTopper(testInfraConfig)
 
 	t.Run("Test Epsilon Result Stage with empty tasks", func(t *testing.T) {
@@ -373,6 +411,22 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 }
 
 func TestEOFArrival(t *testing.T) {
+
+	tempDir, err := os.MkdirTemp("", "test_serialization")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	var testInfraConfig = model.NewInfraConfig(
+		HARDCODED_WORKER_ID,
+		&model.WorkerClusterConfig{},
+		&model.RabbitConfig{
+			ResultExchange: "resultExchange",
+			TopExchange:    "topExchange",
+		},
+		tempDir,
+	)
 
 	var testTopper = NewTopper(testInfraConfig)
 	t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {

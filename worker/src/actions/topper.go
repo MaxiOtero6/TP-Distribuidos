@@ -332,6 +332,7 @@ func (t *Topper) addResultsToNextStage(tasks Tasks, stage string, clientId strin
 	case THETA_STAGE:
 		t.thetaResultStage(tasks, clientId)
 		t.partialResults[clientId].thetaData.maxHeap.Delete()
+		t.partialResults[clientId].thetaData.minHeap.Delete()
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
