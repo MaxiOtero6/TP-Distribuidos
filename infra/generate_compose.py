@@ -18,6 +18,7 @@ def indent(text: str, level: int) -> str:
 
 class ServiceType(Enum):
     SERVER = "SERVER"
+    PROXY = "PROXY"
     CLIENT = "CLIENT"
     RABBIT_MQ = "RABBITMQ"
     FILTER = "FILTER"
@@ -32,6 +33,32 @@ class ServiceType(Enum):
         self, id: int, instances_per_service: Dict["ServiceType", int]
     ) -> "Service":
         match self:
+            case ServiceType.PROXY:
+                server_count = instances_per_service.get(ServiceType.SERVER, 0)
+                depends_on = (
+                    {
+                        f"server_{i}": {"condition": "service_started"}
+                        for i in range(server_count)
+                    }
+                    if server_count > 0
+                    else None
+                )
+
+                return Service(
+                    container_name=f"proxy",
+                    image="proxy:latest",
+                    environment={
+                        "PROXY_PORT": str(8080),
+                        "PROXY_SERVER_COUNT": str(server_count),
+                    },
+                    networks=[MOVIES_NETWORK_NAME],
+                    depends_on=depends_on,
+                    volumes={
+                        "./proxy/config.yaml": "/app/config.yaml",
+                    },
+                )
+
+
             case ServiceType.SERVER:
                 depends_on = {"rabbitmq": {"condition": "service_healthy"}}
 
@@ -84,14 +111,7 @@ class ServiceType(Enum):
                 )
             case ServiceType.CLIENT:
                 server_count = instances_per_service.get(ServiceType.SERVER, 0)
-                depends_on = (
-                    {
-                        f"server_{i}": {"condition": "service_started"}
-                        for i in range(server_count)
-                    }
-                    if server_count > 0
-                    else None
-                )
+                depends_on = {"proxy": {"condition": "service_started"}}
 
                 return Service(
                     container_name=f"client_{id}",

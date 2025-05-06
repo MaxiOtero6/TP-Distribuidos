@@ -136,20 +136,27 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 // This function is nil-safe, meaning it will not panic if the input is nil
 // It will simply return without doing anything
 func (w *Worker) sendSubTasks(subTasks common.Tasks) {
+	sendTask := func(exchange, routingKey string, task *protocol.Task) {
+		taskRaw, err := proto.Marshal(task)
+
+		if err != nil {
+			log.Errorf("Failed to marshal task: %s", err)
+			return
+		}
+
+		w.rabbitMQ.Publish(exchange, routingKey, taskRaw)
+		log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
+	}
+
 	for exchange, stages := range subTasks {
 		for _, stage := range stages {
 			for routingKey, task := range stage {
-
-				taskRaw, err := proto.Marshal(task)
-
-				if err != nil {
-					log.Errorf("Failed to marshal task: %s", err)
+				if task.GetRingEOF() != nil || task.GetOmegaEOF() != nil {
+					defer sendTask(exchange, routingKey, task)
 					continue
 				}
 
-				w.rabbitMQ.Publish(exchange, routingKey, taskRaw)
-				log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
-				//log.Debugf("Task value: %v", task)
+				sendTask(exchange, routingKey, task)
 			}
 		}
 	}

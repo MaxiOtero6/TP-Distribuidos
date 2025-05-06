@@ -7,7 +7,7 @@ data:
     credits: ".data/credits.csv"
 
 server:
-    address: "server_0:12345"
+    address: "proxy:12345"
 
 batch:
     maxSize: 81920 # 80KB

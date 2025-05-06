@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
+	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/rabbit"

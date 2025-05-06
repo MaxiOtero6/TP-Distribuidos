@@ -110,6 +110,11 @@ func handleSigterm(signalChan chan os.Signal, clientLibrary *library.Library) {
 }
 
 func logResults(results *model.Results) {
+	if results == nil {
+		log.Infof("action: processData | result: error | reason: results are nil")
+		return
+	}
+
 	log.Infof(CYAN + UNDERLINE + "Query1 results:" + RESET)
 	for index, movie := range results.Query1 {
 		log.Infof(BOLD+"[%d] MovieId: %s | Title: %s | Genres: %v"+RESET, index+1, movie.MovieId, movie.Title, movie.Genres)

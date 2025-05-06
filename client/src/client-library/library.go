@@ -9,7 +9,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/utils"
-	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
+	client_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/op/go-logging"
 )

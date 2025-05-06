@@ -1,46 +1,46 @@
-package server
+package client_server_communication
 
 import (
 	"errors"
 	"os"
 	"os/exec"
 	"syscall"
-
-	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server-comm"
-	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("log")
+// var log = logging.MustGetLogger("log")
 var ErrSignalReceived = errors.New("signal received")
 
-type Server struct {
-	ID           string
-	serverSocket *client_server_communication.Socket
-	isRunning    bool
-	clients      []*exec.Cmd
+type ConnectionHandler struct {
+	ID                      string
+	connectionHandlerSocket *Socket
+	isRunning               bool
+	connections             []*exec.Cmd
 }
 
-func NewServer(id string, address string) (*Server, error) {
-	serverSocket, err := client_server_communication.CreateServerSocket(address)
+func NewConnectionHandler(id string, address string) (*ConnectionHandler, error) {
+	serverSocket, err := CreateServerSocket(address)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Server{
-		ID:           id,
-		serverSocket: serverSocket,
-		isRunning:    true,
-		clients:      make([]*exec.Cmd, 0),
+	return &ConnectionHandler{
+		ID:                      id,
+		connectionHandlerSocket: serverSocket,
+		isRunning:               true,
+		connections:             make([]*exec.Cmd, 0),
 	}, nil
 }
+func (ch *ConnectionHandler) IsRunning() bool {
+	return ch.isRunning
+}
 
-func (s *Server) acceptConnections() error {
-	for s.isRunning {
-		s.cleanupFinishedClientHandlers()
+func (ch *ConnectionHandler) AcceptConnections() error {
+	for ch.isRunning {
+		ch.cleanupFinishedClientHandlers()
 
-		clientSocket, err := s.serverSocket.Accept()
+		clientSocket, err := ch.connectionHandlerSocket.Accept()
 		if err != nil {
-			if !s.isRunning {
+			if !ch.isRunning {
 				continue
 			} else {
 				log.Errorf("action: acceptConnections | result: fail | error: %v", err)
@@ -52,7 +52,7 @@ func (s *Server) acceptConnections() error {
 
 		log.Infof("Client connected")
 
-		err = s.handleConnection(clientSocket)
+		err = ch.HandleConnection(clientSocket)
 		if err != nil {
 			log.Errorf("action: handleConnection | result: fail | error: %v", err)
 		}
@@ -61,7 +61,7 @@ func (s *Server) acceptConnections() error {
 	return nil
 }
 
-func (s *Server) handleConnection(clientSocket *client_server_communication.Socket) error {
+func (ch *ConnectionHandler) HandleConnection(clientSocket *Socket) error {
 	cmd := exec.Command(os.Args[0], "child") // Fork the current binary
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -83,19 +83,19 @@ func (s *Server) handleConnection(clientSocket *client_server_communication.Sock
 
 	log.Infof("Child process started with PID: %d", cmd.Process.Pid)
 
-	s.clients = append(s.clients, cmd)
+	ch.connections = append(ch.connections, cmd)
 
 	return nil
 }
 
-func (s *Server) Run() error {
-	return s.acceptConnections()
+func (ch *ConnectionHandler) Run() error {
+	return ch.AcceptConnections()
 }
 
-func (s *Server) cleanupFinishedClientHandlers() {
+func (ch *ConnectionHandler) cleanupFinishedClientHandlers() {
 	activeClients := make([]*exec.Cmd, 0)
 
-	for _, client := range s.clients {
+	for _, client := range ch.connections {
 		// Check if the process has finished
 		var status syscall.WaitStatus
 		wpid, err := syscall.Wait4(client.Process.Pid, &status, syscall.WNOHANG, nil)
@@ -111,20 +111,20 @@ func (s *Server) cleanupFinishedClientHandlers() {
 		}
 	}
 
-	s.clients = activeClients
+	ch.connections = activeClients
 }
 
-func (s *Server) Stop() {
-	s.isRunning = false
+func (ch *ConnectionHandler) Stop() {
+	ch.isRunning = false
 
-	if s.serverSocket != nil {
-		s.serverSocket.Close()
-		s.serverSocket = nil
+	if ch.connectionHandlerSocket != nil {
+		ch.connectionHandlerSocket.Close()
+		ch.connectionHandlerSocket = nil
 		log.Info("Server socket closed")
 	}
 
 	// signal
-	for _, client := range s.clients {
+	for _, client := range ch.connections {
 		log.Infof("Sending SIGTERM to child process with PID %d", client.Process.Pid)
 		err := client.Process.Signal(syscall.SIGTERM)
 
@@ -135,7 +135,7 @@ func (s *Server) Stop() {
 	}
 
 	// wait
-	for _, client := range s.clients {
+	for _, client := range ch.connections {
 		status, err := client.Process.Wait()
 
 		if err != nil {

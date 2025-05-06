@@ -7,6 +7,8 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
@@ -63,13 +65,17 @@ func (j *Joiner) makePartialResults(clientId string) {
 
 // NewJoiner creates a new Joiner instance.
 func NewJoiner(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Joiner {
-	return &Joiner{
+	joiner := &Joiner{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 		partialResults: make(map[string]*JoinerPartialResults),
 		eofHandler:     eofHandler,
 	}
+
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+
+	return joiner
 }
 
 func (j *Joiner) joinZetaData(tasks common.Tasks, ratingsData map[string][]*protocol.Zeta_Data_Rating, clientId string) {
@@ -140,7 +146,7 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (t
 		}
 	}
 
-	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
+	err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.ZETA_STAGE, err)
 	}
@@ -183,7 +189,7 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (
 		return tasks
 	} else {
 		dataMap = j.partialResults[clientId].zetaData.bigTable.data
-		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.BIG_TABLE_SOURCE, dataMap)
+		err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.BIG_TABLE_SOURCE, dataMap)
 		if err != nil {
 			log.Errorf("Failed to save %s data: %s", common.ZETA_STAGE, err)
 		}
@@ -286,7 +292,7 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		}
 	}
 
-	err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
+	err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.IOTA_STAGE, err)
 	}
@@ -328,7 +334,7 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string) (t
 		j.joinIotaData(tasks, dataMap, clientId)
 		return tasks
 	} else {
-		err := utils.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.BIG_TABLE_SOURCE, dataMap)
+		err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.BIG_TABLE_SOURCE, dataMap)
 		if err != nil {
 			log.Errorf("Failed to save %s data: %s", common.IOTA_STAGE, err)
 		}
@@ -434,7 +440,7 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 	log.Debugf("Data stage: %s", dataStage)
 
 	// delete only the big table
-	if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, common.BIG_TABLE_SOURCE); err != nil {
+	if err := storage.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, dataStage, common.BIG_TABLE_SOURCE); err != nil {
 		log.Errorf("Failed to delete partial results: %s", err)
 	}
 	j.DeleteTableType(clientId, dataStage, common.BIG_TABLE_SOURCE)
@@ -489,7 +495,7 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 	}
 
 	if ready {
-		if err := utils.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+		if err := storage.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
 

@@ -5,10 +5,10 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
-	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
 
 const EPSILON_TOP_K = 5
@@ -56,11 +56,14 @@ func (t *Topper) makePartialResults(clientId string) {
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
 func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Topper {
-	return &Topper{
+	topper := &Topper{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*PartialResults),
 		eofHandler:     eofHandler,
 	}
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+
+	return topper
 }
 
 func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks common.Tasks) {
@@ -78,7 +81,7 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (t
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.EPSILON_STAGE, common.ANY_SOURCE, convertedData)
+	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.EPSILON_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.EPSILON_STAGE, err)
 	}
@@ -103,7 +106,7 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tas
 		convertedData[fmt.Sprintf("%d", value)] = element.Data
 	}
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.LAMBDA_STAGE, common.ANY_SOURCE, convertedData)
+	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.LAMBDA_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.LAMBDA_STAGE, err)
 	}
@@ -136,7 +139,7 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks
 	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
 	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
 
-	err := utils.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.THETA_STAGE, common.ANY_SOURCE, convertedData)
+	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.THETA_STAGE, common.ANY_SOURCE, convertedData)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.THETA_STAGE, err)
 	}
@@ -335,6 +338,7 @@ func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientI
 	case common.THETA_STAGE:
 		t.thetaResultStage(tasks, clientId)
 		t.partialResults[clientId].thetaData.maxHeap.Delete()
+		t.partialResults[clientId].thetaData.minHeap.Delete()
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
@@ -381,7 +385,7 @@ func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
 	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := utils.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
+		if err := storage.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
 	} else {

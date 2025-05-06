@@ -1,11 +1,11 @@
-package utils
+package storage
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,70 +47,6 @@ func assertSerializationWithCustomComparison(
 	}
 }
 
-func TestDelta2PersistenceWithExistingFunctions(t *testing.T) {
-
-	// Create a temporary directory for the test
-	tempDir, err := os.MkdirTemp("", "0755")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-
-	defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
-
-	originalData := map[string]*protocol.Delta_2_Data{
-		"country1": {
-			Country:       "country1",
-			PartialBudget: 100,
-		},
-		"country2": {
-			Country:       "country2",
-			PartialBudget: 200,
-		},
-		"country3": {
-			Country:       "country3",
-			PartialBudget: 300,
-		},
-	}
-
-	err = SaveDataToFile(tempDir, CLIENT_ID, DELTA_STAGE_2, ANY_SOURCE, originalData)
-	assert.NoError(t, err, "Failed to save delta2 data")
-
-	expectedJSON := `[
-        {
-            "country": "country1",
-            "partialBudget": "100"
-        },
-        {
-            "country": "country2",
-            "partialBudget": "200"
-        },
-        {
-            "country": "country3",
-            "partialBudget": "300"
-        }
-    ]`
-
-	filePath := tempDir + "/" + DELTA_STAGE_2 + "_" + CLIENT_ID + ".json"
-	log.Infof("File path: %s", filePath)
-	fileContent, err := os.ReadFile(filePath)
-	assert.NoError(t, err, "Failed to read the saved file")
-
-	// Comparar el contenido del archivo con el JSON esperado
-	//assert.JSONEq(t, expectedJSON, string(fileContent), "File content does not match expected JSON")
-
-	// Deserializar ambos JSON
-	var expected, actual []map[string]interface{}
-	err = json.Unmarshal([]byte(expectedJSON), &expected)
-	assert.NoError(t, err, "Failed to unmarshal expected JSON")
-
-	err = json.Unmarshal(fileContent, &actual)
-	assert.NoError(t, err, "Failed to unmarshal actual JSON")
-
-	// Validar que ambos contengan los mismos elementos, sin importar el orden
-	assert.ElementsMatch(t, expected, actual, "File content does not match expected JSON")
-
-}
-
 func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -130,8 +66,8 @@ func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      DELTA_STAGE_2,
-			source:     ANY_SOURCE,
+			stage:      common.DELTA_STAGE_2,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -143,8 +79,8 @@ func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      DELTA_STAGE_3,
-			source:     ANY_SOURCE,
+			stage:      common.DELTA_STAGE_3,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 	}
@@ -170,8 +106,8 @@ func TestSerializationAndDeserializationForNuStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      NU_STAGE_2,
-			source:     ANY_SOURCE,
+			stage:      common.NU_STAGE_2,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -182,8 +118,8 @@ func TestSerializationAndDeserializationForNuStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      NU_STAGE_3,
-			source:     ANY_SOURCE,
+			stage:      common.NU_STAGE_3,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 	}
@@ -210,8 +146,8 @@ func TestSerializationAndDeserializationForEtaStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      ETA_STAGE_2,
-			source:     ANY_SOURCE,
+			stage:      common.ETA_STAGE_2,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 
@@ -224,8 +160,8 @@ func TestSerializationAndDeserializationForEtaStage(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      ETA_STAGE_3,
-			source:     ANY_SOURCE,
+			stage:      common.ETA_STAGE_3,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 	}
@@ -251,8 +187,8 @@ func TestSerializationAndDeserializationForSmallTableSource(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      IOTA_STAGE,
-			source:     SMALL_TABLE_SOURCE,
+			stage:      common.IOTA_STAGE,
+			source:     common.SMALL_TABLE_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -263,8 +199,8 @@ func TestSerializationAndDeserializationForSmallTableSource(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      ZETA_STAGE,
-			source:     SMALL_TABLE_SOURCE,
+			stage:      common.ZETA_STAGE,
+			source:     common.SMALL_TABLE_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 	}
@@ -290,8 +226,8 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      EPSILON_STAGE,
-			source:     ANY_SOURCE,
+			stage:      common.EPSILON_STAGE,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -302,8 +238,8 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      LAMBDA_STAGE,
-			source:     ANY_SOURCE,
+			stage:      common.LAMBDA_STAGE,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -314,8 +250,8 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      THETA_STAGE,
-			source:     ANY_SOURCE,
+			stage:      common.THETA_STAGE,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -326,8 +262,8 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      KAPPA_STAGE_2,
-			source:     ANY_SOURCE,
+			stage:      common.KAPPA_STAGE_2,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 		{
@@ -338,8 +274,8 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      KAPPA_STAGE_3,
-			source:     ANY_SOURCE,
+			stage:      common.KAPPA_STAGE_3,
+			source:     common.ANY_SOURCE,
 			comparator: compareProtobufMaps,
 		},
 	}
@@ -372,8 +308,8 @@ func TestSerializationAndDeserializationForBigTableSource(t *testing.T) {
 
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      IOTA_STAGE,
-			source:     BIG_TABLE_SOURCE,
+			stage:      common.IOTA_STAGE,
+			source:     common.BIG_TABLE_SOURCE,
 			comparator: CompareProtobufMapsOfArrays,
 		},
 		{
@@ -394,8 +330,8 @@ func TestSerializationAndDeserializationForBigTableSource(t *testing.T) {
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
-			stage:      ZETA_STAGE,
-			source:     BIG_TABLE_SOURCE,
+			stage:      common.ZETA_STAGE,
+			source:     common.BIG_TABLE_SOURCE,
 			comparator: CompareProtobufMapsOfArrays,
 		},
 	}
