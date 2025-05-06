@@ -20,6 +20,420 @@ const CLEANUP_INTERVAL = 10 * time.Minute
 
 var log = logging.MustGetLogger("log")
 
+func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	var fileName string
+	if sourceType == "" {
+		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
+	} else {
+		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
+	}
+
+	filePath := filepath.Join(dir, fileName)
+
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ",  // Pretty print
+		EmitUnpopulated: false, // Include unpopulated fields
+	}
+
+	switch v := data.(type) {
+	case map[string]*protocol.Epsilon_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Lambda_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Theta_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Delta_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Delta_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Nu_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Nu_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Kappa_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Kappa_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Eta_2_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Eta_3_Data:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Zeta_Data_Movie:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string]*protocol.Iota_Data_Movie:
+		return processTypedMap(v, filePath, marshaler)
+
+	case map[string][]*protocol.Zeta_Data_Rating:
+		return processTypedMap2(v, filePath, marshaler)
+
+	case map[string][]*protocol.Iota_Data_Actor:
+		return processTypedMap2(v, filePath, marshaler)
+
+	default:
+		return fmt.Errorf("unsupported data type: %T", data)
+	}
+}
+
+func LoadDataFromFile(dir string, clientId string, stage string, sourceType string) (interface{}, error) {
+	var fileName string
+	if sourceType == "" {
+		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
+	} else {
+		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
+	}
+
+	filePath := filepath.Join(dir, fileName)
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file %s: %w", filePath, err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+
+	switch stage {
+	case common.EPSILON_STAGE:
+		loadedData := make(map[string]*protocol.Epsilon_Data)
+		decodedData, err := decodeEpsilonData(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.LAMBDA_STAGE:
+		loadedData := make(map[string]*protocol.Lambda_Data)
+		decodedData, err := decodeLambdaData(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+	case common.THETA_STAGE:
+		loadedData := make(map[string]*protocol.Theta_Data)
+		decodedData, err := decodeThetaData(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.DELTA_STAGE_2:
+		loadedData := make(map[string]*protocol.Delta_2_Data)
+		decodedData, err := decodeDelta2Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.DELTA_STAGE_3:
+		loadedData := make(map[string]*protocol.Delta_3_Data)
+		decodedData, err := decodeDelta3Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.NU_STAGE_2:
+		loadedData := make(map[string]*protocol.Nu_2_Data)
+		decodedData, err := decodeNu2Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.NU_STAGE_3:
+		loadedData := make(map[string]*protocol.Nu_3_Data)
+		decodedData, err := decodeNu3Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.KAPPA_STAGE_2:
+		loadedData := make(map[string]*protocol.Kappa_2_Data)
+		decodedData, err := decodeKappa2Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.KAPPA_STAGE_3:
+		loadedData := make(map[string]*protocol.Kappa_3_Data)
+		decodedData, err := decodeKappa3Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.ETA_STAGE_2:
+		loadedData := make(map[string]*protocol.Eta_2_Data)
+		decodedData, err := decodeEta2Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.ETA_STAGE_3:
+		loadedData := make(map[string]*protocol.Eta_3_Data)
+		decodedData, err := decodeEta3Data(decoder)
+
+		if err != nil {
+			return nil, err
+		}
+		loadedData = decodedData
+		return loadedData, nil
+
+	case common.ZETA_STAGE:
+		var loadedData interface{}
+
+		if sourceType == common.SMALL_TABLE_SOURCE {
+
+			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
+			decodedData, err := decodeZetaDataMovie(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
+
+		} else if sourceType == common.BIG_TABLE_SOURCE {
+			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
+			decodedData, err := decodeZetaDataRating(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
+		} else {
+			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
+		}
+
+		return loadedData, nil
+
+	case common.IOTA_STAGE:
+		if sourceType == common.SMALL_TABLE_SOURCE {
+			loadedData := make(map[string]*protocol.Iota_Data_Movie)
+			decodedData, err := decodeIotaDataMovie(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
+			return loadedData, nil
+		} else if sourceType == common.BIG_TABLE_SOURCE {
+			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
+			decodedData, err := decodeIotaDataActor(decoder)
+
+			if err != nil {
+				return nil, err
+			}
+			loadedData = decodedData
+			return loadedData, nil
+		} else {
+			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported data stage: %s", stage)
+	}
+}
+
+func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
+
+	filePattern := fmt.Sprintf("%s*%s*%s*.json", stage, sourceType, clientId)
+	files, err := filepath.Glob(filepath.Join(dir, filePattern))
+	if err != nil {
+		return fmt.Errorf("error finding files with pattern %s: %w", filePattern, err)
+	}
+
+	for _, filePath := range files {
+		err := os.Remove(filePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Debugf("File %s does not exist, nothing to delete", filePath)
+				continue
+			}
+			return fmt.Errorf("error deleting file %s: %w", filePath, err)
+		}
+		log.Debugf("File %s deleted successfully", filePath)
+	}
+
+	return nil
+}
+
+func compareProtobufMaps(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Verify that both are maps
+	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
+		log.Error("The provided values are not maps")
+		return false
+	}
+
+	// Verify that they have the same size
+	if expectedVal.Len() != actualVal.Len() {
+		log.Error("The maps have different lengths")
+		return false
+	}
+
+	// Iterate over the keys of the expected map
+	for _, key := range expectedVal.MapKeys() {
+		expectedValue := expectedVal.MapIndex(key).Interface()
+		actualValue := actualVal.MapIndex(key)
+
+		// Verify that the key exists in the actual map
+		if !actualValue.IsValid() {
+			log.Errorf("Key %v not found in actual map", key)
+			return false
+		}
+
+		// Verify that the values are equal using proto.Equal
+		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
+			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
+			return false
+		}
+	}
+
+	return true
+}
+
+func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Verify that both are maps
+	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
+		log.Error("The provided values are not maps")
+		return false
+	}
+
+	// Verify that they have the same size
+	if expectedVal.Len() != actualVal.Len() {
+		log.Error("The maps have different lengths")
+		return false
+	}
+
+	// Iterate over the keys of the expected map
+	for _, key := range expectedVal.MapKeys() {
+		expectedValue := expectedVal.MapIndex(key).Interface()
+		actualValue := actualVal.MapIndex(key)
+
+		// Verify that the key exists in the actual map
+		if !actualValue.IsValid() {
+			log.Errorf("Key %v not found in actual map", key)
+			return false
+		}
+
+		// Verify that the values are slices
+		expectedSlice := reflect.ValueOf(expectedValue)
+		actualSlice := reflect.ValueOf(actualValue.Interface())
+
+		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
+			log.Errorf("Values for key %v are not slices", key)
+			return false
+		}
+
+		// Verify that the slices have the same length
+		if expectedSlice.Len() != actualSlice.Len() {
+			log.Errorf("Slices for key %v have different lengths", key)
+			return false
+		}
+
+		// Compare the elements of the slices
+		for i := 0; i < expectedSlice.Len(); i++ {
+			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
+				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func cleanUpOldFiles(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("error reading directory %s: %w", dir, err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := filepath.Join(dir, file.Name())
+
+		info, err := os.Stat(filePath)
+		if err != nil {
+			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
+			continue
+		}
+		// Delete files older than CLEANUP_INTERVAL
+		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
+			log.Debugf("Deleting old file: %s", filePath)
+			if err := os.Remove(filePath); err != nil {
+				log.Errorf("Failed to delete file %s: %s", filePath, err)
+			}
+		}
+	}
+	return nil
+}
+
+func StartCleanupRoutine(dir string) {
+	ticker := time.NewTicker(CLEANUP_INTERVAL)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := cleanUpOldFiles(dir)
+			if err != nil {
+				log.Errorf("Error during cleanup: %s", err)
+			}
+
+		}
+	}
+}
+
 func decodeDelta2Data(decoder *json.Decoder) (map[string]*protocol.Delta_2_Data, error) {
 	var tempArray []struct {
 		Country       string `json:"country"`
@@ -353,190 +767,6 @@ func decodeIotaDataActor(decoder *json.Decoder) (map[string][]*protocol.Iota_Dat
 	return result, nil
 }
 
-func LoadDataFromFile(dir string, clientId string, stage string, sourceType string) (interface{}, error) {
-	var fileName string
-	if sourceType == "" {
-		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
-	} else {
-		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
-	}
-
-	filePath := filepath.Join(dir, fileName)
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("error opening file %s: %w", filePath, err)
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-
-	switch stage {
-	case common.EPSILON_STAGE:
-		loadedData := make(map[string]*protocol.Epsilon_Data)
-		decodedData, err := decodeEpsilonData(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.LAMBDA_STAGE:
-		loadedData := make(map[string]*protocol.Lambda_Data)
-		decodedData, err := decodeLambdaData(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-	case common.THETA_STAGE:
-		loadedData := make(map[string]*protocol.Theta_Data)
-		decodedData, err := decodeThetaData(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.DELTA_STAGE_2:
-		loadedData := make(map[string]*protocol.Delta_2_Data)
-		decodedData, err := decodeDelta2Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.DELTA_STAGE_3:
-		loadedData := make(map[string]*protocol.Delta_3_Data)
-		decodedData, err := decodeDelta3Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.NU_STAGE_2:
-		loadedData := make(map[string]*protocol.Nu_2_Data)
-		decodedData, err := decodeNu2Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.NU_STAGE_3:
-		loadedData := make(map[string]*protocol.Nu_3_Data)
-		decodedData, err := decodeNu3Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.KAPPA_STAGE_2:
-		loadedData := make(map[string]*protocol.Kappa_2_Data)
-		decodedData, err := decodeKappa2Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.KAPPA_STAGE_3:
-		loadedData := make(map[string]*protocol.Kappa_3_Data)
-		decodedData, err := decodeKappa3Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.ETA_STAGE_2:
-		loadedData := make(map[string]*protocol.Eta_2_Data)
-		decodedData, err := decodeEta2Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.ETA_STAGE_3:
-		loadedData := make(map[string]*protocol.Eta_3_Data)
-		decodedData, err := decodeEta3Data(decoder)
-
-		if err != nil {
-			return nil, err
-		}
-		loadedData = decodedData
-		return loadedData, nil
-
-	case common.ZETA_STAGE:
-		var loadedData interface{}
-
-		if sourceType == common.SMALL_TABLE_SOURCE {
-
-			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
-			decodedData, err := decodeZetaDataMovie(decoder)
-
-			if err != nil {
-				return nil, err
-			}
-			loadedData = decodedData
-
-		} else if sourceType == common.BIG_TABLE_SOURCE {
-			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
-			decodedData, err := decodeZetaDataRating(decoder)
-
-			if err != nil {
-				return nil, err
-			}
-			loadedData = decodedData
-		} else {
-			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
-		}
-
-		return loadedData, nil
-
-	case common.IOTA_STAGE:
-		if sourceType == common.SMALL_TABLE_SOURCE {
-			loadedData := make(map[string]*protocol.Iota_Data_Movie)
-			decodedData, err := decodeIotaDataMovie(decoder)
-
-			if err != nil {
-				return nil, err
-			}
-			loadedData = decodedData
-			return loadedData, nil
-		} else if sourceType == common.BIG_TABLE_SOURCE {
-			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
-			decodedData, err := decodeIotaDataActor(decoder)
-
-			if err != nil {
-				return nil, err
-			}
-			loadedData = decodedData
-			return loadedData, nil
-		} else {
-			return nil, fmt.Errorf("unsupported source type: %s", sourceType)
-		}
-
-	default:
-		return nil, fmt.Errorf("unsupported data stage: %s", stage)
-	}
-}
-
 func processTypedMap[T proto.Message](typedMap map[string]T, filePath string, marshaler protojson.MarshalOptions) error {
 
 	var jsonArray []json.RawMessage
@@ -581,234 +811,4 @@ func processTypedMap2[T proto.Message](v map[string][]T, filePath string, marsha
 		return fmt.Errorf("error writing grouped data to file: %w", err)
 	}
 	return nil
-}
-
-func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
-	err := os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	var fileName string
-	if sourceType == "" {
-		fileName = fmt.Sprintf("%s_%s.json", stage, clientId)
-	} else {
-		fileName = fmt.Sprintf("%s_%s_%s.json", stage, sourceType, clientId)
-	}
-
-	filePath := filepath.Join(dir, fileName)
-
-	marshaler := protojson.MarshalOptions{
-		Indent:          "  ",  // Pretty print
-		EmitUnpopulated: false, // Include unpopulated fields
-	}
-
-	switch v := data.(type) {
-	case map[string]*protocol.Epsilon_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Lambda_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Theta_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Delta_2_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Delta_3_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Nu_2_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Nu_3_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Kappa_2_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Kappa_3_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Eta_2_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Eta_3_Data:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Zeta_Data_Movie:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string]*protocol.Iota_Data_Movie:
-		return processTypedMap(v, filePath, marshaler)
-
-	case map[string][]*protocol.Zeta_Data_Rating:
-		return processTypedMap2(v, filePath, marshaler)
-
-	case map[string][]*protocol.Iota_Data_Actor:
-		return processTypedMap2(v, filePath, marshaler)
-
-	default:
-		return fmt.Errorf("unsupported data type: %T", data)
-	}
-}
-
-func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
-
-	filePattern := fmt.Sprintf("%s*%s*%s*.json", stage, sourceType, clientId)
-	files, err := filepath.Glob(filepath.Join(dir, filePattern))
-	if err != nil {
-		return fmt.Errorf("error finding files with pattern %s: %w", filePattern, err)
-	}
-
-	for _, filePath := range files {
-		err := os.Remove(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				log.Debugf("File %s does not exist, nothing to delete", filePath)
-				continue
-			}
-			return fmt.Errorf("error deleting file %s: %w", filePath, err)
-		}
-		log.Debugf("File %s deleted successfully", filePath)
-	}
-
-	return nil
-}
-
-func compareProtobufMaps(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are equal using proto.Equal
-		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
-			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
-			return false
-		}
-	}
-
-	return true
-}
-
-func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are slices
-		expectedSlice := reflect.ValueOf(expectedValue)
-		actualSlice := reflect.ValueOf(actualValue.Interface())
-
-		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
-			log.Errorf("Values for key %v are not slices", key)
-			return false
-		}
-
-		// Verify that the slices have the same length
-		if expectedSlice.Len() != actualSlice.Len() {
-			log.Errorf("Slices for key %v have different lengths", key)
-			return false
-		}
-
-		// Compare the elements of the slices
-		for i := 0; i < expectedSlice.Len(); i++ {
-			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
-				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-func cleanUpOldFiles(dir string) error {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return fmt.Errorf("error reading directory %s: %w", dir, err)
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		filePath := filepath.Join(dir, file.Name())
-
-		info, err := os.Stat(filePath)
-		if err != nil {
-			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
-			continue
-		}
-		// Delete files older than CLEANUP_INTERVAL
-		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
-			log.Debugf("Deleting old file: %s", filePath)
-			if err := os.Remove(filePath); err != nil {
-				log.Errorf("Failed to delete file %s: %s", filePath, err)
-			}
-		}
-	}
-	return nil
-}
-
-func StartCleanupRoutine(dir string) {
-	ticker := time.NewTicker(CLEANUP_INTERVAL)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			err := cleanUpOldFiles(dir)
-			if err != nil {
-				log.Errorf("Error during cleanup: %s", err)
-			}
-
-		}
-	}
 }
