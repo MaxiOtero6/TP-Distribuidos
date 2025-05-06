@@ -13,7 +13,6 @@ import (
 
 const HARDCODED_WORKER_ID = "0"
 const CLIENT_ID = "testClientId"
-const VOLUMEN_DIRECTORY = "testVolumeDirectory"
 
 func TestTopperExecute(t *testing.T) {
 
