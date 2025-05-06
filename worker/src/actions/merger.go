@@ -7,6 +7,8 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
@@ -64,7 +66,7 @@ func NewMerger(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandle
 		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
 	}
-	go utils.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 	return merger
 }
 
@@ -101,7 +103,7 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (ta
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_3, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_3, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.DELTA_STAGE_3, err)
 	}
@@ -131,7 +133,7 @@ func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks 
 		dataMap[movieId].Count += e3Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_3, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_3, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.ETA_STAGE_3, err)
 	}
@@ -159,7 +161,7 @@ func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (ta
 		dataMap[actorId].PartialParticipations += k3Data.GetPartialParticipations()
 	}
 
-	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_3, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_3, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.KAPPA_STAGE_3, err)
 	}
@@ -188,7 +190,7 @@ func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks co
 		dataMap[sentiment].Count += nu3Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.NU_STAGE_3, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.NU_STAGE_3, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.NU_STAGE_3, err)
 	}
@@ -420,7 +422,7 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 			delete(m.partialResults, clientId)
 		}
 
-		if err := utils.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+		if err := storage.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
 		if err := m.deleteStage(clientId, data.GetStage()); err != nil {

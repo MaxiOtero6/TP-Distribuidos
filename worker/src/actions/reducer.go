@@ -8,6 +8,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
 
 const REDUCER_STAGES_COUNT uint = 4
@@ -54,7 +55,7 @@ func NewReducer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandl
 		eofHandler:     eofHandler,
 	}
 
-	go utils.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 
 	return reducer
 }
@@ -95,7 +96,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (t
 		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_2, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_2, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.DELTA_STAGE_2, err)
 	}
@@ -140,7 +141,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks
 		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_2, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_2, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.ETA_STAGE_2, err)
 	}
@@ -183,7 +184,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (t
 		dataMap[actorId].PartialParticipations += k2Data.GetPartialParticipations()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_2, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_2, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.KAPPA_STAGE_2, err)
 	}
@@ -226,7 +227,7 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks c
 		dataMap[sentiment].Count += nu2Data.GetCount()
 	}
 
-	err := utils.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.NU_STAGE_2, common.ANY_SOURCE, dataMap)
+	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.NU_STAGE_2, common.ANY_SOURCE, dataMap)
 	if err != nil {
 		log.Errorf("Failed to save %s data: %s", common.NU_STAGE_2, err)
 	}
@@ -444,7 +445,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (
 	tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
 	if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+		if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
 			log.Errorf("Failed to delete partial results: %s", err)
 		}
 		if err := r.deleteStage(clientId, data.GetStage()); err != nil {
@@ -460,7 +461,7 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks c
 
 	if r.infraConfig.GetNodeId() != data.GetCreatorId() {
 		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-			if err := utils.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+			if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
 				log.Errorf("Failed to delete partial results: %s", err)
 			}
 			if err := r.deleteStage(clientId, data.GetStage()); err != nil {

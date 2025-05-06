@@ -1,4 +1,4 @@
-package utils
+package storage
 
 import (
 	"encoding/json"
@@ -10,46 +10,11 @@ import (
 	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
-
-// Query 1
-const ALPHA_STAGE string = "alpha"
-const BETA_STAGE string = "beta"
-
-// Query 2
-const GAMMA_STAGE string = "gamma"
-const DELTA_STAGE_1 string = "delta_1"
-const DELTA_STAGE_2 string = "delta_2"
-const DELTA_STAGE_3 string = "delta_3"
-const EPSILON_STAGE string = "epsilon"
-
-// Query 3
-const ZETA_STAGE string = "zeta"
-const ETA_STAGE_1 string = "eta_1"
-const ETA_STAGE_2 string = "eta_2"
-const ETA_STAGE_3 string = "eta_3"
-const THETA_STAGE string = "theta"
-
-// Query 4
-const IOTA_STAGE string = "iota"
-const KAPPA_STAGE_1 string = "kappa_1"
-const KAPPA_STAGE_2 string = "kappa_2"
-const KAPPA_STAGE_3 string = "kappa_3"
-const LAMBDA_STAGE string = "lambda"
-
-// Query 5
-const MU_STAGE string = "mu"
-const NU_STAGE_1 string = "nu_1"
-const NU_STAGE_2 string = "nu_2"
-const NU_STAGE_3 string = "nu_3"
-
-// Source const
-const BIG_TABLE_SOURCE string = "bigTable"
-const SMALL_TABLE_SOURCE string = "smallTable"
-const ANY_SOURCE string = ""
 
 const CLEANUP_INTERVAL = 10 * time.Minute
 
@@ -407,7 +372,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 	decoder := json.NewDecoder(file)
 
 	switch stage {
-	case EPSILON_STAGE:
+	case common.EPSILON_STAGE:
 		loadedData := make(map[string]*protocol.Epsilon_Data)
 		decodedData, err := decodeEpsilonData(decoder)
 
@@ -418,7 +383,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case LAMBDA_STAGE:
+	case common.LAMBDA_STAGE:
 		loadedData := make(map[string]*protocol.Lambda_Data)
 		decodedData, err := decodeLambdaData(decoder)
 
@@ -427,7 +392,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		}
 		loadedData = decodedData
 		return loadedData, nil
-	case THETA_STAGE:
+	case common.THETA_STAGE:
 		loadedData := make(map[string]*protocol.Theta_Data)
 		decodedData, err := decodeThetaData(decoder)
 
@@ -437,7 +402,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case DELTA_STAGE_2:
+	case common.DELTA_STAGE_2:
 		loadedData := make(map[string]*protocol.Delta_2_Data)
 		decodedData, err := decodeDelta2Data(decoder)
 
@@ -447,7 +412,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case DELTA_STAGE_3:
+	case common.DELTA_STAGE_3:
 		loadedData := make(map[string]*protocol.Delta_3_Data)
 		decodedData, err := decodeDelta3Data(decoder)
 
@@ -457,7 +422,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case NU_STAGE_2:
+	case common.NU_STAGE_2:
 		loadedData := make(map[string]*protocol.Nu_2_Data)
 		decodedData, err := decodeNu2Data(decoder)
 
@@ -467,7 +432,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case NU_STAGE_3:
+	case common.NU_STAGE_3:
 		loadedData := make(map[string]*protocol.Nu_3_Data)
 		decodedData, err := decodeNu3Data(decoder)
 
@@ -477,7 +442,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case KAPPA_STAGE_2:
+	case common.KAPPA_STAGE_2:
 		loadedData := make(map[string]*protocol.Kappa_2_Data)
 		decodedData, err := decodeKappa2Data(decoder)
 
@@ -487,7 +452,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case KAPPA_STAGE_3:
+	case common.KAPPA_STAGE_3:
 		loadedData := make(map[string]*protocol.Kappa_3_Data)
 		decodedData, err := decodeKappa3Data(decoder)
 
@@ -497,7 +462,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case ETA_STAGE_2:
+	case common.ETA_STAGE_2:
 		loadedData := make(map[string]*protocol.Eta_2_Data)
 		decodedData, err := decodeEta2Data(decoder)
 
@@ -507,7 +472,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case ETA_STAGE_3:
+	case common.ETA_STAGE_3:
 		loadedData := make(map[string]*protocol.Eta_3_Data)
 		decodedData, err := decodeEta3Data(decoder)
 
@@ -517,10 +482,10 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 		loadedData = decodedData
 		return loadedData, nil
 
-	case ZETA_STAGE:
+	case common.ZETA_STAGE:
 		var loadedData interface{}
 
-		if sourceType == SMALL_TABLE_SOURCE {
+		if sourceType == common.SMALL_TABLE_SOURCE {
 
 			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
 			decodedData, err := decodeZetaDataMovie(decoder)
@@ -530,7 +495,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 			}
 			loadedData = decodedData
 
-		} else if sourceType == BIG_TABLE_SOURCE {
+		} else if sourceType == common.BIG_TABLE_SOURCE {
 			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
 			decodedData, err := decodeZetaDataRating(decoder)
 
@@ -544,8 +509,8 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 
 		return loadedData, nil
 
-	case IOTA_STAGE:
-		if sourceType == SMALL_TABLE_SOURCE {
+	case common.IOTA_STAGE:
+		if sourceType == common.SMALL_TABLE_SOURCE {
 			loadedData := make(map[string]*protocol.Iota_Data_Movie)
 			decodedData, err := decodeIotaDataMovie(decoder)
 
@@ -554,7 +519,7 @@ func LoadDataFromFile(dir string, clientId string, stage string, sourceType stri
 			}
 			loadedData = decodedData
 			return loadedData, nil
-		} else if sourceType == BIG_TABLE_SOURCE {
+		} else if sourceType == common.BIG_TABLE_SOURCE {
 			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
 			decodedData, err := decodeIotaDataActor(decoder)
 
