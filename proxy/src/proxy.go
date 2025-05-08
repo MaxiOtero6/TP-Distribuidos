@@ -34,9 +34,6 @@ func NewConnectionHandler(id string, proxyAddress string, serverAddresses []stri
 		currentIndex:            -1,
 	}, nil
 }
-func (p *Proxy) IsRunning() bool {
-	return p.isRunning
-}
 
 func (p *Proxy) AcceptConnections() error {
 	for p.isRunning {
@@ -67,6 +64,7 @@ func (p *Proxy) AcceptConnections() error {
 
 func (p *Proxy) selectServer() error {
 	if len(p.serverAddresses) == 0 {
+		log.Panic("action: selectServer | result: fail | error: no servers available")
 		return errors.New("no servers available")
 	}
 

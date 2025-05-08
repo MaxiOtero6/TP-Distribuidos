@@ -10,10 +10,12 @@ import (
 )
 
 var ErrSignalReceived = errors.New("signal received")
+var ErrNoServersAvailable = errors.New("no servers available")
 var log = logging.MustGetLogger("log")
 
 type Handler struct {
 	clientSocket  *client_server_communication.Socket
+	serverSocket  *client_server_communication.Socket
 	isRunning     bool
 	serverAddress []string
 	currentIndex  int
@@ -21,7 +23,6 @@ type Handler struct {
 
 func NewHandler(serverAddresses []string, addressIndex string, socketFd uintptr) (*Handler, error) {
 	clientSocket, err := client_server_communication.NewClientSocketFromFile(socketFd)
-
 	if err != nil {
 		return nil, err
 	}
@@ -31,16 +32,61 @@ func NewHandler(serverAddresses []string, addressIndex string, socketFd uintptr)
 		return nil, errors.New("invalid addressIndex: must be an integer")
 	}
 
-	return &Handler{
+	handler := &Handler{
 		clientSocket:  clientSocket,
+		serverSocket:  nil,
 		isRunning:     true,
 		serverAddress: serverAddresses,
 		currentIndex:  index,
-	}, nil
+	}
+
+	handler.serverSocket, err = handler.selectServer()
+	if err != nil {
+		log.Errorf("action: selectServer | result: fail | error: %v", err)
+		return nil, err
+	}
+
+	return handler, nil
+}
+
+func (h *Handler) selectServer() (*client_server_communication.Socket, error) {
+	if len(h.serverAddress) == 0 {
+		log.Panic("action: selectServer | result: fail | error: no servers available")
+	}
+
+	var connected bool = false
+	var serverSocket *client_server_communication.Socket
+	var err error
+
+	startIndex := h.currentIndex
+
+	for !connected {
+		serverAddress := h.serverAddress[h.currentIndex]
+		log.Infof("action: selectServer | server: %s", serverAddress)
+
+		serverSocket, err = client_server_communication.Connect(serverAddress)
+		if err != nil {
+			log.Errorf("action: selectServer | result: fail | error: %v", err)
+			h.currentIndex = (h.currentIndex + 1) % len(h.serverAddress)
+
+			if h.currentIndex == startIndex {
+				log.Errorf("action: selectServer | result: fail | error: no servers available after full iteration")
+				return nil, ErrNoServersAvailable
+			}
+			continue
+		}
+
+		connected = true
+
+		log.Infof("action: selectServer | result: success | server: %s", serverAddress)
+	}
+
+	return serverSocket, nil
 }
 
 func (h *Handler) Run() error {
 	defer h.clientSocket.Close()
+	defer h.serverSocket.Close()
 
 	if err := h.handleConnection(); err != nil {
 		if !h.isRunning {
@@ -56,79 +102,121 @@ func (h *Handler) Run() error {
 	return nil
 }
 
-func (h *Handler) selectServer() (*client_server_communication.Socket, error) {
-	if len(h.serverAddress) == 0 {
-		return nil, errors.New("no servers available")
+func (h *Handler) handleConnection() error {
+	for h.isRunning {
+
+		err := h.redirectMessage()
+		if err != nil {
+			return err
+		}
 	}
 
-	var connected bool
-	var serverSocket *client_server_communication.Socket
+	log.Infof("action: handleConnection | result: success | server socket closed")
+
+	return nil
+}
+
+func (h *Handler) redirectMessage() error {
+
+	messageSentToServer, err := h.redirectMessageToServer()
+	if err != nil {
+		log.Errorf("action: redirectMessage | result: fail | error: %v", err)
+		return err
+	}
+	err = h.redirectMessageToClient(messageSentToServer)
+	if err != nil {
+		log.Errorf("action: redirectMessage | result: fail | error: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (h *Handler) redirectMessageToServer() (*protocol.Message, error) {
+	message, err := h.clientSocket.Read()
+	if err != nil {
+		log.Errorf("action: handleMessage | result: fail | error: %v", err)
+		return nil, err
+	}
+
+	err = h.sendMessageToServer(message)
+	if err != nil {
+		log.Errorf("action: handleMessage | result: fail | error: %v", err)
+		return nil, err
+	}
+
+	return message, nil
+}
+
+func (h *Handler) redirectMessageToClient(messageSentToServer *protocol.Message) error {
+
+	messageReceivedFromServer, err := h.readMessageFromServer(messageSentToServer)
+	if err != nil {
+		log.Errorf("action: redirectMessageToClient | result: fail | error: %v", err)
+		return err
+	}
+
+	err = h.clientSocket.Write(messageReceivedFromServer)
+	if err != nil {
+		log.Errorf("action: handleMessage | result: fail | error: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (h *Handler) sendMessageToServer(message *protocol.Message) error {
+	for alreadySent := false; !alreadySent; {
+		err := h.serverSocket.Write(message)
+		if err != nil {
+			h.serverSocket.Close()
+
+			// Try to select another server
+			h.serverSocket, err = h.selectServer()
+			if err != nil {
+				return err
+			}
+
+			log.Infof("action: handleMessage | result: retry | trying another server")
+			continue // Retry writing the message to the new server
+		}
+
+		alreadySent = true
+	}
+	return nil
+}
+
+func (h *Handler) readMessageFromServer(messageSentToServer *protocol.Message) (*protocol.Message, error) {
+
+	var messageReadFromServer *protocol.Message
 	var err error
 
-	for !connected && h.currentIndex < len(h.serverAddress) {
+	for alreadyRead := false; !alreadyRead; {
 
-		serverAddress := h.serverAddress[h.currentIndex]
-		log.Infof("action: selectServer | server: %s", serverAddress)
-
-		serverSocket, err = client_server_communication.Connect(serverAddress)
+		messageReadFromServer, err = h.serverSocket.Read()
 		if err != nil {
-			log.Errorf("action: selectServer | result: fail | error: %v", err)
-			h.currentIndex++
+			h.serverSocket.Close()
+
+			// Try to select another server
+			h.serverSocket, err = h.selectServer()
+			if err != nil {
+				return nil, err
+			}
+
+			// Send again the message to the new server
+			err = h.sendMessageToServer(messageSentToServer)
+			if err != nil {
+				log.Errorf("action: sendMessageToServer | result: fail | error: %v", err)
+				return nil, err
+			}
+
 			continue
 		}
 
-		connected = true
-		log.Infof("action: selectServer | result: success | server: %s", serverAddress)
+		alreadyRead = true
 	}
 
-	return serverSocket, nil
-}
-
-func (h *Handler) handleMessage(message *protocol.Message, serverSocket *client_server_communication.Socket) error {
-
-	// Only send the message to the server
-	err := serverSocket.Write(message)
-	if err != nil {
-		log.Errorf("action: handleMessage | result: fail | error: %v", err)
-		return err
-	}
-
-	message, err = serverSocket.Read()
-	if err != nil {
-		log.Errorf("action: handleMessage | result: fail | error: %v", err)
-	}
-
-	err = h.clientSocket.Write(message)
-	if err != nil {
-		log.Errorf("action: handleMessage | result: fail | error: %v", err)
-	}
-
-	return nil
-}
-
-func (h *Handler) handleConnection() error {
-
-	serverSocket, err := h.selectServer()
-	defer serverSocket.Close()
-
-	if err != nil {
-		log.Errorf("action: selectServer | result: fail | error: %v", err)
-		return err
-	}
-
-	for h.isRunning {
-		message, err := h.clientSocket.Read()
-		if err != nil {
-			return err
-		}
-
-		err = h.handleMessage(message, serverSocket)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return messageReadFromServer, nil
 }
 
 func (h *Handler) Stop() {
@@ -137,6 +225,11 @@ func (h *Handler) Stop() {
 	if h.clientSocket != nil {
 		h.clientSocket.Close()
 		log.Infof("Client socket closed")
+	}
+
+	if h.serverSocket != nil {
+		h.serverSocket.Close()
+		log.Infof("Server socket closed")
 	}
 
 }
