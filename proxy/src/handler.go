@@ -2,8 +2,7 @@ package proxy
 
 import (
 	"errors"
-	"math/rand"
-	"time"
+	"strconv"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
@@ -14,32 +13,34 @@ var ErrSignalReceived = errors.New("signal received")
 var log = logging.MustGetLogger("log")
 
 type Handler struct {
-	socket        *client_server_communication.Socket
+	clientSocket  *client_server_communication.Socket
 	isRunning     bool
 	serverAddress []string
 	currentIndex  int
 }
 
-func NewHandler(serverAddresses []string, socketFd uintptr) (*Handler, error) {
-	socket, err := client_server_communication.NewClientSocketFromFile(socketFd)
+func NewHandler(serverAddresses []string, addressIndex string, socketFd uintptr) (*Handler, error) {
+	clientSocket, err := client_server_communication.NewClientSocketFromFile(socketFd)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	currentIndex := rand.Intn(len(serverAddresses))
+	index, err := strconv.Atoi(addressIndex)
+	if err != nil {
+		return nil, errors.New("invalid addressIndex: must be an integer")
+	}
 
 	return &Handler{
-		socket:        socket,
+		clientSocket:  clientSocket,
 		isRunning:     true,
 		serverAddress: serverAddresses,
-		currentIndex:  currentIndex,
+		currentIndex:  index,
 	}, nil
 }
 
 func (h *Handler) Run() error {
-	defer h.socket.Close()
+	defer h.clientSocket.Close()
 
 	if err := h.handleConnection(); err != nil {
 		if !h.isRunning {
@@ -60,18 +61,25 @@ func (h *Handler) selectServer() (*client_server_communication.Socket, error) {
 		return nil, errors.New("no servers available")
 	}
 
-	serverAddress := h.serverAddress[h.currentIndex]
-	h.currentIndex = (h.currentIndex + 1) % len(h.serverAddress)
+	var connected bool
+	var serverSocket *client_server_communication.Socket
+	var err error
 
-	log.Infof("action: selectServer | server: %s", serverAddress)
+	for !connected && h.currentIndex < len(h.serverAddress) {
 
-	serverSocket, err := client_server_communication.Connect(serverAddress)
-	if err != nil {
-		log.Errorf("action: selectServer | result: fail | error: %v", err)
-		return nil, err
+		serverAddress := h.serverAddress[h.currentIndex]
+		log.Infof("action: selectServer | server: %s", serverAddress)
+
+		serverSocket, err = client_server_communication.Connect(serverAddress)
+		if err != nil {
+			log.Errorf("action: selectServer | result: fail | error: %v", err)
+			h.currentIndex++
+			continue
+		}
+
+		connected = true
+		log.Infof("action: selectServer | result: success | server: %s", serverAddress)
 	}
-
-	log.Infof("action: selectServer | result: success | server: %s", serverAddress)
 
 	return serverSocket, nil
 }
@@ -90,7 +98,7 @@ func (h *Handler) handleMessage(message *protocol.Message, serverSocket *client_
 		log.Errorf("action: handleMessage | result: fail | error: %v", err)
 	}
 
-	err = h.socket.Write(message)
+	err = h.clientSocket.Write(message)
 	if err != nil {
 		log.Errorf("action: handleMessage | result: fail | error: %v", err)
 	}
@@ -101,13 +109,15 @@ func (h *Handler) handleMessage(message *protocol.Message, serverSocket *client_
 func (h *Handler) handleConnection() error {
 
 	serverSocket, err := h.selectServer()
+	defer serverSocket.Close()
+
 	if err != nil {
 		log.Errorf("action: selectServer | result: fail | error: %v", err)
 		return err
 	}
 
 	for h.isRunning {
-		message, err := h.socket.Read()
+		message, err := h.clientSocket.Read()
 		if err != nil {
 			return err
 		}
@@ -121,11 +131,11 @@ func (h *Handler) handleConnection() error {
 	return nil
 }
 
-func (c *Handler) Stop() {
-	c.isRunning = false
+func (h *Handler) Stop() {
+	h.isRunning = false
 
-	if c.socket != nil {
-		c.socket.Close()
+	if h.clientSocket != nil {
+		h.clientSocket.Close()
 		log.Infof("Client socket closed")
 	}
 
