@@ -35,22 +35,6 @@ type queue struct {
 func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
 	qArgs := amqp.Table{}
 
-	if v, ok := args["dlx_exchange"]; ok {
-		qArgs["x-dead-letter-exchange"] = v
-	}
-
-	if v, ok := args["dlx_routingKey"]; ok {
-		qArgs["x-dead-letter-routing-key"] = v
-	}
-
-	if v, ok := args["ttl"]; ok {
-		if val, err := strconv.Atoi(v); err == nil {
-			qArgs["x-message-ttl"] = val
-		} else {
-			log.Warningf("ttl is not an int: %v", v)
-		}
-	}
-
 	if v, ok := args["expires"]; ok {
 		if val, err := strconv.Atoi(v); err == nil {
 			qArgs["x-expires"] = val
