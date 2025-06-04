@@ -99,26 +99,15 @@ func appendEOFInfra(
 		log.Panicf("For workers is expected to load one queue from the config file, got %d", len(binds))
 	}
 
-	const TTL = 30000 // 30 seconds
-
-	nextWorkerId, err := utils.GetNextNodeId(workerId, workerCount)
-	if err != nil {
-		log.Panicf("Failed to get next node id, self id %s: %s", workerId, err)
-	}
-
 	qName := fmt.Sprintf("%s_%s_queue", workerType, workerId)
 	eofQName := "eof_" + qName
 
 	if len(queues[0]["name"]) == 0 {
 		queues[0]["name"] = qName
-		queues[0]["dlx_routingKey"] = nextWorkerId
 	}
 
 	queues = append(queues, map[string]string{
-		"name":           eofQName,
-		"dlx_exchange":   eofExchangeName,
-		"dlx_routingKey": nextWorkerId,
-		"ttl":            fmt.Sprintf("%d", TTL),
+		"name": eofQName,
 	})
 
 	// Add the EOF_RK to the worker queues binds

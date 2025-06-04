@@ -133,8 +133,6 @@ rabbitmq:
     queues:
       joinQueue:
         name: ""
-        dlx_exchange: "joinExchange"
-        ttl: "120000"
 
     binds:
       joinQueue:
@@ -185,8 +183,6 @@ rabbitmq:
     queues:
       mergeQueue:
         name: ""
-        dlx_exchange: "mergeExchange"
-        ttl: "120000"
 
     binds:
       mergeQueue:
@@ -210,8 +206,6 @@ rabbitmq:
     queues:
       topQueue:
         name: ""
-        dlx_exchange: "topExchange"
-        ttl: "120000"
 
     binds:
       topQueue:
