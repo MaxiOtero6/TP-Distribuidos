@@ -264,7 +264,4 @@ rabbitmq:
       leaderQueue:
         name: "leaderQueue"
 
-      healthQueue:
-        name: ""
-
 

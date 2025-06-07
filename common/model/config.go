@@ -40,6 +40,7 @@ type RabbitConfig struct {
 	ControlExchange    string
 	ControlBroadcastRK string
 	LeaderRK           string
+	HealthExchange     string
 }
 
 type InfraConfig struct {
@@ -163,6 +164,10 @@ func (i *InfraConfig) GetEofExchange() string {
 
 func (i *InfraConfig) GetControlExchange() string {
 	return i.rabbit.ControlExchange
+}
+
+func (i *InfraConfig) GetHealthExchange() string {
+	return i.rabbit.HealthExchange
 }
 
 func (i *InfraConfig) GetControlBroadcastRK() string {

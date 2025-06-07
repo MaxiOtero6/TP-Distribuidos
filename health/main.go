@@ -114,6 +114,7 @@ func initHealthChecker(v *viper.Viper) *health_checker.HealthChecker {
 		ControlExchange:    v.GetString("consts.controlExchange"),
 		ControlBroadcastRK: v.GetString("consts.controlBroadcastRK"),
 		LeaderRK:           v.GetString("consts.leaderRK"),
+		HealthExchange:     v.GetString("consts.healthExchange"),
 	}
 
 	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
@@ -122,24 +123,35 @@ func initHealthChecker(v *viper.Viper) *health_checker.HealthChecker {
 
 	exchanges, queues, _, err := utils.GetRabbitConfig(NODE_TYPE, v)
 
-	controlQName := "control_" + fmt.Sprintf("%s_%s_queue", NODE_TYPE, id)
+	healthQName := "health_" + fmt.Sprintf("%s_%s_queue", NODE_TYPE, id)
 
 	queues = append(queues, map[string]string{
-		"name": controlQName,
+		"name": healthQName,
 	})
-	// Control
+
 	binds := make([]map[string]string, 0)
 	binds = append(binds, map[string]string{
-		"queue":    controlQName,
+		"queue":    queues[0]["name"],
 		"exchange": infraConfig.GetControlExchange(),
-		"extraRK":  infraConfig.GetControlBroadcastRK(),
+		"extraRK":  infraConfig.GetLeaderRK(),
+	})
+
+	binds = append(binds, map[string]string{
+		"queue":    healthQName,
+		"exchange": infraConfig.GetHealthExchange(),
 	})
 
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	hc := health_checker.NewHealthChecker(id)
+	hc := health_checker.NewHealthChecker(
+		id,
+		v.GetInt("healthCheckInterval"),
+		infraConfig,
+		queues[0]["name"],
+		v.GetUint32("healthMaxStatus"),
+	)
 	hc.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Server '%v' ready", hc.ID)
