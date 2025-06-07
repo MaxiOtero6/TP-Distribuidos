@@ -348,9 +348,6 @@ class HealthChecker:
         lines.append(f'{" " * 6}leaderQueue:')
         lines.append(f'{" " * 8}name: "{LEADER_QUEUE["name"]}"')
         lines.append("")
-        lines.append(f'{" " * 6}healthQueue:')
-        lines.append(f'{" " * 8}name: "{HEALTH_QUEUE["name"]}"')
-        lines.append("")
 
         return "\n".join(lines) + "\n"
 
