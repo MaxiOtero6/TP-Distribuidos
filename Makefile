@@ -13,6 +13,7 @@ docker-image:
 	docker build -f ./client/Dockerfile -t "client:latest" .
 	docker build -f ./worker/Dockerfile -t "worker:latest" .
 	docker build -f ./proxy/Dockerfile -t "proxy:latest" .
+	docker build -f ./health/Dockerfile -t "health:latest" .
 	# Execute this command from time to time to clean up intermediate stages generated 
 	# during client build (your hard drive will like this :) ). Don't left uncommented if you 
 	# want to avoid rebuilding client image every time the docker-compose-up command 
