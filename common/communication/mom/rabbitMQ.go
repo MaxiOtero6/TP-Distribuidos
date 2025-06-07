@@ -65,7 +65,7 @@ func (r *RabbitMQ) InitConfig(
 
 	for _, queue := range queues {
 		r.NewQueue(queue["name"], map[string]string{
-			"expires":        queue["expires"],
+			"expires": queue["expires"],
 		})
 	}
 
@@ -74,7 +74,8 @@ func (r *RabbitMQ) InitConfig(
 			r.BindQueue(bind["queue"], bind["exchange"], rk)
 		}
 
-		if strings.Contains(bind["queue"], "eof") {
+		if strings.Contains(bind["queue"], "eof") ||
+			strings.Contains(bind["queue"], "control") {
 			continue
 		}
 

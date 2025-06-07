@@ -8,10 +8,10 @@ import (
 	"sync"
 	"syscall"
 
-	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/client_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/server/src/listener"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -161,17 +161,64 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 	return c
 }
 
-func initServer(v *viper.Viper) *client_server_communication.ConnectionHandler {
+func initServer(v *viper.Viper) *listener.Listener {
 	id := v.GetString("id")
 	port := v.GetString("port")
 
 	address := fmt.Sprintf("server_%s:%s", id, port)
 
-	s, err := client_server_communication.NewConnectionHandler(id, address)
+	clusterConfig := &model.WorkerClusterConfig{
+		FilterCount:   v.GetInt("filter.count"),
+		OverviewCount: v.GetInt("overview.count"),
+		MapCount:      v.GetInt("map.count"),
+		JoinCount:     v.GetInt("join.count"),
+		ReduceCount:   v.GetInt("reduce.count"),
+		MergeCount:    v.GetInt("merge.count"),
+		TopCount:      v.GetInt("top.count"),
+	}
+
+	rabbitConfig := &model.RabbitConfig{
+		FilterExchange:     v.GetString("consts.filterExchange"),
+		OverviewExchange:   v.GetString("consts.overviewExchange"),
+		MapExchange:        v.GetString("consts.mapExchange"),
+		JoinExchange:       v.GetString("consts.joinExchange"),
+		ReduceExchange:     v.GetString("consts.reduceExchange"),
+		MergeExchange:      v.GetString("consts.mergeExchange"),
+		TopExchange:        v.GetString("consts.topExchange"),
+		ResultExchange:     v.GetString("consts.resultExchange"),
+		EofExchange:        v.GetString("consts.eofExchange"),
+		BroadcastID:        v.GetString("consts.broadcastId"),
+		EofBroadcastRK:     v.GetString("consts.eofBroadcastRK"),
+		ControlExchange:    v.GetString("consts.controlExchange"),
+		ControlBroadcastRK: v.GetString("consts.controlBroadcastRK"),
+		LeaderRK:           v.GetString("consts.leaderRK"),
+	}
+
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
+
+	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
+
+	exchanges, queues, _, err := utils.GetRabbitConfig(NODE_TYPE, v)
+
+	controlQName := "control_" + fmt.Sprintf("%s_%s_queue", NODE_TYPE, id)
+
+	queues = append(queues, map[string]string{
+		"name": controlQName,
+	})
+	// Control
+	binds := make([]map[string]string, 0)
+	binds = append(binds, map[string]string{
+		"queue":    controlQName,
+		"exchange": infraConfig.GetControlExchange(),
+		"extraRK":  infraConfig.GetControlBroadcastRK(),
+	})
 
 	if err != nil {
-		log.Panicf("Failed to initialize server: %s", err)
+		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
+
+	s := listener.NewListener(id, address)
+	s.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Server '%v' ready", s.ID)
 
