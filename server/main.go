@@ -217,7 +217,7 @@ func initServer(v *viper.Viper) *listener.Listener {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	s := listener.NewListener(id, address)
+	s := listener.NewListener(id, address, v.GetString("name"), infraConfig)
 	s.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Server '%v' ready", s.ID)
