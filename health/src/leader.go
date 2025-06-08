@@ -25,9 +25,14 @@ func (hc *HealthChecker) runLeader() {
 func (hc *HealthChecker) wakeUpContainers() {
 	for containerName, status := range hc.status {
 		if status >= hc.maxStatus {
-			cmd := exec.Command("docker-compose", "up", "-d", containerName)
+			cmd := exec.Command("docker", "restart", containerName)
 			if err := cmd.Run(); err != nil {
-				log.Errorf("Failed to wake up container %s: %v", containerName, err)
+				e, ok := err.(*exec.ExitError)
+				if ok {
+					log.Errorf("Failed to wake up container %s: %v; %v", containerName, e.String(), e.Stderr)
+				} else {
+					log.Errorf("Failed to wake up container %s: %v", containerName, err)
+				}
 			} else {
 				log.Infof("Container %s is now awake", containerName)
 			}
@@ -83,7 +88,6 @@ func (hc *HealthChecker) sendPing() {
 }
 
 func (hc *HealthChecker) readResponses() {
-	subscriptions := make([]string, 0)
 	responses := make([]string, 0)
 
 	for {
@@ -105,9 +109,6 @@ func (hc *HealthChecker) readResponses() {
 		case *protocol.HealthMessage_PingResponse:
 			pingResponse := data.GetPingResponse()
 			responses = append(responses, pingResponse.GetContainerName())
-		case *protocol.HealthMessage_Subscribe:
-			subscribe := data.GetSubscribe()
-			subscriptions = append(subscriptions, subscribe.GetContainerName())
 		default:
 			log.Warningf("Unknown or unexpected health message type: %T", data.GetMessage())
 			msg.Reject(false)
@@ -117,17 +118,14 @@ func (hc *HealthChecker) readResponses() {
 		msg.Ack(false)
 	}
 
-	for _, containerName := range subscriptions {
-		if _, exists := hc.status[containerName]; !exists {
-			hc.status[containerName] = 0 // Initialize status if not present
-		}
+	log.Debugf("Received responses: %v", responses)
+
+	for containerName := range hc.status {
+		hc.status[containerName]++
 	}
 
 	for _, containerName := range responses {
-		if _, exists := hc.status[containerName]; !exists {
-			hc.status[containerName] = 0 // Initialize status if not present
-		}
-		hc.status[containerName]++ // Increment the status for the container
+		hc.status[containerName] = 0 // Reset status for containers that responded
 	}
 
 	log.Info("Responses read successfully")

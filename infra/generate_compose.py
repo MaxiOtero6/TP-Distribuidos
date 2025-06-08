@@ -85,6 +85,7 @@ class ServiceType(Enum):
                     environment={
                         "SERVER_PORT": str(8080 + id),
                         "SERVER_ID": str(id),
+                        "SERVER_NAME": f"server_{id}",
                         "SERVER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
@@ -120,6 +121,7 @@ class ServiceType(Enum):
                     image="health:latest",
                     environment={
                         "HEALTH_ID": str(id),
+                        "HEALTH_NAME": f"health_{id}",
                         "HEALTH_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
@@ -147,6 +149,7 @@ class ServiceType(Enum):
                     volumes={
                         "./health/config.yaml": "/app/config.yaml",
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
+                        "/var/run/docker.sock": "/var/run/docker.sock"
                     },
                 )
             case ServiceType.CLIENT:
@@ -199,6 +202,7 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
+                        "WORKER_NAME": f"{worker_name}_{id}",
                         "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
@@ -246,6 +250,7 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
+                        "WORKER_NAME": f"{worker_name}_{id}",
                         "WORKER_DATA_DIR": mount_path,
                         "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)

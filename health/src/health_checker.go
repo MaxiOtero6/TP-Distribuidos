@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/health_check"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -36,6 +37,8 @@ type HealthChecker struct {
 	leaderTimeoutC        <-chan time.Time // Channel to signal leader timeout
 	electionTimeoutActive bool
 	leaderTimeoutActive   bool
+
+	healthCheck *health_check.HealthCheck
 }
 
 func NewHealthChecker(
@@ -46,6 +49,7 @@ func NewHealthChecker(
 	maxStatus uint32,
 	signalChan chan os.Signal,
 	electionTimeout int,
+	containerName string,
 ) *HealthChecker {
 	randomDuration := time.Duration(rand.Float32()) * time.Second
 
@@ -62,11 +66,13 @@ func NewHealthChecker(
 		done:                signalChan,
 		wg:                  &sync.WaitGroup{},
 		electionTimeout:     time.Duration(electionTimeout)*time.Second + randomDuration,
+		healthCheck:         health_check.NewHealthCheck(containerName, infraConfig),
 	}
 }
 
 func (hc *HealthChecker) InitConfig(exchanges, queues, binds []map[string]string) {
 	hc.rabbitMQ.InitConfig(exchanges, queues, binds, hc.ID)
+	hc.healthCheck.InitConfig(exchanges, queues, binds, binds[2]["queue"])
 	hc.healthChannel = hc.rabbitMQ.Consume(binds[1]["queue"])
 }
 
@@ -170,6 +176,9 @@ func (hc *HealthChecker) sendElection() {
 
 func (hc *HealthChecker) Run() {
 	defer hc.Stop()
+
+	go hc.healthCheck.Run(hc.wg)
+	hc.wg.Add(1)
 
 	// Start with election timeout to detect when to initiate an election
 	// hc.resetElectionTimeout()
@@ -276,6 +285,7 @@ func (hc *HealthChecker) handleMessage(message *amqp.Delivery) {
 func (hc *HealthChecker) Stop() {
 	hc.stopElectionTimeout()
 	hc.stopLeaderTimeout()
+	hc.healthCheck.Stop()
 	hc.wg.Wait()
 	hc.rabbitMQ.Close()
 }

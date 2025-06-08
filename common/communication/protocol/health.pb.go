@@ -21,50 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Subscribe struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ContainerName string                 `protobuf:"bytes,1,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Subscribe) Reset() {
-	*x = Subscribe{}
-	mi := &file_proto_health_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Subscribe) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Subscribe) ProtoMessage() {}
-
-func (x *Subscribe) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_health_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Subscribe.ProtoReflect.Descriptor instead.
-func (*Subscribe) Descriptor() ([]byte, []int) {
-	return file_proto_health_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Subscribe) GetContainerName() string {
-	if x != nil {
-		return x.ContainerName
-	}
-	return ""
-}
-
 type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -73,7 +29,7 @@ type PingRequest struct {
 
 func (x *PingRequest) Reset() {
 	*x = PingRequest{}
-	mi := &file_proto_health_proto_msgTypes[1]
+	mi := &file_proto_health_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -85,7 +41,7 @@ func (x *PingRequest) String() string {
 func (*PingRequest) ProtoMessage() {}
 
 func (x *PingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_health_proto_msgTypes[1]
+	mi := &file_proto_health_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -98,7 +54,7 @@ func (x *PingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
 func (*PingRequest) Descriptor() ([]byte, []int) {
-	return file_proto_health_proto_rawDescGZIP(), []int{1}
+	return file_proto_health_proto_rawDescGZIP(), []int{0}
 }
 
 type PingResponse struct {
@@ -110,7 +66,7 @@ type PingResponse struct {
 
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
-	mi := &file_proto_health_proto_msgTypes[2]
+	mi := &file_proto_health_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +78,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_health_proto_msgTypes[2]
+	mi := &file_proto_health_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,7 +91,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_proto_health_proto_rawDescGZIP(), []int{2}
+	return file_proto_health_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PingResponse) GetContainerName() string {
@@ -149,7 +105,6 @@ type HealthMessage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Message:
 	//
-	//	*HealthMessage_Subscribe
 	//	*HealthMessage_PingRequest
 	//	*HealthMessage_PingResponse
 	Message       isHealthMessage_Message `protobuf_oneof:"message"`
@@ -159,7 +114,7 @@ type HealthMessage struct {
 
 func (x *HealthMessage) Reset() {
 	*x = HealthMessage{}
-	mi := &file_proto_health_proto_msgTypes[3]
+	mi := &file_proto_health_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -171,7 +126,7 @@ func (x *HealthMessage) String() string {
 func (*HealthMessage) ProtoMessage() {}
 
 func (x *HealthMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_health_proto_msgTypes[3]
+	mi := &file_proto_health_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -184,21 +139,12 @@ func (x *HealthMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthMessage.ProtoReflect.Descriptor instead.
 func (*HealthMessage) Descriptor() ([]byte, []int) {
-	return file_proto_health_proto_rawDescGZIP(), []int{3}
+	return file_proto_health_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *HealthMessage) GetMessage() isHealthMessage_Message {
 	if x != nil {
 		return x.Message
-	}
-	return nil
-}
-
-func (x *HealthMessage) GetSubscribe() *Subscribe {
-	if x != nil {
-		if x, ok := x.Message.(*HealthMessage_Subscribe); ok {
-			return x.Subscribe
-		}
 	}
 	return nil
 }
@@ -225,10 +171,6 @@ type isHealthMessage_Message interface {
 	isHealthMessage_Message()
 }
 
-type HealthMessage_Subscribe struct {
-	Subscribe *Subscribe `protobuf:"bytes,1,opt,name=subscribe,proto3,oneof"`
-}
-
 type HealthMessage_PingRequest struct {
 	PingRequest *PingRequest `protobuf:"bytes,2,opt,name=ping_request,json=pingRequest,proto3,oneof"`
 }
@@ -236,8 +178,6 @@ type HealthMessage_PingRequest struct {
 type HealthMessage_PingResponse struct {
 	PingResponse *PingResponse `protobuf:"bytes,3,opt,name=ping_response,json=pingResponse,proto3,oneof"`
 }
-
-func (*HealthMessage_Subscribe) isHealthMessage_Message() {}
 
 func (*HealthMessage_PingRequest) isHealthMessage_Message() {}
 
@@ -247,15 +187,11 @@ var File_proto_health_proto protoreflect.FileDescriptor
 
 const file_proto_health_proto_rawDesc = "" +
 	"\n" +
-	"\x12proto/health.proto\"2\n" +
-	"\tSubscribe\x12%\n" +
-	"\x0econtainer_name\x18\x01 \x01(\tR\rcontainerName\"\r\n" +
+	"\x12proto/health.proto\"\r\n" +
 	"\vPingRequest\"5\n" +
 	"\fPingResponse\x12%\n" +
-	"\x0econtainer_name\x18\x01 \x01(\tR\rcontainerName\"\xaf\x01\n" +
-	"\rHealthMessage\x12*\n" +
-	"\tsubscribe\x18\x01 \x01(\v2\n" +
-	".SubscribeH\x00R\tsubscribe\x121\n" +
+	"\x0econtainer_name\x18\x01 \x01(\tR\rcontainerName\"\x83\x01\n" +
+	"\rHealthMessage\x121\n" +
 	"\fping_request\x18\x02 \x01(\v2\f.PingRequestH\x00R\vpingRequest\x124\n" +
 	"\rping_response\x18\x03 \x01(\v2\r.PingResponseH\x00R\fpingResponseB\t\n" +
 	"\amessageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
@@ -272,22 +208,20 @@ func file_proto_health_proto_rawDescGZIP() []byte {
 	return file_proto_health_proto_rawDescData
 }
 
-var file_proto_health_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_health_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_health_proto_goTypes = []any{
-	(*Subscribe)(nil),     // 0: Subscribe
-	(*PingRequest)(nil),   // 1: PingRequest
-	(*PingResponse)(nil),  // 2: PingResponse
-	(*HealthMessage)(nil), // 3: HealthMessage
+	(*PingRequest)(nil),   // 0: PingRequest
+	(*PingResponse)(nil),  // 1: PingResponse
+	(*HealthMessage)(nil), // 2: HealthMessage
 }
 var file_proto_health_proto_depIdxs = []int32{
-	0, // 0: HealthMessage.subscribe:type_name -> Subscribe
-	1, // 1: HealthMessage.ping_request:type_name -> PingRequest
-	2, // 2: HealthMessage.ping_response:type_name -> PingResponse
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 0: HealthMessage.ping_request:type_name -> PingRequest
+	1, // 1: HealthMessage.ping_response:type_name -> PingResponse
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_health_proto_init() }
@@ -295,8 +229,7 @@ func file_proto_health_proto_init() {
 	if File_proto_health_proto != nil {
 		return
 	}
-	file_proto_health_proto_msgTypes[3].OneofWrappers = []any{
-		(*HealthMessage_Subscribe)(nil),
+	file_proto_health_proto_msgTypes[2].OneofWrappers = []any{
 		(*HealthMessage_PingRequest)(nil),
 		(*HealthMessage_PingResponse)(nil),
 	}
@@ -306,7 +239,7 @@ func file_proto_health_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_health_proto_rawDesc), len(file_proto_health_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

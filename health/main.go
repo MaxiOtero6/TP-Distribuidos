@@ -122,10 +122,16 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 
 	exchanges, queues, _, err := utils.GetRabbitConfig(NODE_TYPE, v)
 
-	healthQName := "health_" + fmt.Sprintf("%s_%s_queue", NODE_TYPE, id)
+	qName := fmt.Sprintf("%s_%s_queue", NODE_TYPE, id)
+	healthQName := "health_" + qName
+	controlQName := "control_" + qName
 
 	queues = append(queues, map[string]string{
 		"name": healthQName,
+	})
+
+	queues = append(queues, map[string]string{
+		"name": controlQName,
 	})
 
 	binds := make([]map[string]string, 0)
@@ -140,6 +146,12 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 		"exchange": infraConfig.GetHealthExchange(),
 	})
 
+	binds = append(binds, map[string]string{
+		"queue":    controlQName,
+		"exchange": infraConfig.GetControlExchange(),
+		"extraRK":  infraConfig.GetControlBroadcastRK(),
+	})
+
 	if err != nil {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
@@ -152,6 +164,7 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 		v.GetUint32("healthMaxStatus"),
 		signalChan,
 		v.GetInt("healthElectionTimeout"),
+		v.GetString("name"),
 	)
 	hc.InitConfig(exchanges, queues, binds)
 
