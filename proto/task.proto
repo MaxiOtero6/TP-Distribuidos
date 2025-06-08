@@ -15,13 +15,13 @@ import "proto/stages/kappa.proto";
 import "proto/stages/lambda.proto";
 import "proto/stages/mu.proto";
 import "proto/stages/nu.proto";
-import "proto/stages/result1.proto";
-import "proto/stages/result2.proto";
-import "proto/stages/result3.proto";
-import "proto/stages/result4.proto";
-import "proto/stages/result5.proto";
-import "proto/stages/omegaEOF.proto";
-import "proto/ringEOF.proto";
+import "proto/results/result1.proto";
+import "proto/results/result2.proto";
+import "proto/results/result3.proto";
+import "proto/results/result4.proto";
+import "proto/results/result5.proto";
+import "proto/eof/omegaEOF.proto";
+import "proto/eof/ringEOF.proto";
 
 message Task {
     oneof Stage {

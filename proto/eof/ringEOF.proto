@@ -7,5 +7,6 @@ message RingEOF {
     repeated string alive = 2;
     repeated string ready = 3;
     string creatorId = 4;
-    string eofType = 5;
+    string taskCount = 5;
+    string eofType = 6;
 }
