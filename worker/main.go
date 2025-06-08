@@ -192,7 +192,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		infraConfig.GetControlBroadcastRK(),
 	)
 
-	w := worker.NewWorker(workerType, infraConfig, signalChan)
+	w := worker.NewWorker(workerType, infraConfig, signalChan, v.GetString("name"))
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)
