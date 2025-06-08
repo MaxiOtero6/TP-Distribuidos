@@ -142,6 +142,7 @@ class ServiceType(Enum):
                             instances_per_service.get(ServiceType.TOP, 0)
                         ),
                     },
+                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
                     networks=[MOVIES_NETWORK_NAME],
                     volumes={
                         "./health/config.yaml": "/app/config.yaml",
@@ -162,7 +163,6 @@ class ServiceType(Enum):
                         + f"_client_{id}{RESULTS_OUTPUT_FILE_EXTENSION}",
                     },
                     networks=[MOVIES_NETWORK_NAME],
-                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
                     volumes={
                         "./client/config.yaml": "/app/config.yaml",
                         os.path.abspath("./.data/"): "/app/.data",
