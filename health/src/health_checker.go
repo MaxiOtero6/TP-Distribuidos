@@ -172,7 +172,8 @@ func (hc *HealthChecker) Run() {
 	defer hc.Stop()
 
 	// Start with election timeout to detect when to initiate an election
-	hc.resetElectionTimeout()
+	// hc.resetElectionTimeout()
+	hc.sendElection()
 
 outer:
 	for {
@@ -234,6 +235,7 @@ func (hc *HealthChecker) handleMessage(message *amqp.Delivery) {
 		} else {
 			// If my ID is lower, I should back off and let the higher ID node lead
 			hc.stopLeaderTimeout() // Stop any pending leader timeout
+			hc.leaderID = ""
 			hc.resetElectionTimeout()
 			log.Infof("Received election message from %s, but my id is lower", internalMsg.GetSenderId())
 		}
