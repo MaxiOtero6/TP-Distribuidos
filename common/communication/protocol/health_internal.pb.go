@@ -161,6 +161,7 @@ type HealthInternalMessage struct {
 	//	*HealthInternalMessage_Election
 	//	*HealthInternalMessage_Leader
 	Message       isHealthInternalMessage_Message `protobuf_oneof:"message"`
+	SenderId      string                          `protobuf:"bytes,4,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"` // ID of the sender of this message
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -229,6 +230,13 @@ func (x *HealthInternalMessage) GetLeader() *Leader {
 	return nil
 }
 
+func (x *HealthInternalMessage) GetSenderId() string {
+	if x != nil {
+		return x.SenderId
+	}
+	return ""
+}
+
 type isHealthInternalMessage_Message interface {
 	isHealthInternalMessage_Message()
 }
@@ -264,11 +272,12 @@ const file_proto_health_internal_proto_rawDesc = "" +
 	"\bElection\x12'\n" +
 	"\x0fhealtchecker_id\x18\x01 \x01(\tR\x0ehealtcheckerId\"%\n" +
 	"\x06Leader\x12\x1b\n" +
-	"\tleader_id\x18\x01 \x01(\tR\bleaderId\"\x91\x01\n" +
+	"\tleader_id\x18\x01 \x01(\tR\bleaderId\"\xae\x01\n" +
 	"\x15HealthInternalMessage\x12!\n" +
 	"\x06status\x18\x01 \x01(\v2\a.StatusH\x00R\x06status\x12'\n" +
 	"\belection\x18\x02 \x01(\v2\t.ElectionH\x00R\belection\x12!\n" +
-	"\x06leader\x18\x03 \x01(\v2\a.LeaderH\x00R\x06leaderB\t\n" +
+	"\x06leader\x18\x03 \x01(\v2\a.LeaderH\x00R\x06leader\x12\x1b\n" +
+	"\tsender_id\x18\x04 \x01(\tR\bsenderIdB\t\n" +
 	"\amessageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (

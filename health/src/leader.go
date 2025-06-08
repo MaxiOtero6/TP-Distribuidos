@@ -9,7 +9,9 @@ import (
 )
 
 func (hc *HealthChecker) runLeader() {
-	for hc.running {
+	defer hc.wg.Done()
+
+	for hc.leaderID == hc.ID {
 		hc.sendPing()
 
 		time.Sleep(hc.healthCheckInterval)
@@ -40,6 +42,7 @@ func (hc *HealthChecker) sendStatus() {
 				Status: hc.status,
 			},
 		},
+		SenderId: hc.ID,
 	}
 
 	bytesMsg, err := proto.Marshal(msg)
@@ -53,6 +56,8 @@ func (hc *HealthChecker) sendStatus() {
 		hc.infraConfig.GetBroadcastID(),
 		bytesMsg,
 	)
+
+	log.Info("Status message sent")
 }
 
 func (hc *HealthChecker) sendPing() {
@@ -73,6 +78,8 @@ func (hc *HealthChecker) sendPing() {
 		hc.infraConfig.GetControlBroadcastRK(),
 		bytesMsg,
 	)
+
+	log.Info("Ping request sent")
 }
 
 func (hc *HealthChecker) readResponses() {
@@ -122,4 +129,7 @@ func (hc *HealthChecker) readResponses() {
 		}
 		hc.status[containerName]++ // Increment the status for the container
 	}
+
+	log.Info("Responses read successfully")
+	log.Debugf("Current status: %v", hc.status)
 }

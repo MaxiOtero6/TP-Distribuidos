@@ -20,4 +20,5 @@ message HealthInternalMessage {
         Election election = 2; // Contains information about an election
         Leader leader = 3; // Contains information about the new leader
     }
+    string sender_id = 4; // ID of the sender of this message
 }

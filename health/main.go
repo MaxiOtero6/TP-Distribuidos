@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -86,7 +85,7 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func initHealthChecker(v *viper.Viper) *health_checker.HealthChecker {
+func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checker.HealthChecker {
 	id := v.GetString("id")
 
 	clusterConfig := &model.WorkerClusterConfig{
@@ -151,6 +150,8 @@ func initHealthChecker(v *viper.Viper) *health_checker.HealthChecker {
 		infraConfig,
 		queues[0]["name"],
 		v.GetUint32("healthMaxStatus"),
+		signalChan,
+		v.GetInt("healthElectionTimeout"),
 	)
 	hc.InitConfig(exchanges, queues, binds)
 
@@ -159,23 +160,9 @@ func initHealthChecker(v *viper.Viper) *health_checker.HealthChecker {
 	return hc
 }
 
-func handleSigterm(signalChan chan os.Signal, stoppable *health_checker.HealthChecker, wg *sync.WaitGroup) {
-	defer wg.Done()
-	s := <-signalChan
-
-	if s != nil {
-		stoppable.Stop()
-		log.Infof("action: exit | result: success | signal: %v",
-			s.String(),
-		)
-	}
-}
-
 func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGTERM)
-
-	var wg sync.WaitGroup
 
 	v, err := InitConfig()
 	if err != nil {
@@ -186,15 +173,8 @@ func main() {
 		log.Criticalf("%s", err)
 	}
 
-	hc := initHealthChecker(v)
-
-	wg.Add(1)
-	go handleSigterm(signalChan, hc, &wg)
-
+	hc := initHealthChecker(v, signalChan)
 	hc.Run()
 
 	close(signalChan)
-
-	wg.Wait()
-
 }
