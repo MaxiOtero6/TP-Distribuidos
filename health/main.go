@@ -128,6 +128,7 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 
 	queues = append(queues, map[string]string{
 		"name": healthQName,
+		"ttl":  "4000", // 4 seconds
 	})
 
 	queues = append(queues, map[string]string{

@@ -43,6 +43,14 @@ func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
 		}
 	}
 
+	if v, ok := args["ttl"]; ok {
+		if val, err := strconv.Atoi(v); err == nil {
+			qArgs["x-message-ttl"] = val
+		} else {
+			log.Warningf("ttl is not an int: %v", v)
+		}
+	}
+
 	q := &queue{
 		channel:     ch,
 		name:        name,
