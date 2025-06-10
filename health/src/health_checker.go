@@ -105,7 +105,7 @@ func (hc *HealthChecker) stopLeaderTimeout() {
 
 func (hc *HealthChecker) sendLeader() {
 	// Logic to send a leader message to the leader queue
-	log.Info("I'm the leader, sending leader message")
+	log.Debug("I'm the leader, sending leader message")
 	hc.stopLeaderTimeout()
 	hc.stopElectionTimeout()
 
@@ -136,12 +136,12 @@ func (hc *HealthChecker) sendLeader() {
 		hc.wg.Add(1)
 	}
 
-	log.Infof("Leader message sent: %s", hc.ID)
+	log.Debugf("Leader message sent: %s", hc.ID)
 }
 
 func (hc *HealthChecker) sendElection() {
 	// Logic to send an election message to the leader queue
-	log.Info("Sending election message")
+	log.Debug("Sending election message")
 
 	hc.stopLeaderTimeout()
 	hc.stopElectionTimeout()
@@ -171,7 +171,7 @@ func (hc *HealthChecker) sendElection() {
 	// this node will declare itself the leader
 	hc.resetLeaderTimeout()
 
-	log.Infof("Election message sent: %s", hc.ID)
+	log.Debugf("Election message sent: %s", hc.ID)
 }
 
 func (hc *HealthChecker) Run() {
@@ -235,18 +235,18 @@ func (hc *HealthChecker) handleMessage(message *amqp.Delivery) {
 		// If I'm already the leader, respond with a leader message instead of election
 		if hc.ID > internalMsg.GetElection().GetHealtcheckerId() {
 			if hc.leaderID == hc.ID {
-				log.Infof("Received election message while I'm the leader, sending leader message")
+				log.Debugf("Received election message while I'm the leader, sending leader message")
 				hc.sendLeader() // Remind everyone I'm the leader
 			} else {
 				hc.sendElection()
-				log.Infof("Sent election message, my id is higher: %s", hc.ID)
+				log.Debugf("Sent election message, my id is higher: %s", hc.ID)
 			}
 		} else {
 			// If my ID is lower, I should back off and let the higher ID node lead
 			hc.stopLeaderTimeout() // Stop any pending leader timeout
 			hc.leaderID = ""
 			hc.resetElectionTimeout()
-			log.Infof("Received election message from %s, but my id is lower", internalMsg.GetSenderId())
+			log.Debugf("Received election message from %s, but my id is lower", internalMsg.GetSenderId())
 		}
 
 	case *protocol.HealthInternalMessage_Status:
@@ -259,7 +259,7 @@ func (hc *HealthChecker) handleMessage(message *amqp.Delivery) {
 		}
 		statusMsg := internalMsg.GetStatus()
 		hc.status = statusMsg.GetStatus()
-		log.Infof("Received status message from leader %s", hc.leaderID)
+		log.Debugf("Received status message from leader %s", hc.leaderID)
 
 	case *protocol.HealthInternalMessage_Leader:
 		// When a leader is declared, all nodes should recognize it
@@ -271,7 +271,7 @@ func (hc *HealthChecker) handleMessage(message *amqp.Delivery) {
 			hc.resetElectionTimeout() // Reset election timeout - the leader is active
 		}
 
-		log.Infof("Received leader message from %s", hc.leaderID)
+		log.Debugf("Received leader message from %s", hc.leaderID)
 
 	default:
 		log.Warningf("Unknown message type: %T", msg)

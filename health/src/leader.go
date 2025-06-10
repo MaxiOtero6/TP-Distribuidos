@@ -62,7 +62,7 @@ func (hc *HealthChecker) sendStatus() {
 		bytesMsg,
 	)
 
-	log.Info("Status message sent")
+	log.Debugf("Status message sent")
 }
 
 func (hc *HealthChecker) sendPing() {
@@ -84,7 +84,7 @@ func (hc *HealthChecker) sendPing() {
 		bytesMsg,
 	)
 
-	log.Info("Ping request sent")
+	log.Debugf("Ping request sent")
 }
 
 func (hc *HealthChecker) readResponses() {
@@ -118,8 +118,6 @@ func (hc *HealthChecker) readResponses() {
 		msg.Ack(false)
 	}
 
-	log.Debugf("Received responses: %v", responses)
-
 	for containerName := range hc.status {
 		hc.status[containerName]++
 	}
@@ -128,6 +126,6 @@ func (hc *HealthChecker) readResponses() {
 		hc.status[containerName] = 0 // Reset status for containers that responded
 	}
 
-	log.Info("Responses read successfully")
+	log.Debugf("Responses read successfully")
 	log.Debugf("Current status: %v", hc.status)
 }
