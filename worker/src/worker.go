@@ -2,7 +2,9 @@ package worker
 
 import (
 	"os"
+	"sync"
 
+	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/health_check"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -23,12 +25,15 @@ type Worker struct {
 	done        chan os.Signal
 	consumeChan mom.ConsumerChan
 	eofChan     mom.ConsumerChan
+
+	healthCheck *health_check.HealthCheck
+	wg          *sync.WaitGroup
 }
 
 // NewWorker creates a new worker with the given id, type, and infraConfig
 // and initializes RabbitMQ and action structs
 // It also takes a signal channel to handle SIGTERM signal
-func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan chan os.Signal) *Worker {
+func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan chan os.Signal, containerName string) *Worker {
 	rabbitMQ := mom.NewRabbitMQ()
 
 	action := actions.NewAction(workerType, infraConfig)
@@ -39,6 +44,8 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 		action:      action,
 		done:        signalChan,
 		consumeChan: nil,
+		healthCheck: health_check.NewHealthCheck(containerName, infraConfig),
+		wg:          &sync.WaitGroup{},
 	}
 }
 
@@ -49,13 +56,20 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 2 {
-		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof), got %d", len(binds))
+	if len(binds) != 3 {
+		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof + control), got %d", len(binds))
 	}
 
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
 	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])
+
+	w.healthCheck.InitConfig(
+		exchanges,
+		queues,
+		binds,
+		binds[2]["queue"],
+	)
 }
 
 // Run starts the worker and listens for messages on the consume channel
@@ -73,6 +87,9 @@ func (w *Worker) Run() {
 	}
 
 	defer w.Shutdown()
+
+	go w.healthCheck.Run(w.wg)
+	w.wg.Add(1)
 
 outer:
 	for {
@@ -165,5 +182,7 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 // Shutdown closes the RabbitMQ connection
 // It is safe to call this method multiple times
 func (w *Worker) Shutdown() {
+	w.healthCheck.Stop()
 	w.rabbitMQ.Close()
+	w.wg.Wait()
 }

@@ -8,9 +8,15 @@ consts:
   topExchange: "topExchange"
   resultExchange: "resultExchange"
   eofExchange: "eofExchange"
+  controlExchange: "controlExchange"
+  healthExchange: "healthExchange"
   broadcastId: ""
 
   eofBroadcastRK: "eof"
+
+  controlBroadcastRK: "ping"
+
+  leaderRK: "leader"
 
 rabbitmq:
   SERVER:
@@ -29,6 +35,10 @@ rabbitmq:
 
       resultExchange:
         name: "resultExchange"
+        kind: "direct"
+
+      controlExchange:
+        name: "controlExchange"
         kind: "direct"
 
     binds:
@@ -55,6 +65,10 @@ rabbitmq:
 
       eofExchange:
         name: "eofExchange"
+        kind: "direct"
+
+      controlExchange:
+        name: "controlExchange"
         kind: "direct"
 
     queues:
@@ -84,6 +98,10 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      controlExchange:
+        name: "controlExchange"
+        kind: "direct"
+
     queues:
       overviewQueue:
         name: "overviewQueue"
@@ -105,6 +123,10 @@ rabbitmq:
 
       eofExchange:
         name: "eofExchange"
+        kind: "direct"
+
+      controlExchange:
+        name: "controlExchange"
         kind: "direct"
 
     queues:
@@ -130,6 +152,10 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      controlExchange:
+        name: "controlExchange"
+        kind: "direct"
+
     queues:
       joinQueue:
         name: ""
@@ -151,6 +177,10 @@ rabbitmq:
 
       eofExchange:
         name: "eofExchange"
+        kind: "direct"
+
+      controlExchange:
+        name: "controlExchange"
         kind: "direct"
 
     queues:
@@ -180,6 +210,10 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      controlExchange:
+        name: "controlExchange"
+        kind: "direct"
+
     queues:
       mergeQueue:
         name: ""
@@ -203,6 +237,10 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      controlExchange:
+        name: "controlExchange"
+        kind: "direct"
+
     queues:
       topQueue:
         name: ""
@@ -211,4 +249,19 @@ rabbitmq:
       topQueue:
         exchange: "topExchange"
         queue: ""
+
+  HEALTH:
+    exchanges:
+      controlExchange:
+        name: "controlExchange"
+        kind: "direct"
+
+      healthExchange:
+        name: "healthExchange"
+        kind: "fanout"
+
+    queues:
+      leaderQueue:
+        name: "leaderQueue"
+
 
