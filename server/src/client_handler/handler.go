@@ -3,7 +3,6 @@ package client_handler
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
@@ -125,18 +124,18 @@ func (c *ClientHandler) handleConnectionMessage(syncMessage *protocol.Sync) {
 		},
 	}
 
+	c.ClientID = clientID
+	log.Infof("Client connected with ID: %s", clientID)
+	c.rabbitHandler.RegisterNewClient(clientID)
+
 	if err := c.socket.Write(idMessage); err != nil {
 		log.Errorf("Error sending ID to client: %v", err)
 		return
 	}
-
-	c.ClientID = clientID
-	log.Infof("Client connected with ID: %s", clientID)
-	c.rabbitHandler.RegisterNewClient(clientID)
 }
 
 func (c *ClientHandler) handleBatchMessage(batchMessage *protocol.Batch) error {
-	//log.Debugf("Received batch message: %v ", batchMessage)
+
 	clientId := batchMessage.GetClientId()
 
 	switch batchMessage.Type {
@@ -257,7 +256,7 @@ func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) erro
 	}
 
 	log.Debugf("Sending results to client %v, status: %v", resultMessage.ClientId, results.GetStatus())
-	time.Sleep(5 * time.Second)
+
 	if err := c.socket.Write(message); err != nil {
 		log.Errorf("Error sending results: %v", err)
 		return err
