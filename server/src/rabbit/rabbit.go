@@ -140,7 +140,7 @@ func (r *RabbitHandler) publishTasksRabbit(tasks map[string]*protocol.Task, exch
 
 // GetResults retrieves the results from the result queue
 // The results are unmarshalled and returned as a ResultsResponse
-func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
+func (r *RabbitHandler) GetResults(clientId string) (*protocol.ResultsResponse, *amqp.Delivery) {
 	unmarshallResult := func(msg amqp.Delivery) (*protocol.ResultsResponse_Result, error) {
 		task := &protocol.Task{}
 		err := proto.Unmarshal(msg.Body, task)
@@ -188,29 +188,33 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 		Status:  protocol.MessageStatus_PENDING,
 	}
 
-	for {
-		msg, ok := r.rabbitMQ.GetHeadDelivery(r.resultQueueName)
+	msg, ok := r.rabbitMQ.GetHeadDelivery(r.resultQueueName)
 
-		if !ok {
-			break
-		}
-
-		r, err := unmarshallResult(msg)
-
-		if err != nil {
-			log.Errorf("Error unmarshalling task: %v", err)
-			continue
-		}
-
-		results.Results = append(results.Results, r)
-		msg.Ack(false)
+	if !ok {
+		return results, nil
 	}
+
+	result, err := unmarshallResult(msg)
+
+	if err != nil {
+		log.Errorf("Error unmarshalling task: %v", err)
+		return results, nil
+	}
+
+	results.Results = append(results.Results, result)
+	//msg.Ack(false)
 
 	if len(results.Results) > 0 {
 		results.Status = protocol.MessageStatus_SUCCESS
 	}
 
-	return results
+	return results, &msg
+}
+
+func (r *RabbitHandler) AckResults(msg *amqp.Delivery) {
+	if msg != nil {
+		msg.Ack(false)
+	}
 }
 
 func (r *RabbitHandler) RemoveClient(clientId string) {

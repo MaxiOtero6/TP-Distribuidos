@@ -3,6 +3,7 @@ package client_handler
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
@@ -243,7 +244,7 @@ func (c *ClientHandler) handleDisconnectMessage(disconnectMessage *protocol.Disc
 func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) error {
 	log.Infof("Received result message from user: %v ", resultMessage.ClientId)
 
-	results := c.rabbitHandler.GetResults(resultMessage.ClientId)
+	results, msg := c.rabbitHandler.GetResults(resultMessage.ClientId)
 
 	message := &protocol.Message{
 		Message: &protocol.Message_ServerClientMessage{
@@ -256,11 +257,13 @@ func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) erro
 	}
 
 	log.Debugf("Sending results to client %v, status: %v", resultMessage.ClientId, results.GetStatus())
-
+	time.Sleep(5 * time.Second)
 	if err := c.socket.Write(message); err != nil {
 		log.Errorf("Error sending results: %v", err)
 		return err
 	}
+
+	c.rabbitHandler.AckResults(msg)
 
 	return nil
 }
