@@ -7,7 +7,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
 
@@ -28,7 +27,7 @@ type Reducer struct {
 	partialResults map[string]*ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
+	// eofHandler     eof_handler.IEOFHandler
 }
 
 func (r *Reducer) makePartialResults(clientId string) {
@@ -46,13 +45,13 @@ func (r *Reducer) makePartialResults(clientId string) {
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
-func NewReducer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Reducer {
+func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	reducer := &Reducer{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     eofHandler,
+		// eofHandler:     eofHandler,
 	}
 
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
@@ -442,35 +441,35 @@ func (r *Reducer) addResultsToNextStage(tasks common.Tasks, stage string, client
 }
 
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+	// tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
-	if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-		if err := r.deleteStage(clientId, data.GetStage()); err != nil {
-			log.Errorf("Failed to delete stage: %s", err)
-		}
-	}
+	// if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+	// 	if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+	// 		log.Errorf("Failed to delete partial results: %s", err)
+	// 	}
+	// 	if err := r.deleteStage(clientId, data.GetStage()); err != nil {
+	// 		log.Errorf("Failed to delete stage: %s", err)
+	// 	}
+	// }
 
 	return tasks
 }
 
 func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	tasks = r.eofHandler.HandleRing(data, clientId, r.getNextStageData, true)
+	// tasks = r.eofHandler.HandleRing(data, clientId, r.getNextStageData, true)
 
-	if r.infraConfig.GetNodeId() != data.GetCreatorId() {
-		if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-			if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-				log.Errorf("Failed to delete partial results: %s", err)
-			}
-			if err := r.deleteStage(clientId, data.GetStage()); err != nil {
-				log.Errorf("Failed to delete stage: %s", err)
-			}
-		} else {
-			log.Errorf("Failed to add results to next stage: %s", err)
-		}
-	}
+	// if r.infraConfig.GetNodeId() != data.GetCreatorId() {
+	// 	if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+	// 		if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+	// 			log.Errorf("Failed to delete partial results: %s", err)
+	// 		}
+	// 		if err := r.deleteStage(clientId, data.GetStage()); err != nil {
+	// 			log.Errorf("Failed to delete stage: %s", err)
+	// 		}
+	// 	} else {
+	// 		log.Errorf("Failed to add results to next stage: %s", err)
+	// 	}
+	// }
 
 	return tasks
 }

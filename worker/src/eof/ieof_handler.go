@@ -1,12 +1,17 @@
-package eof_handler
+package eof
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("log")
+// import (
+// 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+// 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+// 	"github.com/op/go-logging"
+// )
+
+// var log = logging.MustGetLogger("log")
 
 type IEOFHandler interface {
 	// InitRing initializes the ring for the EOF handler.

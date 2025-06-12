@@ -7,7 +7,9 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
+
+	// "github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/cdipaolo/sentiment"
 )
 
@@ -17,13 +19,13 @@ type Overviewer struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
+	// eofHandler     eof_handler.IEOFHandler
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
@@ -34,7 +36,6 @@ func NewOverviewer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHa
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     eofHandler,
 	}
 }
 
@@ -117,17 +118,6 @@ func (o *Overviewer) getNextStageData(stage string, clientId string) ([]common.N
 	}
 }
 
-func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
-}
-
-func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// For overviewers eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return o.eofHandler.HandleRing(data, clientId, o.getNextStageData, true)
-}
-
 func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
@@ -139,10 +129,7 @@ func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return o.omegaEOFStage(data, clientId), nil
-
-	case *protocol.Task_RingEOF:
-		return o.ringEOFStage(v.RingEOF, clientId), nil
+		return eof.StatelessOmegaEof(data, clientId, o.getNextStageData), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

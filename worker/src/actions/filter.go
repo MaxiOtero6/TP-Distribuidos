@@ -9,7 +9,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 )
 
 // Filter is a struct that implements the Action interface.
@@ -19,15 +19,15 @@ type Filter struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
+	// eofHandler     eof_handler.IEOFHandler
 }
 
-func NewFilter(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Filter {
+func NewFilter(infraConfig *model.InfraConfig) *Filter {
 	return &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     eofHandler,
+		// eofHandler:     eofHandler,
 	}
 }
 
@@ -292,13 +292,13 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextS
 				Stage:       common.ZETA_STAGE,
 				Exchange:    f.infraConfig.GetJoinExchange(),
 				WorkerCount: f.infraConfig.GetJoinCount(),
-				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  f.itemHashFunc(f.infraConfig.GetJoinCount(), clientId+common.ZETA_STAGE),
 			},
 			{
 				Stage:       common.IOTA_STAGE,
 				Exchange:    f.infraConfig.GetJoinExchange(),
 				WorkerCount: f.infraConfig.GetJoinCount(),
-				RoutingKey:  f.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  f.itemHashFunc(f.infraConfig.GetJoinCount(), clientId+common.IOTA_STAGE),
 			},
 		}, nil
 
@@ -328,17 +328,6 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextS
 	}
 }
 
-func (f *Filter) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	return f.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
-}
-
-func (f *Filter) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// For filters eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return f.eofHandler.HandleRing(data, clientId, f.getNextStageData, true)
-}
-
 // Execute executes the action.
 // It returns a map of tasks for the next stages.
 // It returns an error if the action fails.
@@ -361,10 +350,7 @@ func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return f.omegaEOFStage(data, clientId), nil
-
-	case *protocol.Task_RingEOF:
-		return f.ringEOFStage(v.RingEOF, clientId), nil
+		return eof.StatelessOmegaEof(data, clientId, f.getNextStageData), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

@@ -8,8 +8,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
-
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
 const MERGER_STAGES_COUNT uint = 4
@@ -28,7 +26,7 @@ type Merger struct {
 	partialResults map[string]*MergerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
+	// eofHandler     eof_handler.IEOFHandler
 }
 
 func (m *Merger) makePartialResults(clientId string) {
@@ -58,13 +56,13 @@ func (m *Merger) makePartialResults(clientId string) {
 
 // NewMerger creates a new Merger instance.
 // It initializes the worker count and returns a pointer to the Merger struct.
-func NewMerger(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Merger {
+func NewMerger(infraConfig *model.InfraConfig) *Merger {
 	merger := &Merger{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*MergerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     eofHandler,
+		// eofHandler:     eofHandler,
 	}
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 	return merger
@@ -404,52 +402,53 @@ func (m *Merger) addResultsToNextStage(tasks common.Tasks, stage string, clientI
 }
 
 func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+	// tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
-	switch data.GetStage() {
-	case common.DELTA_STAGE_3:
-		m.partialResults[clientId].delta3.ready = true
-	case common.ETA_STAGE_3:
-		m.partialResults[clientId].eta3.ready = true
-	case common.KAPPA_STAGE_3:
-		m.partialResults[clientId].kappa3.ready = true
-	case common.NU_STAGE_3:
-		m.partialResults[clientId].nu3Data.ready = true
-	}
+	// switch data.GetStage() {
+	// case common.DELTA_STAGE_3:
+	// 	m.partialResults[clientId].delta3.ready = true
+	// case common.ETA_STAGE_3:
+	// 	m.partialResults[clientId].eta3.ready = true
+	// case common.KAPPA_STAGE_3:
+	// 	m.partialResults[clientId].kappa3.ready = true
+	// case common.NU_STAGE_3:
+	// 	m.partialResults[clientId].nu3Data.ready = true
+	// }
 
-	if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
-			delete(m.partialResults, clientId)
-		}
+	// if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+	// 	if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
+	// 		delete(m.partialResults, clientId)
+	// 	}
 
-		if err := storage.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-		if err := m.deleteStage(clientId, data.GetStage()); err != nil {
-			log.Errorf("Failed to delete stage: %s", err)
-		}
-	} else {
-		log.Errorf("Failed to add results to next stage: %s", err)
-	}
+	// 	if err := storage.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
+	// 		log.Errorf("Failed to delete partial results: %s", err)
+	// 	}
+	// 	if err := m.deleteStage(clientId, data.GetStage()); err != nil {
+	// 		log.Errorf("Failed to delete stage: %s", err)
+	// 	}
+	// } else {
+	// 	log.Errorf("Failed to add results to next stage: %s", err)
+	// }
 
 	return tasks
 }
 
 func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	var ready bool
+	// var ready bool
 
-	switch data.GetStage() {
-	case common.DELTA_STAGE_3:
-		ready = m.partialResults[clientId].delta3.ready
-	case common.ETA_STAGE_3:
-		ready = m.partialResults[clientId].eta3.ready
-	case common.KAPPA_STAGE_3:
-		ready = m.partialResults[clientId].kappa3.ready
-	case common.NU_STAGE_3:
-		ready = m.partialResults[clientId].nu3Data.ready
-	}
+	// switch data.GetStage() {
+	// case common.DELTA_STAGE_3:
+	// 	ready = m.partialResults[clientId].delta3.ready
+	// case common.ETA_STAGE_3:
+	// 	ready = m.partialResults[clientId].eta3.ready
+	// case common.KAPPA_STAGE_3:
+	// 	ready = m.partialResults[clientId].kappa3.ready
+	// case common.NU_STAGE_3:
+	// 	ready = m.partialResults[clientId].nu3Data.ready
+	// }
 
-	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, ready)
+	// return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, ready)
+	return
 }
 
 func (m *Merger) Execute(task *protocol.Task) (common.Tasks, error) {

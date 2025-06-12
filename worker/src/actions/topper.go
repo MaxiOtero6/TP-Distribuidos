@@ -6,7 +6,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
@@ -35,7 +34,7 @@ type PartialResults struct {
 type Topper struct {
 	infraConfig    *model.InfraConfig
 	partialResults map[string]*PartialResults
-	eofHandler     eof_handler.IEOFHandler
+	// eofHandler     eof_handler.IEOFHandler
 }
 
 func (t *Topper) makePartialResults(clientId string) {
@@ -55,11 +54,11 @@ func (t *Topper) makePartialResults(clientId string) {
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Topper {
+func NewTopper(infraConfig *model.InfraConfig) *Topper {
 	topper := &Topper{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*PartialResults),
-		eofHandler:     eofHandler,
+		// eofHandler:     eofHandler,
 	}
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 
@@ -382,15 +381,15 @@ func (t *Topper) getNextStageData(stage string, clientId string) ([]common.NextS
 }
 
 func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+	// tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
 
-	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := storage.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
-		}
-	} else {
-		log.Errorf("Failed to add results to next stage: %s", err)
-	}
+	// if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
+	// 	if err := storage.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
+	// 		log.Errorf("Failed to delete partial results: %s", err)
+	// 	}
+	// } else {
+	// 	log.Errorf("Failed to add results to next stage: %s", err)
+	// }
 
 	return tasks
 }
@@ -400,7 +399,8 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 	// because one of them receives the EOF and init the ring
 	// and the others just declare that they are alive
 	// Only one topper resolves the query for a client
-	return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
+	// return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
+	return
 }
 
 func (t *Topper) Execute(task *protocol.Task) (common.Tasks, error) {

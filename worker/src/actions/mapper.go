@@ -7,7 +7,8 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
+	// "github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 )
 
 // Mapper is a struct that implements the Action interface.
@@ -15,17 +16,15 @@ type Mapper struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, itemId string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
-func NewMapper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Mapper {
+func NewMapper(infraConfig *model.InfraConfig) *Mapper {
 	return &Mapper{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     eofHandler,
 	}
 }
 
@@ -303,7 +302,7 @@ func (m *Mapper) getNextStageData(stage string, clientId string) ([]common.NextS
 				Stage:       common.DELTA_STAGE_2,
 				Exchange:    m.infraConfig.GetReduceExchange(),
 				WorkerCount: m.infraConfig.GetReduceCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  m.itemHashFunc(m.infraConfig.GetReduceCount(), clientId+common.DELTA_STAGE_2),
 			},
 		}, nil
 	case common.ETA_STAGE_1:
@@ -312,7 +311,7 @@ func (m *Mapper) getNextStageData(stage string, clientId string) ([]common.NextS
 				Stage:       common.ETA_STAGE_2,
 				Exchange:    m.infraConfig.GetReduceExchange(),
 				WorkerCount: m.infraConfig.GetReduceCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  m.itemHashFunc(m.infraConfig.GetReduceCount(), clientId+common.ETA_STAGE_2),
 			},
 		}, nil
 	case common.KAPPA_STAGE_1:
@@ -321,7 +320,7 @@ func (m *Mapper) getNextStageData(stage string, clientId string) ([]common.NextS
 				Stage:       common.KAPPA_STAGE_2,
 				Exchange:    m.infraConfig.GetReduceExchange(),
 				WorkerCount: m.infraConfig.GetReduceCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  m.itemHashFunc(m.infraConfig.GetReduceCount(), clientId+common.KAPPA_STAGE_2),
 			},
 		}, nil
 	case common.NU_STAGE_1:
@@ -330,24 +329,13 @@ func (m *Mapper) getNextStageData(stage string, clientId string) ([]common.NextS
 				Stage:       common.NU_STAGE_2,
 				Exchange:    m.infraConfig.GetReduceExchange(),
 				WorkerCount: m.infraConfig.GetReduceCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				RoutingKey:  m.itemHashFunc(m.infraConfig.GetReduceCount(), clientId+common.NU_STAGE_2),
 			},
 		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
 		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
 	}
-}
-
-func (m *Mapper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	return m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
-}
-
-func (m *Mapper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// For mappers eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, true)
 }
 
 func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
@@ -373,10 +361,7 @@ func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return m.omegaEOFStage(data, clientId), nil
-
-	case *protocol.Task_RingEOF:
-		return m.ringEOFStage(v.RingEOF, clientId), nil
+		return eof.StatelessOmegaEof(data, clientId, m.getNextStageData), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

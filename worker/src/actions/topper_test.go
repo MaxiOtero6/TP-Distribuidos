@@ -34,7 +34,7 @@ func TestTopperExecute(t *testing.T) {
 
 	t.Run("Test Epsilon Stage with single task", func(t *testing.T) {
 
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -67,7 +67,7 @@ func TestTopperExecute(t *testing.T) {
 
 	t.Run("Test Epsilon Stage with multiple tasks", func(t *testing.T) {
 
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task1 := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -116,7 +116,7 @@ func TestTopperExecute(t *testing.T) {
 
 	t.Run("Test Theta Stage with single task", func(t *testing.T) {
 
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -151,7 +151,7 @@ func TestTopperExecute(t *testing.T) {
 
 	t.Run("Test Theta Stage with multiple tasks", func(t *testing.T) {
 
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task1 := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -199,7 +199,7 @@ func TestTopperExecute(t *testing.T) {
 	})
 
 	t.Run("Test Lambda Stage with single task", func(t *testing.T) {
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -246,7 +246,7 @@ func TestTopperExecute(t *testing.T) {
 	})
 
 	t.Run("Test Lambda Stage with multiple tasks", func(t *testing.T) {
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		task := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -320,7 +320,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 		tempDir,
 	)
 
-	var testTopper = NewTopper(testInfraConfig, nil)
+	var testTopper = NewTopper(testInfraConfig)
 
 	t.Run("Test Epsilon Result Stage with empty tasks", func(t *testing.T) {
 		emptyTask := &protocol.Task{
@@ -346,7 +346,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 
 	t.Run("Test Lambda Result Stage with empty tasks", func(t *testing.T) {
 
-		var testTopper = NewTopper(testInfraConfig, nil)
+		var testTopper = NewTopper(testInfraConfig)
 
 		emptyTask := &protocol.Task{
 			ClientId: CLIENT_ID,
@@ -415,7 +415,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 
 // var testTopper = NewTopper(testInfraConfig)
 // t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {
-// 	var testTopper = NewTopper(testInfraConfig, nil)
+// 	var testTopper = NewTopper(testInfraConfig)
 // 	t.Run("EOF arrival bring result and EOF Message", func(t *testing.T) {
 
 // 		epsilonTask := &protocol.Task{
