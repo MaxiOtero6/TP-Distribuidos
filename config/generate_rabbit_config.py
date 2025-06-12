@@ -29,20 +29,11 @@ MAP_QUEUE = {"name": "mapQueue"}
 
 REDUCE_QUEUE = {"name": "reduceQueue"}
 
-# dlx_routingKey generated in the worker's code
-JOIN_QUEUE = {"name": "",
-              "dlx_exchange": JOIN_EXCHANGE["name"], "ttl": PACKET_TTL}
+JOIN_QUEUE = {"name": ""}
 
-# dlx_routingKey generated in the worker's code
-MERGE_QUEUE = {"name": "",
-               "dlx_exchange": MERGE_EXCHANGE["name"], "ttl": PACKET_TTL}
+MERGE_QUEUE = {"name": ""}
 
-# dlx_routingKey generated in the worker's code
-TOP_QUEUE = {"name": "",
-             "dlx_exchange": TOP_EXCHANGE["name"], "ttl": PACKET_TTL}
-
-# This queue is generated in the worker's code due to anonymous queue name and dynamics dlx_routingKeys
-# EOF_QUEUE = {"name": "", "dlx_exchange": "eofExchange", "ttl": PACKET_TTL}
+TOP_QUEUE = {"name": ""}
 
 BROADCAST_ID = ""
 
@@ -226,8 +217,6 @@ class Join:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}joinQueue:')
         lines.append(f'{" " * 8}name: "{JOIN_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}dlx_exchange: "{JOIN_QUEUE["dlx_exchange"]}"')
-        lines.append(f'{" " * 8}ttl: "{JOIN_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}joinQueue:')
@@ -261,8 +250,6 @@ class Merge:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}dlx_exchange: "{MERGE_QUEUE["dlx_exchange"]}"')
-        lines.append(f'{" " * 8}ttl: "{MERGE_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}mergeQueue:')
@@ -292,8 +279,6 @@ class Top:
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}name: "{TOP_QUEUE["name"]}"')
-        lines.append(f'{" " * 8}dlx_exchange: "{TOP_QUEUE["dlx_exchange"]}"')
-        lines.append(f'{" " * 8}ttl: "{TOP_QUEUE["ttl"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}topQueue:')
