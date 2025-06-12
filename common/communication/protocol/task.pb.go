@@ -53,10 +53,13 @@ type Task struct {
 	//	*Task_Result5
 	//	*Task_OmegaEOF
 	//	*Task_RingEOF
-	Stage         isTask_Stage `protobuf_oneof:"Stage"`
-	ClientId      string       `protobuf:"bytes,29,opt,name=clientId,proto3" json:"clientId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Stage              isTask_Stage `protobuf_oneof:"Stage"`
+	ClientId           string       `protobuf:"bytes,29,opt,name=clientId,proto3" json:"clientId,omitempty"`
+	TaskNumber         uint32       `protobuf:"varint,30,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
+	TaskFragmentNumber uint32       `protobuf:"varint,31,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`
+	MoreTaskFragments  bool         `protobuf:"varint,32,opt,name=moreTaskFragments,proto3" json:"moreTaskFragments,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
@@ -355,6 +358,27 @@ func (x *Task) GetClientId() string {
 	return ""
 }
 
+func (x *Task) GetTaskNumber() uint32 {
+	if x != nil {
+		return x.TaskNumber
+	}
+	return 0
+}
+
+func (x *Task) GetTaskFragmentNumber() uint32 {
+	if x != nil {
+		return x.TaskFragmentNumber
+	}
+	return 0
+}
+
+func (x *Task) GetMoreTaskFragments() bool {
+	if x != nil {
+		return x.MoreTaskFragments
+	}
+	return false
+}
+
 type isTask_Stage interface {
 	isTask_Stage()
 }
@@ -531,7 +555,7 @@ var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\x1a\x1bproto/stages/omegaEOF.proto\x1a\x13proto/ringEOF.proto\"\xde\a\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1bproto/results/result1.proto\x1a\x1bproto/results/result2.proto\x1a\x1bproto/results/result3.proto\x1a\x1bproto/results/result4.proto\x1a\x1bproto/results/result5.proto\x1a\x18proto/eof/omegaEOF.proto\x1a\x17proto/eof/ringEOF.proto\"\xdc\b\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
@@ -562,7 +586,12 @@ const file_proto_task_proto_rawDesc = "" +
 	"\aresult5\x18\x1a \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
 	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOF\x12$\n" +
 	"\aringEOF\x18\x1c \x01(\v2\b.RingEOFH\x00R\aringEOF\x12\x1a\n" +
-	"\bclientId\x18\x1d \x01(\tR\bclientIdB\a\n" +
+	"\bclientId\x18\x1d \x01(\tR\bclientId\x12\x1e\n" +
+	"\n" +
+	"taskNumber\x18\x1e \x01(\rR\n" +
+	"taskNumber\x12.\n" +
+	"\x12taskFragmentNumber\x18\x1f \x01(\rR\x12taskFragmentNumber\x12,\n" +
+	"\x11moreTaskFragments\x18  \x01(\bR\x11moreTaskFragmentsB\a\n" +
 	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
@@ -663,13 +692,13 @@ func file_proto_task_proto_init() {
 	file_proto_stages_lambda_proto_init()
 	file_proto_stages_mu_proto_init()
 	file_proto_stages_nu_proto_init()
-	file_proto_stages_result1_proto_init()
-	file_proto_stages_result2_proto_init()
-	file_proto_stages_result3_proto_init()
-	file_proto_stages_result4_proto_init()
-	file_proto_stages_result5_proto_init()
-	file_proto_stages_omegaEOF_proto_init()
-	file_proto_ringEOF_proto_init()
+	file_proto_results_result1_proto_init()
+	file_proto_results_result2_proto_init()
+	file_proto_results_result3_proto_init()
+	file_proto_results_result4_proto_init()
+	file_proto_results_result5_proto_init()
+	file_proto_eof_omegaEOF_proto_init()
+	file_proto_eof_ringEOF_proto_init()
 	file_proto_task_proto_msgTypes[0].OneofWrappers = []any{
 		(*Task_Alpha)(nil),
 		(*Task_Beta)(nil),

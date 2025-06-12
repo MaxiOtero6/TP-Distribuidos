@@ -2,11 +2,23 @@ syntax = "proto3";
 
 option go_package = "common/communication/protocol";
 
+message FragmentRange {
+    uint32 start = 1;
+    uint32 end = 2;
+}
+
+message TaskFragments {
+    uint32 taskId = 1;
+    repeated FragmentRange fragments = 2;
+    bool noMoreFragments = 3;
+}
+
 message RingEOF {
     string stage = 1;
     repeated string alive = 2;
     repeated string ready = 3;
     string creatorId = 4;
     string taskCount = 5;
-    string eofType = 6;
+    repeated TaskFragments taskFragments = 6;
+    string eofType = 7;
 }

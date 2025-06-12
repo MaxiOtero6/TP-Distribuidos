@@ -73,54 +73,70 @@ func (r *RabbitHandler) Close() {
 }
 
 // SendMoviesRabbit sends the movies to the filter and overview exchanges
-func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string, isEOF bool) {
+func (r *RabbitHandler) SendMoviesRabbit(movies []*model.Movie, clientId string, taskId uint32) {
 	FILTER_COUNT := r.infraConfig.GetFilterCount()
 	OVERVIEW_COUNT := r.infraConfig.GetOverviewCount()
 
 	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
 	OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
 
-	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId)
-	muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT, clientId)
-	gammaTasks := utils.GetGammaStageTask(movies, FILTER_COUNT, clientId)
+	alphaTasks := utils.GetAlphaStageTask(movies, FILTER_COUNT, clientId, taskId)
+	muTasks := utils.GetMuStageTask(movies, OVERVIEW_COUNT, clientId, taskId)
+	gammaTasks := utils.GetGammaStageTask(movies, FILTER_COUNT, clientId, taskId)
 
 	r.publishTasksRabbit(alphaTasks, FILTER_EXCHANGE)
 	r.publishTasksRabbit(muTasks, OVERVIEW_EXCHANGE)
 	r.publishTasksRabbit(gammaTasks, FILTER_EXCHANGE)
+}
 
-	if isEOF {
-		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE), FILTER_EXCHANGE)
-		r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE), OVERVIEW_EXCHANGE)
-		r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE), FILTER_EXCHANGE)
-	}
+// SendMoviesEOFRabbit sends the EOF message to the filter and overview exchanges
+func (r *RabbitHandler) SendMoviesEOFRabbit(clientId string, taskCount uint32) {
+	FILTER_COUNT := r.infraConfig.GetFilterCount()
+	OVERVIEW_COUNT := r.infraConfig.GetOverviewCount()
+
+	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
+	OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
+
+	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE, taskCount), FILTER_EXCHANGE)
+	r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE, taskCount), OVERVIEW_EXCHANGE)
+	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE, taskCount), FILTER_EXCHANGE)
 }
 
 // SendRatingsRabbit sends the ratings to the join exchange
 // The ratings are shuffled by the join count hashing
-func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string, isEOF bool) {
+func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId string, taskId uint32) {
 	JOINER_COUNT := r.infraConfig.GetJoinCount()
 	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
 
-	zetaTasks := utils.GetZetaStageRatingsTask(ratings, JOINER_COUNT, clientId)
+	zetaTasks := utils.GetZetaStageRatingsTask(ratings, JOINER_COUNT, clientId, taskId)
 	r.publishTasksRabbit(zetaTasks, JOINER_EXCHANGE)
+}
 
-	if isEOF {
-		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE), JOINER_EXCHANGE)
-	}
+// SendRatingsEOFRabbit sends the EOF message for ratings to the join exchange
+func (r *RabbitHandler) SendRatingsEOFRabbit(clientId string, taskCount uint32) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	eofTasks := utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE, taskCount)
+	r.publishTasksRabbit(eofTasks, JOINER_EXCHANGE)
 }
 
 // SendActorsRabbit sends the actors to the join exchange
 // The actors are shuffled by the join count hashing
-func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string, isEOF bool) {
+func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string, taskId uint32) {
 	JOINER_COUNT := r.infraConfig.GetJoinCount()
 	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
 
-	iotaTasks := utils.GetIotaStageCreditsTask(actors, JOINER_COUNT, clientId)
+	iotaTasks := utils.GetIotaStageCreditsTask(actors, JOINER_COUNT, clientId, taskId)
 	r.publishTasksRabbit(iotaTasks, JOINER_EXCHANGE)
+}
 
-	if isEOF {
-		r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE), JOINER_EXCHANGE)
-	}
+// SendActorsEOFRabbit sends the EOF message for actors to the join exchange
+func (r *RabbitHandler) SendActorsEOFRabbit(clientId string, taskCount uint32) {
+	JOINER_COUNT := r.infraConfig.GetJoinCount()
+	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+
+	r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE, taskCount), JOINER_EXCHANGE)
 }
 
 // publishTasksRabbit publishes the tasks to the specified exchange

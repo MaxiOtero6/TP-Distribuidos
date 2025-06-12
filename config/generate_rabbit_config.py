@@ -8,7 +8,7 @@ OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
 
 MAP_EXCHANGE = {"name": "mapExchange", "kind": "fanout"}
 
-REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "fanout"}
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
 
 JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
 
@@ -20,14 +20,13 @@ RESULT_EXCHANGE = {"name": "resultExchange", "kind": "direct"}
 
 EOF_EXCHANGE = {"name": "eofExchange", "kind": "direct"}
 
-
 FILTER_QUEUE = {"name": "filterQueue"}
 
 OVERVIEW_QUEUE = {"name": "overviewQueue"}
 
 MAP_QUEUE = {"name": "mapQueue"}
 
-REDUCE_QUEUE = {"name": "reduceQueue"}
+REDUCE_QUEUE = {"name": ""}
 
 JOIN_QUEUE = {"name": ""}
 
@@ -313,9 +312,7 @@ class RabbitConfig:
             lines.append(f'{" " * 2}{k}: "{v["name"]}"')
 
         lines.append(f'{" " * 2}broadcastId: "{BROADCAST_ID}"\n')
-        lines.append(
-            f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n'
-        )
+        lines.append(f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n')
 
         lines.append("rabbitmq:")
         lines.append(str(Server()))

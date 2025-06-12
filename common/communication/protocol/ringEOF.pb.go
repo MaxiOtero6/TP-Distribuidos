@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.30.2
-// source: proto/ringEOF.proto
+// source: proto/eof/ringEOF.proto
 
 package protocol
 
@@ -21,20 +21,134 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FragmentRange struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Start         uint32                 `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           uint32                 `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FragmentRange) Reset() {
+	*x = FragmentRange{}
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FragmentRange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FragmentRange) ProtoMessage() {}
+
+func (x *FragmentRange) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FragmentRange.ProtoReflect.Descriptor instead.
+func (*FragmentRange) Descriptor() ([]byte, []int) {
+	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FragmentRange) GetStart() uint32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *FragmentRange) GetEnd() uint32 {
+	if x != nil {
+		return x.End
+	}
+	return 0
+}
+
+type TaskFragments struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TaskId          uint32                 `protobuf:"varint,1,opt,name=taskId,proto3" json:"taskId,omitempty"`
+	Fragments       []*FragmentRange       `protobuf:"bytes,2,rep,name=fragments,proto3" json:"fragments,omitempty"`
+	NoMoreFragments bool                   `protobuf:"varint,3,opt,name=noMoreFragments,proto3" json:"noMoreFragments,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *TaskFragments) Reset() {
+	*x = TaskFragments{}
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaskFragments) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskFragments) ProtoMessage() {}
+
+func (x *TaskFragments) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskFragments.ProtoReflect.Descriptor instead.
+func (*TaskFragments) Descriptor() ([]byte, []int) {
+	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TaskFragments) GetTaskId() uint32 {
+	if x != nil {
+		return x.TaskId
+	}
+	return 0
+}
+
+func (x *TaskFragments) GetFragments() []*FragmentRange {
+	if x != nil {
+		return x.Fragments
+	}
+	return nil
+}
+
+func (x *TaskFragments) GetNoMoreFragments() bool {
+	if x != nil {
+		return x.NoMoreFragments
+	}
+	return false
+}
+
 type RingEOF struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stage         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
 	Alive         []string               `protobuf:"bytes,2,rep,name=alive,proto3" json:"alive,omitempty"`
 	Ready         []string               `protobuf:"bytes,3,rep,name=ready,proto3" json:"ready,omitempty"`
 	CreatorId     string                 `protobuf:"bytes,4,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
-	EofType       string                 `protobuf:"bytes,5,opt,name=eofType,proto3" json:"eofType,omitempty"`
+	TaskCount     string                 `protobuf:"bytes,5,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
+	TaskFragments []*TaskFragments       `protobuf:"bytes,6,rep,name=taskFragments,proto3" json:"taskFragments,omitempty"`
+	EofType       string                 `protobuf:"bytes,7,opt,name=eofType,proto3" json:"eofType,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RingEOF) Reset() {
 	*x = RingEOF{}
-	mi := &file_proto_ringEOF_proto_msgTypes[0]
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +160,7 @@ func (x *RingEOF) String() string {
 func (*RingEOF) ProtoMessage() {}
 
 func (x *RingEOF) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ringEOF_proto_msgTypes[0]
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +173,7 @@ func (x *RingEOF) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RingEOF.ProtoReflect.Descriptor instead.
 func (*RingEOF) Descriptor() ([]byte, []int) {
-	return file_proto_ringEOF_proto_rawDescGZIP(), []int{0}
+	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RingEOF) GetStage() string {
@@ -90,6 +204,20 @@ func (x *RingEOF) GetCreatorId() string {
 	return ""
 }
 
+func (x *RingEOF) GetTaskCount() string {
+	if x != nil {
+		return x.TaskCount
+	}
+	return ""
+}
+
+func (x *RingEOF) GetTaskFragments() []*TaskFragments {
+	if x != nil {
+		return x.TaskFragments
+	}
+	return nil
+}
+
 func (x *RingEOF) GetEofType() string {
 	if x != nil {
 		return x.EofType
@@ -97,62 +225,75 @@ func (x *RingEOF) GetEofType() string {
 	return ""
 }
 
-var File_proto_ringEOF_proto protoreflect.FileDescriptor
+var File_proto_eof_ringEOF_proto protoreflect.FileDescriptor
 
-const file_proto_ringEOF_proto_rawDesc = "" +
+const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/ringEOF.proto\"\x83\x01\n" +
+	"\x17proto/eof/ringEOF.proto\"7\n" +
+	"\rFragmentRange\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\rR\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\rR\x03end\"\x7f\n" +
+	"\rTaskFragments\x12\x16\n" +
+	"\x06taskId\x18\x01 \x01(\rR\x06taskId\x12,\n" +
+	"\tfragments\x18\x02 \x03(\v2\x0e.FragmentRangeR\tfragments\x12(\n" +
+	"\x0fnoMoreFragments\x18\x03 \x01(\bR\x0fnoMoreFragments\"\xd7\x01\n" +
 	"\aRingEOF\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x14\n" +
 	"\x05alive\x18\x02 \x03(\tR\x05alive\x12\x14\n" +
 	"\x05ready\x18\x03 \x03(\tR\x05ready\x12\x1c\n" +
-	"\tcreatorId\x18\x04 \x01(\tR\tcreatorId\x12\x18\n" +
-	"\aeofType\x18\x05 \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\tcreatorId\x18\x04 \x01(\tR\tcreatorId\x12\x1c\n" +
+	"\ttaskCount\x18\x05 \x01(\tR\ttaskCount\x124\n" +
+	"\rtaskFragments\x18\x06 \x03(\v2\x0e.TaskFragmentsR\rtaskFragments\x12\x18\n" +
+	"\aeofType\x18\a \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
-	file_proto_ringEOF_proto_rawDescOnce sync.Once
-	file_proto_ringEOF_proto_rawDescData []byte
+	file_proto_eof_ringEOF_proto_rawDescOnce sync.Once
+	file_proto_eof_ringEOF_proto_rawDescData []byte
 )
 
-func file_proto_ringEOF_proto_rawDescGZIP() []byte {
-	file_proto_ringEOF_proto_rawDescOnce.Do(func() {
-		file_proto_ringEOF_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_ringEOF_proto_rawDesc), len(file_proto_ringEOF_proto_rawDesc)))
+func file_proto_eof_ringEOF_proto_rawDescGZIP() []byte {
+	file_proto_eof_ringEOF_proto_rawDescOnce.Do(func() {
+		file_proto_eof_ringEOF_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_eof_ringEOF_proto_rawDesc), len(file_proto_eof_ringEOF_proto_rawDesc)))
 	})
-	return file_proto_ringEOF_proto_rawDescData
+	return file_proto_eof_ringEOF_proto_rawDescData
 }
 
-var file_proto_ringEOF_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_proto_ringEOF_proto_goTypes = []any{
-	(*RingEOF)(nil), // 0: RingEOF
+var file_proto_eof_ringEOF_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_eof_ringEOF_proto_goTypes = []any{
+	(*FragmentRange)(nil), // 0: FragmentRange
+	(*TaskFragments)(nil), // 1: TaskFragments
+	(*RingEOF)(nil),       // 2: RingEOF
 }
-var file_proto_ringEOF_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+var file_proto_eof_ringEOF_proto_depIdxs = []int32{
+	0, // 0: TaskFragments.fragments:type_name -> FragmentRange
+	1, // 1: RingEOF.taskFragments:type_name -> TaskFragments
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_proto_ringEOF_proto_init() }
-func file_proto_ringEOF_proto_init() {
-	if File_proto_ringEOF_proto != nil {
+func init() { file_proto_eof_ringEOF_proto_init() }
+func file_proto_eof_ringEOF_proto_init() {
+	if File_proto_eof_ringEOF_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_ringEOF_proto_rawDesc), len(file_proto_ringEOF_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_eof_ringEOF_proto_rawDesc), len(file_proto_eof_ringEOF_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_ringEOF_proto_goTypes,
-		DependencyIndexes: file_proto_ringEOF_proto_depIdxs,
-		MessageInfos:      file_proto_ringEOF_proto_msgTypes,
+		GoTypes:           file_proto_eof_ringEOF_proto_goTypes,
+		DependencyIndexes: file_proto_eof_ringEOF_proto_depIdxs,
+		MessageInfos:      file_proto_eof_ringEOF_proto_msgTypes,
 	}.Build()
-	File_proto_ringEOF_proto = out.File
-	file_proto_ringEOF_proto_goTypes = nil
-	file_proto_ringEOF_proto_depIdxs = nil
+	File_proto_eof_ringEOF_proto = out.File
+	file_proto_eof_ringEOF_proto_goTypes = nil
+	file_proto_eof_ringEOF_proto_depIdxs = nil
 }

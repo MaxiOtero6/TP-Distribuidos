@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.30.2
-// source: proto/stages/omegaEOF.proto
+// source: proto/eof/omegaEOF.proto
 
 package protocol
 
@@ -30,7 +30,7 @@ type OmegaEOF struct {
 
 func (x *OmegaEOF) Reset() {
 	*x = OmegaEOF{}
-	mi := &file_proto_stages_omegaEOF_proto_msgTypes[0]
+	mi := &file_proto_eof_omegaEOF_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *OmegaEOF) String() string {
 func (*OmegaEOF) ProtoMessage() {}
 
 func (x *OmegaEOF) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_omegaEOF_proto_msgTypes[0]
+	mi := &file_proto_eof_omegaEOF_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *OmegaEOF) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OmegaEOF.ProtoReflect.Descriptor instead.
 func (*OmegaEOF) Descriptor() ([]byte, []int) {
-	return file_proto_stages_omegaEOF_proto_rawDescGZIP(), []int{0}
+	return file_proto_eof_omegaEOF_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *OmegaEOF) GetData() *OmegaEOF_Data {
@@ -68,6 +68,7 @@ func (x *OmegaEOF) GetData() *OmegaEOF_Data {
 type OmegaEOF_Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stage         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	TasksCount    uint32                 `protobuf:"varint,2,opt,name=tasksCount,proto3" json:"tasksCount,omitempty"`
 	EofType       string                 `protobuf:"bytes,3,opt,name=eofType,proto3" json:"eofType,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -75,7 +76,7 @@ type OmegaEOF_Data struct {
 
 func (x *OmegaEOF_Data) Reset() {
 	*x = OmegaEOF_Data{}
-	mi := &file_proto_stages_omegaEOF_proto_msgTypes[1]
+	mi := &file_proto_eof_omegaEOF_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +88,7 @@ func (x *OmegaEOF_Data) String() string {
 func (*OmegaEOF_Data) ProtoMessage() {}
 
 func (x *OmegaEOF_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_stages_omegaEOF_proto_msgTypes[1]
+	mi := &file_proto_eof_omegaEOF_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +101,7 @@ func (x *OmegaEOF_Data) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OmegaEOF_Data.ProtoReflect.Descriptor instead.
 func (*OmegaEOF_Data) Descriptor() ([]byte, []int) {
-	return file_proto_stages_omegaEOF_proto_rawDescGZIP(), []int{0, 0}
+	return file_proto_eof_omegaEOF_proto_rawDescGZIP(), []int{0, 0}
 }
 
 func (x *OmegaEOF_Data) GetStage() string {
@@ -110,6 +111,13 @@ func (x *OmegaEOF_Data) GetStage() string {
 	return ""
 }
 
+func (x *OmegaEOF_Data) GetTasksCount() uint32 {
+	if x != nil {
+		return x.TasksCount
+	}
+	return 0
+}
+
 func (x *OmegaEOF_Data) GetEofType() string {
 	if x != nil {
 		return x.EofType
@@ -117,35 +125,38 @@ func (x *OmegaEOF_Data) GetEofType() string {
 	return ""
 }
 
-var File_proto_stages_omegaEOF_proto protoreflect.FileDescriptor
+var File_proto_eof_omegaEOF_proto protoreflect.FileDescriptor
 
-const file_proto_stages_omegaEOF_proto_rawDesc = "" +
+const file_proto_eof_omegaEOF_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/stages/omegaEOF.proto\"f\n" +
+	"\x18proto/eof/omegaEOF.proto\"\x86\x01\n" +
 	"\bOmegaEOF\x12\"\n" +
-	"\x04data\x18\x01 \x01(\v2\x0e.OmegaEOF.DataR\x04data\x1a6\n" +
+	"\x04data\x18\x01 \x01(\v2\x0e.OmegaEOF.DataR\x04data\x1aV\n" +
 	"\x04Data\x12\x14\n" +
-	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x18\n" +
+	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x1e\n" +
+	"\n" +
+	"tasksCount\x18\x02 \x01(\rR\n" +
+	"tasksCount\x12\x18\n" +
 	"\aeofType\x18\x03 \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
-	file_proto_stages_omegaEOF_proto_rawDescOnce sync.Once
-	file_proto_stages_omegaEOF_proto_rawDescData []byte
+	file_proto_eof_omegaEOF_proto_rawDescOnce sync.Once
+	file_proto_eof_omegaEOF_proto_rawDescData []byte
 )
 
-func file_proto_stages_omegaEOF_proto_rawDescGZIP() []byte {
-	file_proto_stages_omegaEOF_proto_rawDescOnce.Do(func() {
-		file_proto_stages_omegaEOF_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_stages_omegaEOF_proto_rawDesc), len(file_proto_stages_omegaEOF_proto_rawDesc)))
+func file_proto_eof_omegaEOF_proto_rawDescGZIP() []byte {
+	file_proto_eof_omegaEOF_proto_rawDescOnce.Do(func() {
+		file_proto_eof_omegaEOF_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_eof_omegaEOF_proto_rawDesc), len(file_proto_eof_omegaEOF_proto_rawDesc)))
 	})
-	return file_proto_stages_omegaEOF_proto_rawDescData
+	return file_proto_eof_omegaEOF_proto_rawDescData
 }
 
-var file_proto_stages_omegaEOF_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_stages_omegaEOF_proto_goTypes = []any{
+var file_proto_eof_omegaEOF_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_eof_omegaEOF_proto_goTypes = []any{
 	(*OmegaEOF)(nil),      // 0: OmegaEOF
 	(*OmegaEOF_Data)(nil), // 1: OmegaEOF.Data
 }
-var file_proto_stages_omegaEOF_proto_depIdxs = []int32{
+var file_proto_eof_omegaEOF_proto_depIdxs = []int32{
 	1, // 0: OmegaEOF.data:type_name -> OmegaEOF.Data
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -154,26 +165,26 @@ var file_proto_stages_omegaEOF_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_stages_omegaEOF_proto_init() }
-func file_proto_stages_omegaEOF_proto_init() {
-	if File_proto_stages_omegaEOF_proto != nil {
+func init() { file_proto_eof_omegaEOF_proto_init() }
+func file_proto_eof_omegaEOF_proto_init() {
+	if File_proto_eof_omegaEOF_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_stages_omegaEOF_proto_rawDesc), len(file_proto_stages_omegaEOF_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_eof_omegaEOF_proto_rawDesc), len(file_proto_eof_omegaEOF_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_stages_omegaEOF_proto_goTypes,
-		DependencyIndexes: file_proto_stages_omegaEOF_proto_depIdxs,
-		MessageInfos:      file_proto_stages_omegaEOF_proto_msgTypes,
+		GoTypes:           file_proto_eof_omegaEOF_proto_goTypes,
+		DependencyIndexes: file_proto_eof_omegaEOF_proto_depIdxs,
+		MessageInfos:      file_proto_eof_omegaEOF_proto_msgTypes,
 	}.Build()
-	File_proto_stages_omegaEOF_proto = out.File
-	file_proto_stages_omegaEOF_proto_goTypes = nil
-	file_proto_stages_omegaEOF_proto_depIdxs = nil
+	File_proto_eof_omegaEOF_proto = out.File
+	file_proto_eof_omegaEOF_proto_goTypes = nil
+	file_proto_eof_omegaEOF_proto_depIdxs = nil
 }

@@ -2,12 +2,12 @@ syntax = "proto3";
 
 option go_package = "common/communication/protocol";
 
-import "proto/stages/result1.proto";
-import "proto/stages/result2.proto";
-import "proto/stages/result3.proto";
-import "proto/stages/result4.proto";
-import "proto/stages/result5.proto";
-import "proto/stages/omegaEOF.proto";
+import "proto/results/result1.proto";
+import "proto/results/result2.proto";
+import "proto/results/result3.proto";
+import "proto/results/result4.proto";
+import "proto/results/result5.proto";
+import "proto/eof/omegaEOF.proto";
 
 enum MessageStatus {
     SUCCESS = 0;
@@ -18,6 +18,10 @@ enum MessageStatus {
 message BatchAck {
     string batch_id = 1;
     MessageStatus status = 2;
+}
+
+message FileEOFAck {
+    MessageStatus status = 1;
 }
 
 message SyncAck {
@@ -49,9 +53,10 @@ message ResultsResponse {
 message ServerClientMessage{
     oneof message {
         BatchAck batch_ack = 1;
-        SyncAck sync_ack = 2;
-        ResultsResponse results = 3;
-        FinishAck finish_ack = 4;
-        DisconnectAck disconnect_ack = 5;
+        FileEOFAck file_eof_ack = 2;
+        SyncAck sync_ack = 3;
+        ResultsResponse results = 4;
+        FinishAck finish_ack = 5;
+        DisconnectAck disconnect_ack = 6;
     }
 }

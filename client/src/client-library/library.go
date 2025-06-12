@@ -119,6 +119,36 @@ func (l *Library) sendAllFiles() error {
 	return nil
 }
 
+func (l *Library) sendFileEOF(fileType protocol.FileType, batchCount int, filename string) error {
+	fileEof := &protocol.Message{
+		Message: &protocol.Message_ClientServerMessage{
+			ClientServerMessage: &protocol.ClientServerMessage{
+				Message: &protocol.ClientServerMessage_FileEof{
+					FileEof: &protocol.FileEOF{
+						ClientId:   l.config.ClientId,
+						Type:       fileType,
+						BatchCount: uint32(batchCount),
+					},
+				},
+			},
+		},
+	}
+
+	if err := l.socket.Write(fileEof); err != nil {
+		return err
+	}
+
+	log.Debugf("action: sendFile | result: file_eof_sent | clientId: %v | file: %s", l.config.ClientId, filename)
+
+	if err := l.waitACK(); err != nil {
+		log.Errorf("action: waitFileEofACK | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)
+		return err
+	}
+
+	log.Infof("action: sendFile | result: file_eof_ack_received | clientId: %v | file: %s", l.config.ClientId, filename)
+	return nil
+}
+
 // Read line by line the file with the name pass by parameter and
 // Send each line to the server and wait for confirmation
 // until an OEF or the client is shutdown
@@ -132,13 +162,21 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 	defer parser.Close()
 
+	batchCount := 0
+
 	for l.isRunning {
+		batch, fileErr := parser.ReadBatch(l.config.ClientId, batchCount)
 
-		batch, fileErr := parser.ReadBatch(l.config.ClientId)
+		if fileErr == io.EOF {
+			log.Infof("action: sendFile | result: end | file: %s", filename)
+			return l.sendFileEOF(fileType, batchCount, filename)
+		}
 
-		if fileErr != io.EOF && fileErr != nil {
+		if fileErr != nil {
 			return err
 		}
+
+		batchCount++
 
 		if err := l.socket.Write(batch); err != nil {
 			return err
@@ -146,19 +184,13 @@ func (l *Library) sendFile(filename string, fileType protocol.FileType) error {
 
 		log.Debugf("action: batch_send | result: success | clientId: %v |  file: %s", l.config.ClientId, filename)
 
-		err = l.waitACK()
-		if err != nil {
+		if err := l.waitACK(); err != nil {
 			log.Criticalf("action: batch_send | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)
 			return err
-		}
-
-		if fileErr == io.EOF {
-			break
 		}
 	}
 
 	return nil
-
 }
 
 func (l *Library) sendMoviesFile() error {
@@ -296,10 +328,11 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 
 		if !ok {
 			l.sendDisconnectMessage()
-			if err := l.waitACK() != nil; err {
+			if err := l.waitACK(); err != nil {
 				log.Errorf("action: waitDisconnectACK | result: fail | error: %v", err)
 			}
 			l.disconnectFromServer()
+
 			// Exponential backoff + jitter
 			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
 			l.retryNumber++
@@ -397,7 +430,13 @@ func (l *Library) waitACK() error {
 			log.Errorf("action: receiveBatchAckResponse | result: fail | error: %v", resp.BatchAck.Status)
 			return fmt.Errorf("server response was not succes")
 		}
-
+	case *protocol.ServerClientMessage_FileEofAck:
+		if resp.FileEofAck.Status == protocol.MessageStatus_SUCCESS {
+			log.Debugf("action: receiveFileEofAckResponse | result: success | response: %v", resp.FileEofAck.Status)
+		} else {
+			log.Errorf("action: receiveFileEofAckResponse | result: fail | error: %v", resp.FileEofAck.Status)
+			return fmt.Errorf("server response was not success")
+		}
 	case *protocol.ServerClientMessage_SyncAck:
 		l.config.ClientId = resp.SyncAck.ClientId
 		log.Debugf("action: receiveSyncAckResponse | result: success | clientId: %v", l.config.ClientId)
@@ -440,7 +479,8 @@ func (l *Library) sendResultMessage() error {
 
 func (l *Library) Stop() {
 	l.sendFinishMessage()
-	if err := l.waitACK() != nil; err {
+	err := l.waitACK()
+	if err != nil {
 		log.Errorf("action: waitFinishACK | result: fail | error: %v", err)
 	}
 

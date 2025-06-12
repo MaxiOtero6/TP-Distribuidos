@@ -14,7 +14,7 @@ func TestGetAlphaStageTask(t *testing.T) {
 		{Id: "1", Title: "Movie 2", ProdCountries: []string{"UK"}, Genres: []string{"Drama"}, ReleaseYear: 2019},
 	}
 
-	tasks := GetAlphaStageTask(movies, 2, CLIENT_ID)
+	tasks := GetAlphaStageTask(movies, 2, CLIENT_ID, 0)
 
 	assert.Len(t, tasks, 1)
 	for _, task := range tasks {
@@ -30,7 +30,7 @@ func TestGetZetaStageRatingsTask(t *testing.T) {
 		{MovieId: "2", Rating: 5.0},
 	}
 
-	tasks := GetZetaStageRatingsTask(ratings, 2, CLIENT_ID)
+	tasks := GetZetaStageRatingsTask(ratings, 2, CLIENT_ID, 0)
 
 	assert.Len(t, tasks, 2) // Since joinersCount is 2, tasks are distributed into 2 groups
 	for _, task := range tasks {
@@ -46,7 +46,7 @@ func TestGetIotaStageCreditsTask(t *testing.T) {
 		{Id: "2", Name: "Actor 3", MovieId: "0"},
 	}
 
-	tasks := GetIotaStageCreditsTask(actors, 2, CLIENT_ID)
+	tasks := GetIotaStageCreditsTask(actors, 2, CLIENT_ID, 0)
 
 	assert.Len(t, tasks, 2) // Since joinersCount is 2, tasks are distributed into 2 groups
 	for _, task := range tasks {
@@ -61,7 +61,7 @@ func TestGetMuStageTask(t *testing.T) {
 		{Id: "1", Title: "Movie 2", Revenue: 2000000, Budget: 1000000, Overview: "Overview 2"},
 	}
 
-	tasks := GetMuStageTask(movies, 2, CLIENT_ID)
+	tasks := GetMuStageTask(movies, 2, CLIENT_ID, 0)
 
 	assert.Len(t, tasks, 1)
 	for _, task := range tasks {

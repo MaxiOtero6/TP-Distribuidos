@@ -56,4 +56,7 @@ message Task {
     }
     
     string clientId = 29;
+    uint32 taskNumber = 30;
+    uint32 taskFragmentNumber = 31;
+    bool moreTaskFragments = 32;
 }

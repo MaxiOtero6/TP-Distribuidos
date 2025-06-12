@@ -19,7 +19,7 @@ const GENERAL string = "general"
 
 const EOF_BROADCAST_RK string = "eof"
 
-func GetEOFTask(workersCount int, clientId string, stage string) map[string]*protocol.Task {
+func GetEOFTask(workersCount int, clientId string, stage string, taskCount uint32) map[string]*protocol.Task {
 	tasks := make(map[string]*protocol.Task)
 
 	var EofType string
@@ -41,8 +41,9 @@ func GetEOFTask(workersCount int, clientId string, stage string) map[string]*pro
 		Stage: &protocol.Task_OmegaEOF{
 			OmegaEOF: &protocol.OmegaEOF{
 				Data: &protocol.OmegaEOF_Data{
-					Stage:   stage,
-					EofType: EofType,
+					Stage:      stage,
+					TasksCount: taskCount,
+					EofType:    EofType,
 				},
 			},
 		},
@@ -51,7 +52,7 @@ func GetEOFTask(workersCount int, clientId string, stage string) map[string]*pro
 	return tasks
 }
 
-func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
+func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string, taskNumber uint32) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var alphaData = make(map[string][]*protocol.Alpha_Data)
 
@@ -73,13 +74,14 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string)
 					Data: data,
 				},
 			},
+			TaskNumber: taskNumber,
 		}
 	}
 
 	return tasks
 }
 
-func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string) (tasks map[string]*protocol.Task) {
+func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string, taskNumber uint32) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var gammaData = make(map[string][]*protocol.Gamma_Data)
 
@@ -99,13 +101,14 @@ func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string)
 					Data: data,
 				},
 			},
+			TaskNumber: taskNumber,
 		}
 	}
 
 	return tasks
 }
 
-func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
+func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId string, taskNumber uint32) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	zetaData := make(map[string][]*protocol.Zeta_Data)
 
@@ -130,13 +133,14 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId
 					Data: data,
 				},
 			},
+			TaskNumber: taskNumber,
 		}
 	}
 
 	return tasks
 }
 
-func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId string) (tasks map[string]*protocol.Task) {
+func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId string, taskNumber uint32) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	iotaData := make(map[string][]*protocol.Iota_Data)
 
@@ -162,13 +166,14 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId s
 					Data: data,
 				},
 			},
+			TaskNumber: taskNumber,
 		}
 	}
 
 	return tasks
 }
 
-func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string) (tasks map[string]*protocol.Task) {
+func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string, taskNumber uint32) (tasks map[string]*protocol.Task) {
 	tasks = make(map[string]*protocol.Task)
 	var muData = make(map[string][]*protocol.Mu_Data)
 
@@ -190,6 +195,7 @@ func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string) (
 					Data: data,
 				},
 			},
+			TaskNumber: taskNumber,
 		}
 	}
 
