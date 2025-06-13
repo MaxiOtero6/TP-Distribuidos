@@ -23,6 +23,12 @@ import "proto/results/result5.proto";
 import "proto/eof/omegaEOF.proto";
 import "proto/eof/ringEOF.proto";
 
+message TaskIdentifier {
+    uint32 taskNumber = 1;
+    uint32 taskFragmentNumber = 2;
+    bool lastFragment = 3;
+}
+
 message Task {
     oneof Stage {
         Alpha alpha = 1;
@@ -56,7 +62,5 @@ message Task {
     }
     
     string clientId = 29;
-    uint32 taskNumber = 30;
-    uint32 taskFragmentNumber = 31;
-    bool moreTaskFragments = 32;
+    TaskIdentifier taskIdentifier = 30;
 }

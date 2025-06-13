@@ -21,81 +21,81 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type FragmentRange struct {
+type FragmentIdentifier struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	TaskNumber         uint32                 `protobuf:"varint,1,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
+	TaskFragmentNumber uint32                 `protobuf:"varint,2,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FragmentIdentifier) Reset() {
+	*x = FragmentIdentifier{}
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FragmentIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FragmentIdentifier) ProtoMessage() {}
+
+func (x *FragmentIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FragmentIdentifier.ProtoReflect.Descriptor instead.
+func (*FragmentIdentifier) Descriptor() ([]byte, []int) {
+	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FragmentIdentifier) GetTaskNumber() uint32 {
+	if x != nil {
+		return x.TaskNumber
+	}
+	return 0
+}
+
+func (x *FragmentIdentifier) GetTaskFragmentNumber() uint32 {
+	if x != nil {
+		return x.TaskFragmentNumber
+	}
+	return 0
+}
+
+type StageFragment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Start         uint32                 `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
-	End           uint32                 `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`
+	Start         *FragmentIdentifier    `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           *FragmentIdentifier    `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
+	LastFragment  bool                   `protobuf:"varint,3,opt,name=lastFragment,proto3" json:"lastFragment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FragmentRange) Reset() {
-	*x = FragmentRange{}
-	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FragmentRange) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FragmentRange) ProtoMessage() {}
-
-func (x *FragmentRange) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_eof_ringEOF_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FragmentRange.ProtoReflect.Descriptor instead.
-func (*FragmentRange) Descriptor() ([]byte, []int) {
-	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *FragmentRange) GetStart() uint32 {
-	if x != nil {
-		return x.Start
-	}
-	return 0
-}
-
-func (x *FragmentRange) GetEnd() uint32 {
-	if x != nil {
-		return x.End
-	}
-	return 0
-}
-
-type TaskFragments struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	TaskId          uint32                 `protobuf:"varint,1,opt,name=taskId,proto3" json:"taskId,omitempty"`
-	Fragments       []*FragmentRange       `protobuf:"bytes,2,rep,name=fragments,proto3" json:"fragments,omitempty"`
-	NoMoreFragments bool                   `protobuf:"varint,3,opt,name=noMoreFragments,proto3" json:"noMoreFragments,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *TaskFragments) Reset() {
-	*x = TaskFragments{}
+func (x *StageFragment) Reset() {
+	*x = StageFragment{}
 	mi := &file_proto_eof_ringEOF_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TaskFragments) String() string {
+func (x *StageFragment) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TaskFragments) ProtoMessage() {}
+func (*StageFragment) ProtoMessage() {}
 
-func (x *TaskFragments) ProtoReflect() protoreflect.Message {
+func (x *StageFragment) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_eof_ringEOF_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -107,43 +107,41 @@ func (x *TaskFragments) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TaskFragments.ProtoReflect.Descriptor instead.
-func (*TaskFragments) Descriptor() ([]byte, []int) {
+// Deprecated: Use StageFragment.ProtoReflect.Descriptor instead.
+func (*StageFragment) Descriptor() ([]byte, []int) {
 	return file_proto_eof_ringEOF_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *TaskFragments) GetTaskId() uint32 {
+func (x *StageFragment) GetStart() *FragmentIdentifier {
 	if x != nil {
-		return x.TaskId
-	}
-	return 0
-}
-
-func (x *TaskFragments) GetFragments() []*FragmentRange {
-	if x != nil {
-		return x.Fragments
+		return x.Start
 	}
 	return nil
 }
 
-func (x *TaskFragments) GetNoMoreFragments() bool {
+func (x *StageFragment) GetEnd() *FragmentIdentifier {
 	if x != nil {
-		return x.NoMoreFragments
+		return x.End
+	}
+	return nil
+}
+
+func (x *StageFragment) GetLastFragment() bool {
+	if x != nil {
+		return x.LastFragment
 	}
 	return false
 }
 
 type RingEOF struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Stage         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
-	Alive         []string               `protobuf:"bytes,2,rep,name=alive,proto3" json:"alive,omitempty"`
-	Ready         []string               `protobuf:"bytes,3,rep,name=ready,proto3" json:"ready,omitempty"`
-	CreatorId     string                 `protobuf:"bytes,4,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
-	TaskCount     uint32                 `protobuf:"varint,5,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
-	TaskFragments []*TaskFragments       `protobuf:"bytes,6,rep,name=taskFragments,proto3" json:"taskFragments,omitempty"`
-	EofType       string                 `protobuf:"bytes,7,opt,name=eofType,proto3" json:"eofType,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Stage           string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	CreatorId       string                 `protobuf:"bytes,2,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
+	TaskCount       uint32                 `protobuf:"varint,3,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
+	StageFragmentes []*StageFragment       `protobuf:"bytes,4,rep,name=stageFragmentes,proto3" json:"stageFragmentes,omitempty"`
+	EofType         string                 `protobuf:"bytes,5,opt,name=eofType,proto3" json:"eofType,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RingEOF) Reset() {
@@ -183,20 +181,6 @@ func (x *RingEOF) GetStage() string {
 	return ""
 }
 
-func (x *RingEOF) GetAlive() []string {
-	if x != nil {
-		return x.Alive
-	}
-	return nil
-}
-
-func (x *RingEOF) GetReady() []string {
-	if x != nil {
-		return x.Ready
-	}
-	return nil
-}
-
 func (x *RingEOF) GetCreatorId() string {
 	if x != nil {
 		return x.CreatorId
@@ -211,9 +195,9 @@ func (x *RingEOF) GetTaskCount() uint32 {
 	return 0
 }
 
-func (x *RingEOF) GetTaskFragments() []*TaskFragments {
+func (x *RingEOF) GetStageFragmentes() []*StageFragment {
 	if x != nil {
-		return x.TaskFragments
+		return x.StageFragmentes
 	}
 	return nil
 }
@@ -229,22 +213,22 @@ var File_proto_eof_ringEOF_proto protoreflect.FileDescriptor
 
 const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/eof/ringEOF.proto\"7\n" +
-	"\rFragmentRange\x12\x14\n" +
-	"\x05start\x18\x01 \x01(\rR\x05start\x12\x10\n" +
-	"\x03end\x18\x02 \x01(\rR\x03end\"\x7f\n" +
-	"\rTaskFragments\x12\x16\n" +
-	"\x06taskId\x18\x01 \x01(\rR\x06taskId\x12,\n" +
-	"\tfragments\x18\x02 \x03(\v2\x0e.FragmentRangeR\tfragments\x12(\n" +
-	"\x0fnoMoreFragments\x18\x03 \x01(\bR\x0fnoMoreFragments\"\xd7\x01\n" +
+	"\x17proto/eof/ringEOF.proto\"d\n" +
+	"\x12FragmentIdentifier\x12\x1e\n" +
+	"\n" +
+	"taskNumber\x18\x01 \x01(\rR\n" +
+	"taskNumber\x12.\n" +
+	"\x12taskFragmentNumber\x18\x02 \x01(\rR\x12taskFragmentNumber\"\x85\x01\n" +
+	"\rStageFragment\x12)\n" +
+	"\x05start\x18\x01 \x01(\v2\x13.FragmentIdentifierR\x05start\x12%\n" +
+	"\x03end\x18\x02 \x01(\v2\x13.FragmentIdentifierR\x03end\x12\"\n" +
+	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\xaf\x01\n" +
 	"\aRingEOF\x12\x14\n" +
-	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x14\n" +
-	"\x05alive\x18\x02 \x03(\tR\x05alive\x12\x14\n" +
-	"\x05ready\x18\x03 \x03(\tR\x05ready\x12\x1c\n" +
-	"\tcreatorId\x18\x04 \x01(\tR\tcreatorId\x12\x1c\n" +
-	"\ttaskCount\x18\x05 \x01(\rR\ttaskCount\x124\n" +
-	"\rtaskFragments\x18\x06 \x03(\v2\x0e.TaskFragmentsR\rtaskFragments\x12\x18\n" +
-	"\aeofType\x18\a \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x1c\n" +
+	"\tcreatorId\x18\x02 \x01(\tR\tcreatorId\x12\x1c\n" +
+	"\ttaskCount\x18\x03 \x01(\rR\ttaskCount\x128\n" +
+	"\x0fstageFragmentes\x18\x04 \x03(\v2\x0e.StageFragmentR\x0fstageFragmentes\x12\x18\n" +
+	"\aeofType\x18\x05 \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_eof_ringEOF_proto_rawDescOnce sync.Once
@@ -260,18 +244,19 @@ func file_proto_eof_ringEOF_proto_rawDescGZIP() []byte {
 
 var file_proto_eof_ringEOF_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_eof_ringEOF_proto_goTypes = []any{
-	(*FragmentRange)(nil), // 0: FragmentRange
-	(*TaskFragments)(nil), // 1: TaskFragments
-	(*RingEOF)(nil),       // 2: RingEOF
+	(*FragmentIdentifier)(nil), // 0: FragmentIdentifier
+	(*StageFragment)(nil),      // 1: StageFragment
+	(*RingEOF)(nil),            // 2: RingEOF
 }
 var file_proto_eof_ringEOF_proto_depIdxs = []int32{
-	0, // 0: TaskFragments.fragments:type_name -> FragmentRange
-	1, // 1: RingEOF.taskFragments:type_name -> TaskFragments
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // 0: StageFragment.start:type_name -> FragmentIdentifier
+	0, // 1: StageFragment.end:type_name -> FragmentIdentifier
+	1, // 2: RingEOF.stageFragmentes:type_name -> StageFragment
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_eof_ringEOF_proto_init() }

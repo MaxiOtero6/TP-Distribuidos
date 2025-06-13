@@ -1,6 +1,8 @@
 package eof
 
 import (
+	"sort"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 )
@@ -33,12 +35,10 @@ func (h *StatefulEofHandler) nextWorkerRing(previousRingEof *protocol.RingEOF, c
 			ClientId: clientId,
 			Stage: &protocol.Task_RingEOF{
 				RingEOF: &protocol.RingEOF{
-					Stage:         previousRingEof.GetStage(),
-					EofType:       previousRingEof.GetEofType(),
-					Alive:         previousRingEof.GetAlive(),
-					Ready:         previousRingEof.GetReady(),
-					TaskCount:     previousRingEof.GetTaskCount(),
-					TaskFragments: previousRingEof.GetTaskFragments(),
+					Stage:           previousRingEof.GetStage(),
+					EofType:         previousRingEof.GetEofType(),
+					TaskCount:       previousRingEof.GetTaskCount(),
+					StageFragmentes: previousRingEof.GetStageFragmentes(),
 				},
 			},
 		}
@@ -57,13 +57,11 @@ func (h *StatefulEofHandler) nextWorkerRing(previousRingEof *protocol.RingEOF, c
 
 func (h *StatefulEofHandler) initRingEof(eofData *protocol.OmegaEOF_Data) *protocol.RingEOF {
 	return &protocol.RingEOF{
-		Stage:         eofData.GetStage(),
-		EofType:       eofData.GetEofType(),
-		CreatorId:     h.workerId,
-		Alive:         []string{},
-		Ready:         []string{},
-		TaskCount:     eofData.GetTasksCount(),
-		TaskFragments: []*protocol.TaskFragments{},
+		Stage:           eofData.GetStage(),
+		EofType:         eofData.GetEofType(),
+		CreatorId:       h.workerId,
+		TaskCount:       eofData.GetTasksCount(),
+		StageFragmentes: []*protocol.StageFragment{},
 	}
 }
 
@@ -104,4 +102,75 @@ func (h *StatefulEofHandler) HandleRingEOF(eofData *protocol.RingEOF, clientId s
 	}
 
 	return tasks
+}
+
+func mergeStageFragments(stageFragments []*protocol.StageFragment, taskFragments []*protocol.TaskIdentifier) []*protocol.StageFragment {
+	for _, taskFragment := range taskFragments {
+		stageFragments = append(stageFragments, &protocol.StageFragment{
+			Start: &protocol.FragmentIdentifier{
+				TaskNumber:         taskFragment.TaskNumber,
+				TaskFragmentNumber: taskFragment.TaskFragmentNumber,
+			},
+			LastFragment: taskFragment.LastFragment,
+		})
+	}
+
+	// Sort stage fragments by TaskNumber and TaskFragmentNumber
+	sort.Slice(stageFragments, func(i, j int) bool {
+		if stageFragments[i].Start.GetTaskNumber() != stageFragments[j].Start.GetTaskNumber() {
+			return stageFragments[i].Start.GetTaskNumber() < stageFragments[j].Start.GetTaskNumber()
+		}
+		return stageFragments[i].Start.GetTaskFragmentNumber() < stageFragments[j].Start.GetTaskFragmentNumber()
+	})
+
+	// Merge consecutive fragments iteratively
+	mergedFragments := []*protocol.StageFragment{}
+	i := 0
+	for i < len(stageFragments) {
+		// Add a new fragment to the merged list
+		current := stageFragments[i]
+		i++
+		for i < len(stageFragments) {
+			// Check if the next fragment can be merged with the current one
+			next := stageFragments[i]
+
+			if current.End.GetTaskNumber() == next.Start.GetTaskNumber() {
+				// If the next fragment starts with the same TaskNumber
+				if current.End.GetTaskFragmentNumber()+1 != next.Start.GetTaskFragmentNumber() {
+					// If the next fragment does not continue the current one
+					break
+				}
+			} else if current.LastFragment || current.End.GetTaskNumber()+1 != next.Start.GetTaskNumber() {
+				// If the current fragment is not the last fragment or the next task number is not consecutive
+				break
+			}
+
+			current.End = next.End
+			current.LastFragment = next.LastFragment
+			i++
+		}
+		mergedFragments = append(mergedFragments, current)
+	}
+
+	return mergedFragments
+}
+
+func isStageReady(stageFragments []*protocol.StageFragment, taskCount uint32) bool {
+	if len(stageFragments) == 0 {
+		return taskCount == 0
+	}
+
+	if len(stageFragments) != 1 {
+		return false
+	}
+
+	if stageFragments[0].Start.GetTaskNumber() != 0 || stageFragments[0].Start.GetTaskFragmentNumber() != 0 {
+		return false
+	}
+
+	if stageFragments[0].End.GetTaskNumber() != taskCount-1 || !stageFragments[0].LastFragment {
+		return false
+	}
+
+	return true
 }
