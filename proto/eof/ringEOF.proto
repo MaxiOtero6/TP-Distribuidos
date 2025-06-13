@@ -18,7 +18,7 @@ message RingEOF {
     repeated string alive = 2;
     repeated string ready = 3;
     string creatorId = 4;
-    string taskCount = 5;
+    uint32 taskCount = 5;
     repeated TaskFragments taskFragments = 6;
     string eofType = 7;
 }

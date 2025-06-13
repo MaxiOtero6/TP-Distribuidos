@@ -19,7 +19,7 @@ type Overviewer struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	// eofHandler     eof_handler.IEOFHandler
+	eofHandler     *eof.StatelessEofHandler
 }
 
 // NewOverviewer creates a new Overviewer instance.
@@ -31,12 +31,20 @@ func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
-	return &Overviewer{
+	o := &Overviewer{
 		model:          model,
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     nil,
 	}
+
+	eofHandler := eof.NewStatelessEofHandler(
+		o.getNextStageData,
+	)
+
+	o.eofHandler = eofHandler
+	return o
 }
 
 /*
@@ -129,7 +137,7 @@ func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return eof.StatelessOmegaEof(data, clientId, o.getNextStageData), nil
+		return o.eofHandler.HandleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

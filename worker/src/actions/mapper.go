@@ -16,21 +16,28 @@ type Mapper struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, itemId string) string
 	randomHashFunc func(workersCount int) string
+	eofHandler     *eof.StatelessEofHandler
 }
 
 // NewMapper creates a new Mapper instance.
 // It initializes the worker count and returns a pointer to the Mapper struct.
 func NewMapper(infraConfig *model.InfraConfig) *Mapper {
-	return &Mapper{
+	m := &Mapper{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
+		eofHandler:     nil,
 	}
+
+	eofHandler := eof.NewStatelessEofHandler(
+		m.getNextStageData,
+	)
+
+	m.eofHandler = eofHandler
+	return m
 }
 
 /*
-delta1Stage partially sum up investment by country
-
 This function is nil-safe, meaning it will not panic if the input is nil.
 It will simply return a map with empty data.
 
@@ -361,7 +368,7 @@ func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return eof.StatelessOmegaEof(data, clientId, m.getNextStageData), nil
+		return m.eofHandler.HandleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

@@ -19,16 +19,23 @@ type Filter struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	// eofHandler     eof_handler.IEOFHandler
+	eofHandler     *eof.StatelessEofHandler
 }
 
 func NewFilter(infraConfig *model.InfraConfig) *Filter {
-	return &Filter{
+	f := &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		// eofHandler:     eofHandler,
+		eofHandler:     nil,
 	}
+
+	eofHandler := eof.NewStatelessEofHandler(
+		f.getNextStageData,
+	)
+
+	f.eofHandler = eofHandler
+	return f
 }
 
 const ARGENTINA_COUNTRY string = "Argentina"
@@ -350,7 +357,7 @@ func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return eof.StatelessOmegaEof(data, clientId, f.getNextStageData), nil
+		return f.eofHandler.HandleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

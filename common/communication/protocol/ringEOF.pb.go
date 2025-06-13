@@ -139,7 +139,7 @@ type RingEOF struct {
 	Alive         []string               `protobuf:"bytes,2,rep,name=alive,proto3" json:"alive,omitempty"`
 	Ready         []string               `protobuf:"bytes,3,rep,name=ready,proto3" json:"ready,omitempty"`
 	CreatorId     string                 `protobuf:"bytes,4,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
-	TaskCount     string                 `protobuf:"bytes,5,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
+	TaskCount     uint32                 `protobuf:"varint,5,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
 	TaskFragments []*TaskFragments       `protobuf:"bytes,6,rep,name=taskFragments,proto3" json:"taskFragments,omitempty"`
 	EofType       string                 `protobuf:"bytes,7,opt,name=eofType,proto3" json:"eofType,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -204,11 +204,11 @@ func (x *RingEOF) GetCreatorId() string {
 	return ""
 }
 
-func (x *RingEOF) GetTaskCount() string {
+func (x *RingEOF) GetTaskCount() uint32 {
 	if x != nil {
 		return x.TaskCount
 	}
-	return ""
+	return 0
 }
 
 func (x *RingEOF) GetTaskFragments() []*TaskFragments {
@@ -242,7 +242,7 @@ const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\x05alive\x18\x02 \x03(\tR\x05alive\x12\x14\n" +
 	"\x05ready\x18\x03 \x03(\tR\x05ready\x12\x1c\n" +
 	"\tcreatorId\x18\x04 \x01(\tR\tcreatorId\x12\x1c\n" +
-	"\ttaskCount\x18\x05 \x01(\tR\ttaskCount\x124\n" +
+	"\ttaskCount\x18\x05 \x01(\rR\ttaskCount\x124\n" +
 	"\rtaskFragments\x18\x06 \x03(\v2\x0e.TaskFragmentsR\rtaskFragments\x12\x18\n" +
 	"\aeofType\x18\a \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 

@@ -6,18 +6,29 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 )
 
-func StatelessOmegaEof(eofData *protocol.OmegaEOF_Data, clientId string, nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error)) common.Tasks {
+type StatelessEofHandler struct {
+	NextStageFunc func(stage string, clientId string) ([]common.NextStageData, error)
+}
+
+func NewStatelessEofHandler(
+	nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error),
+) *StatelessEofHandler {
+	return &StatelessEofHandler{
+		NextStageFunc: nextStageFunc,
+	}
+}
+
+func (h *StatelessEofHandler) HandleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
 	tasks := make(common.Tasks)
 
 	stage := eofData.Stage
-	nextStagesData, err := nextStageFunc(stage, clientId)
+	nextStagesData, err := h.NextStageFunc(stage, clientId)
 
 	if err != nil {
 		return tasks
 	}
 
 	for _, nextStageData := range nextStagesData {
-
 		nextStageEOF := &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_OmegaEOF{
