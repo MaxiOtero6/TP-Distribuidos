@@ -9,7 +9,8 @@ MOVIES_NETWORK_NAME: str = "movies_network"
 
 RESULTS_OUTPUT_FILE_NAME: str = "actual_results"
 RESULTS_OUTPUT_FILE_EXTENSION: str = ".json"
-RESULTS_OUTPUT_DIR_PATH: str = os.path.join(os.path.dirname(__file__), "..", "test")
+RESULTS_OUTPUT_DIR_PATH: str = os.path.join(
+    os.path.dirname(__file__), "..", "test")
 
 
 def indent(text: str, level: int) -> str:
@@ -28,6 +29,7 @@ class ServiceType(Enum):
     MAP = "MAPPER"
     REDUCE = "REDUCER"
     MERGE = "MERGER"
+    HEALTH = "HEALTH"
 
     def to_service(
         self, id: int, instances_per_service: Dict["ServiceType", int]
@@ -58,21 +60,24 @@ class ServiceType(Enum):
                     },
                 )
 
-
             case ServiceType.SERVER:
                 depends_on = {"rabbitmq": {"condition": "service_healthy"}}
 
                 filter_count = instances_per_service.get(ServiceType.FILTER, 0)
                 for i in range(filter_count):
-                    depends_on[f"filter_{i}"] = {"condition": "service_started"}
+                    depends_on[f"filter_{i}"] = {
+                        "condition": "service_started"}
 
-                overview_count = instances_per_service.get(ServiceType.OVERVIEW, 0)
+                overview_count = instances_per_service.get(
+                    ServiceType.OVERVIEW, 0)
                 for i in range(overview_count):
-                    depends_on[f"overviewer_{i}"] = {"condition": "service_started"}
+                    depends_on[f"overviewer_{i}"] = {
+                        "condition": "service_started"}
 
                 joiner_count = instances_per_service.get(ServiceType.JOINER, 0)
                 for i in range(joiner_count):
-                    depends_on[f"joiner_{i}"] = {"condition": "service_started"}
+                    depends_on[f"joiner_{i}"] = {
+                        "condition": "service_started"}
 
                 return Service(
                     container_name=f"server_{id}",
@@ -80,6 +85,7 @@ class ServiceType(Enum):
                     environment={
                         "SERVER_PORT": str(8080 + id),
                         "SERVER_ID": str(id),
+                        "SERVER_NAME": f"server_{id}",
                         "SERVER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
@@ -109,6 +115,43 @@ class ServiceType(Enum):
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
                     },
                 )
+            case ServiceType.HEALTH:
+                return Service(
+                    container_name=f"health_{id}",
+                    image="health:latest",
+                    environment={
+                        "HEALTH_ID": str(id),
+                        "HEALTH_NAME": f"health_{id}",
+                        "HEALTH_FILTER_COUNT": str(
+                            instances_per_service.get(ServiceType.FILTER, 0)
+                        ),
+                        "HEALTH_OVERVIEW_COUNT": str(
+                            instances_per_service.get(ServiceType.OVERVIEW, 0)
+                        ),
+                        "HEALTH_MAP_COUNT": str(
+                            instances_per_service.get(ServiceType.MAP, 0)
+                        ),
+                        "HEALTH_JOIN_COUNT": str(
+                            instances_per_service.get(ServiceType.JOINER, 0)
+                        ),
+                        "HEALTH_REDUCE_COUNT": str(
+                            instances_per_service.get(ServiceType.REDUCE, 0)
+                        ),
+                        "HEALTH_MERGE_COUNT": str(
+                            instances_per_service.get(ServiceType.MERGE, 0)
+                        ),
+                        "HEALTH_TOP_COUNT": str(
+                            instances_per_service.get(ServiceType.TOP, 0)
+                        ),
+                    },
+                    depends_on={"rabbitmq": {"condition": "service_healthy"}},
+                    networks=[MOVIES_NETWORK_NAME],
+                    volumes={
+                        "./health/config.yaml": "/app/config.yaml",
+                        "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
+                        "/var/run/docker.sock": "/var/run/docker.sock"
+                    },
+                )
             case ServiceType.CLIENT:
                 server_count = instances_per_service.get(ServiceType.SERVER, 0)
                 depends_on = {"proxy": {"condition": "service_started"}}
@@ -128,7 +171,6 @@ class ServiceType(Enum):
                         os.path.abspath("./.data/"): "/app/.data",
                         os.path.abspath(RESULTS_OUTPUT_DIR_PATH): "/app/test/",
                     },
-                    depends_on=depends_on,
                 )
             case ServiceType.RABBIT_MQ:
                 return Service(
@@ -160,6 +202,7 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
+                        "WORKER_NAME": f"{worker_name}_{id}",
                         "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
                         ),
@@ -189,17 +232,17 @@ class ServiceType(Enum):
                         "./rabbitConfig.yaml": "/app/rabbitConfig.yaml",
                     },
                 )
-            
-            case (               
+
+            case (
                 ServiceType.JOINER
                 | ServiceType.TOP
                 | ServiceType.REDUCE
                 | ServiceType.MERGE
             ):
-                
+
                 worker_name = self.value.split("_", 1)[0].lower()
-                volume_name=f"{worker_name}_{id}_data"
-                mount_path=f"/app/data/{worker_name}_{id}"
+                volume_name = f"{worker_name}_{id}_data"
+                mount_path = f"/app/data/{worker_name}_{id}"
 
                 return Service(
                     container_name=f"{worker_name}_{id}",
@@ -207,6 +250,7 @@ class ServiceType(Enum):
                     environment={
                         "WORKER_ID": str(id),
                         "WORKER_TYPE": self.value,
+                        "WORKER_NAME": f"{worker_name}_{id}",
                         "WORKER_DATA_DIR": mount_path,
                         "WORKER_FILTER_COUNT": str(
                             instances_per_service.get(ServiceType.FILTER, 0)
@@ -238,7 +282,6 @@ class ServiceType(Enum):
                         volume_name: mount_path,
                     },
                 )
-            
 
 
 class DockerCompose:
@@ -320,7 +363,8 @@ class Service:
     def __str__(self) -> str:
         level = self.indent_level
         lines = [indent(f"{self.container_name}:", level)]
-        lines.append(indent(f"container_name: {self.container_name}", level + 1))
+        lines.append(
+            indent(f"container_name: {self.container_name}", level + 1))
         lines.append(indent(f"image: {self.image}", level + 1))
         if self.entrypoint:
             lines.append(indent(f"entrypoint: {self.entrypoint}", level + 1))
@@ -472,7 +516,8 @@ def write_to_file(output_file: str, compose: DockerCompose) -> None:
 def main() -> None:
     n_instances_path, output_file_path = get_args()
     instances_per_service = read_instances(n_instances_path)
-    docker_compose: DockerCompose = generate_docker_compose(instances_per_service)
+    docker_compose: DockerCompose = generate_docker_compose(
+        instances_per_service)
     write_to_file(output_file_path, docker_compose)
 
 

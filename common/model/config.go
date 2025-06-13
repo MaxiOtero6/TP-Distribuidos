@@ -26,17 +26,21 @@ func (w *WorkerClusterConfig) TotalWorkers() int {
 }
 
 type RabbitConfig struct {
-	FilterExchange   string
-	OverviewExchange string
-	MapExchange      string
-	JoinExchange     string
-	ReduceExchange   string
-	MergeExchange    string
-	TopExchange      string
-	ResultExchange   string
-	EofExchange      string
-	BroadcastID      string
-	EofBroadcastRK   string
+	FilterExchange     string
+	OverviewExchange   string
+	MapExchange        string
+	JoinExchange       string
+	ReduceExchange     string
+	MergeExchange      string
+	TopExchange        string
+	ResultExchange     string
+	EofExchange        string
+	BroadcastID        string
+	EofBroadcastRK     string
+	ControlExchange    string
+	ControlBroadcastRK string
+	LeaderRK           string
+	HealthExchange     string
 }
 
 type InfraConfig struct {
@@ -156,6 +160,22 @@ func (i *InfraConfig) GetResultExchange() string {
 
 func (i *InfraConfig) GetEofExchange() string {
 	return i.rabbit.EofExchange
+}
+
+func (i *InfraConfig) GetControlExchange() string {
+	return i.rabbit.ControlExchange
+}
+
+func (i *InfraConfig) GetHealthExchange() string {
+	return i.rabbit.HealthExchange
+}
+
+func (i *InfraConfig) GetControlBroadcastRK() string {
+	return i.rabbit.ControlBroadcastRK
+}
+
+func (i *InfraConfig) GetLeaderRK() string {
+	return i.rabbit.LeaderRK
 }
 
 func (i *InfraConfig) GetBroadcastID() string {

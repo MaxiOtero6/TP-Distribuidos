@@ -82,14 +82,15 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func appendEOFInfra(
+func appendExtraInfra(
 	eofExchangeName string,
+	controlExchangeName string,
 	queues []map[string]string,
 	binds []map[string]string,
 	workerId string,
 	workerType string,
-	workerCount int,
 	eofBroadcastRK string,
+	controlBroadcastRK string,
 ) ([]map[string]string, []map[string]string) {
 	if len(binds) != 1 {
 		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
@@ -114,10 +115,23 @@ func appendEOFInfra(
 	binds[0]["extraRK"] = eofBroadcastRK
 	binds[0]["queue"] = queues[0]["name"]
 
+	// Eof
 	binds = append(binds, map[string]string{
 		"queue":    eofQName,
 		"exchange": eofExchangeName,
 		"extraRK":  workerType + "_" + workerId,
+	})
+
+	controlQName := "control_" + qName
+
+	queues = append(queues, map[string]string{
+		"name": controlQName,
+	})
+	// Control
+	binds = append(binds, map[string]string{
+		"queue":    controlQName,
+		"exchange": controlExchangeName,
+		"extraRK":  controlBroadcastRK,
 	})
 
 	return queues, binds
@@ -141,17 +155,20 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	}
 
 	rabbitConfig := &model.RabbitConfig{
-		FilterExchange:   v.GetString("consts.filterExchange"),
-		OverviewExchange: v.GetString("consts.overviewExchange"),
-		MapExchange:      v.GetString("consts.mapExchange"),
-		JoinExchange:     v.GetString("consts.joinExchange"),
-		ReduceExchange:   v.GetString("consts.reduceExchange"),
-		MergeExchange:    v.GetString("consts.mergeExchange"),
-		TopExchange:      v.GetString("consts.topExchange"),
-		ResultExchange:   v.GetString("consts.resultExchange"),
-		EofExchange:      v.GetString("consts.eofExchange"),
-		BroadcastID:      v.GetString("consts.broadcastId"),
-		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
+		FilterExchange:     v.GetString("consts.filterExchange"),
+		OverviewExchange:   v.GetString("consts.overviewExchange"),
+		MapExchange:        v.GetString("consts.mapExchange"),
+		JoinExchange:       v.GetString("consts.joinExchange"),
+		ReduceExchange:     v.GetString("consts.reduceExchange"),
+		MergeExchange:      v.GetString("consts.mergeExchange"),
+		TopExchange:        v.GetString("consts.topExchange"),
+		ResultExchange:     v.GetString("consts.resultExchange"),
+		EofExchange:        v.GetString("consts.eofExchange"),
+		BroadcastID:        v.GetString("consts.broadcastId"),
+		EofBroadcastRK:     v.GetString("consts.eofBroadcastRK"),
+		ControlExchange:    v.GetString("consts.controlExchange"),
+		ControlBroadcastRK: v.GetString("consts.controlBroadcastRK"),
+		LeaderRK:           v.GetString("consts.leaderRK"),
 	}
 
 	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
@@ -164,17 +181,18 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
-	queues, binds = appendEOFInfra(
+	queues, binds = appendExtraInfra(
 		infraConfig.GetEofExchange(),
+		infraConfig.GetControlExchange(),
 		queues,
 		binds,
 		nodeId,
 		workerType,
-		infraConfig.GetWorkersCountByType(workerType),
 		infraConfig.GetEofBroadcastRK(),
+		infraConfig.GetControlBroadcastRK(),
 	)
 
-	w := worker.NewWorker(workerType, infraConfig, signalChan)
+	w := worker.NewWorker(workerType, infraConfig, signalChan, v.GetString("name"))
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

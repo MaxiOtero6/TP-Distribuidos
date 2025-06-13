@@ -1,0 +1,6 @@
+healthCheckInterval: 3
+healthMaxStatus: 2
+healthElectionTimeout: 5
+# healthCheckInterval << healthElectionTimeout
+log:
+    level: "INFO"
