@@ -165,6 +165,7 @@ class ServiceType(Enum):
                         + RESULTS_OUTPUT_FILE_NAME
                         + f"_client_{id}{RESULTS_OUTPUT_FILE_EXTENSION}",
                     },
+                    depends_on={"proxy": {"condition": "service_started"}},
                     networks=[MOVIES_NETWORK_NAME],
                     volumes={
                         "./client/config.yaml": "/app/config.yaml",
