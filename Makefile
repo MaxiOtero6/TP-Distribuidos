@@ -1,7 +1,7 @@
 # Makefile for managing Docker Compose
 
 # Variables
-docker_compose_file := docker-compose-dev.yaml
+docker_compose_file := docker-compose.yaml
 
 # Targets
 .PHONY: up down restart logs build
