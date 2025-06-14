@@ -90,20 +90,36 @@ func appendEOFInfra(
 	workerType string,
 	workerCount int,
 	eofBroadcastRK string,
+	parkingEofExchange string,
+	needParking bool,
 ) ([]map[string]string, []map[string]string) {
-	if len(binds) != 1 {
-		log.Panicf("For workers is expected to load one bind from the config file, got %d", len(binds))
-	}
-
-	if len(queues) != 1 {
-		log.Panicf("For workers is expected to load one queue from the config file, got %d", len(binds))
-	}
-
 	qName := fmt.Sprintf("%s_%s_queue", workerType, workerId)
 	eofQName := "eof_" + qName
+	parkingQName := "parking_eof_" + qName
 
 	if len(queues[0]["name"]) == 0 {
 		queues[0]["name"] = qName
+	}
+
+	// TODO: Cuando se mergee a main tocar esto
+	if needParking {
+		nextWorkerId, err := utils.GetNextNodeId(workerId, workerCount)
+		if err != nil {
+			log.Panicf("Failed to get next node id, self id %s: %s", workerId, err)
+		}
+
+		queues = append(queues, map[string]string{
+			"name":           parkingQName,
+			"dlx_routingKey": workerType + "_" + nextWorkerId,
+			"ttl":            "5000", // 5 seconds
+			"dlx_exchange":   eofExchangeName,
+		})
+
+		binds = append(binds, map[string]string{
+			"queue":    parkingQName,
+			"exchange": parkingEofExchange,
+			"extraRK":  workerType + "_" + workerId,
+		})
 	}
 
 	queues = append(queues, map[string]string{
@@ -141,17 +157,18 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	}
 
 	rabbitConfig := &model.RabbitConfig{
-		FilterExchange:   v.GetString("consts.filterExchange"),
-		OverviewExchange: v.GetString("consts.overviewExchange"),
-		MapExchange:      v.GetString("consts.mapExchange"),
-		JoinExchange:     v.GetString("consts.joinExchange"),
-		ReduceExchange:   v.GetString("consts.reduceExchange"),
-		MergeExchange:    v.GetString("consts.mergeExchange"),
-		TopExchange:      v.GetString("consts.topExchange"),
-		ResultExchange:   v.GetString("consts.resultExchange"),
-		EofExchange:      v.GetString("consts.eofExchange"),
-		BroadcastID:      v.GetString("consts.broadcastId"),
-		EofBroadcastRK:   v.GetString("consts.eofBroadcastRK"),
+		FilterExchange:     v.GetString("consts.filterExchange"),
+		OverviewExchange:   v.GetString("consts.overviewExchange"),
+		MapExchange:        v.GetString("consts.mapExchange"),
+		JoinExchange:       v.GetString("consts.joinExchange"),
+		ReduceExchange:     v.GetString("consts.reduceExchange"),
+		MergeExchange:      v.GetString("consts.mergeExchange"),
+		TopExchange:        v.GetString("consts.topExchange"),
+		ResultExchange:     v.GetString("consts.resultExchange"),
+		EofExchange:        v.GetString("consts.eofExchange"),
+		BroadcastID:        v.GetString("consts.broadcastId"),
+		EofBroadcastRK:     v.GetString("consts.eofBroadcastRK"),
+		ParkingEOFExchange: v.GetString("consts.parkingEofExchange"),
 	}
 
 	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
@@ -164,6 +181,14 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		log.Panicf("Failed to parse RabbitMQ configuration: %s", err)
 	}
 
+	needParking := false
+	for _, exchange := range exchanges {
+		if exchange["name"] == infraConfig.GetParkingEOFExchange() {
+			needParking = true
+			break
+		}
+	}
+
 	queues, binds = appendEOFInfra(
 		infraConfig.GetEofExchange(),
 		queues,
@@ -172,6 +197,8 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		workerType,
 		infraConfig.GetWorkersCountByType(workerType),
 		infraConfig.GetEofBroadcastRK(),
+		infraConfig.GetParkingEOFExchange(),
+		needParking,
 	)
 
 	w := worker.NewWorker(workerType, infraConfig, signalChan)

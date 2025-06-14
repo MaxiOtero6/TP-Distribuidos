@@ -1,7 +1,5 @@
 import sys
 
-PACKET_TTL = 120000  # 2 minutes
-
 FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 
 OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
@@ -37,6 +35,11 @@ TOP_QUEUE = {"name": ""}
 BROADCAST_ID = ""
 
 BROADCAST_EOF_ROUTING_KEY = "eof"
+
+PARKING_EOF_EXCHANGE = {
+    "name": "parkingEofExchange",
+    "kind": "direct",
+}
 
 
 class Server:
@@ -184,6 +187,10 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}name: "{REDUCE_QUEUE["name"]}"')
@@ -212,6 +219,10 @@ class Join:
         lines.append(f'{" " * 6}eofExchange:')
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}joinQueue:')
@@ -246,6 +257,10 @@ class Merge:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
@@ -275,6 +290,10 @@ class Top:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}name: "{TOP_QUEUE["name"]}"')
@@ -302,6 +321,7 @@ class RabbitConfig:
             "topExchange": TOP_EXCHANGE,
             "resultExchange": RESULT_EXCHANGE,
             "eofExchange": EOF_EXCHANGE,
+            "parkingEofExchange": PARKING_EOF_EXCHANGE,
         }
 
     def __str__(self):
@@ -312,7 +332,8 @@ class RabbitConfig:
             lines.append(f'{" " * 2}{k}: "{v["name"]}"')
 
         lines.append(f'{" " * 2}broadcastId: "{BROADCAST_ID}"\n')
-        lines.append(f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n')
+        lines.append(
+            f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n')
 
         lines.append("rabbitmq:")
         lines.append(str(Server()))

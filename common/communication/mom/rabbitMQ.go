@@ -66,6 +66,9 @@ func (r *RabbitMQ) InitConfig(
 	for _, queue := range queues {
 		r.NewQueue(queue["name"], map[string]string{
 			"expires":        queue["expires"],
+			"dlx_exchange":   queue["dlx_exchange"],
+			"dlx_routingKey": queue["dlx_routingKey"],
+			"ttl":            queue["ttl"],
 		})
 	}
 

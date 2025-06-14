@@ -49,10 +49,6 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 2 {
-		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof), got %d", len(binds))
-	}
-
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
 	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])

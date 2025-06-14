@@ -26,17 +26,18 @@ func (w *WorkerClusterConfig) TotalWorkers() int {
 }
 
 type RabbitConfig struct {
-	FilterExchange   string
-	OverviewExchange string
-	MapExchange      string
-	JoinExchange     string
-	ReduceExchange   string
-	MergeExchange    string
-	TopExchange      string
-	ResultExchange   string
-	EofExchange      string
-	BroadcastID      string
-	EofBroadcastRK   string
+	FilterExchange     string
+	OverviewExchange   string
+	MapExchange        string
+	JoinExchange       string
+	ReduceExchange     string
+	MergeExchange      string
+	TopExchange        string
+	ResultExchange     string
+	EofExchange        string
+	BroadcastID        string
+	EofBroadcastRK     string
+	ParkingEOFExchange string
 }
 
 type InfraConfig struct {
@@ -172,4 +173,8 @@ func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) str
 
 func (i *InfraConfig) GetDirectory() string {
 	return i.volumeBaseDir
+}
+
+func (i *InfraConfig) GetParkingEOFExchange() string {
+	return i.rabbit.ParkingEOFExchange
 }
