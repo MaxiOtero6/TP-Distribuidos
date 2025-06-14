@@ -15,8 +15,10 @@ message StageFragment {
 
 message RingEOF {
     string stage = 1;
-    string creatorId = 2;
-    uint32 taskCount = 3;
-    repeated StageFragment stageFragmentes = 4;
-    string eofType = 5;
+    string eofType = 2;
+    string creatorId = 3;
+    string readyId = 4;
+    uint32 tasksCount = 5;
+    repeated StageFragment stageFragmentes = 6;
+    repeated string nextStageWorkerParticipantIds = 7;
 }

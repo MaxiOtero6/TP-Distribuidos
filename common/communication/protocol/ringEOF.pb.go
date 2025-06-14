@@ -134,14 +134,16 @@ func (x *StageFragment) GetLastFragment() bool {
 }
 
 type RingEOF struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Stage           string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
-	CreatorId       string                 `protobuf:"bytes,2,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
-	TaskCount       uint32                 `protobuf:"varint,3,opt,name=taskCount,proto3" json:"taskCount,omitempty"`
-	StageFragmentes []*StageFragment       `protobuf:"bytes,4,rep,name=stageFragmentes,proto3" json:"stageFragmentes,omitempty"`
-	EofType         string                 `protobuf:"bytes,5,opt,name=eofType,proto3" json:"eofType,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"open.v1"`
+	Stage                         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	EofType                       string                 `protobuf:"bytes,2,opt,name=eofType,proto3" json:"eofType,omitempty"`
+	CreatorId                     string                 `protobuf:"bytes,3,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
+	ReadyId                       string                 `protobuf:"bytes,4,opt,name=readyId,proto3" json:"readyId,omitempty"`
+	TasksCount                    uint32                 `protobuf:"varint,5,opt,name=tasksCount,proto3" json:"tasksCount,omitempty"`
+	StageFragmentes               []*StageFragment       `protobuf:"bytes,6,rep,name=stageFragmentes,proto3" json:"stageFragmentes,omitempty"`
+	NextStageWorkerParticipantIds []string               `protobuf:"bytes,7,rep,name=nextStageWorkerParticipantIds,proto3" json:"nextStageWorkerParticipantIds,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *RingEOF) Reset() {
@@ -181,6 +183,13 @@ func (x *RingEOF) GetStage() string {
 	return ""
 }
 
+func (x *RingEOF) GetEofType() string {
+	if x != nil {
+		return x.EofType
+	}
+	return ""
+}
+
 func (x *RingEOF) GetCreatorId() string {
 	if x != nil {
 		return x.CreatorId
@@ -188,9 +197,16 @@ func (x *RingEOF) GetCreatorId() string {
 	return ""
 }
 
-func (x *RingEOF) GetTaskCount() uint32 {
+func (x *RingEOF) GetReadyId() string {
 	if x != nil {
-		return x.TaskCount
+		return x.ReadyId
+	}
+	return ""
+}
+
+func (x *RingEOF) GetTasksCount() uint32 {
+	if x != nil {
+		return x.TasksCount
 	}
 	return 0
 }
@@ -202,11 +218,11 @@ func (x *RingEOF) GetStageFragmentes() []*StageFragment {
 	return nil
 }
 
-func (x *RingEOF) GetEofType() string {
+func (x *RingEOF) GetNextStageWorkerParticipantIds() []string {
 	if x != nil {
-		return x.EofType
+		return x.NextStageWorkerParticipantIds
 	}
-	return ""
+	return nil
 }
 
 var File_proto_eof_ringEOF_proto protoreflect.FileDescriptor
@@ -222,13 +238,17 @@ const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\rStageFragment\x12)\n" +
 	"\x05start\x18\x01 \x01(\v2\x13.FragmentIdentifierR\x05start\x12%\n" +
 	"\x03end\x18\x02 \x01(\v2\x13.FragmentIdentifierR\x03end\x12\"\n" +
-	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\xaf\x01\n" +
+	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\x91\x02\n" +
 	"\aRingEOF\x12\x14\n" +
-	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x1c\n" +
-	"\tcreatorId\x18\x02 \x01(\tR\tcreatorId\x12\x1c\n" +
-	"\ttaskCount\x18\x03 \x01(\rR\ttaskCount\x128\n" +
-	"\x0fstageFragmentes\x18\x04 \x03(\v2\x0e.StageFragmentR\x0fstageFragmentes\x12\x18\n" +
-	"\aeofType\x18\x05 \x01(\tR\aeofTypeB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x18\n" +
+	"\aeofType\x18\x02 \x01(\tR\aeofType\x12\x1c\n" +
+	"\tcreatorId\x18\x03 \x01(\tR\tcreatorId\x12\x18\n" +
+	"\areadyId\x18\x04 \x01(\tR\areadyId\x12\x1e\n" +
+	"\n" +
+	"tasksCount\x18\x05 \x01(\rR\n" +
+	"tasksCount\x128\n" +
+	"\x0fstageFragmentes\x18\x06 \x03(\v2\x0e.StageFragmentR\x0fstageFragmentes\x12D\n" +
+	"\x1dnextStageWorkerParticipantIds\x18\a \x03(\tR\x1dnextStageWorkerParticipantIdsB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_eof_ringEOF_proto_rawDescOnce sync.Once
