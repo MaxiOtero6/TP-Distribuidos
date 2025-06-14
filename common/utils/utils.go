@@ -29,16 +29,16 @@ func RandomHash(workersCount int) string {
 	return fmt.Sprint(randomSource.Intn(workersCount))
 }
 
-func GetNextNodeId(nodeId string, workerCount int) (string, error) {
+func GetNextNodeId(nodeId string, workerCount int) string {
 	currentNodeId, err := strconv.Atoi(nodeId)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert currentNodeId to int: %s", err)
+		return ""
 	}
 
 	nextNodeIdInt := (currentNodeId + 1) % workerCount
 
 	nextNodeId := fmt.Sprintf("%d", nextNodeIdInt)
-	return nextNodeId, nil
+	return nextNodeId
 }
 
 func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, error) {
@@ -48,7 +48,7 @@ func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, err
 		exchangeMap, ok := value.(map[string]any)
 
 		if !ok {
-			return nil, fmt.Errorf("Failed to assert type value: %v, expected map[string]any", value)
+			return nil, fmt.Errorf("failed to assert type value: %v, expected map[string]any", value)
 		}
 
 		// Convert map[string]interface{} to map[string]string
@@ -56,7 +56,7 @@ func ViperGetSliceMapStringString(data map[string]any) ([]map[string]string, err
 		for k, v := range exchangeMap {
 			strValue, ok := v.(string)
 			if !ok {
-				return nil, fmt.Errorf("Failed to assert type for key %s in data %s", k, key)
+				return nil, fmt.Errorf("failed to assert type for key %s in data %s", k, key)
 			}
 			parsedExchange[k] = strValue
 		}
@@ -81,7 +81,7 @@ func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]st
 	)
 
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to parse queues: %s", err)
+		return nil, nil, nil, fmt.Errorf("failed to parse queues: %s", err)
 	}
 
 	binds, err = ViperGetSliceMapStringString(
@@ -89,7 +89,7 @@ func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]st
 	)
 
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to parse binds: %s", err)
+		return nil, nil, nil, fmt.Errorf("failed to parse binds: %s", err)
 	}
 
 	return exchanges, queues, binds, nil

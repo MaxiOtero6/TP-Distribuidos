@@ -2,6 +2,8 @@ package actions
 
 import (
 	"fmt"
+	"slices"
+	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -15,10 +17,10 @@ const REDUCER_FILE_TYPE string = ""
 
 type ReducerPartialResults struct {
 	toDeleteCount uint
-	delta2        map[string]*protocol.Delta_2_Data
-	eta2          map[string]*protocol.Eta_2_Data
-	kappa2        map[string]*protocol.Kappa_2_Data
-	nu2Data       map[string]*protocol.Nu_2_Data
+	delta2        *PartialData[*protocol.Delta_2_Data]
+	eta2          *PartialData[*protocol.Eta_2_Data]
+	kappa2        *PartialData[*protocol.Kappa_2_Data]
+	nu2Data       *PartialData[*protocol.Nu_2_Data]
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -36,10 +38,11 @@ func (r *Reducer) makePartialResults(clientId string) {
 	}
 
 	r.partialResults[clientId] = &ReducerPartialResults{
-		delta2:  make(map[string]*protocol.Delta_2_Data),
-		eta2:    make(map[string]*protocol.Eta_2_Data),
-		kappa2:  make(map[string]*protocol.Kappa_2_Data),
-		nu2Data: make(map[string]*protocol.Nu_2_Data),
+		toDeleteCount: REDUCER_STAGES_COUNT,
+		delta2:        NewPartialData[*protocol.Delta_2_Data](),
+		eta2:          NewPartialData[*protocol.Eta_2_Data](),
+		kappa2:        NewPartialData[*protocol.Kappa_2_Data](),
+		nu2Data:       NewPartialData[*protocol.Nu_2_Data](),
 	}
 }
 
@@ -78,28 +81,26 @@ Then it divides the resulting countries by hashing each country and send it to t
 		},
 	}
 */
-func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].delta2
+func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := r.partialResults[clientId].delta2
+	stage := common.DELTA_STAGE_2
 
-	// Sum up the partial budgets by country
-	for _, country := range data {
-		prodCountry := country.GetCountry()
+	aggregationFunc := func(existing *protocol.Delta_2_Data, input *protocol.Delta_2_Data) {
+		existing.PartialBudget += input.GetPartialBudget()
+	}
 
-		if _, ok := dataMap[prodCountry]; !ok {
-			dataMap[prodCountry] = &protocol.Delta_2_Data{
-				Country:       prodCountry,
-				PartialBudget: 0,
-			}
+	identifierFunc := func(input *protocol.Delta_2_Data) string {
+		return input.GetCountry()
+	}
+
+	creatorFunc := func(input *protocol.Delta_2_Data) *protocol.Delta_2_Data {
+		return &protocol.Delta_2_Data{
+			Country:       input.GetCountry(),
+			PartialBudget: 0,
 		}
-
-		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
 	}
 
-	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_2, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.DELTA_STAGE_2, err)
-	}
-
+	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -120,31 +121,29 @@ Return example
 		},
 	}
 */
-func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].eta2
+func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := r.partialResults[clientId].eta2
+	stage := common.ETA_STAGE_2
 
-	// Sum up the partial ratings and counts for each movie
-	for _, e2Data := range data {
-		movieId := e2Data.GetMovieId()
+	aggregationFunc := func(existing *protocol.Eta_2_Data, input *protocol.Eta_2_Data) {
+		existing.Rating += input.GetRating()
+		existing.Count += input.GetCount()
+	}
 
-		if _, ok := dataMap[movieId]; !ok {
-			dataMap[movieId] = &protocol.Eta_2_Data{
-				MovieId: movieId,
-				Title:   e2Data.GetTitle(),
-				Rating:  0,
-				Count:   0,
-			}
+	identifierFunc := func(input *protocol.Eta_2_Data) string {
+		return input.GetMovieId()
+	}
+
+	creatorFunc := func(input *protocol.Eta_2_Data) *protocol.Eta_2_Data {
+		return &protocol.Eta_2_Data{
+			MovieId: input.GetMovieId(),
+			Title:   input.GetTitle(),
+			Rating:  0,
+			Count:   0,
 		}
-
-		dataMap[movieId].Rating += e2Data.GetRating()
-		dataMap[movieId].Count += e2Data.GetCount()
 	}
 
-	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_2, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.ETA_STAGE_2, err)
-	}
-
+	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -165,29 +164,27 @@ Return example
 		},
 	}
 */
-func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].kappa2
+func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := r.partialResults[clientId].kappa2
+	stage := common.KAPPA_STAGE_2
 
-	// Sum up the partial participations by actor
-	for _, k2Data := range data {
-		actorId := k2Data.GetActorId()
+	aggregationFunc := func(existing *protocol.Kappa_2_Data, input *protocol.Kappa_2_Data) {
+		existing.PartialParticipations += input.GetPartialParticipations()
+	}
 
-		if _, ok := dataMap[actorId]; !ok {
-			dataMap[actorId] = &protocol.Kappa_2_Data{
-				ActorId:               actorId,
-				ActorName:             k2Data.GetActorName(),
-				PartialParticipations: 0,
-			}
+	identifierFunc := func(input *protocol.Kappa_2_Data) string {
+		return input.GetActorId()
+	}
+
+	creatorFunc := func(input *protocol.Kappa_2_Data) *protocol.Kappa_2_Data {
+		return &protocol.Kappa_2_Data{
+			ActorId:               input.GetActorId(),
+			ActorName:             input.GetActorName(),
+			PartialParticipations: 0,
 		}
-
-		dataMap[actorId].PartialParticipations += k2Data.GetPartialParticipations()
 	}
 
-	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_2, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.KAPPA_STAGE_2, err)
-	}
-
+	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -207,30 +204,28 @@ Return example
 		},
 	}
 */
-func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].nu2Data
+func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := r.partialResults[clientId].nu2Data
+	stage := common.NU_STAGE_2
 
-	// Sum up the budget and revenue by sentiment
-	for _, nu2Data := range data {
-		sentiment := fmt.Sprintf("%t", nu2Data.GetSentiment())
+	aggregationFunc := func(existing *protocol.Nu_2_Data, input *protocol.Nu_2_Data) {
+		existing.Ratio += input.GetRatio()
+		existing.Count += input.GetCount()
+	}
 
-		if _, ok := dataMap[sentiment]; !ok {
-			dataMap[sentiment] = &protocol.Nu_2_Data{
-				Sentiment: nu2Data.GetSentiment(),
-				Ratio:     0,
-				Count:     0,
-			}
+	identifierFunc := func(input *protocol.Nu_2_Data) string {
+		return strconv.FormatBool(input.GetSentiment())
+	}
+
+	creatorFunc := func(input *protocol.Nu_2_Data) *protocol.Nu_2_Data {
+		return &protocol.Nu_2_Data{
+			Sentiment: input.GetSentiment(),
+			Ratio:     0,
+			Count:     0,
 		}
-
-		dataMap[sentiment].Ratio += nu2Data.GetRatio()
-		dataMap[sentiment].Count += nu2Data.GetCount()
 	}
 
-	err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, common.NU_STAGE_2, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.NU_STAGE_2, err)
-	}
-
+	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -272,6 +267,15 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]common.Next
 				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
 			},
 		}, nil
+	case common.RING_STAGE:
+		return []common.NextStageData{
+			{
+				Stage:       common.RING_STAGE,
+				Exchange:    r.infraConfig.GetEofExchange(),
+				WorkerCount: r.infraConfig.GetReduceCount(),
+				RoutingKey:  utils.GetNextNodeId(r.infraConfig.GetNodeId(), r.infraConfig.GetReduceCount()),
+			},
+		}, nil
 	default:
 		log.Errorf("Invalid stage: %s", stage)
 		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
@@ -279,7 +283,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]common.Next
 }
 
 func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].delta2
+	dataMap := r.partialResults[clientId].delta2.data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -300,6 +304,25 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 		})
 	}
 
+	destinationNodes := make([]string, len(delta3Data))
+	// Fill destinationNodes with the node IDs
+	for nodeId := range delta3Data {
+		destinationNodes = append(destinationNodes, nodeId)
+	}
+	// Sort destinationNodes to ensure consistent order
+	slices.Sort(destinationNodes)
+
+	taskIdentifiersByNodeId := make(map[string]*protocol.TaskIdentifier)
+	for index, nodeId := range destinationNodes {
+		taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+		taskIdentifiersByNodeId[nodeId] = &protocol.TaskIdentifier{
+			TaskNumber:         uint32(taskNumber),
+			TaskFragmentNumber: uint32(index),
+			LastFragment:       index == len(destinationNodes)-1,
+		}
+	}
+
 	// Create tasks for each worker
 	for nodeId, data := range delta3Data {
 		tasks[MERGE_EXCHANGE][common.DELTA_STAGE_3][nodeId] = &protocol.Task{
@@ -309,6 +332,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifiersByNodeId[nodeId],
 		}
 	}
 }
@@ -474,28 +498,64 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks c
 	return tasks
 }
 
+// processStage is a generic function to handle task fragment checking, aggregation, and storage.
+func processStage[T any](
+	partialData *PartialData[T],
+	clientId string,
+	taskIdentifier *protocol.TaskIdentifier,
+	stage string,
+	aggregationFunc func(existing T, input T),
+	identifierFunc func(input T) string,
+	creatorFunc func(input T) T,
+) {
+	if _, ok := partialData.taskFragments[taskIdentifier.GetTaskNumber()]; ok {
+		// Task already processed
+		return
+	}
+
+	// Mark the task as processed
+	partialData.taskFragments[taskIdentifier.GetTaskNumber()] = taskIdentifier
+
+	// Aggregate data
+	for _, input := range partialData.data {
+		id := identifierFunc(input)
+		if _, exists := partialData.data[id]; !exists {
+			partialData.data[id] = creatorFunc(input)
+		}
+		existing := partialData.data[id]
+		aggregationFunc(existing, input)
+	}
+
+	// Save data to storage
+	err := storage.SaveDataToFile("/path/to/directory", clientId, stage, "ANY_SOURCE", partialData.data)
+	if err != nil {
+		log.Errorf("Failed to save %s data: %s", stage, err)
+	}
+}
+
 func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	taskIdentifier := task.GetTaskIdentifier()
 
 	r.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_2:
 		data := v.Delta_2.GetData()
-		return r.delta2Stage(data, clientId), nil
+		return r.delta2Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Eta_2:
 		data := v.Eta_2.GetData()
-		return r.eta2Stage(data, clientId), nil
+		return r.eta2Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Kappa_2:
 		data := v.Kappa_2.GetData()
-		return r.kappa2Stage(data, clientId), nil
+		return r.kappa2Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Nu_2:
 		data := v.Nu_2.GetData()
-		return r.nu2Stage(data, clientId), nil
+		return r.nu2Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()

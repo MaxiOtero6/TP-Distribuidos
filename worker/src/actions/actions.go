@@ -10,8 +10,17 @@ import (
 var log = logging.MustGetLogger("log")
 
 type PartialData[T any] struct {
-	data  map[string]T
-	ready bool
+	data          map[string]T
+	taskFragments map[uint32]*protocol.TaskIdentifier
+	ready         bool // TODO: creo que se puede sacar
+}
+
+func NewPartialData[T any]() *PartialData[T] {
+	return &PartialData[T]{
+		data:          make(map[string]T),
+		taskFragments: make(map[uint32]*protocol.TaskIdentifier),
+		ready:         false,
+	}
 }
 
 type Action interface {

@@ -36,12 +36,7 @@ func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, c
 		nextStageRing := &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_RingEOF{
-				RingEOF: &protocol.RingEOF{
-					Stage:           previousRingEOF.GetStage(),
-					EofType:         previousRingEOF.GetEofType(),
-					TasksCount:      previousRingEOF.GetTasksCount(),
-					StageFragmentes: previousRingEOF.GetStageFragmentes(),
-				},
+				RingEOF: previousRingEOF,
 			},
 		}
 
@@ -119,13 +114,17 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 		} else {
 
 			// TODO: Handle diferent if the RingEOF which is not ready makes a full cycle
-			// if ringEOF.GetCreatorId() == h.workerId {
-			// } else {
+			if ringEOF.GetCreatorId() == h.workerId {
+				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
+				// return h.delayExchange(ringEOF, clientId), false
+				return h.nextWorkerRing(ringEOF, clientId), false
 
-			// }
+			} else {
+				// If the EOF does not do a full cycle, we continue the RingEOF cycle until it is ready
+				return h.nextWorkerRing(ringEOF, clientId), false
+			}
 
 			// If the stage is not ready, we continue the RingEOF cycle until it is ready
-			return h.nextWorkerRing(ringEOF, clientId), false
 		}
 
 	} else {
@@ -204,21 +203,18 @@ func isStageReady(ringEOF *protocol.RingEOF) bool {
 	stageFragments := ringEOF.GetStageFragmentes()
 	taskCount := ringEOF.GetTasksCount()
 
-	if len(stageFragments) == 0 {
-		return taskCount == 0
+	totalTasks := 0
+	for _, frag := range stageFragments {
+		// Each fragment must start with fragment 0 and be marked as last
+		if frag.Start.GetTaskFragmentNumber() != 0 || !frag.LastFragment {
+			return false
+		}
+
+		startTask := frag.Start.GetTaskNumber()
+		endTask := frag.End.GetTaskNumber()
+
+		totalTasks += int(endTask - startTask + 1)
 	}
 
-	if len(stageFragments) != 1 {
-		return false
-	}
-
-	if stageFragments[0].Start.GetTaskNumber() != 0 || stageFragments[0].Start.GetTaskFragmentNumber() != 0 {
-		return false
-	}
-
-	if stageFragments[0].End.GetTaskNumber() != taskCount-1 || !stageFragments[0].LastFragment {
-		return false
-	}
-
-	return true
+	return totalTasks == int(taskCount)
 }
