@@ -39,6 +39,7 @@ func assertSerializationWithCustomComparison(
 
 			//Leer los datos del archivo
 			loadedData, err := LoadDataFromFile(tempDir, tc.clientID, tc.stage, tc.source)
+			log.Info("fail with error : ", err)
 			assert.NoError(t, err, "Failed to load data from file")
 
 			// Usar la función de comparación personalizada
@@ -337,4 +338,8 @@ func TestSerializationAndDeserializationForBigTableSource(t *testing.T) {
 	}
 
 	assertSerializationWithCustomComparison(t, testCases)
+}
+
+func TestCreateTemporaryFileAndReplaceThisWithTheOriginal(t *testing.T) {
+
 }
