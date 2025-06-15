@@ -103,10 +103,7 @@ func appendEOFInfra(
 
 	// TODO: Cuando se mergee a main tocar esto
 	if needParking {
-		nextWorkerId, err := utils.GetNextNodeId(workerId, workerCount)
-		if err != nil {
-			log.Panicf("Failed to get next node id, self id %s: %s", workerId, err)
-		}
+		nextWorkerId := utils.GetNextNodeId(workerId, workerCount)
 
 		queues = append(queues, map[string]string{
 			"name":           parkingQName,
