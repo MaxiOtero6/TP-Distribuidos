@@ -47,11 +47,11 @@ const MOVIE_YEAR_2010 uint32 = 2010
 func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	filteredData := utils.FilterData(data, func(movie *protocol.Alpha_Data) bool {
+	filteredData := utils.FilterSlice(data, func(movie *protocol.Alpha_Data) bool {
 		return movie.GetReleaseYear() >= MOVIE_YEAR_2000 && slices.Contains(movie.GetProdCountries(), ARGENTINA_COUNTRY)
 	})
 
-	resultsBeta := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Beta_Data {
+	resultsBeta := utils.MapSlice(filteredData, func(input *protocol.Alpha_Data) *protocol.Beta_Data {
 		return &protocol.Beta_Data{
 			Id:            input.GetId(),
 			Title:         input.GetTitle(),
@@ -61,7 +61,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 		}
 	})
 
-	resultsZeta := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Zeta_Data {
+	resultsZeta := utils.MapSlice(filteredData, func(input *protocol.Alpha_Data) *protocol.Zeta_Data {
 		return &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
 				Movie: &protocol.Zeta_Data_Movie{
@@ -72,7 +72,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 		}
 	})
 
-	resultsIota := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Iota_Data {
+	resultsIota := utils.MapSlice(filteredData, func(input *protocol.Alpha_Data) *protocol.Iota_Data {
 		return &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Movie_{
 				Movie: &protocol.Iota_Data_Movie{
@@ -152,12 +152,12 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 
 func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
-	filteredData := utils.FilterData(data, func(movie *protocol.Beta_Data) bool {
+	filteredData := utils.FilterSlice(data, func(movie *protocol.Beta_Data) bool {
 		return movie.GetReleaseYear() < MOVIE_YEAR_2010 && slices.Contains(movie.GetProdCountries(), SPAIN_COUNTRY)
 	},
 	)
 
-	results := utils.MapData(filteredData, func(input *protocol.Beta_Data) *protocol.Result1_Data {
+	results := utils.MapSlice(filteredData, func(input *protocol.Beta_Data) *protocol.Result1_Data {
 		return &protocol.Result1_Data{
 			Id:     input.GetId(),
 			Title:  input.GetTitle(),
@@ -195,11 +195,11 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumb
 func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	filteredData := utils.FilterData(data, func(movie *protocol.Gamma_Data) bool {
+	filteredData := utils.FilterSlice(data, func(movie *protocol.Gamma_Data) bool {
 		return len(movie.GetProdCountries()) == 1
 	})
 
-	results := utils.MapData(filteredData, func(input *protocol.Gamma_Data) *protocol.Delta_1_Data {
+	results := utils.MapSlice(filteredData, func(input *protocol.Gamma_Data) *protocol.Delta_1_Data {
 		return &protocol.Delta_1_Data{
 			Country: input.GetProdCountries()[0],
 			Budget:  input.GetBudget(),

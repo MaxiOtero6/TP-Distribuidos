@@ -11,6 +11,7 @@ import (
 )
 
 type StatefulEofHandler struct {
+	workerType    model.ActionType
 	nodeId        string
 	infraConfig   *model.InfraConfig
 	nextStageFunc func(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error)
@@ -18,6 +19,7 @@ type StatefulEofHandler struct {
 }
 
 func NewStatefulEofHandler(
+	workerType model.ActionType,
 	infraConfig *model.InfraConfig,
 	nextStageFunc func(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error),
 	itemHashFunc func(workersCount int, item string) string,
@@ -25,6 +27,7 @@ func NewStatefulEofHandler(
 	nodeId := infraConfig.GetNodeId()
 
 	return &StatefulEofHandler{
+		workerType,
 		nodeId,
 		infraConfig,
 		nextStageFunc,
@@ -32,7 +35,7 @@ func NewStatefulEofHandler(
 	}
 }
 
-func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, clientId string) common.Tasks {
+func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, clientId string, parking bool) common.Tasks {
 	tasks := make(common.Tasks)
 
 	nextStagesData, err := h.nextStageFunc(common.RING_STAGE, clientId, h.infraConfig, h.itemHashFunc)
@@ -48,13 +51,20 @@ func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, c
 			},
 		}
 
-		if _, exists := tasks[nextStageData.Exchange]; !exists {
-			tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
+		exchange := nextStageData.Exchange
+		routingKey := nextStageData.RoutingKey
+		if parking {
+			exchange = h.infraConfig.GetParkingEOFExchange()
+			routingKey = string(h.workerType) + "_" + nextStageData.RoutingKey
 		}
-		if _, exists := tasks[nextStageData.Exchange][nextStageData.Stage]; !exists {
-			tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+
+		if _, exists := tasks[exchange]; !exists {
+			tasks[exchange] = make(map[string]map[string]*protocol.Task)
 		}
-		tasks[nextStageData.Exchange][nextStageData.Stage][nextStageData.RoutingKey] = nextStageRing
+		if _, exists := tasks[exchange][nextStageData.Stage]; !exists {
+			tasks[exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+		}
+		tasks[exchange][nextStageData.Stage][routingKey] = nextStageRing
 	}
 
 	return tasks
@@ -67,6 +77,7 @@ func (h *StatefulEofHandler) initRingEof(omegaEOFData *protocol.OmegaEOF_Data) *
 		CreatorId:                     h.nodeId,
 		ReadyId:                       "",
 		TasksCount:                    omegaEOFData.GetTasksCount(),
+		RoundNumber:                   0,
 		StageFragmentes:               []*protocol.StageFragment{},
 		NextStageWorkerParticipantIds: []string{},
 	}
@@ -106,10 +117,15 @@ func (h *StatefulEofHandler) HandleOmegaEOF(omegaEOFData *protocol.OmegaEOF_Data
 	ringEof := h.initRingEof(omegaEOFData)
 	h.mergeStageFragments(ringEof, workerFragments)
 
-	return h.nextWorkerRing(ringEof, clientId)
+	return h.nextWorkerRing(ringEof, clientId, false)
 }
 
 func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId string, workerFragments []*protocol.TaskIdentifier) (common.Tasks, bool) {
+	if ringEOF.GetCreatorId() == h.nodeId {
+		// If the RingEOF is created by this worker, we advaance the round
+		ringEOF.RoundNumber++
+	}
+
 	if ringEOF.GetReadyId() == "" {
 
 		// If the EOF is not ready yet, we merge the fragments and check if the stage is ready
@@ -118,21 +134,18 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 		if isStageReady(ringEOF) {
 			// If the stage is ready, we set the ReadyId to this worker and return the next stage EOF
 			ringEOF.ReadyId = h.nodeId
-			return h.nextWorkerRing(ringEOF, clientId), true
+			return h.nextWorkerRing(ringEOF, clientId, false), true
 		} else {
 
 			// TODO: Handle diferent if the RingEOF which is not ready makes a full cycle
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
-				// return h.delayExchange(ringEOF, clientId), false
-				return h.nextWorkerRing(ringEOF, clientId), false
+				return h.nextWorkerRing(ringEOF, clientId, true), false
 
 			} else {
 				// If the EOF does not do a full cycle, we continue the RingEOF cycle until it is ready
-				return h.nextWorkerRing(ringEOF, clientId), false
+				return h.nextWorkerRing(ringEOF, clientId, false), false
 			}
-
-			// If the stage is not ready, we continue the RingEOF cycle until it is ready
 		}
 
 	} else {
@@ -142,7 +155,7 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 			return h.nextStagesOmegaEOF(ringEOF, clientId), false
 		} else {
 			// If the EOF is ready but it is not from this worker, we continue the RingEOF cycle
-			return h.nextWorkerRing(ringEOF, clientId), true
+			return h.nextWorkerRing(ringEOF, clientId, false), true
 		}
 	}
 }

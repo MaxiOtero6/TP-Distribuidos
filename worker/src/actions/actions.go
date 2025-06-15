@@ -5,6 +5,7 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/op/go-logging"
 )
@@ -12,20 +13,20 @@ import (
 var log = logging.MustGetLogger("log")
 
 type PartialData[T any] struct {
-	data          map[string]T
-	taskFragments map[uint32]*protocol.TaskIdentifier
-	ready         bool
-	omegaReady    bool
-	ringRound     uint32
+	data           map[string]*T
+	taskFragments  map[uint32]*protocol.TaskIdentifier
+	ready          bool
+	omegaProcessed bool
+	ringRound      uint32
 }
 
 func NewPartialData[T any]() *PartialData[T] {
 	return &PartialData[T]{
-		data:          make(map[string]T),
-		taskFragments: make(map[uint32]*protocol.TaskIdentifier),
-		ready:         false,
-		omegaReady:    false,
-		ringRound:     0,
+		data:           make(map[string]*T),
+		taskFragments:  make(map[uint32]*protocol.TaskIdentifier),
+		ready:          false,
+		omegaProcessed: false,
+		ringRound:      0,
 	}
 }
 
@@ -112,36 +113,59 @@ func AddResults[T any](
 	}
 }
 
+// func ProcessStage[T any](
+// 	partialData *PartialData[T],
+// 	newData []*T,
+// 	clientId string,
+// 	taskIdentifier *protocol.TaskIdentifier,
+// 	stage string,
+// 	aggregationFunc func(existing *T, input *T),
+// 	identifierFunc func(input *T) string,
+// ) {
+// 	if _, ok := partialData.taskFragments[taskIdentifier.GetTaskNumber()]; ok {
+// 		// Task already processed
+// 		return
+// 	}
+
+// 	// Mark the task as processed
+// 	partialData.taskFragments[taskIdentifier.GetTaskNumber()] = taskIdentifier
+
+// 	// Convert map to slice and aggregate data using utils.GroupData
+// 	dataSlice := utils.MapValues(partialData.data)
+// 	groupedData := utils.GroupByKey(dataSlice, identifierFunc, aggregationFunc)
+// 	partialData.data = utils.MapToMap(groupedData, identifierFunc)
+
+// 	// // Save data to storage
+// 	// err := storage.SaveDataToFile("/path/to/directory", clientId, stage, "ANY_SOURCE", partialData.data)
+// 	// if err != nil {
+// 	// 	log.Errorf("Failed to save %s data: %s", stage, err)
+// 	// }
+// }
+
 func ProcessStage[T any](
-	partialData *PartialData[T],
-	clientId string,
-	taskIdentifier *protocol.TaskIdentifier,
-	stage string,
-	aggregationFunc func(existing T, input T),
-	identifierFunc func(input T) string,
-	creatorFunc func(input T) T,
+	partial *PartialData[T],
+	newItems []*T,
+	clientID string,
+	taskID *protocol.TaskIdentifier,
+	merge func(*T, *T),
+	keySelector func(*T) string,
 ) {
-	if _, ok := partialData.taskFragments[taskIdentifier.GetTaskNumber()]; ok {
-		// Task already processed
+	taskNum := taskID.GetTaskNumber()
+
+	if _, processed := partial.taskFragments[taskNum]; processed {
+		// Task already handled
 		return
 	}
 
-	// Mark the task as processed
-	partialData.taskFragments[taskIdentifier.GetTaskNumber()] = taskIdentifier
+	// Mark task as processed
+	partial.taskFragments[taskNum] = taskID
 
 	// Aggregate data
-	for _, input := range partialData.data {
-		id := identifierFunc(input)
-		if _, exists := partialData.data[id]; !exists {
-			partialData.data[id] = creatorFunc(input)
-		}
-		existing := partialData.data[id]
-		aggregationFunc(existing, input)
-	}
+	utils.MergeIntoMap(partial.data, newItems, keySelector, merge)
 
-	// // Save data to storage
-	// err := storage.SaveDataToFile("/path/to/directory", clientId, stage, "ANY_SOURCE", partialData.data)
+	// TODO: Save data to storage
+	// err := storage.SaveDataToFile("/path/to/directory", clientID, stage, "ANY_SOURCE", partial.data)
 	// if err != nil {
-	// 	log.Errorf("Failed to save %s data: %s", stage, err)
+	//     log.Errorf("Failed to save %s data: %s", stage, err)
 	// }
 }

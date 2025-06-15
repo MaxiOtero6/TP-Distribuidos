@@ -68,11 +68,11 @@ Return example
 func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	filteredData := utils.FilterData(data, func(input *protocol.Mu_Data) bool {
+	filteredData := utils.FilterSlice(data, func(input *protocol.Mu_Data) bool {
 		return input.GetBudget() != 0 && input.GetRevenue() != 0 && input.GetOverview() != ""
 	})
 
-	mappedData := utils.MapData(filteredData, func(input *protocol.Mu_Data) *protocol.Nu_1_Data {
+	mappedData := utils.MapSlice(filteredData, func(input *protocol.Mu_Data) *protocol.Nu_1_Data {
 		return &protocol.Nu_1_Data{
 			Id:        input.GetId(),
 			Title:     input.GetTitle(),
@@ -82,7 +82,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumb
 		}
 	})
 
-	groupedData := utils.GroupData(mappedData, func(item *protocol.Nu_1_Data) string {
+	groupedData := utils.GroupByKey(mappedData, func(item *protocol.Nu_1_Data) string {
 		return item.Id
 	}, func(acc *protocol.Nu_1_Data, item *protocol.Nu_1_Data) {
 		acc.Revenue += item.GetRevenue()

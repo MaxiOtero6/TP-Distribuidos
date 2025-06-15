@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type 	TaskIdentifier struct {
+type TaskIdentifier struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	TaskNumber         uint32                 `protobuf:"varint,1,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
 	TaskFragmentNumber uint32                 `protobuf:"varint,2,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`

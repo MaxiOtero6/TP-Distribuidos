@@ -2,11 +2,13 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
 
@@ -14,10 +16,10 @@ const MERGER_STAGES_COUNT uint = 4
 
 type MergerPartialResults struct {
 	toDeleteCount uint
-	delta3        PartialData[*protocol.Delta_3_Data]
-	eta3          PartialData[*protocol.Eta_3_Data]
-	kappa3        PartialData[*protocol.Kappa_3_Data]
-	nu3Data       PartialData[*protocol.Nu_3_Data]
+	delta3        PartialData[protocol.Delta_3_Data]
+	eta3          PartialData[protocol.Eta_3_Data]
+	kappa3        PartialData[protocol.Kappa_3_Data]
+	nu3Data       PartialData[protocol.Nu_3_Data]
 }
 
 // Merger is a struct that implements the Action interface.
@@ -26,7 +28,7 @@ type Merger struct {
 	partialResults map[string]*MergerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	// eofHandler     eof_handler.IEOFHandler
+	eofHandler     *eof.StatefulEofHandler
 }
 
 func (m *Merger) makePartialResults(clientId string) {
@@ -35,19 +37,19 @@ func (m *Merger) makePartialResults(clientId string) {
 	}
 
 	m.partialResults[clientId] = &MergerPartialResults{
-		delta3: PartialData[*protocol.Delta_3_Data]{
+		delta3: PartialData[protocol.Delta_3_Data]{
 			data:  make(map[string]*protocol.Delta_3_Data),
 			ready: false,
 		},
-		eta3: PartialData[*protocol.Eta_3_Data]{
+		eta3: PartialData[protocol.Eta_3_Data]{
 			data:  make(map[string]*protocol.Eta_3_Data),
 			ready: false,
 		},
-		kappa3: PartialData[*protocol.Kappa_3_Data]{
+		kappa3: PartialData[protocol.Kappa_3_Data]{
 			data:  make(map[string]*protocol.Kappa_3_Data),
 			ready: false,
 		},
-		nu3Data: PartialData[*protocol.Nu_3_Data]{
+		nu3Data: PartialData[protocol.Nu_3_Data]{
 			data:  make(map[string]*protocol.Nu_3_Data),
 			ready: false,
 		},
@@ -57,181 +59,131 @@ func (m *Merger) makePartialResults(clientId string) {
 // NewMerger creates a new Merger instance.
 // It initializes the worker count and returns a pointer to the Merger struct.
 func NewMerger(infraConfig *model.InfraConfig) *Merger {
+	eofHandler := eof.NewStatefulEofHandler(
+		model.MergerAction,
+		infraConfig,
+		mergerNextStageData,
+		utils.GetWorkerIdFromHash,
+	)
+
 	merger := &Merger{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*MergerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		// eofHandler:     eofHandler,
+		eofHandler:     eofHandler,
 	}
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 	return merger
 }
 
-/*
-delta3Stage merge the total investment by country
+func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := &m.partialResults[clientId].delta3
 
-This function is nil-safe, meaning it will not panic if the input is nil.
-
-Return example
-
-	{
-		"topExchange": {
-			"epsilon": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
-func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].delta3.data
-
-	// Sum up the partial budgets by country
-	for _, country := range data {
-		prodCountry := country.GetCountry()
-
-		if _, ok := dataMap[prodCountry]; !ok {
-			dataMap[prodCountry] = &protocol.Delta_3_Data{
-				Country:       prodCountry,
-				PartialBudget: 0,
-			}
-		}
-
-		dataMap[prodCountry].PartialBudget += country.GetPartialBudget()
+	aggregationFunc := func(existing *protocol.Delta_3_Data, input *protocol.Delta_3_Data) {
+		existing.PartialBudget += input.GetPartialBudget()
 	}
 
-	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.DELTA_STAGE_3, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.DELTA_STAGE_3, err)
+	identifierFunc := func(input *protocol.Delta_3_Data) string {
+		return input.GetCountry()
 	}
 
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc)
 	return nil
 }
 
-/*
- */
-func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].eta3.data
+func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := &m.partialResults[clientId].eta3
 
-	// Sum up the partial ratings and counts for each movie
-	for _, e3Data := range data {
-		movieId := e3Data.GetMovieId()
-
-		if _, ok := dataMap[movieId]; !ok {
-			dataMap[movieId] = &protocol.Eta_3_Data{
-				MovieId: movieId,
-				Title:   e3Data.GetTitle(),
-				Rating:  0,
-				Count:   0,
-			}
-		}
-
-		dataMap[movieId].Rating += e3Data.GetRating()
-		dataMap[movieId].Count += e3Data.GetCount()
+	aggregationFunc := func(existing *protocol.Eta_3_Data, input *protocol.Eta_3_Data) {
+		existing.Rating += input.GetRating()
+		existing.Count += input.GetCount()
 	}
 
-	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.ETA_STAGE_3, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.ETA_STAGE_3, err)
+	identifierFunc := func(input *protocol.Eta_3_Data) string {
+		return input.GetMovieId()
 	}
 
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc)
 	return nil
 }
 
-/*
- */
-func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].kappa3.data
+func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := &m.partialResults[clientId].kappa3
 
-	// Sum up the partial participations by actor
-	for _, k3Data := range data {
-		actorId := k3Data.GetActorId()
-
-		if _, ok := dataMap[actorId]; !ok {
-			dataMap[actorId] = &protocol.Kappa_3_Data{
-				ActorId:               actorId,
-				ActorName:             k3Data.GetActorName(),
-				PartialParticipations: 0,
-			}
-		}
-
-		dataMap[actorId].PartialParticipations += k3Data.GetPartialParticipations()
+	aggregationFunc := func(existing *protocol.Kappa_3_Data, input *protocol.Kappa_3_Data) {
+		existing.PartialParticipations += input.GetPartialParticipations()
 	}
 
-	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.KAPPA_STAGE_3, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.KAPPA_STAGE_3, err)
+	identifierFunc := func(input *protocol.Kappa_3_Data) string {
+		return input.GetActorId()
 	}
 
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc)
 	return nil
 }
 
-/*
- */
-func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].nu3Data.data
+func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	partialData := &m.partialResults[clientId].nu3Data
 
-	// Sum up the budget and revenue by sentiment
-	for _, nu3Data := range data {
-		sentiment := fmt.Sprintf("%t", nu3Data.GetSentiment())
-
-		if _, ok := dataMap[sentiment]; !ok {
-			dataMap[sentiment] = &protocol.Nu_3_Data{
-				Sentiment: nu3Data.GetSentiment(),
-				Ratio:     0,
-				Count:     0,
-			}
-		}
-
-		dataMap[sentiment].Ratio += nu3Data.GetRatio()
-		dataMap[sentiment].Count += nu3Data.GetCount()
+	aggregationFunc := func(existing *protocol.Nu_3_Data, input *protocol.Nu_3_Data) {
+		existing.Ratio += input.GetRatio()
+		existing.Count += input.GetCount()
 	}
 
-	err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, common.NU_STAGE_3, common.ANY_SOURCE, dataMap)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.NU_STAGE_3, err)
+	identifierFunc := func(input *protocol.Nu_3_Data) string {
+		return strconv.FormatBool(input.GetSentiment())
 	}
 
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc)
 	return nil
 }
 
-func (m *Merger) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+func mergerNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
 	switch stage {
 	case common.DELTA_STAGE_3:
 		return []common.NextStageData{
 			{
 				Stage:       common.EPSILON_STAGE,
-				Exchange:    m.infraConfig.GetTopExchange(),
-				WorkerCount: m.infraConfig.GetTopCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetTopExchange(),
+				WorkerCount: infraConfig.GetTopCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetTopCount(), clientId+common.EPSILON_STAGE),
 			},
 		}, nil
 	case common.ETA_STAGE_3:
 		return []common.NextStageData{
 			{
 				Stage:       common.THETA_STAGE,
-				Exchange:    m.infraConfig.GetTopExchange(),
-				WorkerCount: m.infraConfig.GetTopCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetTopExchange(),
+				WorkerCount: infraConfig.GetTopCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetTopCount(), clientId+common.THETA_STAGE),
 			},
 		}, nil
 	case common.KAPPA_STAGE_3:
 		return []common.NextStageData{
 			{
 				Stage:       common.LAMBDA_STAGE,
-				Exchange:    m.infraConfig.GetTopExchange(),
-				WorkerCount: m.infraConfig.GetTopCount(),
-				RoutingKey:  m.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetTopExchange(),
+				WorkerCount: infraConfig.GetTopCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetTopCount(), clientId+common.LAMBDA_STAGE),
 			},
 		}, nil
 	case common.NU_STAGE_3:
 		return []common.NextStageData{
 			{
 				Stage:       common.RESULT_STAGE,
-				Exchange:    m.infraConfig.GetResultExchange(),
+				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
+			},
+		}, nil
+	case common.RING_STAGE:
+		return []common.NextStageData{
+			{
+				Stage:       common.RING_STAGE,
+				Exchange:    infraConfig.GetEofExchange(),
+				WorkerCount: infraConfig.GetReduceCount(),
+				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetMergeCount()),
 			},
 		}, nil
 	default:
@@ -240,239 +192,226 @@ func (m *Merger) getNextStageData(stage string, clientId string) ([]common.NextS
 	}
 }
 
+func (m *Merger) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+	return mergerNextStageData(stage, clientId, m.infraConfig, m.itemHashFunc)
+}
+
 func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].delta3.data
+	partialDataMap := m.partialResults[clientId].delta3.data
+	partialData := utils.MapValues(partialDataMap)
+	results := utils.MapSlice(partialData, func(data *protocol.Delta_3_Data) *protocol.Epsilon_Data {
+		return &protocol.Epsilon_Data{
+			ProdCountry:     data.GetCountry(),
+			TotalInvestment: data.GetPartialBudget(),
+		}
+	})
 
-	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
-
-	if _, ok := tasks[TOP_EXCHANGE]; !ok {
-		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Epsilon_Data) string {
+		return data.GetProdCountry()
 	}
 
-	tasks[TOP_EXCHANGE][common.EPSILON_STAGE] = make(map[string]*protocol.Task)
-	epsilonData := make(map[string][]*protocol.Epsilon_Data)
-
-	// Asign the data to the corresponding worker
-	nodeId := m.itemHashFunc(m.infraConfig.GetTopCount(), common.EPSILON_STAGE)
-
-	for _, eData := range dataMap {
-		epsilonData[nodeId] = append(epsilonData[nodeId], &protocol.Epsilon_Data{
-			ProdCountry:     eData.GetCountry(),
-			TotalInvestment: eData.GetPartialBudget(),
-		})
-	}
-
-	// Create tasks for each worker
-	for nodeId, data := range epsilonData {
-		tasks[TOP_EXCHANGE][common.EPSILON_STAGE][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Epsilon_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Epsilon{
 				Epsilon: &protocol.Epsilon{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := m.getNextStageData(common.DELTA_STAGE_3, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return m.itemHashFunc(workersCount, clientId+common.EPSILON_STAGE)
+	}
+
+	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].eta3.data
+	partialDataMap := m.partialResults[clientId].eta3.data
+	partialData := utils.MapValues(partialDataMap)
 
-	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
+	results := utils.MapSlice(partialData, func(data *protocol.Eta_3_Data) *protocol.Theta_Data {
+		return &protocol.Theta_Data{
+			Id:        data.GetMovieId(),
+			Title:     data.GetTitle(),
+			AvgRating: float32(data.GetRating()) / float32(data.GetCount()),
+		}
+	})
 
-	if _, ok := tasks[TOP_EXCHANGE]; !ok {
-		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Theta_Data) string {
+		return data.GetId()
 	}
 
-	tasks[TOP_EXCHANGE][common.THETA_STAGE] = make(map[string]*protocol.Task)
-	thetaData := make(map[string][]*protocol.Theta_Data)
-
-	// Asign the data to the corresponding worker
-	nodeId := m.itemHashFunc(m.infraConfig.GetTopCount(), common.THETA_STAGE)
-
-	for _, e3Data := range dataMap {
-		avgRating := float32(e3Data.GetRating()) / float32(e3Data.GetCount())
-		thetaData[nodeId] = append(thetaData[nodeId], &protocol.Theta_Data{
-			Id:        e3Data.GetMovieId(),
-			Title:     e3Data.GetTitle(),
-			AvgRating: avgRating,
-		})
-	}
-
-	// Create tasks for each worker
-	for nodeId, data := range thetaData {
-		tasks[TOP_EXCHANGE][common.THETA_STAGE][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Theta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Theta{
 				Theta: &protocol.Theta{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := m.getNextStageData(common.ETA_STAGE_3, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return m.itemHashFunc(workersCount, clientId+common.THETA_STAGE)
+	}
+
+	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].kappa3.data
-	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
+	partialDataMap := m.partialResults[clientId].kappa3.data
+	partialData := utils.MapValues(partialDataMap)
 
-	if _, ok := tasks[TOP_EXCHANGE]; !ok {
-		tasks[TOP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	results := utils.MapSlice(partialData, func(data *protocol.Kappa_3_Data) *protocol.Lambda_Data {
+		return &protocol.Lambda_Data{
+			ActorId:        data.GetActorId(),
+			ActorName:      data.GetActorName(),
+			Participations: data.GetPartialParticipations(),
+		}
+	})
+
+	identifierFunc := func(data *protocol.Lambda_Data) string {
+		return data.GetActorId()
 	}
 
-	tasks[TOP_EXCHANGE][common.LAMBDA_STAGE] = make(map[string]*protocol.Task)
-	lambdaData := make(map[string][]*protocol.Lambda_Data)
-	// Asign the data to the corresponding worker
-	nodeId := m.itemHashFunc(m.infraConfig.GetTopCount(), common.LAMBDA_STAGE)
-	// Divide the resulting actors by hashing each actor
-	for _, k3Data := range dataMap {
-		participations := k3Data.GetPartialParticipations()
-		lambdaData[nodeId] = append(lambdaData[nodeId], &protocol.Lambda_Data{
-			ActorId:        k3Data.GetActorId(),
-			ActorName:      k3Data.GetActorName(),
-			Participations: participations,
-		})
-	}
-	// Create tasks for each worker
-	for nodeId, data := range lambdaData {
-		tasks[TOP_EXCHANGE][common.LAMBDA_STAGE][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Lambda_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Lambda{
 				Lambda: &protocol.Lambda{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := m.getNextStageData(common.KAPPA_STAGE_3, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return m.itemHashFunc(workersCount, item)
+	}
+
+	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].nu3Data.data
+	partialDataMap := m.partialResults[clientId].nu3Data.data
+	partialData := utils.MapValues(partialDataMap)
 
-	RESULT_EXCHANGE := m.infraConfig.GetResultExchange()
+	results := utils.MapSlice(partialData, func(data *protocol.Nu_3_Data) *protocol.Result5_Data {
+		return &protocol.Result5_Data{
+			Sentiment: data.GetSentiment(),
+			Ratio:     data.GetRatio() / float32(data.GetCount()),
+		}
+	})
 
-	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
-		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Result5_Data) string {
+		return strconv.FormatBool(data.GetSentiment())
 	}
 
-	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
-	resultData := make(map[string][]*protocol.Result5_Data)
-
-	// Asign the data to the corresponding worker
-	nodeId := clientId
-
-	for _, n3Data := range dataMap {
-		ratio := n3Data.GetRatio() / float32(n3Data.GetCount())
-		resultData[nodeId] = append(resultData[nodeId], &protocol.Result5_Data{
-			Sentiment: n3Data.GetSentiment(),
-			Ratio:     ratio,
-		})
-	}
-
-	// Create tasks for each worker
-	for nodeId, data := range resultData {
-		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Result5_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result5{
 				Result5: &protocol.Result5{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
-}
 
-func (m *Merger) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
-	switch stage {
-	case common.DELTA_STAGE_3:
-		m.delta3Results(tasks, clientId)
-	case common.ETA_STAGE_3:
-		m.eta3Results(tasks, clientId)
-	case common.KAPPA_STAGE_3:
-		m.kappa3Results(tasks, clientId)
-	case common.NU_STAGE_3:
-		m.nu3Results(tasks, clientId)
-	default:
-		return fmt.Errorf("invalid stage: %s", stage)
+	nextStageData, _ := m.getNextStageData(common.NU_STAGE_3, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
 	}
 
-	m.partialResults[clientId].toDeleteCount++
-
-	return nil
+	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
-func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	// tasks = m.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+// Adding EOF handler to Merger
+func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	omegaReady, err := m.getOmegaProcessed(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get omega ready for stage %s: %s", data.GetStage(), err)
+		return nil
+	}
+	if omegaReady {
+		log.Debugf("Omega EOF for stage %s has already been processed for client %s", data.GetStage(), clientId)
+		return nil
+	}
 
-	// switch data.GetStage() {
-	// case common.DELTA_STAGE_3:
-	// 	m.partialResults[clientId].delta3.ready = true
-	// case common.ETA_STAGE_3:
-	// 	m.partialResults[clientId].eta3.ready = true
-	// case common.KAPPA_STAGE_3:
-	// 	m.partialResults[clientId].kappa3.ready = true
-	// case common.NU_STAGE_3:
-	// 	m.partialResults[clientId].nu3Data.ready = true
-	// }
+	taskIdentifiers, err := m.getTaskIdentifiers(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		return nil
+	}
 
-	// if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-	// 	if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
-	// 		delete(m.partialResults, clientId)
-	// 	}
+	return m.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
+}
 
-	// 	if err := storage.DeletePartialResults(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-	// 		log.Errorf("Failed to delete partial results: %s", err)
-	// 	}
-	// 	if err := m.deleteStage(clientId, data.GetStage()); err != nil {
-	// 		log.Errorf("Failed to delete stage: %s", err)
-	// 	}
-	// } else {
-	// 	log.Errorf("Failed to add results to next stage: %s", err)
-	// }
+func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	taskIdentifiers, err := m.getTaskIdentifiers(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		return nil
+	}
+
+	ringRound, err := m.getRingRound(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
+		return nil
+	}
+	if ringRound > data.GetRoundNumber() {
+		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
+		return nil
+	}
+
+	tasks, ready := m.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
+
+	if ready {
+		err = m.addResultsToNextStage(tasks, data.GetStage(), clientId)
+		if err != nil {
+			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
+			return nil
+		}
+	}
 
 	return tasks
 }
 
-func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// var ready bool
-
-	// switch data.GetStage() {
-	// case common.DELTA_STAGE_3:
-	// 	ready = m.partialResults[clientId].delta3.ready
-	// case common.ETA_STAGE_3:
-	// 	ready = m.partialResults[clientId].eta3.ready
-	// case common.KAPPA_STAGE_3:
-	// 	ready = m.partialResults[clientId].kappa3.ready
-	// case common.NU_STAGE_3:
-	// 	ready = m.partialResults[clientId].nu3Data.ready
-	// }
-
-	// return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, ready)
-	return
-}
-
+// Adjusting Execute to pass taskIdentifier
 func (m *Merger) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	taskIdentifier := task.GetTaskIdentifier()
 
 	m.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_3:
 		data := v.Delta_3.GetData()
-		return m.delta3Stage(data, clientId), nil
+		return m.delta3Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Eta_3:
 		data := v.Eta_3.GetData()
-		return m.eta3Stage(data, clientId), nil
+		return m.eta3Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Kappa_3:
 		data := v.Kappa_3.GetData()
-		return m.kappa3Stage(data, clientId), nil
+		return m.kappa3Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Nu_3:
 		data := v.Nu_3.GetData()
-		return m.nu3Stage(data, clientId), nil
+		return m.nu3Stage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
@@ -506,4 +445,70 @@ func (m *Merger) deleteStage(clientId string, stage string) error {
 		}
 	}
 	return nil
+}
+
+// Implementing getTaskIdentifiers for Merger
+func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]*protocol.TaskIdentifier, error) {
+	partialResults := m.partialResults[clientId]
+	switch stage {
+	case common.DELTA_STAGE_3:
+		return utils.MapValues(partialResults.delta3.taskFragments), nil
+	case common.ETA_STAGE_3:
+		return utils.MapValues(partialResults.eta3.taskFragments), nil
+	case common.KAPPA_STAGE_3:
+		return utils.MapValues(partialResults.kappa3.taskFragments), nil
+	case common.NU_STAGE_3:
+		return utils.MapValues(partialResults.nu3Data.taskFragments), nil
+	default:
+		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (m *Merger) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
+	switch stage {
+	case common.DELTA_STAGE_3:
+		m.delta3Results(tasks, clientId)
+	case common.ETA_STAGE_3:
+		m.eta3Results(tasks, clientId)
+	case common.KAPPA_STAGE_3:
+		m.kappa3Results(tasks, clientId)
+	case common.NU_STAGE_3:
+		m.nu3Results(tasks, clientId)
+	default:
+		return fmt.Errorf("invalid stage: %s", stage)
+	}
+
+	return nil
+}
+
+func (m *Merger) getOmegaProcessed(clientId string, stage string) (bool, error) {
+	partialResults := m.partialResults[clientId]
+	switch stage {
+	case common.DELTA_STAGE_3:
+		return partialResults.delta3.omegaProcessed, nil
+	case common.ETA_STAGE_3:
+		return partialResults.eta3.omegaProcessed, nil
+	case common.KAPPA_STAGE_3:
+		return partialResults.kappa3.omegaProcessed, nil
+	case common.NU_STAGE_3:
+		return partialResults.nu3Data.omegaProcessed, nil
+	default:
+		return false, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (m *Merger) getRingRound(clientId string, stage string) (uint32, error) {
+	partialResults := m.partialResults[clientId]
+	switch stage {
+	case common.DELTA_STAGE_3:
+		return partialResults.delta3.ringRound, nil
+	case common.ETA_STAGE_3:
+		return partialResults.eta3.ringRound, nil
+	case common.KAPPA_STAGE_3:
+		return partialResults.kappa3.ringRound, nil
+	case common.NU_STAGE_3:
+		return partialResults.nu3Data.ringRound, nil
+	default:
+		return 0, fmt.Errorf("invalid stage: %s", stage)
+	}
 }

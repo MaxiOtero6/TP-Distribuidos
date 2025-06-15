@@ -12,13 +12,13 @@ import (
 
 type StageData[S any, B any] struct {
 	smallTable PartialData[S]
-	bigTable   PartialData[[]B]
+	bigTable   PartialData[[]*B]
 	ready      bool
 }
 
 type JoinerPartialResults struct {
-	zetaData StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]
-	iotaData StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]
+	zetaData StageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]
+	iotaData StageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]
 }
 
 // Joiner is a struct that implements the Action interface.
@@ -36,24 +36,24 @@ func (j *Joiner) makePartialResults(clientId string) {
 	}
 
 	j.partialResults[clientId] = &JoinerPartialResults{
-		zetaData: StageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{
-			smallTable: PartialData[*protocol.Zeta_Data_Movie]{
+		zetaData: StageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]{
+			smallTable: PartialData[protocol.Zeta_Data_Movie]{
 				data:  make(map[string]*protocol.Zeta_Data_Movie),
 				ready: false,
 			},
 			bigTable: PartialData[[]*protocol.Zeta_Data_Rating]{
-				data:  make(map[string][]*protocol.Zeta_Data_Rating),
+				data:  make(map[string]*[]*protocol.Zeta_Data_Rating),
 				ready: false,
 			},
 			ready: false,
 		},
-		iotaData: StageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{
-			smallTable: PartialData[*protocol.Iota_Data_Movie]{
+		iotaData: StageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]{
+			smallTable: PartialData[protocol.Iota_Data_Movie]{
 				data:  make(map[string]*protocol.Iota_Data_Movie),
 				ready: false,
 			},
 			bigTable: PartialData[[]*protocol.Iota_Data_Actor]{
-				data:  make(map[string][]*protocol.Iota_Data_Actor),
+				data:  make(map[string]*[]*protocol.Iota_Data_Actor),
 				ready: false,
 			},
 			ready: false,
@@ -153,11 +153,11 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string) (t
 }
 
 func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string) (tasks common.Tasks) {
-	var dataMap map[string][]*protocol.Zeta_Data_Rating
+	var dataMap map[string]*[]*protocol.Zeta_Data_Rating
 	readyToJoin := j.partialResults[clientId].zetaData.smallTable.ready
 
 	if readyToJoin {
-		dataMap = make(map[string][]*protocol.Zeta_Data_Rating)
+		dataMap = make(map[string]*[]*protocol.Zeta_Data_Rating)
 	} else {
 		dataMap = j.partialResults[clientId].zetaData.bigTable.data
 	}

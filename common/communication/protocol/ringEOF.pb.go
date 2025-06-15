@@ -140,8 +140,9 @@ type RingEOF struct {
 	CreatorId                     string                 `protobuf:"bytes,3,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
 	ReadyId                       string                 `protobuf:"bytes,4,opt,name=readyId,proto3" json:"readyId,omitempty"`
 	TasksCount                    uint32                 `protobuf:"varint,5,opt,name=tasksCount,proto3" json:"tasksCount,omitempty"`
-	StageFragmentes               []*StageFragment       `protobuf:"bytes,6,rep,name=stageFragmentes,proto3" json:"stageFragmentes,omitempty"`
-	NextStageWorkerParticipantIds []string               `protobuf:"bytes,7,rep,name=nextStageWorkerParticipantIds,proto3" json:"nextStageWorkerParticipantIds,omitempty"`
+	RoundNumber                   uint32                 `protobuf:"varint,6,opt,name=roundNumber,proto3" json:"roundNumber,omitempty"`
+	StageFragmentes               []*StageFragment       `protobuf:"bytes,7,rep,name=stageFragmentes,proto3" json:"stageFragmentes,omitempty"`
+	NextStageWorkerParticipantIds []string               `protobuf:"bytes,8,rep,name=nextStageWorkerParticipantIds,proto3" json:"nextStageWorkerParticipantIds,omitempty"`
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -211,6 +212,13 @@ func (x *RingEOF) GetTasksCount() uint32 {
 	return 0
 }
 
+func (x *RingEOF) GetRoundNumber() uint32 {
+	if x != nil {
+		return x.RoundNumber
+	}
+	return 0
+}
+
 func (x *RingEOF) GetStageFragmentes() []*StageFragment {
 	if x != nil {
 		return x.StageFragmentes
@@ -238,7 +246,7 @@ const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\rStageFragment\x12)\n" +
 	"\x05start\x18\x01 \x01(\v2\x13.FragmentIdentifierR\x05start\x12%\n" +
 	"\x03end\x18\x02 \x01(\v2\x13.FragmentIdentifierR\x03end\x12\"\n" +
-	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\x91\x02\n" +
+	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\xb3\x02\n" +
 	"\aRingEOF\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x18\n" +
 	"\aeofType\x18\x02 \x01(\tR\aeofType\x12\x1c\n" +
@@ -246,9 +254,10 @@ const file_proto_eof_ringEOF_proto_rawDesc = "" +
 	"\areadyId\x18\x04 \x01(\tR\areadyId\x12\x1e\n" +
 	"\n" +
 	"tasksCount\x18\x05 \x01(\rR\n" +
-	"tasksCount\x128\n" +
-	"\x0fstageFragmentes\x18\x06 \x03(\v2\x0e.StageFragmentR\x0fstageFragmentes\x12D\n" +
-	"\x1dnextStageWorkerParticipantIds\x18\a \x03(\tR\x1dnextStageWorkerParticipantIdsB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
+	"tasksCount\x12 \n" +
+	"\vroundNumber\x18\x06 \x01(\rR\vroundNumber\x128\n" +
+	"\x0fstageFragmentes\x18\a \x03(\v2\x0e.StageFragmentR\x0fstageFragmentes\x12D\n" +
+	"\x1dnextStageWorkerParticipantIds\x18\b \x03(\tR\x1dnextStageWorkerParticipantIdsB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
 	file_proto_eof_ringEOF_proto_rawDescOnce sync.Once

@@ -95,7 +95,7 @@ func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]st
 	return exchanges, queues, binds, nil
 }
 
-func MapToSlice[T any, K comparable](dataMap map[K]T) []T {
+func MapValues[T any, K comparable](dataMap map[K]T) []T {
 	result := make([]T, 0, len(dataMap))
 	for _, value := range dataMap {
 		result = append(result, value)
@@ -103,7 +103,7 @@ func MapToSlice[T any, K comparable](dataMap map[K]T) []T {
 	return result
 }
 
-func MapData[F any, T any](data []F, mapperFunc func(F) T) []T {
+func MapSlice[F any, T any](data []F, mapperFunc func(F) T) []T {
 	mappedData := make([]T, len(data))
 	for i, item := range data {
 		mappedData[i] = mapperFunc(item)
@@ -111,7 +111,7 @@ func MapData[F any, T any](data []F, mapperFunc func(F) T) []T {
 	return mappedData
 }
 
-func FilterData[T any](data []*T, filterFunc func(input *T) bool) []*T {
+func FilterSlice[T any](data []*T, filterFunc func(input *T) bool) []*T {
 	filteredData := make([]*T, 0)
 
 	for _, item := range data {
@@ -126,17 +126,36 @@ func FilterData[T any](data []*T, filterFunc func(input *T) bool) []*T {
 	return filteredData
 }
 
-func GroupData[T any](data []*T, keyFunc func(item *T) string, accFunc func(acc *T, item *T)) []*T {
-	dataMap := make(map[string]*T)
+func GroupByKey[T any](items []*T,
+	keySelector func(*T) string,
+	merge func(*T, *T),
+) []*T {
+	grouped := make(map[string]*T)
 
-	for _, item := range data {
-		key := keyFunc(item)
-		if _, exists := dataMap[key]; !exists {
-			dataMap[key] = item
+	for _, item := range items {
+		key := keySelector(item)
+		if existing, found := grouped[key]; found {
+			merge(existing, item)
 		} else {
-			accFunc(dataMap[key], item)
+			grouped[key] = item
 		}
 	}
 
-	return MapToSlice(dataMap)
+	return MapValues(grouped)
+}
+
+func MergeIntoMap[T any](
+	target map[string]*T,
+	items []*T,
+	keySelector func(*T) string,
+	merge func(*T, *T),
+) {
+	for _, item := range items {
+		key := keySelector(item)
+		if existing, found := target[key]; found {
+			merge(existing, item)
+		} else {
+			target[key] = item
+		}
+	}
 }
