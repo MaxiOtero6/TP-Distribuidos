@@ -68,25 +68,6 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return reducer
 }
 
-/*
-delta2Stage partially sum up investment by country
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Then it divides the resulting countries by hashing each country and send it to the corresponding worker to finish the reduction.
-
-# Return example
-
-	{
-		"topExchange": {
-			"delta_3": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].delta2
 	stage := common.DELTA_STAGE_2
@@ -110,23 +91,6 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, ta
 	return nil
 }
 
-/*
-eta2Stage calculates average rating for each movie
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"topExchange": {
-			"theta": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
 func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].eta2
 	stage := common.ETA_STAGE_2
@@ -153,23 +117,6 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskId
 	return nil
 }
 
-/*
-kappa2Stage reduce into one, partials actors participations in movies
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"topExchange": {
-			"lambda": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
 func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].kappa2
 	stage := common.KAPPA_STAGE_2
@@ -194,22 +141,6 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 	return nil
 }
 
-/*
-nu2Stage reduce into one, partials revenue and budget from movies by sentiment.
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"resultExchange": {
-			"result": {
-				"" : Task
-			}
-		},
-	}
-*/
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].nu2Data
 	stage := common.NU_STAGE_2
