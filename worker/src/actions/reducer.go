@@ -28,7 +28,6 @@ type Reducer struct {
 	infraConfig    *model.InfraConfig
 	partialResults map[string]*ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
-	randomHashFunc func(workersCount int) string
 	eofHandler     *eof.StatefulEofHandler
 }
 
@@ -60,7 +59,6 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
-		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
 	}
 
@@ -196,7 +194,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].delta2.data
 	partialData := utils.MapValues(partialDataMap)
-	results := utils.MapSlice(partialData, func(data *protocol.Delta_2_Data) *protocol.Delta_3_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Delta_2_Data) *protocol.Delta_3_Data {
 		return &protocol.Delta_3_Data{
 			Country:       data.GetCountry(),
 			PartialBudget: data.GetPartialBudget(),
@@ -237,7 +235,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].eta2.data
 	partialData := utils.MapValues(partialDataMap)
-	results := utils.MapSlice(partialData, func(data *protocol.Eta_2_Data) *protocol.Eta_3_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Eta_2_Data) *protocol.Eta_3_Data {
 		return &protocol.Eta_3_Data{
 			MovieId: data.GetMovieId(),
 			Title:   data.GetTitle(),
@@ -280,7 +278,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].kappa2.data
 	partialData := utils.MapValues(partialDataMap)
-	results := utils.MapSlice(partialData, func(data *protocol.Kappa_2_Data) *protocol.Kappa_3_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Kappa_2_Data) *protocol.Kappa_3_Data {
 		return &protocol.Kappa_3_Data{
 			ActorId:               data.GetActorId(),
 			ActorName:             data.GetActorName(),
@@ -322,7 +320,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].nu2.data
 	partialData := utils.MapValues(partialDataMap)
-	results := utils.MapSlice(partialData, func(data *protocol.Nu_2_Data) *protocol.Nu_3_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Nu_2_Data) *protocol.Nu_3_Data {
 		return &protocol.Nu_3_Data{
 			Sentiment: data.GetSentiment(),
 			Ratio:     data.GetRatio(),
@@ -426,6 +424,33 @@ func (r *Reducer) getRingRound(clientId string, stage string) (uint32, error) {
 	}
 }
 
+// Actualizar funciones para usar las constantes de etapas del paquete common
+func (r *Reducer) updateOmegaProcessed(clientId string, stage string) {
+	switch stage {
+	case common.DELTA_STAGE_2:
+		r.partialResults[clientId].delta2.omegaProcessed = true
+	case common.ETA_STAGE_2:
+		r.partialResults[clientId].eta2.omegaProcessed = true
+	case common.KAPPA_STAGE_2:
+		r.partialResults[clientId].kappa2.omegaProcessed = true
+	case common.NU_STAGE_2:
+		r.partialResults[clientId].nu2.omegaProcessed = true
+	}
+}
+
+func (r *Reducer) updateRingRound(clientId string, stage string, round uint32) {
+	switch stage {
+	case common.DELTA_STAGE_2:
+		r.partialResults[clientId].delta2.ringRound = round
+	case common.ETA_STAGE_2:
+		r.partialResults[clientId].eta2.ringRound = round
+	case common.KAPPA_STAGE_2:
+		r.partialResults[clientId].kappa2.ringRound = round
+	case common.NU_STAGE_2:
+		r.partialResults[clientId].nu2.ringRound = round
+	}
+}
+
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
 	omegaReady, err := r.getOmegaProcessed(clientId, data.GetStage())
 	if err != nil {
@@ -443,6 +468,8 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) c
 		return nil
 	}
 
+	r.updateOmegaProcessed(clientId, data.GetStage())
+
 	return r.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
 }
 
@@ -458,10 +485,12 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
 		return nil
 	}
-	if ringRound > data.GetRoundNumber() {
+	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
 		return nil
 	}
+
+	r.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
 
 	tasks, ready := r.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
 

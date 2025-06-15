@@ -103,10 +103,10 @@ func MapValues[T any, K comparable](dataMap map[K]T) []T {
 	return result
 }
 
-func MapSlice[F any, T any](data []F, mapperFunc func(F) T) []T {
+func MapSlice[F any, T any](data []F, mapperFunc func(int, F) T) []T {
 	mappedData := make([]T, len(data))
 	for i, item := range data {
-		mappedData[i] = mapperFunc(item)
+		mappedData[i] = mapperFunc(i, item)
 	}
 	return mappedData
 }

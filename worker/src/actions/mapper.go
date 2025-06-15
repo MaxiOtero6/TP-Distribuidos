@@ -56,7 +56,7 @@ Return example
 func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	mappedData := utils.MapSlice(data, func(input *protocol.Delta_1_Data) *protocol.Delta_2_Data {
+	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Delta_1_Data) *protocol.Delta_2_Data {
 		return &protocol.Delta_2_Data{
 			Country:       input.GetCountry(),
 			PartialBudget: input.GetBudget(),
@@ -116,7 +116,7 @@ Return example
 func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	mappedData := utils.MapSlice(data, func(input *protocol.Eta_1_Data) *protocol.Eta_2_Data {
+	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Eta_1_Data) *protocol.Eta_2_Data {
 		return &protocol.Eta_2_Data{
 			MovieId: input.GetMovieId(),
 			Title:   input.GetTitle(),
@@ -179,7 +179,7 @@ Return example
 func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	mappedData := utils.MapSlice(data, func(input *protocol.Kappa_1_Data) *protocol.Kappa_2_Data {
+	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Kappa_1_Data) *protocol.Kappa_2_Data {
 		return &protocol.Kappa_2_Data{
 			ActorId:               input.GetActorId(),
 			ActorName:             input.GetActorName(),
@@ -240,7 +240,7 @@ Return example
 func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
-	mappedData := utils.MapSlice(data, func(input *protocol.Nu_1_Data) *protocol.Nu_2_Data {
+	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Nu_1_Data) *protocol.Nu_2_Data {
 		return &protocol.Nu_2_Data{
 			Sentiment: input.GetSentiment(),
 			Ratio:     float32(float64(input.GetRevenue()) / float64(input.GetBudget())),

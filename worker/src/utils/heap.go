@@ -64,13 +64,17 @@ func (h *TopKHeap[V, D]) Insert(value V, data D) {
 }
 
 // GetTopK returns the elements in the heap in descending order.
-func (h *TopKHeap[V, D]) GetTopK() []*Element[V, D] {
-	result := make([]*Element[V, D], len(h.heap))
-	copy(result, h.heap)
+func (h *TopKHeap[V, D]) GetTopK() []D {
+	len := min(h.heap.Len(), h.k)
 
-	// Ordenar explícitamente en orden descendente por el valor
+	result := make([]D, len)
+	for i := range len {
+		elem := heap.Pop(&h.heap).(*Element[V, D])
+		result[i] = elem.Data
+	}
+
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].Value > result[j].Value
+		return h.heap[i].Value > h.heap[j].Value
 	})
 
 	return result

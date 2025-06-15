@@ -27,7 +27,6 @@ type Merger struct {
 	infraConfig    *model.InfraConfig
 	partialResults map[string]*MergerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
-	randomHashFunc func(workersCount int) string
 	eofHandler     *eof.StatefulEofHandler
 }
 
@@ -70,7 +69,6 @@ func NewMerger(infraConfig *model.InfraConfig) *Merger {
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*MergerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
-		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
 	}
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
@@ -199,7 +197,7 @@ func (m *Merger) getNextStageData(stage string, clientId string) ([]common.NextS
 func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 	partialDataMap := m.partialResults[clientId].delta3.data
 	partialData := utils.MapValues(partialDataMap)
-	results := utils.MapSlice(partialData, func(data *protocol.Delta_3_Data) *protocol.Epsilon_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Delta_3_Data) *protocol.Epsilon_Data {
 		return &protocol.Epsilon_Data{
 			ProdCountry:     data.GetCountry(),
 			TotalInvestment: data.GetPartialBudget(),
@@ -234,7 +232,7 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 	partialDataMap := m.partialResults[clientId].eta3.data
 	partialData := utils.MapValues(partialDataMap)
 
-	results := utils.MapSlice(partialData, func(data *protocol.Eta_3_Data) *protocol.Theta_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Eta_3_Data) *protocol.Theta_Data {
 		return &protocol.Theta_Data{
 			Id:        data.GetMovieId(),
 			Title:     data.GetTitle(),
@@ -270,7 +268,7 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 	partialDataMap := m.partialResults[clientId].kappa3.data
 	partialData := utils.MapValues(partialDataMap)
 
-	results := utils.MapSlice(partialData, func(data *protocol.Kappa_3_Data) *protocol.Lambda_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Kappa_3_Data) *protocol.Lambda_Data {
 		return &protocol.Lambda_Data{
 			ActorId:        data.GetActorId(),
 			ActorName:      data.GetActorName(),
@@ -296,7 +294,7 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 
 	nextStageData, _ := m.getNextStageData(common.KAPPA_STAGE_3, clientId)
 	hashFunc := func(workersCount int, item string) string {
-		return m.itemHashFunc(workersCount, item)
+		return m.itemHashFunc(workersCount, clientId+common.LAMBDA_STAGE)
 	}
 
 	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
@@ -306,7 +304,7 @@ func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
 	partialDataMap := m.partialResults[clientId].nu3Data.data
 	partialData := utils.MapValues(partialDataMap)
 
-	results := utils.MapSlice(partialData, func(data *protocol.Nu_3_Data) *protocol.Result5_Data {
+	results := utils.MapSlice(partialData, func(_ int, data *protocol.Nu_3_Data) *protocol.Result5_Data {
 		return &protocol.Result5_Data{
 			Sentiment: data.GetSentiment(),
 			Ratio:     data.GetRatio() / float32(data.GetCount()),
@@ -370,7 +368,7 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
 		return nil
 	}
-	if ringRound > data.GetRoundNumber() {
+	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
 		return nil
 	}

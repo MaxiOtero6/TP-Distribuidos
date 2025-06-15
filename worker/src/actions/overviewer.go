@@ -72,7 +72,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumb
 		return input.GetBudget() != 0 && input.GetRevenue() != 0 && input.GetOverview() != ""
 	})
 
-	mappedData := utils.MapSlice(filteredData, func(input *protocol.Mu_Data) *protocol.Nu_1_Data {
+	mappedData := utils.MapSlice(filteredData, func(_ int, input *protocol.Mu_Data) *protocol.Nu_1_Data {
 		return &protocol.Nu_1_Data{
 			Id:        input.GetId(),
 			Title:     input.GetTitle(),

@@ -77,7 +77,7 @@ func (h *StatefulEofHandler) initRingEof(omegaEOFData *protocol.OmegaEOF_Data) *
 		CreatorId:                     h.nodeId,
 		ReadyId:                       "",
 		TasksCount:                    omegaEOFData.GetTasksCount(),
-		RoundNumber:                   0,
+		RoundNumber:                   1, // Start with round 1 so it does not conflict with the default round 0
 		StageFragmentes:               []*protocol.StageFragment{},
 		NextStageWorkerParticipantIds: []string{},
 	}

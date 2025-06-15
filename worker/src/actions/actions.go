@@ -113,35 +113,6 @@ func AddResults[T any](
 	}
 }
 
-// func ProcessStage[T any](
-// 	partialData *PartialData[T],
-// 	newData []*T,
-// 	clientId string,
-// 	taskIdentifier *protocol.TaskIdentifier,
-// 	stage string,
-// 	aggregationFunc func(existing *T, input *T),
-// 	identifierFunc func(input *T) string,
-// ) {
-// 	if _, ok := partialData.taskFragments[taskIdentifier.GetTaskNumber()]; ok {
-// 		// Task already processed
-// 		return
-// 	}
-
-// 	// Mark the task as processed
-// 	partialData.taskFragments[taskIdentifier.GetTaskNumber()] = taskIdentifier
-
-// 	// Convert map to slice and aggregate data using utils.GroupData
-// 	dataSlice := utils.MapValues(partialData.data)
-// 	groupedData := utils.GroupByKey(dataSlice, identifierFunc, aggregationFunc)
-// 	partialData.data = utils.MapToMap(groupedData, identifierFunc)
-
-// 	// // Save data to storage
-// 	// err := storage.SaveDataToFile("/path/to/directory", clientId, stage, "ANY_SOURCE", partialData.data)
-// 	// if err != nil {
-// 	// 	log.Errorf("Failed to save %s data: %s", stage, err)
-// 	// }
-// }
-
 func ProcessStage[T any](
 	partial *PartialData[T],
 	newItems []*T,
@@ -162,10 +133,4 @@ func ProcessStage[T any](
 
 	// Aggregate data
 	utils.MergeIntoMap(partial.data, newItems, keySelector, merge)
-
-	// TODO: Save data to storage
-	// err := storage.SaveDataToFile("/path/to/directory", clientID, stage, "ANY_SOURCE", partial.data)
-	// if err != nil {
-	//     log.Errorf("Failed to save %s data: %s", stage, err)
-	// }
 }
