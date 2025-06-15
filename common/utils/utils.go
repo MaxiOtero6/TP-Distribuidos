@@ -94,3 +94,49 @@ func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]st
 
 	return exchanges, queues, binds, nil
 }
+
+func MapToSlice[T any, K comparable](dataMap map[K]T) []T {
+	result := make([]T, 0, len(dataMap))
+	for _, value := range dataMap {
+		result = append(result, value)
+	}
+	return result
+}
+
+func MapData[F any, T any](data []F, mapperFunc func(F) T) []T {
+	mappedData := make([]T, len(data))
+	for i, item := range data {
+		mappedData[i] = mapperFunc(item)
+	}
+	return mappedData
+}
+
+func FilterData[T any](data []*T, filterFunc func(input *T) bool) []*T {
+	filteredData := make([]*T, 0)
+
+	for _, item := range data {
+		if item == nil {
+			continue
+		}
+		if filterFunc(item) {
+			filteredData = append(filteredData, item)
+		}
+	}
+
+	return filteredData
+}
+
+func GroupData[T any](data []*T, keyFunc func(item *T) string, accFunc func(acc *T, item *T)) []*T {
+	dataMap := make(map[string]*T)
+
+	for _, item := range data {
+		key := keyFunc(item)
+		if _, exists := dataMap[key]; !exists {
+			dataMap[key] = item
+		} else {
+			accFunc(dataMap[key], item)
+		}
+	}
+
+	return MapToSlice(dataMap)
+}

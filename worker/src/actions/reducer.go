@@ -2,13 +2,13 @@ package actions
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 )
 
@@ -29,7 +29,7 @@ type Reducer struct {
 	partialResults map[string]*ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	// eofHandler     eof_handler.IEOFHandler
+	eofHandler     *eof.StatefulEofHandler
 }
 
 func (r *Reducer) makePartialResults(clientId string) {
@@ -49,12 +49,18 @@ func (r *Reducer) makePartialResults(clientId string) {
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
 func NewReducer(infraConfig *model.InfraConfig) *Reducer {
+	eofHandler := eof.NewStatefulEofHandler(
+		infraConfig,
+		reducerNextStageData,
+		utils.GetWorkerIdFromHash,
+	)
+
 	reducer := &Reducer{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		// eofHandler:     eofHandler,
+		eofHandler:     eofHandler,
 	}
 
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
@@ -100,7 +106,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, ta
 		}
 	}
 
-	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
+	ProcessStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -143,7 +149,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskId
 		}
 	}
 
-	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
+	ProcessStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -184,7 +190,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 		}
 	}
 
-	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
+	ProcessStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
@@ -225,55 +231,64 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIden
 		}
 	}
 
-	processStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
+	ProcessStage(partialData, clientId, taskIdentifier, stage, aggregationFunc, identifierFunc, creatorFunc)
 	return nil
 }
 
-func (r *Reducer) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+func (r *Reducer) nextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+	return reducerNextStageData(
+		stage,
+		clientId,
+		r.infraConfig,
+		r.itemHashFunc,
+	)
+}
+
+func reducerNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		return []common.NextStageData{
 			{
 				Stage:       common.DELTA_STAGE_3,
-				Exchange:    r.infraConfig.GetMergeExchange(),
-				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetMergeExchange(),
+				WorkerCount: infraConfig.GetMergeCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.DELTA_STAGE_3),
 			},
 		}, nil
 	case common.ETA_STAGE_2:
 		return []common.NextStageData{
 			{
 				Stage:       common.ETA_STAGE_3,
-				Exchange:    r.infraConfig.GetMergeExchange(),
-				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetMergeExchange(),
+				WorkerCount: infraConfig.GetMergeCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.ETA_STAGE_3),
 			},
 		}, nil
 	case common.KAPPA_STAGE_2:
 		return []common.NextStageData{
 			{
 				Stage:       common.KAPPA_STAGE_3,
-				Exchange:    r.infraConfig.GetMergeExchange(),
-				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetMergeExchange(),
+				WorkerCount: infraConfig.GetMergeCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.KAPPA_STAGE_3),
 			},
 		}, nil
 	case common.NU_STAGE_2:
 		return []common.NextStageData{
 			{
 				Stage:       common.NU_STAGE_3,
-				Exchange:    r.infraConfig.GetMergeExchange(),
-				WorkerCount: r.infraConfig.GetMergeCount(),
-				RoutingKey:  r.infraConfig.GetEofBroadcastRK(),
+				Exchange:    infraConfig.GetMergeExchange(),
+				WorkerCount: infraConfig.GetMergeCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.NU_STAGE_3),
 			},
 		}, nil
 	case common.RING_STAGE:
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    r.infraConfig.GetEofExchange(),
-				WorkerCount: r.infraConfig.GetReduceCount(),
-				RoutingKey:  utils.GetNextNodeId(r.infraConfig.GetNodeId(), r.infraConfig.GetReduceCount()),
+				Exchange:    infraConfig.GetEofExchange(),
+				WorkerCount: infraConfig.GetReduceCount(),
+				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetReduceCount()),
 			},
 		}, nil
 	default:
@@ -283,171 +298,174 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]common.Next
 }
 
 func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].delta2.data
-
-	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
-	MERGE_COUNT := r.infraConfig.GetMergeCount()
-
-	if _, ok := tasks[MERGE_EXCHANGE]; !ok {
-		tasks[MERGE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	}
-
-	tasks[MERGE_EXCHANGE][common.DELTA_STAGE_3] = make(map[string]*protocol.Task)
-	delta3Data := make(map[string][]*protocol.Delta_3_Data)
-
-	// Divide the resulting countries by hashing each country
-	for _, d3Data := range dataMap {
-		nodeId := r.itemHashFunc(MERGE_COUNT, d3Data.GetCountry())
-		delta3Data[nodeId] = append(delta3Data[nodeId], &protocol.Delta_3_Data{
-			Country:       d3Data.GetCountry(),
-			PartialBudget: d3Data.GetPartialBudget(),
-		})
-	}
-
-	destinationNodes := make([]string, len(delta3Data))
-	// Fill destinationNodes with the node IDs
-	for nodeId := range delta3Data {
-		destinationNodes = append(destinationNodes, nodeId)
-	}
-	// Sort destinationNodes to ensure consistent order
-	slices.Sort(destinationNodes)
-
-	taskIdentifiersByNodeId := make(map[string]*protocol.TaskIdentifier)
-	for index, nodeId := range destinationNodes {
-		taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
-
-		taskIdentifiersByNodeId[nodeId] = &protocol.TaskIdentifier{
-			TaskNumber:         uint32(taskNumber),
-			TaskFragmentNumber: uint32(index),
-			LastFragment:       index == len(destinationNodes)-1,
+	partialDataMap := r.partialResults[clientId].delta2.data
+	partialData := utils.MapToSlice(partialDataMap)
+	results := utils.MapData(partialData, func(data *protocol.Delta_2_Data) *protocol.Delta_3_Data {
+		return &protocol.Delta_3_Data{
+			Country:       data.GetCountry(),
+			PartialBudget: data.GetPartialBudget(),
 		}
+	})
+
+	identifierFunc := func(data *protocol.Delta_3_Data) string {
+		return data.GetCountry()
 	}
 
-	// Create tasks for each worker
-	for nodeId, data := range delta3Data {
-		tasks[MERGE_EXCHANGE][common.DELTA_STAGE_3][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Delta_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Delta_3{
 				Delta_3: &protocol.Delta_3{
 					Data: data,
 				},
 			},
-			TaskIdentifier: taskIdentifiersByNodeId[nodeId],
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := r.nextStageData(common.DELTA_STAGE_2, clientId)
+	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	AddResults(
+		tasks,
+		results,
+		nextStageData[0],
+		clientId,
+		taskNumber,
+		r.itemHashFunc,
+		identifierFunc,
+		taskDataCreator,
+	)
 }
 
 func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].eta2
+	partialDataMap := r.partialResults[clientId].eta2.data
+	partialData := utils.MapToSlice(partialDataMap)
+	results := utils.MapData(partialData, func(data *protocol.Eta_2_Data) *protocol.Eta_3_Data {
+		return &protocol.Eta_3_Data{
+			MovieId: data.GetMovieId(),
+			Title:   data.GetTitle(),
+			Rating:  data.GetRating(),
+			Count:   data.GetCount(),
+		}
+	})
 
-	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
-	MERGE_COUNT := r.infraConfig.GetMergeCount()
-
-	if _, ok := tasks[MERGE_EXCHANGE]; !ok {
-		tasks[MERGE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Eta_3_Data) string {
+		return data.GetMovieId()
 	}
 
-	tasks[MERGE_EXCHANGE][common.ETA_STAGE_3] = make(map[string]*protocol.Task)
-	eta3Data := make(map[string][]*protocol.Eta_3_Data)
-
-	// Divide the resulting movies by hashing each movie
-	for _, e2Data := range dataMap {
-		nodeId := r.itemHashFunc(MERGE_COUNT, e2Data.GetMovieId())
-		eta3Data[nodeId] = append(eta3Data[nodeId], &protocol.Eta_3_Data{
-			MovieId: e2Data.GetMovieId(),
-			Title:   e2Data.GetTitle(),
-			Rating:  e2Data.GetRating(),
-			Count:   e2Data.GetCount(),
-		})
-	}
-
-	// Create tasks for each worker
-	for nodeId, data := range eta3Data {
-		tasks[MERGE_EXCHANGE][common.ETA_STAGE_3][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Eta_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Eta_3{
 				Eta_3: &protocol.Eta_3{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := r.nextStageData(common.ETA_STAGE_2, clientId)
+	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	AddResults(
+		tasks,
+		results,
+		nextStageData[0],
+		clientId,
+		taskNumber,
+		r.itemHashFunc,
+		identifierFunc,
+		taskDataCreator,
+	)
 }
 
 func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].kappa2
+	partialDataMap := r.partialResults[clientId].kappa2.data
+	partialData := utils.MapToSlice(partialDataMap)
+	results := utils.MapData(partialData, func(data *protocol.Kappa_2_Data) *protocol.Kappa_3_Data {
+		return &protocol.Kappa_3_Data{
+			ActorId:               data.GetActorId(),
+			ActorName:             data.GetActorName(),
+			PartialParticipations: data.GetPartialParticipations(),
+		}
+	})
 
-	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
-	MERGE_COUNT := r.infraConfig.GetMergeCount()
-
-	if _, ok := tasks[MERGE_EXCHANGE]; !ok {
-		tasks[MERGE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Kappa_3_Data) string {
+		return data.GetActorId()
 	}
 
-	tasks[MERGE_EXCHANGE][common.KAPPA_STAGE_3] = make(map[string]*protocol.Task)
-	kappa3Data := make(map[string][]*protocol.Kappa_3_Data)
-
-	// Divide the resulting actors by hashing each actor
-	for _, k2Data := range dataMap {
-		nodeId := r.itemHashFunc(MERGE_COUNT, k2Data.GetActorId())
-		kappa3Data[nodeId] = append(kappa3Data[nodeId], &protocol.Kappa_3_Data{
-			ActorId:               k2Data.GetActorId(),
-			ActorName:             k2Data.GetActorName(),
-			PartialParticipations: k2Data.GetPartialParticipations(),
-		})
-	}
-	// Create tasks for each worker
-	for nodeId, data := range kappa3Data {
-		tasks[MERGE_EXCHANGE][common.KAPPA_STAGE_3][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Kappa_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Kappa_3{
 				Kappa_3: &protocol.Kappa_3{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := r.nextStageData(common.KAPPA_STAGE_2, clientId)
+	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	AddResults(
+		tasks,
+		results,
+		nextStageData[0],
+		clientId,
+		taskNumber,
+		r.itemHashFunc,
+		identifierFunc,
+		taskDataCreator,
+	)
 }
 
 func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].nu2Data
+	partialDataMap := r.partialResults[clientId].nu2Data.data
+	partialData := utils.MapToSlice(partialDataMap)
+	results := utils.MapData(partialData, func(data *protocol.Nu_2_Data) *protocol.Nu_3_Data {
+		return &protocol.Nu_3_Data{
+			Sentiment: data.GetSentiment(),
+			Ratio:     data.GetRatio(),
+			Count:     data.GetCount(),
+		}
+	})
 
-	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
-	MERGE_COUNT := r.infraConfig.GetMergeCount()
-
-	if _, ok := tasks[MERGE_EXCHANGE]; !ok {
-		tasks[MERGE_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	identifierFunc := func(data *protocol.Nu_3_Data) string {
+		return strconv.FormatBool(data.GetSentiment())
 	}
 
-	tasks[MERGE_EXCHANGE][common.NU_STAGE_3] = make(map[string]*protocol.Task)
-
-	nu3Data := make(map[string][]*protocol.Nu_3_Data)
-
-	// Divide the resulting sentiments by hashing each sentiment
-	for _, n2Data := range dataMap {
-		sentiment := fmt.Sprintf("%t", n2Data.GetSentiment())
-		nodeId := r.itemHashFunc(MERGE_COUNT, sentiment)
-		nu3Data[nodeId] = append(nu3Data[nodeId], &protocol.Nu_3_Data{
-			Sentiment: n2Data.GetSentiment(),
-			Ratio:     n2Data.GetRatio(),
-			Count:     n2Data.GetCount(),
-		})
-	}
-
-	// Create tasks for each worker
-	for nodeId, data := range nu3Data {
-		tasks[MERGE_EXCHANGE][common.NU_STAGE_3][nodeId] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Nu_3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_3{
 				Nu_3: &protocol.Nu_3{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := r.nextStageData(common.NU_STAGE_2, clientId)
+	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	AddResults(
+		tasks,
+		results,
+		nextStageData[0],
+		clientId,
+		taskNumber,
+		r.itemHashFunc,
+		identifierFunc,
+		taskDataCreator,
+	)
 }
 
-func (r *Reducer) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
+func (r *Reducer) AddResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		r.delta2Results(tasks, clientId)
@@ -464,73 +482,51 @@ func (r *Reducer) addResultsToNextStage(tasks common.Tasks, stage string, client
 	return nil
 }
 
-func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	// tasks = r.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
-
-	// if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-	// 	if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-	// 		log.Errorf("Failed to delete partial results: %s", err)
-	// 	}
-	// 	if err := r.deleteStage(clientId, data.GetStage()); err != nil {
-	// 		log.Errorf("Failed to delete stage: %s", err)
-	// 	}
-	// }
-
-	return tasks
+func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]*protocol.TaskIdentifier, error) {
+	partialResults := r.partialResults[clientId]
+	switch stage {
+	case common.DELTA_STAGE_2:
+		return utils.MapToSlice(partialResults.delta2.taskFragments), nil
+	case common.ETA_STAGE_2:
+		return utils.MapToSlice(partialResults.eta2.taskFragments), nil
+	case common.KAPPA_STAGE_2:
+		return utils.MapToSlice(partialResults.kappa2.taskFragments), nil
+	case common.NU_STAGE_2:
+		return utils.MapToSlice(partialResults.nu2Data.taskFragments), nil
+	default:
+		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
 }
 
-func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// tasks = r.eofHandler.HandleRing(data, clientId, r.getNextStageData, true)
-
-	// if r.infraConfig.GetNodeId() != data.GetCreatorId() {
-	// 	if err := r.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-	// 		if err := storage.DeletePartialResults(r.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
-	// 			log.Errorf("Failed to delete partial results: %s", err)
-	// 		}
-	// 		if err := r.deleteStage(clientId, data.GetStage()); err != nil {
-	// 			log.Errorf("Failed to delete stage: %s", err)
-	// 		}
-	// 	} else {
-	// 		log.Errorf("Failed to add results to next stage: %s", err)
-	// 	}
-	// }
-
-	return tasks
-}
-
-// processStage is a generic function to handle task fragment checking, aggregation, and storage.
-func processStage[T any](
-	partialData *PartialData[T],
-	clientId string,
-	taskIdentifier *protocol.TaskIdentifier,
-	stage string,
-	aggregationFunc func(existing T, input T),
-	identifierFunc func(input T) string,
-	creatorFunc func(input T) T,
-) {
-	if _, ok := partialData.taskFragments[taskIdentifier.GetTaskNumber()]; ok {
-		// Task already processed
-		return
-	}
-
-	// Mark the task as processed
-	partialData.taskFragments[taskIdentifier.GetTaskNumber()] = taskIdentifier
-
-	// Aggregate data
-	for _, input := range partialData.data {
-		id := identifierFunc(input)
-		if _, exists := partialData.data[id]; !exists {
-			partialData.data[id] = creatorFunc(input)
-		}
-		existing := partialData.data[id]
-		aggregationFunc(existing, input)
-	}
-
-	// Save data to storage
-	err := storage.SaveDataToFile("/path/to/directory", clientId, stage, "ANY_SOURCE", partialData.data)
+func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	taskIdentifiers, err := r.getTaskIdentifiers(clientId, data.GetStage())
 	if err != nil {
-		log.Errorf("Failed to save %s data: %s", stage, err)
+		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		return nil
 	}
+
+	return r.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
+}
+
+func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	taskIdentifiers, err := r.getTaskIdentifiers(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		return nil
+	}
+
+	tasks, ready := r.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
+
+	if ready {
+		err = r.AddResultsToNextStage(tasks, data.GetStage(), clientId)
+
+		if err != nil {
+			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
+			return nil
+		}
+	}
+
+	return tasks
 }
 
 func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {

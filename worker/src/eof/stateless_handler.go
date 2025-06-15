@@ -2,19 +2,25 @@ package eof
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
-
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 )
 
 type StatelessEofHandler struct {
-	NextStageFunc func(stage string, clientId string) ([]common.NextStageData, error)
+	infraConfig   *model.InfraConfig
+	nextStageFunc func(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error)
+	itemHashFunc  func(workersCount int, item string) string
 }
 
 func NewStatelessEofHandler(
-	nextStageFunc func(stage string, clientId string) ([]common.NextStageData, error),
+	infraConfig *model.InfraConfig,
+	nextStageFunc func(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error),
+	itemHashFunc func(workersCount int, item string) string,
 ) *StatelessEofHandler {
 	return &StatelessEofHandler{
-		NextStageFunc: nextStageFunc,
+		infraConfig,
+		nextStageFunc,
+		itemHashFunc,
 	}
 }
 
@@ -22,7 +28,7 @@ func (h *StatelessEofHandler) HandleOmegaEOF(eofData *protocol.OmegaEOF_Data, cl
 	tasks := make(common.Tasks)
 
 	stage := eofData.Stage
-	nextStagesData, err := h.NextStageFunc(stage, clientId)
+	nextStagesData, err := h.nextStageFunc(stage, clientId, h.infraConfig, h.itemHashFunc)
 
 	if err != nil {
 		return tasks

@@ -23,18 +23,19 @@ type Filter struct {
 }
 
 func NewFilter(infraConfig *model.InfraConfig) *Filter {
+	eofHandler := eof.NewStatelessEofHandler(
+		infraConfig,
+		filterNextStageData,
+		utils.GetWorkerIdFromHash,
+	)
+
 	f := &Filter{
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
-		eofHandler:     nil,
+		eofHandler:     eofHandler,
 	}
 
-	eofHandler := eof.NewStatelessEofHandler(
-		f.getNextStageData,
-	)
-
-	f.eofHandler = eofHandler
 	return f
 }
 
@@ -43,269 +44,220 @@ const SPAIN_COUNTRY string = "Spain"
 const MOVIE_YEAR_2000 uint32 = 2000
 const MOVIE_YEAR_2010 uint32 = 2010
 
-/*
-alphaStage filters movies based on the following criteria:
-The movie must be released from the year 2000 and must be produced in Argentina.
+func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNumber int) common.Tasks {
+	tasks := make(common.Tasks)
 
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
+	filteredData := utils.FilterData(data, func(movie *protocol.Alpha_Data) bool {
+		return movie.GetReleaseYear() >= MOVIE_YEAR_2000 && slices.Contains(movie.GetProdCountries(), ARGENTINA_COUNTRY)
+	})
 
-Return example
-
-	{
-		"filterExchange": {
-			"beta": {
-				"0": Task,
-				"1": Task
-			}
-		},
-		"joinExchange": {
-			"zeta": {
-				"0": Task,
-				"1": Task
-			},
-			"iota": {
-				"0": Task,
-				"1": Task
-			}
+	resultsBeta := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Beta_Data {
+		return &protocol.Beta_Data{
+			Id:            input.GetId(),
+			Title:         input.GetTitle(),
+			ReleaseYear:   input.GetReleaseYear(),
+			ProdCountries: input.GetProdCountries(),
+			Genres:        input.GetGenres(),
 		}
-	}
-*/
-func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string) (tasks common.Tasks) {
-	FILTER_EXCHANGE := f.infraConfig.GetFilterExchange()
-	JOIN_EXCHANGE := f.infraConfig.GetJoinExchange()
-	JOIN_COUNT := f.infraConfig.GetJoinCount()
+	})
 
-	tasks = make(common.Tasks)
-	tasks[FILTER_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[FILTER_EXCHANGE][common.BETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][common.ZETA_STAGE] = make(map[string]*protocol.Task)
-	tasks[JOIN_EXCHANGE][common.IOTA_STAGE] = make(map[string]*protocol.Task)
-
-	betaData := make(map[string][]*protocol.Beta_Data)
-	zetaData := make(map[string][]*protocol.Zeta_Data)
-	iotaData := make(map[string][]*protocol.Iota_Data)
-
-	for _, movie := range data {
-		if movie == nil {
-			continue
-		}
-
-		if movie.GetReleaseYear() < MOVIE_YEAR_2000 {
-			continue
-		}
-
-		if !slices.Contains(movie.GetProdCountries(), ARGENTINA_COUNTRY) {
-			continue
-		}
-
-		betaData[""] = append(betaData[""], &protocol.Beta_Data{
-			Id:            movie.GetId(),
-			Title:         movie.GetTitle(),
-			ReleaseYear:   movie.GetReleaseYear(),
-			ProdCountries: movie.GetProdCountries(),
-			Genres:        movie.GetGenres(),
-		})
-
-		joinerIdHash := f.itemHashFunc(JOIN_COUNT, movie.GetId())
-
-		zetaData[joinerIdHash] = append(zetaData[joinerIdHash], &protocol.Zeta_Data{
+	resultsZeta := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Zeta_Data {
+		return &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Movie_{
 				Movie: &protocol.Zeta_Data_Movie{
-					MovieId: movie.GetId(),
-					Title:   movie.GetTitle(),
+					MovieId: input.GetId(),
+					Title:   input.GetTitle(),
 				},
 			},
-		})
+		}
+	})
 
-		iotaData[joinerIdHash] = append(iotaData[joinerIdHash], &protocol.Iota_Data{
+	resultsIota := utils.MapData(filteredData, func(input *protocol.Alpha_Data) *protocol.Iota_Data {
+		return &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Movie_{
 				Movie: &protocol.Iota_Data_Movie{
-					MovieId: movie.GetId(),
+					MovieId: input.GetId(),
 				},
 			},
-		})
+		}
+	})
+
+	nextStagesData, _ := f.nextStageData(common.ALPHA_STAGE, clientId)
+
+	nextStageDataBeta := nextStagesData[0]
+	nextStageDataZeta := nextStagesData[1]
+	nextStageDataIota := nextStagesData[2]
+
+	hashFuncBeta := func(workersCount int, item string) string {
+		return f.infraConfig.GetBroadcastID()
 	}
 
-	for nodeId, data := range betaData {
-		tasks[FILTER_EXCHANGE][common.BETA_STAGE][nodeId] = &protocol.Task{
+	hashFuncZeta := f.itemHashFunc
+	hashFuncIota := f.itemHashFunc
+
+	identifierFuncBeta := func(input *protocol.Beta_Data) string {
+		return input.Id
+	}
+
+	identifierFuncZeta := func(input *protocol.Zeta_Data) string {
+		return input.GetMovie().GetMovieId()
+	}
+
+	identifierFuncIota := func(input *protocol.Iota_Data) string {
+		return input.GetMovie().GetMovieId()
+	}
+
+	taskDataCreatorBeta := func(stage string, data []*protocol.Beta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Beta{
 				Beta: &protocol.Beta{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
 
-	for nodeId, data := range zetaData {
-		tasks[JOIN_EXCHANGE][common.ZETA_STAGE][nodeId] = &protocol.Task{
+	taskDataCreatorZeta := func(stage string, data []*protocol.Zeta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
 
-	for nodeId, data := range iotaData {
-		tasks[JOIN_EXCHANGE][common.IOTA_STAGE][nodeId] = &protocol.Task{
+	taskDataCreatorIota := func(stage string, data []*protocol.Iota_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, taskNumber, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
+	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, taskNumber, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
+	AddResults(tasks, resultsIota, nextStageDataIota, clientId, taskNumber, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
 
 	return tasks
 }
 
-/*
-betaStage filters movies based on the following criteria:
-The movie must be released before the year 2010 and must be produced in Argentina.
+func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumber int) common.Tasks {
+	tasks := make(common.Tasks)
+	filteredData := utils.FilterData(data, func(movie *protocol.Beta_Data) bool {
+		return movie.GetReleaseYear() < MOVIE_YEAR_2010 && slices.Contains(movie.GetProdCountries(), SPAIN_COUNTRY)
+	},
+	)
 
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"resultExchange": {
-			"result": {
-				"": Task
-			}
-		},
-	}
-*/
-func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string) (tasks common.Tasks) {
-	RESULT_EXCHANGE := f.infraConfig.GetResultExchange()
-
-	tasks = make(common.Tasks)
-	tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
-	resData := make(map[string][]*protocol.Result1_Data)
-
-	for _, movie := range data {
-		if movie == nil {
-			continue
+	results := utils.MapData(filteredData, func(input *protocol.Beta_Data) *protocol.Result1_Data {
+		return &protocol.Result1_Data{
+			Id:     input.GetId(),
+			Title:  input.GetTitle(),
+			Genres: input.GetGenres(),
 		}
+	})
 
-		if movie.GetReleaseYear() >= MOVIE_YEAR_2010 {
-			continue
-		}
+	nextStagesData, _ := f.nextStageData(common.BETA_STAGE, clientId)
 
-		if !slices.Contains(movie.GetProdCountries(), SPAIN_COUNTRY) {
-			continue
-		}
-
-		// TODO: USE CLIENT ID INSTEAD OF BROADCAST ID WHEN MULTICLIENTS ARE IMPLEMENTED
-		resData[clientId] = append(resData[clientId], &protocol.Result1_Data{
-			Id:     movie.GetId(),
-			Title:  movie.GetTitle(),
-			Genres: movie.GetGenres(),
-		})
+	hashFunc := func(workersCount int, item string) string {
+		return f.infraConfig.GetBroadcastID()
 	}
 
-	for nodeId, data := range resData {
-		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][nodeId] = &protocol.Task{
+	identifierFunc := func(input *protocol.Result1_Data) string {
+		return input.Id
+	}
+
+	taskDataCreator := func(stage string, data []*protocol.Result1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result1{
 				Result1: &protocol.Result1{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
 
-/*
-gammaStage filters movies based on the following criteria:
-The movie must be produced in only one country.
+func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNumber int) common.Tasks {
+	tasks := make(common.Tasks)
 
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
+	filteredData := utils.FilterData(data, func(movie *protocol.Gamma_Data) bool {
+		return len(movie.GetProdCountries()) == 1
+	})
 
-Return example
-
-	{
-		"mapExchange": {
-			"delta_1": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
-func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string) (tasks common.Tasks) {
-	MAP_EXCHANGE := f.infraConfig.GetMapExchange()
-
-	tasks = make(common.Tasks)
-	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][common.DELTA_STAGE_1] = make(map[string]*protocol.Task)
-	delta1Data := make(map[string][]*protocol.Delta_1_Data)
-
-	for _, movie := range data {
-		if movie == nil {
-			continue
+	results := utils.MapData(filteredData, func(input *protocol.Gamma_Data) *protocol.Delta_1_Data {
+		return &protocol.Delta_1_Data{
+			Country: input.GetProdCountries()[0],
+			Budget:  input.GetBudget(),
 		}
+	})
 
-		countries := movie.GetProdCountries()
+	nextStagesData, _ := f.nextStageData(common.DELTA_STAGE_1, clientId)
 
-		if countries == nil {
-			continue
-		}
-
-		if len(countries) != 1 {
-			continue
-		}
-
-		delta1Data[""] = append(delta1Data[""], &protocol.Delta_1_Data{
-			Country: countries[0],
-			Budget:  movie.GetBudget(),
-		})
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
 	}
 
-	for nodeId, data := range delta1Data {
-		tasks[MAP_EXCHANGE][common.DELTA_STAGE_1][nodeId] = &protocol.Task{
+	identifierFunc := func(input *protocol.Delta_1_Data) string {
+		return input.Country
+	}
+
+	taskDataCreator := func(stage string, data []*protocol.Delta_1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Delta_1{
 				Delta_1: &protocol.Delta_1{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
 
-func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+func (f *Filter) nextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+	return filterNextStageData(stage, clientId, f.infraConfig, f.itemHashFunc)
+}
+
+func filterNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
 	switch stage {
 	case common.ALPHA_STAGE:
 		return []common.NextStageData{
 			{
 				Stage:       common.BETA_STAGE,
-				Exchange:    f.infraConfig.GetFilterExchange(),
-				WorkerCount: f.infraConfig.GetFilterCount(),
-				RoutingKey:  f.infraConfig.GetBroadcastID(),
+				Exchange:    infraConfig.GetFilterExchange(),
+				WorkerCount: infraConfig.GetFilterCount(),
+				RoutingKey:  infraConfig.GetBroadcastID(),
 			},
 			{
 				Stage:       common.ZETA_STAGE,
-				Exchange:    f.infraConfig.GetJoinExchange(),
-				WorkerCount: f.infraConfig.GetJoinCount(),
-				RoutingKey:  f.itemHashFunc(f.infraConfig.GetJoinCount(), clientId+common.ZETA_STAGE),
+				Exchange:    infraConfig.GetJoinExchange(),
+				WorkerCount: infraConfig.GetJoinCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetJoinCount(), clientId+common.ZETA_STAGE),
 			},
 			{
 				Stage:       common.IOTA_STAGE,
-				Exchange:    f.infraConfig.GetJoinExchange(),
-				WorkerCount: f.infraConfig.GetJoinCount(),
-				RoutingKey:  f.itemHashFunc(f.infraConfig.GetJoinCount(), clientId+common.IOTA_STAGE),
+				Exchange:    infraConfig.GetJoinExchange(),
+				WorkerCount: infraConfig.GetJoinCount(),
+				RoutingKey:  itemHashFunc(infraConfig.GetJoinCount(), clientId+common.IOTA_STAGE),
 			},
 		}, nil
 
@@ -313,7 +265,7 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextS
 		return []common.NextStageData{
 			{
 				Stage:       common.RESULT_STAGE,
-				Exchange:    f.infraConfig.GetResultExchange(),
+				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
@@ -323,9 +275,9 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextS
 		return []common.NextStageData{
 			{
 				Stage:       common.DELTA_STAGE_1,
-				Exchange:    f.infraConfig.GetMapExchange(),
-				WorkerCount: f.infraConfig.GetMapCount(),
-				RoutingKey:  f.infraConfig.GetBroadcastID(),
+				Exchange:    infraConfig.GetMapExchange(),
+				WorkerCount: infraConfig.GetMapCount(),
+				RoutingKey:  infraConfig.GetBroadcastID(),
 			},
 		}, nil
 
@@ -341,19 +293,20 @@ func (f *Filter) getNextStageData(stage string, clientId string) ([]common.NextS
 func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	taskNumber := int(task.GetTaskIdentifier().GetTaskNumber())
 
 	switch v := stage.(type) {
 	case *protocol.Task_Alpha:
 		data := v.Alpha.GetData()
-		return f.alphaStage(data, clientId), nil
+		return f.alphaStage(data, clientId, taskNumber), nil
 
 	case *protocol.Task_Beta:
 		data := v.Beta.GetData()
-		return f.betaStage(data, clientId), nil
+		return f.betaStage(data, clientId, taskNumber), nil
 
 	case *protocol.Task_Gamma:
 		data := v.Gamma.GetData()
-		return f.gammaStage(data, clientId), nil
+		return f.gammaStage(data, clientId, taskNumber), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
