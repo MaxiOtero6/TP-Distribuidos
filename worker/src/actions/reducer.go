@@ -14,18 +14,10 @@ import (
 const REDUCER_STAGES_COUNT uint = 4
 const REDUCER_FILE_TYPE string = ""
 
-type ReducerPartialResults struct {
-	toDeleteCount uint
-	delta2        map[string]*protocol.Delta_2_Data
-	eta2          map[string]*protocol.Eta_2_Data
-	kappa2        map[string]*protocol.Kappa_2_Data
-	nu2Data       map[string]*protocol.Nu_2_Data
-}
-
 // Reducer is a struct that implements the Action interface.
 type Reducer struct {
 	infraConfig    *model.InfraConfig
-	partialResults map[string]*ReducerPartialResults
+	partialResults map[string]*common.ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
 	eofHandler     eof_handler.IEOFHandler
@@ -36,11 +28,11 @@ func (r *Reducer) makePartialResults(clientId string) {
 		return
 	}
 
-	r.partialResults[clientId] = &ReducerPartialResults{
-		delta2:  make(map[string]*protocol.Delta_2_Data),
-		eta2:    make(map[string]*protocol.Eta_2_Data),
-		kappa2:  make(map[string]*protocol.Kappa_2_Data),
-		nu2Data: make(map[string]*protocol.Nu_2_Data),
+	r.partialResults[clientId] = &common.ReducerPartialResults{
+		Delta2:  make(map[string]*protocol.Delta_2_Data),
+		Eta2:    make(map[string]*protocol.Eta_2_Data),
+		Kappa2:  make(map[string]*protocol.Kappa_2_Data),
+		Nu2Data: make(map[string]*protocol.Nu_2_Data),
 	}
 }
 
@@ -49,7 +41,7 @@ func (r *Reducer) makePartialResults(clientId string) {
 func NewReducer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Reducer {
 	reducer := &Reducer{
 		infraConfig:    infraConfig,
-		partialResults: make(map[string]*ReducerPartialResults),
+		partialResults: make(map[string]*common.ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
@@ -80,7 +72,7 @@ Then it divides the resulting countries by hashing each country and send it to t
 	}
 */
 func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].delta2
+	dataMap := r.partialResults[clientId].Delta2
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -122,7 +114,7 @@ Return example
 	}
 */
 func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].eta2
+	dataMap := r.partialResults[clientId].Eta2
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e2Data := range data {
@@ -167,7 +159,7 @@ Return example
 	}
 */
 func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].kappa2
+	dataMap := r.partialResults[clientId].Kappa2
 
 	// Sum up the partial participations by actor
 	for _, k2Data := range data {
@@ -209,7 +201,7 @@ Return example
 	}
 */
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string) (tasks common.Tasks) {
-	dataMap := r.partialResults[clientId].nu2Data
+	dataMap := r.partialResults[clientId].Nu2Data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu2Data := range data {
@@ -280,7 +272,7 @@ func (r *Reducer) getNextStageData(stage string, clientId string) ([]common.Next
 }
 
 func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].delta2
+	dataMap := r.partialResults[clientId].Delta2
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -315,7 +307,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 }
 
 func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].eta2
+	dataMap := r.partialResults[clientId].Eta2
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -352,7 +344,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 }
 
 func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].kappa2
+	dataMap := r.partialResults[clientId].Kappa2
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -387,7 +379,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 }
 
 func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
-	dataMap := r.partialResults[clientId].nu2Data
+	dataMap := r.partialResults[clientId].Nu2Data
 
 	MERGE_EXCHANGE := r.infraConfig.GetMergeExchange()
 	MERGE_COUNT := r.infraConfig.GetMergeCount()
@@ -517,13 +509,13 @@ func (r *Reducer) deleteStage(clientId string, stage string) error {
 	if anStage, ok := r.partialResults[clientId]; ok {
 		switch stage {
 		case common.DELTA_STAGE_2:
-			anStage.delta2 = nil
+			anStage.Delta2 = nil
 		case common.ETA_STAGE_2:
-			anStage.eta2 = nil
+			anStage.Eta2 = nil
 		case common.KAPPA_STAGE_2:
-			anStage.kappa2 = nil
+			anStage.Kappa2 = nil
 		case common.NU_STAGE_2:
-			anStage.nu2Data = nil
+			anStage.Nu2Data = nil
 		default:
 			log.Errorf("Invalid stage: %s", stage)
 			return fmt.Errorf("invalid stage: %s", stage)

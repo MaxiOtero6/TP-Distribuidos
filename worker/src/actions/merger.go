@@ -14,18 +14,10 @@ import (
 
 const MERGER_STAGES_COUNT uint = 4
 
-type MergerPartialResults struct {
-	toDeleteCount uint
-	delta3        PartialData[*protocol.Delta_3_Data]
-	eta3          PartialData[*protocol.Eta_3_Data]
-	kappa3        PartialData[*protocol.Kappa_3_Data]
-	nu3Data       PartialData[*protocol.Nu_3_Data]
-}
-
 // Merger is a struct that implements the Action interface.
 type Merger struct {
 	infraConfig    *model.InfraConfig
-	partialResults map[string]*MergerPartialResults
+	partialResults map[string]*common.MergerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
 	eofHandler     eof_handler.IEOFHandler
@@ -36,22 +28,22 @@ func (m *Merger) makePartialResults(clientId string) {
 		return
 	}
 
-	m.partialResults[clientId] = &MergerPartialResults{
-		delta3: PartialData[*protocol.Delta_3_Data]{
-			data:  make(map[string]*protocol.Delta_3_Data),
-			ready: false,
+	m.partialResults[clientId] = &common.MergerPartialResults{
+		Delta3: common.PartialData[*protocol.Delta_3_Data]{
+			Data:  make(map[string]*protocol.Delta_3_Data),
+			Ready: false,
 		},
-		eta3: PartialData[*protocol.Eta_3_Data]{
-			data:  make(map[string]*protocol.Eta_3_Data),
-			ready: false,
+		Eta3: common.PartialData[*protocol.Eta_3_Data]{
+			Data:  make(map[string]*protocol.Eta_3_Data),
+			Ready: false,
 		},
-		kappa3: PartialData[*protocol.Kappa_3_Data]{
-			data:  make(map[string]*protocol.Kappa_3_Data),
-			ready: false,
+		Kappa3: common.PartialData[*protocol.Kappa_3_Data]{
+			Data:  make(map[string]*protocol.Kappa_3_Data),
+			Ready: false,
 		},
-		nu3Data: PartialData[*protocol.Nu_3_Data]{
-			data:  make(map[string]*protocol.Nu_3_Data),
-			ready: false,
+		Nu3Data: common.PartialData[*protocol.Nu_3_Data]{
+			Data:  make(map[string]*protocol.Nu_3_Data),
+			Ready: false,
 		},
 	}
 }
@@ -59,9 +51,12 @@ func (m *Merger) makePartialResults(clientId string) {
 // NewMerger creates a new Merger instance.
 // It initializes the worker count and returns a pointer to the Merger struct.
 func NewMerger(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Merger {
+
+	//partialResults := storage.LoadAllStagesDataFromFile(infraConfig.GetDirectory(), infraConfig.GetNodeId(), &MergerPartialResults{})
+
 	merger := &Merger{
 		infraConfig:    infraConfig,
-		partialResults: make(map[string]*MergerPartialResults),
+		partialResults: make(map[string]*common.MergerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
@@ -87,7 +82,7 @@ Return example
 	}
 */
 func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].delta3.data
+	dataMap := m.partialResults[clientId].Delta3.Data
 
 	// Sum up the partial budgets by country
 	for _, country := range data {
@@ -114,7 +109,7 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string) (ta
 /*
  */
 func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].eta3.data
+	dataMap := m.partialResults[clientId].Eta3.Data
 
 	// Sum up the partial ratings and counts for each movie
 	for _, e3Data := range data {
@@ -144,7 +139,7 @@ func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string) (tasks 
 /*
  */
 func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].kappa3.data
+	dataMap := m.partialResults[clientId].Kappa3.Data
 
 	// Sum up the partial participations by actor
 	for _, k3Data := range data {
@@ -172,7 +167,7 @@ func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string) (ta
 /*
  */
 func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string) (tasks common.Tasks) {
-	dataMap := m.partialResults[clientId].nu3Data.data
+	dataMap := m.partialResults[clientId].Nu3Data.Data
 
 	// Sum up the budget and revenue by sentiment
 	for _, nu3Data := range data {
@@ -243,7 +238,7 @@ func (m *Merger) getNextStageData(stage string, clientId string) ([]common.NextS
 }
 
 func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].delta3.data
+	dataMap := m.partialResults[clientId].Delta3.Data
 
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
@@ -278,7 +273,7 @@ func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 }
 
 func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].eta3.data
+	dataMap := m.partialResults[clientId].Eta3.Data
 
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
@@ -315,7 +310,7 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 }
 
 func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].kappa3.data
+	dataMap := m.partialResults[clientId].Kappa3.Data
 	TOP_EXCHANGE := m.infraConfig.GetTopExchange()
 
 	if _, ok := tasks[TOP_EXCHANGE]; !ok {
@@ -349,7 +344,7 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 }
 
 func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
-	dataMap := m.partialResults[clientId].nu3Data.data
+	dataMap := m.partialResults[clientId].Nu3Data.Data
 
 	RESULT_EXCHANGE := m.infraConfig.GetResultExchange()
 
@@ -398,7 +393,7 @@ func (m *Merger) addResultsToNextStage(tasks common.Tasks, stage string, clientI
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
 
-	m.partialResults[clientId].toDeleteCount++
+	m.partialResults[clientId].ToDeleteCount++
 
 	return nil
 }
@@ -408,17 +403,17 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 
 	switch data.GetStage() {
 	case common.DELTA_STAGE_3:
-		m.partialResults[clientId].delta3.ready = true
+		m.partialResults[clientId].Delta3.Ready = true
 	case common.ETA_STAGE_3:
-		m.partialResults[clientId].eta3.ready = true
+		m.partialResults[clientId].Eta3.Ready = true
 	case common.KAPPA_STAGE_3:
-		m.partialResults[clientId].kappa3.ready = true
+		m.partialResults[clientId].Kappa3.Ready = true
 	case common.NU_STAGE_3:
-		m.partialResults[clientId].nu3Data.ready = true
+		m.partialResults[clientId].Nu3Data.Ready = true
 	}
 
 	if err := m.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if m.partialResults[clientId].toDeleteCount >= MERGER_STAGES_COUNT {
+		if m.partialResults[clientId].ToDeleteCount >= MERGER_STAGES_COUNT {
 			delete(m.partialResults, clientId)
 		}
 
@@ -440,13 +435,13 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 
 	switch data.GetStage() {
 	case common.DELTA_STAGE_3:
-		ready = m.partialResults[clientId].delta3.ready
+		ready = m.partialResults[clientId].Delta3.Ready
 	case common.ETA_STAGE_3:
-		ready = m.partialResults[clientId].eta3.ready
+		ready = m.partialResults[clientId].Eta3.Ready
 	case common.KAPPA_STAGE_3:
-		ready = m.partialResults[clientId].kappa3.ready
+		ready = m.partialResults[clientId].Kappa3.Ready
 	case common.NU_STAGE_3:
-		ready = m.partialResults[clientId].nu3Data.ready
+		ready = m.partialResults[clientId].Nu3Data.Ready
 	}
 
 	return m.eofHandler.HandleRing(data, clientId, m.getNextStageData, ready)
@@ -494,13 +489,13 @@ func (m *Merger) deleteStage(clientId string, stage string) error {
 	if anStage, ok := m.partialResults[clientId]; ok {
 		switch stage {
 		case common.DELTA_STAGE_3:
-			anStage.delta3.data = nil
+			anStage.Delta3.Data = nil
 		case common.ETA_STAGE_3:
-			anStage.eta3.data = nil
+			anStage.Eta3.Data = nil
 		case common.KAPPA_STAGE_3:
-			anStage.kappa3.data = nil
+			anStage.Kappa3.Data = nil
 		case common.NU_STAGE_3:
-			anStage.nu3Data.data = nil
+			anStage.Nu3Data.Data = nil
 		default:
 			log.Errorf("Invalid stage: %s", stage)
 			return fmt.Errorf("invalid stage: %s", stage)

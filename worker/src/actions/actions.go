@@ -11,11 +11,6 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-type PartialData[T any] struct {
-	data  map[string]T
-	ready bool
-}
-
 type Action interface {
 	// Execute executes the action.
 	// It returns a map of tasks for the next stages.
