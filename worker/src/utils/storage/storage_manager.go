@@ -26,6 +26,8 @@ const TEMPORARY_FILE_NAME = "data_temp.json"
 
 var log = logging.MustGetLogger("log")
 
+// var processTypedMapFirstTime = true
+
 type OutputFile struct {
 	Data       interface{} `json:"data"`
 	Timestamps string      `json:"timestamps"`
@@ -176,11 +178,6 @@ func SaveDataToFile(dir string, clientId string, stage string, sourceType string
 
 	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
 	finalFilePath := filepath.Join(dirPath, FINALLY_FILE_NAME)
-
-	err = handleLeftOverFiles(finalFilePath, tempFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to handle leftover files: %w", err)
-	}
 
 	err = saveDataToFile(tempFilePath, finalFilePath, data)
 	if err != nil {
@@ -987,6 +984,14 @@ func processTypedMap[T proto.Message](typedMap map[string]T, tempFilePath string
 	if err != nil {
 		return fmt.Errorf("error creating temp file: %w", err)
 	}
+
+	// if processTypedMapFirstTime {
+	// 	log.Info("Waiting 20 seconds before writing the first time")
+	// 	time.Sleep(20 * time.Second) // Solo la primera vez
+
+	// 	processTypedMapFirstTime = false
+	// }
+
 	if _, err := tmpFile.Write(jsonBytes); err != nil {
 		tmpFile.Close()
 		return fmt.Errorf("error writing to temp file: %w", err)
