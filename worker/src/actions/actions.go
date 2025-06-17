@@ -72,7 +72,6 @@ func AddResults[T any](
 	identifierFunc func(input T) string,
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
 ) int {
-	// Ensure the nested maps exist
 	if _, ok := tasks[nextStageData.Exchange]; !ok {
 		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
 	}
@@ -111,7 +110,7 @@ func AddResults[T any](
 		)
 	}
 
-	return len(destinationNodes) + initialTaskFragmentNumber
+	return len(destinationNodes)
 }
 
 func ProcessStage[T any](
