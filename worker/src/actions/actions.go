@@ -13,7 +13,7 @@ import (
 var log = logging.MustGetLogger("log")
 
 type PartialData[T any] struct {
-	data           map[string]*T
+	data           map[string]T
 	taskFragments  map[common.TaskFragmentIdentifier]struct{}
 	omegaProcessed bool
 	ringRound      uint32
@@ -21,7 +21,7 @@ type PartialData[T any] struct {
 
 func NewPartialData[T any]() *PartialData[T] {
 	return &PartialData[T]{
-		data:           make(map[string]*T),
+		data:           make(map[string]T),
 		taskFragments:  make(map[common.TaskFragmentIdentifier]struct{}),
 		omegaProcessed: false,
 		ringRound:      0,
@@ -112,7 +112,7 @@ func AddResults[T any](
 }
 
 func ProcessStage[T any](
-	partial *PartialData[T],
+	partial *PartialData[*T],
 	newItems []*T,
 	clientID string,
 	taskIdentifier *protocol.TaskIdentifier,

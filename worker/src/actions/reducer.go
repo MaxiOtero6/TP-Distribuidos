@@ -17,10 +17,10 @@ const REDUCER_FILE_TYPE string = ""
 
 type ReducerPartialResults struct {
 	toDeleteCount uint
-	delta2        *PartialData[protocol.Delta_2_Data]
-	eta2          *PartialData[protocol.Eta_2_Data]
-	kappa2        *PartialData[protocol.Kappa_2_Data]
-	nu2           *PartialData[protocol.Nu_2_Data]
+	delta2        *PartialData[*protocol.Delta_2_Data]
+	eta2          *PartialData[*protocol.Eta_2_Data]
+	kappa2        *PartialData[*protocol.Kappa_2_Data]
+	nu2           *PartialData[*protocol.Nu_2_Data]
 }
 
 // Reducer is a struct that implements the Action interface.
@@ -38,10 +38,10 @@ func (r *Reducer) makePartialResults(clientId string) {
 
 	r.partialResults[clientId] = &ReducerPartialResults{
 		toDeleteCount: REDUCER_STAGES_COUNT,
-		delta2:        NewPartialData[protocol.Delta_2_Data](),
-		eta2:          NewPartialData[protocol.Eta_2_Data](),
-		kappa2:        NewPartialData[protocol.Kappa_2_Data](),
-		nu2:           NewPartialData[protocol.Nu_2_Data](),
+		delta2:        NewPartialData[*protocol.Delta_2_Data](),
+		eta2:          NewPartialData[*protocol.Eta_2_Data](),
+		kappa2:        NewPartialData[*protocol.Kappa_2_Data](),
+		nu2:           NewPartialData[*protocol.Nu_2_Data](),
 	}
 }
 

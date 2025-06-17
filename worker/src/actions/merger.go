@@ -16,10 +16,10 @@ const MERGER_STAGES_COUNT uint = 4
 
 type MergerPartialResults struct {
 	// toDeleteCount uint
-	delta3  PartialData[protocol.Delta_3_Data]
-	eta3    PartialData[protocol.Eta_3_Data]
-	kappa3  PartialData[protocol.Kappa_3_Data]
-	nu3Data PartialData[protocol.Nu_3_Data]
+	delta3  PartialData[*protocol.Delta_3_Data]
+	eta3    PartialData[*protocol.Eta_3_Data]
+	kappa3  PartialData[*protocol.Kappa_3_Data]
+	nu3Data PartialData[*protocol.Nu_3_Data]
 }
 
 // Merger is a struct that implements the Action interface.
@@ -36,16 +36,16 @@ func (m *Merger) makePartialResults(clientId string) {
 	}
 
 	m.partialResults[clientId] = &MergerPartialResults{
-		delta3: PartialData[protocol.Delta_3_Data]{
+		delta3: PartialData[*protocol.Delta_3_Data]{
 			data: make(map[string]*protocol.Delta_3_Data),
 		},
-		eta3: PartialData[protocol.Eta_3_Data]{
+		eta3: PartialData[*protocol.Eta_3_Data]{
 			data: make(map[string]*protocol.Eta_3_Data),
 		},
-		kappa3: PartialData[protocol.Kappa_3_Data]{
+		kappa3: PartialData[*protocol.Kappa_3_Data]{
 			data: make(map[string]*protocol.Kappa_3_Data),
 		},
-		nu3Data: PartialData[protocol.Nu_3_Data]{
+		nu3Data: PartialData[*protocol.Nu_3_Data]{
 			data: make(map[string]*protocol.Nu_3_Data),
 		},
 	}

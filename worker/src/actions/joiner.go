@@ -20,16 +20,16 @@ type JoinerTableData[T any] struct {
 }
 
 type JoinerStageData[S any, B any] struct {
-	smallTable          JoinerTableData[*S]
-	bigTable            JoinerTableData[[]*B]
+	smallTable          *JoinerTableData[*S]
+	bigTable            *JoinerTableData[[]*B]
 	sendedTaskCount     int
 	smallTableTaskCount int
 	ringRound           uint32
 }
 
 type JoinerPartialResults struct {
-	zetaData JoinerStageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]
-	iotaData JoinerStageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]
+	zetaData *JoinerStageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]
+	iotaData *JoinerStageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]
 }
 
 // Joiner is a struct that implements the Action interface.
@@ -47,19 +47,19 @@ func (j *Joiner) makePartialResults(clientId string) {
 	}
 
 	j.partialResults[clientId] = &JoinerPartialResults{
-		zetaData: JoinerStageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]{
-			smallTable: JoinerTableData[*protocol.Zeta_Data_Movie]{
+		zetaData: &JoinerStageData[protocol.Zeta_Data_Movie, protocol.Zeta_Data_Rating]{
+			smallTable: &JoinerTableData[*protocol.Zeta_Data_Movie]{
 				data: make(map[string]*protocol.Zeta_Data_Movie),
 			},
-			bigTable: JoinerTableData[[]*protocol.Zeta_Data_Rating]{
+			bigTable: &JoinerTableData[[]*protocol.Zeta_Data_Rating]{
 				data: make(map[string][]*protocol.Zeta_Data_Rating),
 			},
 		},
-		iotaData: JoinerStageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]{
-			smallTable: JoinerTableData[*protocol.Iota_Data_Movie]{
+		iotaData: &JoinerStageData[protocol.Iota_Data_Movie, protocol.Iota_Data_Actor]{
+			smallTable: &JoinerTableData[*protocol.Iota_Data_Movie]{
 				data: make(map[string]*protocol.Iota_Data_Movie),
 			},
-			bigTable: JoinerTableData[[]*protocol.Iota_Data_Actor]{
+			bigTable: &JoinerTableData[[]*protocol.Iota_Data_Actor]{
 				data: make(map[string][]*protocol.Iota_Data_Actor),
 			},
 		},
@@ -88,7 +88,7 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return joiner
 }
 
-func (j *Joiner) joinZetaData(tasks common.Tasks, ratingsData map[string][]*protocol.Zeta_Data_Rating, clientId string) []*protocol.Eta_1_Data {
+func (j *Joiner) joinZetaData(ratingsData map[string][]*protocol.Zeta_Data_Rating, clientId string) []*protocol.Eta_1_Data {
 	joinedData := make([]*protocol.Eta_1_Data, 0)
 
 	for movieId, ratings := range ratingsData {
@@ -109,7 +109,7 @@ func (j *Joiner) joinZetaData(tasks common.Tasks, ratingsData map[string][]*prot
 	return joinedData
 }
 
-func (j *Joiner) joinIotaData(tasks common.Tasks, actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) []*protocol.Kappa_1_Data {
+func (j *Joiner) joinIotaData(actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) []*protocol.Kappa_1_Data {
 	joinedData := make([]*protocol.Kappa_1_Data, 0)
 
 	for movieId, actors := range actorsData {
@@ -157,7 +157,7 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string, ta
 		bigTable := zetaData.bigTable
 		bigTableData := bigTable.data
 
-		partialResults := j.joinZetaData(tasks, bigTableData, clientId)
+		partialResults := j.joinZetaData(bigTableData, clientId)
 		j.addEta1Results(tasks, partialResults, clientId)
 
 		bigTable.data = make(map[string][]*protocol.Zeta_Data_Rating)
@@ -197,7 +197,7 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string, ta
 		bigTable := iotaData.bigTable
 		bigTableData := bigTable.data
 
-		partialResults := j.joinIotaData(tasks, bigTableData, clientId)
+		partialResults := j.joinIotaData(bigTableData, clientId)
 		j.addKappa1Results(tasks, partialResults, clientId)
 
 		bigTable.data = make(map[string][]*protocol.Iota_Data_Actor)
@@ -231,7 +231,7 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, t
 	processBigTableJoinerStage(partialData, data, clientId, taskIdentifier, identifierFunc, mappingFunc)
 
 	if zetaData.smallTable.ready {
-		partialResults := j.joinZetaData(tasks, partialData.data, clientId)
+		partialResults := j.joinZetaData(partialData.data, clientId)
 		partialData.data = make(map[string][]*protocol.Zeta_Data_Rating)
 
 		j.addEta1Results(tasks, partialResults, clientId)
@@ -266,7 +266,7 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string, ta
 	processBigTableJoinerStage(partialData, data, clientId, taskIdentifier, identifierFunc, mappingFunc)
 
 	if iotaData.smallTable.ready {
-		partialResults := j.joinIotaData(tasks, partialData.data, clientId)
+		partialResults := j.joinIotaData(partialData.data, clientId)
 		partialData.data = make(map[string][]*protocol.Iota_Data_Actor)
 
 		j.addKappa1Results(tasks, partialResults, clientId)
@@ -375,7 +375,7 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 		zetaData.smallTable.ready = smallTableReady
 
 		if smallTableReady {
-			partialResults := j.joinZetaData(tasks, zetaData.bigTable.data, clientId)
+			partialResults := j.joinZetaData(zetaData.bigTable.data, clientId)
 			j.addEta1Results(tasks, partialResults, clientId)
 		}
 
@@ -396,7 +396,7 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 		iotaData.smallTable.ready = smallTableReady
 
 		if smallTableReady {
-			partialResults := j.joinIotaData(tasks, iotaData.bigTable.data, clientId)
+			partialResults := j.joinIotaData(iotaData.bigTable.data, clientId)
 			j.addKappa1Results(tasks, partialResults, clientId)
 		}
 
@@ -610,7 +610,7 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResults []*protocol
 }
 
 func processSmallTableJoinerStage[G any, S any](
-	partialData JoinerTableData[S],
+	partialData *JoinerTableData[S],
 	data []G,
 	clientId string,
 	taskIdentifier *protocol.TaskIdentifier,
@@ -638,7 +638,7 @@ func processSmallTableJoinerStage[G any, S any](
 }
 
 func processBigTableJoinerStage[G any, B any](
-	partialData JoinerTableData[[]B],
+	partialData *JoinerTableData[[]B],
 	data []G,
 	clientId string,
 	taskIdentifier *protocol.TaskIdentifier,
@@ -699,7 +699,7 @@ func joinerAddResults[T any](
 	}
 	slices.Sort(destinationNodes)
 
-	createTaskIdentifier := func(nodeId string, index int) *protocol.TaskIdentifier {
+	createTaskIdentifier := func(_ string, index int) *protocol.TaskIdentifier {
 		return &protocol.TaskIdentifier{
 			CreatorId:          creatorId,
 			TaskNumber:         uint32(initialTaskNumber + index),
