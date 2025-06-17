@@ -321,7 +321,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.EPSILON_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
+				Stage:       common.RESULT_2_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -330,7 +330,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.THETA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
+				Stage:       common.RESULT_3_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -339,7 +339,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.LAMBDA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
+				Stage:       common.RESULT_4_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,

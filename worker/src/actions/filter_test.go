@@ -43,7 +43,7 @@ func TestFilter(t *testing.T) {
 		JOIN_EXCHANGE := testFilter.infraConfig.GetJoinExchange()
 
 		t.Run("Test with nil data", func(t *testing.T) {
-			result := testFilter.alphaStage(nil, CLIENT_ID)
+			result := testFilter.alphaStage(nil, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 2, "Expected 2 exchanges")
 			assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[FILTER_EXCHANGE][c.BETA_STAGE], 0, "Expected 0 destination ID")
@@ -62,7 +62,7 @@ func TestFilter(t *testing.T) {
 		})
 
 		t.Run("Test with empty data", func(t *testing.T) {
-			result := testFilter.alphaStage([]*protocol.Alpha_Data{}, CLIENT_ID)
+			result := testFilter.alphaStage([]*protocol.Alpha_Data{}, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 2, "Expected 2 exchanges")
 			assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[FILTER_EXCHANGE][c.BETA_STAGE], 0, "Expected 0 destination ID")
@@ -121,7 +121,7 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.alphaStage(data, CLIENT_ID)
+			result := testFilter.alphaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 2, "Expected 2 exchanges")
 			assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[FILTER_EXCHANGE][c.BETA_STAGE], 1, "Expected 1 destination ID")
@@ -186,7 +186,7 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.alphaStage(data, CLIENT_ID)
+			result := testFilter.alphaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 2, "Expected 2 exchanges")
 			assert.Len(t, result[FILTER_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[FILTER_EXCHANGE][c.BETA_STAGE], 0, "Expected 1 destination ID")
@@ -209,22 +209,22 @@ func TestFilter(t *testing.T) {
 		RESULT_EXCHANGE := testFilter.infraConfig.GetResultExchange()
 
 		t.Run("Test with nil data", func(t *testing.T) {
-			result := testFilter.betaStage(nil, CLIENT_ID)
+			result := testFilter.betaStage(nil, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
 		t.Run("Test with empty data", func(t *testing.T) {
-			result := testFilter.betaStage([]*protocol.Beta_Data{}, CLIENT_ID)
+			result := testFilter.betaStage([]*protocol.Beta_Data{}, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
@@ -268,12 +268,12 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.betaStage(data, CLIENT_ID)
+			result := testFilter.betaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_STAGE], 1, "Expected 1 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 1, "Expected 1 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 2, "Expected 2 movies")
 
 			assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
@@ -311,12 +311,12 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.betaStage(data, CLIENT_ID)
+			result := testFilter.betaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 	})
@@ -325,7 +325,7 @@ func TestFilter(t *testing.T) {
 		MAP_EXCHANGE := testFilter.infraConfig.GetMapExchange()
 
 		t.Run("Test with nil data", func(t *testing.T) {
-			result := testFilter.gammaStage(nil, CLIENT_ID)
+			result := testFilter.gammaStage(nil, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][c.DELTA_STAGE_1], 0, "Expected 0 destination ID")
@@ -335,7 +335,7 @@ func TestFilter(t *testing.T) {
 		})
 
 		t.Run("Test with empty data", func(t *testing.T) {
-			result := testFilter.gammaStage([]*protocol.Gamma_Data{}, CLIENT_ID)
+			result := testFilter.gammaStage([]*protocol.Gamma_Data{}, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][c.DELTA_STAGE_1], 0, "Expected 0 destination ID")
@@ -374,7 +374,7 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.gammaStage(data, CLIENT_ID)
+			result := testFilter.gammaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][c.DELTA_STAGE_1], 1, "Expected 1 destination ID")
@@ -409,7 +409,7 @@ func TestFilter(t *testing.T) {
 				nil,
 			}
 
-			result := testFilter.gammaStage(data, CLIENT_ID)
+			result := testFilter.gammaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[MAP_EXCHANGE], 1, "Expected 1 stage")
 			assert.Len(t, result[MAP_EXCHANGE][c.DELTA_STAGE_1], 0, "Expected 0 destination ID")

@@ -64,7 +64,7 @@ func TestOverviewer(t *testing.T) {
 				},
 			}
 
-			result := testOverviewer.muStage(data, CLIENT_ID)
+			result := testOverviewer.muStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], c.NU_STAGE_1)
@@ -95,7 +95,7 @@ func TestOverviewer(t *testing.T) {
 				},
 			}
 
-			result := testOverviewer.muStage(data, CLIENT_ID)
+			result := testOverviewer.muStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], c.NU_STAGE_1)
@@ -117,7 +117,7 @@ func TestOverviewer(t *testing.T) {
 		t.Run("Handle nil Mu_Data", func(t *testing.T) {
 			data := []*protocol.Mu_Data{nil}
 
-			result := testOverviewer.muStage(data, CLIENT_ID)
+			result := testOverviewer.muStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], c.NU_STAGE_1)
@@ -127,7 +127,7 @@ func TestOverviewer(t *testing.T) {
 		t.Run("Handle empty Mu_Data", func(t *testing.T) {
 			data := []*protocol.Mu_Data{}
 
-			result := testOverviewer.muStage(data, CLIENT_ID)
+			result := testOverviewer.muStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.NotNil(t, result)
 			assert.Contains(t, result, MAP_EXCHANGE)
 			assert.Contains(t, result[MAP_EXCHANGE], c.NU_STAGE_1)

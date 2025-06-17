@@ -165,7 +165,7 @@ func mergerNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.NU_STAGE_3:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
+				Stage:       common.RESULT_5_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,

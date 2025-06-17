@@ -58,8 +58,8 @@ func stringSliceToJSONString(s []string) string {
 
 func adaptResults(results *model.Results) *res {
 
-	q1Data := make([]*q1, len(results.Query1))
-	for i, data := range results.Query1 {
+	q1Data := make([]*q1, len(results.Query1.Results))
+	for i, data := range results.Query1.Results {
 		q1Data[i] = &q1{
 			Title:  data.Title,
 			Genres: stringSliceToJSONString(data.Genres),
@@ -67,12 +67,12 @@ func adaptResults(results *model.Results) *res {
 	}
 
 	q2 := make(q2)
-	for _, country := range results.Query2 {
+	for _, country := range results.Query2.Results {
 		q2[country.Country] = country.TotalInvestment
 	}
 
 	q3 := make(q3)
-	for kind, data := range results.Query3 {
+	for kind, data := range results.Query3.Results {
 		q3[kind] = q3Data{
 			Id:     0,
 			Title:  data.Title,
@@ -81,7 +81,7 @@ func adaptResults(results *model.Results) *res {
 	}
 
 	q5 := make(q5)
-	for sentiment, data := range results.Query5 {
+	for sentiment, data := range results.Query5.Results {
 		q5[sentiment] = data.RevenueBudgetRatio
 	}
 
@@ -89,7 +89,7 @@ func adaptResults(results *model.Results) *res {
 		Query1: q1Data,
 		Query2: q2,
 		Query3: q3,
-		Query4: results.Query4,
+		Query4: results.Query4.Results,
 		Query5: q5,
 	}
 }

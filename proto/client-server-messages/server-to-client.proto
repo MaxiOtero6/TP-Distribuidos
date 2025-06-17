@@ -8,6 +8,7 @@ import "proto/results/result3.proto";
 import "proto/results/result4.proto";
 import "proto/results/result5.proto";
 import "proto/eof/omegaEOF.proto";
+import "proto/task.proto";
 
 enum MessageStatus {
     SUCCESS = 0;
@@ -41,8 +42,10 @@ message ResultsResponse {
             Result3 result3 = 3;
             Result4 result4 = 4;
             Result5 result5 = 5;
-            OmegaEOF omegaEOF = 27;
+            OmegaEOF omegaEOF = 6;
         };
+
+        TaskIdentifier task_identifier = 7;
     }   
    
     MessageStatus status = 1;

@@ -37,7 +37,11 @@ const NU_STAGE_2 string = "nu_2"
 const NU_STAGE_3 string = "nu_3"
 
 // Results
-const RESULT_STAGE string = "result"
+const RESULT_1_STAGE string = "result_1"
+const RESULT_2_STAGE string = "result_2"
+const RESULT_3_STAGE string = "result_3"
+const RESULT_4_STAGE string = "result_4"
+const RESULT_5_STAGE string = "result_5"
 
 // EOF
 const RING_STAGE string = "ringEOF"
