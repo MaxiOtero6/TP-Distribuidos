@@ -77,6 +77,7 @@ func GetAlphaStageTask(movies []*model.Movie, filtersCount int, clientId string,
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
+				CreatorId:          clientId,
 				TaskNumber:         taskNumber,
 				TaskFragmentNumber: 0,
 				LastFragment:       true,
@@ -108,6 +109,7 @@ func GetGammaStageTask(movies []*model.Movie, filtersCount int, clientId string,
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
+				CreatorId:          clientId,
 				TaskNumber:         taskNumber,
 				TaskFragmentNumber: 0,
 				LastFragment:       true,
@@ -150,6 +152,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
+				CreatorId:          clientId,
 				TaskNumber:         taskNumber,
 				TaskFragmentNumber: uint32(index),
 				LastFragment:       index == len(destinationNodes)-1,
@@ -193,6 +196,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId s
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
+				CreatorId:          clientId,
 				TaskNumber:         taskNumber,
 				TaskFragmentNumber: uint32(index),
 				LastFragment:       index == len(destinationNodes)-1,
@@ -226,6 +230,7 @@ func GetMuStageTask(movies []*model.Movie, overviewCount int, clientId string, t
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
+				CreatorId:          clientId,
 				TaskNumber:         taskNumber,
 				TaskFragmentNumber: 0,
 				LastFragment:       true,
