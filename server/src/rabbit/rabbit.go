@@ -165,7 +165,9 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 			return nil, err
 		}
 
-		result := &protocol.ResultsResponse_Result{}
+		result := &protocol.ResultsResponse_Result{
+			TaskIdentifier: task.GetTaskIdentifier(),
+		}
 
 		switch task.GetStage().(type) {
 		case *protocol.Task_Result1:
