@@ -23,7 +23,7 @@ const TOPPER_STAGES_COUNT uint = 3
 // Topper is a struct that implements the Action interface.
 type Topper struct {
 	infraConfig    *model.InfraConfig
-	partialResults map[string]*common.PartialResults
+	partialResults map[string]*common.TopperPartialResults
 	eofHandler     eof_handler.IEOFHandler
 }
 
@@ -32,7 +32,7 @@ func (t *Topper) makePartialResults(clientId string) {
 		return
 	}
 
-	t.partialResults[clientId] = &common.PartialResults{
+	t.partialResults[clientId] = &common.TopperPartialResults{
 		EpsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K),
 		ThetaData: common.Result3{
 			MaxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
@@ -47,7 +47,7 @@ func (t *Topper) makePartialResults(clientId string) {
 func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Topper {
 	topper := &Topper{
 		infraConfig:    infraConfig,
-		partialResults: make(map[string]*common.PartialResults),
+		partialResults: make(map[string]*common.TopperPartialResults),
 		eofHandler:     eofHandler,
 	}
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())

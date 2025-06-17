@@ -29,9 +29,636 @@ var log = logging.MustGetLogger("log")
 // var processTypedMapFirstTime = true
 
 type OutputFile struct {
-	Data       interface{} `json:"data"`
-	Timestamps string      `json:"timestamps"`
-	Status     string      `json:"status"`
+	Data          interface{} `json:"data"`
+	Ready         bool        `json:"ready"`
+	Timestamps    string      `json:"timestamps"`
+	Status        string      `json:"status"`
+	OmegaReady    bool        `json:"omega_ready"`
+	RingRound     uint32      `json:"ring_round"`
+	TaskFragments interface{} `json:"task_fragments"`
+}
+
+// func loadReducerPartialResultsFromDisk(dir, sourceType string) (map[string]*common.ReducerPartialResults, error) {
+// 	partialResults := make(map[string]*common.ReducerPartialResults)
+// 	// Delta3
+// 	stageDir := filepath.Join(dir, common.DELTA_STAGE_3, sourceType)
+// 	clientDirs, err := os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Delta_2_Data]](dir, common.DELTA_STAGE_2, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.ReducerPartialResults{
+// 					Delta2: common.PartialData[*protocol.Delta_2_Data]{
+// 						Data:  data.Data,
+// 						Ready: data.Ready,
+// 					},
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Delta2 data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	// Eta2
+// 	stageDir = filepath.Join(dir, common.ETA_STAGE_2, sourceType)
+// 	clientDirs, err = os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Eta_2_Data]](dir, common.ETA_STAGE_3, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.ReducerPartialResults{
+// 					Eta2: common.PartialData[*protocol.Eta_2_Data]{
+// 						Data:  data.Data,
+// 						Ready: data.Ready,
+// 					},
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Eta2 data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	// Kappa2
+// 	stageDir = filepath.Join(dir, common.KAPPA_STAGE_2, sourceType)
+// 	clientDirs, err = os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Kappa_2_Data]](dir, common.KAPPA_STAGE_2, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.ReducerPartialResults{
+// 					Kappa2: common.PartialData[*protocol.Kappa_2_Data]{
+// 						Data:  data.Data,
+// 						Ready: data.Ready,
+// 					},
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Kappa2 data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	// Nu2Data
+// 	stageDir = filepath.Join(dir, common.NU_STAGE_2, sourceType)
+// 	clientDirs, err = os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			log.Infof("Loading Nu2Data for client %s", clientId)
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Nu_2_Data]](dir, common.NU_STAGE_2, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.ReducerPartialResults{
+// 					Nu2Data: common.PartialData[*protocol.Nu_2_Data]{
+// 						Data:  data.Data,
+// 						Ready: data.Ready,
+// 					},
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Nu2Data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	return partialResults, nil
+// // }
+
+// func loadTopperPartialDataFromDisk(dir, sourceType string) (map[string]*common.PartialData[*protocol.Theta_Data], error) {
+// 	partialResults := make(map[string]*common.PartialData[*protocol.Theta_Data])
+// 	// Theta
+// 	stageDir := filepath.Join(dir, common.THETA_STAGE, sourceType)
+// 	clientDirs, err := os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Theta_Data]](dir, common.THETA_STAGE, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.PartialData[*protocol.Theta_Data]{
+// 					Data:  data.Data,
+// 					Ready: data.Ready,
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Theta data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	//Epsilon
+// 	stageDir = filepath.Join(dir, common.EPSILON_STAGE, sourceType)
+// 	clientDirs, err = os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Epsilon_Data]](dir, common.EPSILON_STAGE, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.PartialData[*protocol.Epsilon_Data]{
+// 					Data:  data.Data,
+// 					Ready: data.Ready,
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Epsilon data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	//Lambda
+// 	stageDir = filepath.Join(dir, common.LAMBDA_STAGE, sourceType)
+// 	clientDirs, err = os.ReadDir(stageDir)
+// 	if err == nil {
+// 		for _, clientEntry := range clientDirs {
+// 			if !clientEntry.IsDir() {
+// 				continue
+// 			}
+// 			clientId := clientEntry.Name()
+// 			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Lambda_Data]](dir, common.LAMBDA_STAGE, sourceType, clientId)
+// 			if err == nil {
+// 				partialResults[clientId] = &common.PartialData[*protocol.Lambda_Data]{
+// 					Data:  data.Data,
+// 					Ready: data.Ready,
+// 				}
+// 			} else {
+// 				log.Errorf("Error loading Lambda data for client %s: %v", clientId, err)
+// 			}
+// 		}
+// 	}
+// 	return partialResults, nil
+// }
+
+func LoadStageClientInfoFromDisk[T any](dir string, stage string, sourceType string, clientId string) (T, error) {
+	var zero T
+
+	dirPath := filepath.Join(dir, stage, sourceType, clientId)
+
+	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
+	finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
+
+	err := handleLeftOverFiles(finalFilePath, tempFilePath)
+	if err != nil {
+
+		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
+	}
+
+	file, err := os.Open(finalFilePath)
+	if err != nil {
+		return zero, fmt.Errorf("error opening file %s: %w", finalFilePath, err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+
+	switch stage {
+	case common.EPSILON_STAGE:
+		loadedData := make(map[string]*protocol.Epsilon_Data)
+		result, err := decodeEpsilonData(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+
+		loadedData = result
+		return any(loadedData).(T), nil
+
+	case common.LAMBDA_STAGE:
+		loadedData := make(map[string]*protocol.Lambda_Data)
+		decodedData, err := decodeLambdaData(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+	case common.THETA_STAGE:
+		loadedData := make(map[string]*protocol.Theta_Data)
+		decodedData, err := decodeThetaData(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.DELTA_STAGE_2:
+		loadedData := make(map[string]*protocol.Delta_2_Data)
+		decodedData, err := decodeDelta2Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.DELTA_STAGE_3:
+		loadedData := common.PartialData[*protocol.Delta_3_Data]{}
+		decodedData, err := decodeDelta3Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.NU_STAGE_2:
+		loadedData := make(map[string]*protocol.Nu_2_Data)
+		decodedData, err := decodeNu2Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.NU_STAGE_3:
+		loadedData := common.PartialData[*protocol.Nu_3_Data]{}
+		decodedData, err := decodeNu3Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.KAPPA_STAGE_2:
+		loadedData := make(map[string]*protocol.Kappa_2_Data)
+		decodedData, err := decodeKappa2Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.KAPPA_STAGE_3:
+		loadedData := common.PartialData[*protocol.Kappa_3_Data]{}
+		decodedData, err := decodeKappa3Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.ETA_STAGE_2:
+		loadedData := make(map[string]*protocol.Eta_2_Data)
+		decodedData, err := decodeEta2Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.ETA_STAGE_3:
+		loadedData := common.PartialData[*protocol.Eta_3_Data]{}
+		decodedData, err := decodeEta3Data(decoder)
+
+		if err != nil {
+			return zero, err
+		}
+		loadedData = decodedData
+		return any(loadedData).(T), nil
+
+	case common.ZETA_STAGE:
+		var loadedData interface{}
+
+		if sourceType == common.SMALL_TABLE_SOURCE {
+
+			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
+			decodedData, err := decodeZetaDataMovie(decoder)
+
+			if err != nil {
+				return zero, err
+			}
+			loadedData = decodedData
+
+		} else if sourceType == common.BIG_TABLE_SOURCE {
+			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
+			decodedData, err := decodeZetaDataRating(decoder)
+
+			if err != nil {
+				return zero, err
+			}
+			loadedData = decodedData
+		} else {
+			return zero, fmt.Errorf("unsupported source type: %s", sourceType)
+		}
+
+		return any(loadedData).(T), nil
+
+	case common.IOTA_STAGE:
+		if sourceType == common.SMALL_TABLE_SOURCE {
+			loadedData := make(map[string]*protocol.Iota_Data_Movie)
+			decodedData, err := decodeIotaDataMovie(decoder)
+
+			if err != nil {
+				return zero, err
+			}
+			loadedData = decodedData
+			return any(loadedData).(T), nil
+		} else if sourceType == common.BIG_TABLE_SOURCE {
+			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
+			decodedData, err := decodeIotaDataActor(decoder)
+
+			if err != nil {
+				return zero, err
+			}
+			loadedData = decodedData
+			return any(loadedData).(T), nil
+		} else {
+			return zero, fmt.Errorf("unsupported source type: %s", sourceType)
+		}
+
+	default:
+		return zero, fmt.Errorf("unsupported data stage: %s", stage)
+	}
+}
+
+func CommitPartialDataToFinal(dir string, stage interface{}, sourceType string, clientId string) error {
+
+	if dir != "" {
+		stringStage, err := getStageNameFromInterface(stage)
+		if err != nil {
+			return fmt.Errorf("error getting stage name: %w", err)
+		}
+
+		dirPath := filepath.Join(dir, stringStage, sourceType, clientId)
+		tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
+		finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
+
+		log.Infof("Committing data from %s to %s", tempFilePath, finalFilePath)
+
+		if err := os.Rename(tempFilePath, finalFilePath); err != nil {
+			return fmt.Errorf("error renaming temp file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
+	dirPath := filepath.Join(dir, stage, sourceType, clientId)
+	return os.RemoveAll(dirPath)
+}
+
+func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
+
+	dirPath := filepath.Join(dir, stage, sourceType, clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
+
+	err = saveDataToFile(tempFilePath, data)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	return nil
+}
+
+func LoadMergerPartialResultsFromDisk(dir string) (map[string]*common.MergerPartialResults, error) {
+	partialResults := make(map[string]*common.MergerPartialResults)
+
+	const sourceType = common.ANY_SOURCE
+
+	// Delta3
+	stageDir := filepath.Join(dir, common.DELTA_STAGE_3, sourceType)
+	clientDirs, err := os.ReadDir(stageDir)
+	if err == nil {
+		for _, clientEntry := range clientDirs {
+			if !clientEntry.IsDir() {
+				continue
+			}
+			clientId := clientEntry.Name()
+			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Delta_3_Data]](dir, common.DELTA_STAGE_3, sourceType, clientId)
+			if err == nil {
+				partialResults[clientId] = &common.MergerPartialResults{
+					Delta3: common.PartialData[*protocol.Delta_3_Data]{
+						Data:  data.Data,
+						Ready: data.Ready,
+					},
+				}
+			} else {
+				log.Errorf("Error loading Delta3 data for client %s: %v", clientId, err)
+			}
+		}
+	}
+
+	// Eta3
+	stageDir = filepath.Join(dir, common.ETA_STAGE_3, sourceType)
+	clientDirs, err = os.ReadDir(stageDir)
+	if err == nil {
+		for _, clientEntry := range clientDirs {
+			if !clientEntry.IsDir() {
+				continue
+			}
+			clientId := clientEntry.Name()
+			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Eta_3_Data]](dir, common.ETA_STAGE_3, sourceType, clientId)
+			if err == nil {
+				partialResults[clientId] = &common.MergerPartialResults{
+					Eta3: common.PartialData[*protocol.Eta_3_Data]{
+						Data:  data.Data,
+						Ready: data.Ready,
+					},
+				}
+			} else {
+				log.Errorf("Error loading Eta3 data for client %s: %v", clientId, err)
+			}
+		}
+	}
+
+	// Kappa3
+	stageDir = filepath.Join(dir, common.KAPPA_STAGE_3, sourceType)
+	clientDirs, err = os.ReadDir(stageDir)
+	if err == nil {
+		for _, clientEntry := range clientDirs {
+			if !clientEntry.IsDir() {
+				continue
+			}
+			clientId := clientEntry.Name()
+			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Kappa_3_Data]](dir, common.KAPPA_STAGE_3, sourceType, clientId)
+			if err == nil {
+				partialResults[clientId] = &common.MergerPartialResults{
+					Kappa3: common.PartialData[*protocol.Kappa_3_Data]{
+						Data:  data.Data,
+						Ready: data.Ready,
+					},
+				}
+			} else {
+				log.Errorf("Error loading Kappa3 data for client %s: %v", clientId, err)
+			}
+		}
+	}
+
+	// Nu3Data
+	stageDir = filepath.Join(dir, common.NU_STAGE_3, sourceType)
+	clientDirs, err = os.ReadDir(stageDir)
+	if err == nil {
+		for _, clientEntry := range clientDirs {
+			if !clientEntry.IsDir() {
+				continue
+			}
+			clientId := clientEntry.Name()
+			log.Infof("Loading Nu3Data for client %s", clientId)
+			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Nu_3_Data]](dir, common.NU_STAGE_3, sourceType, clientId)
+			if err == nil {
+				partialResults[clientId] = &common.MergerPartialResults{
+					Nu3Data: common.PartialData[*protocol.Nu_3_Data]{
+						Data:  data.Data,
+						Ready: data.Ready,
+					},
+				}
+			} else {
+				log.Errorf("Error loading Nu3Data for client %s: %v", clientId, err)
+			}
+		}
+	}
+
+	return partialResults, nil
+}
+
+func StartCleanupRoutine(dir string) {
+	ticker := time.NewTicker(CLEANUP_INTERVAL)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := cleanUpOldFiles(dir)
+			if err != nil {
+				log.Errorf("Error during cleanup: %s", err)
+			}
+
+		}
+	}
+}
+
+// func cleanUpOldFiles(dir string) error {
+// 	files, err := os.ReadDir(dir)
+// 	if err != nil {
+// 		return fmt.Errorf("error reading directory %s: %w", dir, err)
+// 	}
+// 	for _, file := range files {
+// 		if !file.IsDir() {
+// 			continue
+// 		}
+// 		filePath := filepath.Join(dir, file.Name())
+// 		info, err := os.Stat(filePath)
+// 		if err != nil {
+// 			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
+// 			continue
+// 		}
+// 		// Delete files older than CLEANUP_INTERVAL
+// 		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
+// 			log.Debugf("Deleting old file: %s", filePath)
+// 			if err := os.Remove(filePath); err != nil {
+// 				log.Errorf("Failed to delete file %s: %s", filePath, err)
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
+
+func saveDataToFile(tempFilePath string, data interface{}) error {
+
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ", // Pretty print
+		EmitUnpopulated: true, // Include unpopulated fields
+	}
+
+	switch v := data.(type) {
+	case map[string]*protocol.Epsilon_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Lambda_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Theta_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Delta_2_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Delta_3_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Nu_2_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Nu_3_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Kappa_2_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Kappa_3_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Eta_2_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Eta_3_Data:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Zeta_Data_Movie:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string]*protocol.Iota_Data_Movie:
+		return processTypedMap(v, tempFilePath, marshaler)
+
+	case map[string][]*protocol.Zeta_Data_Rating:
+		return processTypedMap2(v, tempFilePath, marshaler)
+
+	case map[string][]*protocol.Iota_Data_Actor:
+		return processTypedMap2(v, tempFilePath, marshaler)
+
+	// Add explicit instantiations for the expected PartialData types
+	case common.PartialData[*protocol.Delta_3_Data]:
+		return processTypedStruct(v, tempFilePath, marshaler)
+	case common.PartialData[*protocol.Eta_3_Data]:
+		return processTypedStruct(v, tempFilePath, marshaler)
+	case common.PartialData[*protocol.Kappa_3_Data]:
+		return processTypedStruct(v, tempFilePath, marshaler)
+	case common.PartialData[*protocol.Nu_3_Data]:
+		return processTypedStruct(v, tempFilePath, marshaler)
+	default:
+		return fmt.Errorf("unsupported data type: %T", data)
+	}
+}
+
+func cleanUpOldFiles(dir string) error {
+	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
+			if err := os.Remove(path); err != nil {
+				// log error si querés
+			}
+		}
+		return nil
+	})
 }
 
 func isTempFileValid(finalFile, tempFile string) (bool, bool, error) {
@@ -168,465 +795,6 @@ func handleLeftOverFiles(finalFile, tempFile string) error {
 	return nil
 }
 
-func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
-
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
-	err := os.MkdirAll(dirPath, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
-
-	err = saveDataToFile(tempFilePath, data)
-	if err != nil {
-		return fmt.Errorf("failed to save data to temporary file: %w", err)
-	}
-
-	return nil
-}
-
-func saveDataToFile(tempFilePath string, data interface{}) error {
-
-	marshaler := protojson.MarshalOptions{
-		Indent:          "  ",  // Pretty print
-		EmitUnpopulated: false, // Include unpopulated fields
-	}
-
-	switch v := data.(type) {
-	case map[string]*protocol.Epsilon_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Lambda_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Theta_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Delta_2_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Delta_3_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-		//return processTypedStruct(common.PartialData[v], tempFilePath, marshaler)
-
-	case map[string]*protocol.Nu_2_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Nu_3_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Kappa_2_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Kappa_3_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Eta_2_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Eta_3_Data:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Zeta_Data_Movie:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string]*protocol.Iota_Data_Movie:
-		return processTypedMap(v, tempFilePath, marshaler)
-
-	case map[string][]*protocol.Zeta_Data_Rating:
-		return processTypedMap2(v, tempFilePath, marshaler)
-
-	case map[string][]*protocol.Iota_Data_Actor:
-		return processTypedMap2(v, tempFilePath, marshaler)
-
-	// Add explicit instantiations for the expected PartialData types
-	case common.PartialData[*protocol.Delta_3_Data]:
-		return processTypedStruct(v, tempFilePath, marshaler)
-	case common.PartialData[*protocol.Eta_3_Data]:
-		return processTypedStruct(v, tempFilePath, marshaler)
-	case common.PartialData[*protocol.Kappa_3_Data]:
-		return processTypedStruct(v, tempFilePath, marshaler)
-	case common.PartialData[*protocol.Nu_3_Data]:
-		return processTypedStruct(v, tempFilePath, marshaler)
-	default:
-		return fmt.Errorf("unsupported data type: %T", data)
-	}
-}
-
-func LoadMergerPartialResultsFromDisk(dir, sourceType string) (map[string]*common.MergerPartialResults, error) {
-	partialResults := make(map[string]*common.MergerPartialResults)
-
-	// Delta3
-	stageDir := filepath.Join(dir, common.DELTA_STAGE_3, sourceType)
-	clientDirs, err := os.ReadDir(stageDir)
-	if err == nil {
-		for _, clientEntry := range clientDirs {
-			if !clientEntry.IsDir() {
-				continue
-			}
-			clientId := clientEntry.Name()
-			data, err := LoadStageClientInfoFromDisk[map[string]*protocol.Delta_3_Data](dir, common.DELTA_STAGE_3, sourceType, clientId)
-			if err == nil {
-				partialResults[clientId] = &common.MergerPartialResults{
-					Delta3: common.PartialData[*protocol.Delta_3_Data]{
-						Data:  data,
-						Ready: false,
-					},
-				}
-			} else {
-				log.Errorf("Error loading Delta3 data for client %s: %v", clientId, err)
-			}
-		}
-	}
-
-	// Eta3
-	stageDir = filepath.Join(dir, common.ETA_STAGE_3, sourceType)
-	clientDirs, err = os.ReadDir(stageDir)
-	if err == nil {
-		for _, clientEntry := range clientDirs {
-			if !clientEntry.IsDir() {
-				continue
-			}
-			clientId := clientEntry.Name()
-			data, err := LoadStageClientInfoFromDisk[map[string]*protocol.Eta_3_Data](dir, common.ETA_STAGE_3, sourceType, clientId)
-			if err == nil {
-				partialResults[clientId] = &common.MergerPartialResults{
-					Eta3: common.PartialData[*protocol.Eta_3_Data]{
-						Data:  data,
-						Ready: false,
-					},
-				}
-			} else {
-				log.Errorf("Error loading Eta3 data for client %s: %v", clientId, err)
-			}
-		}
-	}
-
-	// Kappa3
-	stageDir = filepath.Join(dir, common.KAPPA_STAGE_3, sourceType)
-	clientDirs, err = os.ReadDir(stageDir)
-	if err == nil {
-		for _, clientEntry := range clientDirs {
-			if !clientEntry.IsDir() {
-				continue
-			}
-			clientId := clientEntry.Name()
-			data, err := LoadStageClientInfoFromDisk[map[string]*protocol.Kappa_3_Data](dir, common.KAPPA_STAGE_3, sourceType, clientId)
-			if err == nil {
-				partialResults[clientId] = &common.MergerPartialResults{
-					Kappa3: common.PartialData[*protocol.Kappa_3_Data]{
-						Data:  data,
-						Ready: false,
-					},
-				}
-			} else {
-				log.Errorf("Error loading Kappa3 data for client %s: %v", clientId, err)
-			}
-		}
-	}
-
-	// Nu3Data
-	stageDir = filepath.Join(dir, common.NU_STAGE_3, sourceType)
-	clientDirs, err = os.ReadDir(stageDir)
-	if err == nil {
-		for _, clientEntry := range clientDirs {
-			if !clientEntry.IsDir() {
-				continue
-			}
-			clientId := clientEntry.Name()
-			log.Infof("Loading Nu3Data for client %s", clientId)
-			data, err := LoadStageClientInfoFromDisk[common.PartialData[*protocol.Nu_3_Data]](dir, common.NU_STAGE_3, sourceType, clientId)
-			if err == nil {
-				partialResults[clientId] = &common.MergerPartialResults{
-					Nu3Data: common.PartialData[*protocol.Nu_3_Data]{
-						Data:  data.Data,
-						Ready: data.Ready,
-					},
-				}
-			} else {
-				log.Errorf("Error loading Nu3Data for client %s: %v", clientId, err)
-			}
-		}
-	}
-
-	return partialResults, nil
-}
-
-func LoadStageClientInfoFromDisk[T any](dir string, stage string, sourceType string, clientId string) (T, error) {
-	var zero T
-
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
-
-	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
-	finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
-
-	err := handleLeftOverFiles(finalFilePath, tempFilePath)
-	if err != nil {
-
-		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
-	}
-
-	file, err := os.Open(finalFilePath)
-	if err != nil {
-		return zero, fmt.Errorf("error opening file %s: %w", finalFilePath, err)
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-
-	switch stage {
-	case common.EPSILON_STAGE:
-		loadedData := make(map[string]*protocol.Epsilon_Data)
-		result, err := decodeEpsilonData(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-
-		loadedData = result
-		return any(loadedData).(T), nil
-
-	case common.LAMBDA_STAGE:
-		loadedData := make(map[string]*protocol.Lambda_Data)
-		decodedData, err := decodeLambdaData(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-	case common.THETA_STAGE:
-		loadedData := make(map[string]*protocol.Theta_Data)
-		decodedData, err := decodeThetaData(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.DELTA_STAGE_2:
-		loadedData := make(map[string]*protocol.Delta_2_Data)
-		decodedData, err := decodeDelta2Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.DELTA_STAGE_3:
-		loadedData := make(map[string]*protocol.Delta_3_Data)
-		decodedData, err := decodeDelta3Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.NU_STAGE_2:
-		loadedData := make(map[string]*protocol.Nu_2_Data)
-		decodedData, err := decodeNu2Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.NU_STAGE_3:
-		loadedData := common.PartialData[*protocol.Nu_3_Data]{}
-		decodedData, err := decodeNu3Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.KAPPA_STAGE_2:
-		loadedData := make(map[string]*protocol.Kappa_2_Data)
-		decodedData, err := decodeKappa2Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.KAPPA_STAGE_3:
-		loadedData := make(map[string]*protocol.Kappa_3_Data)
-		decodedData, err := decodeKappa3Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.ETA_STAGE_2:
-		loadedData := make(map[string]*protocol.Eta_2_Data)
-		decodedData, err := decodeEta2Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.ETA_STAGE_3:
-		loadedData := make(map[string]*protocol.Eta_3_Data)
-		decodedData, err := decodeEta3Data(decoder)
-
-		if err != nil {
-			return zero, err
-		}
-		loadedData = decodedData
-		return any(loadedData).(T), nil
-
-	case common.ZETA_STAGE:
-		var loadedData interface{}
-
-		if sourceType == common.SMALL_TABLE_SOURCE {
-
-			loadedData = make(map[string]*protocol.Zeta_Data_Movie)
-			decodedData, err := decodeZetaDataMovie(decoder)
-
-			if err != nil {
-				return zero, err
-			}
-			loadedData = decodedData
-
-		} else if sourceType == common.BIG_TABLE_SOURCE {
-			loadedData = make(map[string][]*protocol.Zeta_Data_Rating)
-			decodedData, err := decodeZetaDataRating(decoder)
-
-			if err != nil {
-				return zero, err
-			}
-			loadedData = decodedData
-		} else {
-			return zero, fmt.Errorf("unsupported source type: %s", sourceType)
-		}
-
-		return any(loadedData).(T), nil
-
-	case common.IOTA_STAGE:
-		if sourceType == common.SMALL_TABLE_SOURCE {
-			loadedData := make(map[string]*protocol.Iota_Data_Movie)
-			decodedData, err := decodeIotaDataMovie(decoder)
-
-			if err != nil {
-				return zero, err
-			}
-			loadedData = decodedData
-			return any(loadedData).(T), nil
-		} else if sourceType == common.BIG_TABLE_SOURCE {
-			loadedData := make(map[string][]*protocol.Iota_Data_Actor)
-			decodedData, err := decodeIotaDataActor(decoder)
-
-			if err != nil {
-				return zero, err
-			}
-			loadedData = decodedData
-			return any(loadedData).(T), nil
-		} else {
-			return zero, fmt.Errorf("unsupported source type: %s", sourceType)
-		}
-
-	default:
-		return zero, fmt.Errorf("unsupported data stage: %s", stage)
-	}
-}
-
-func CommitPartialDataToFinal(dir string, stage interface{}, sourceType string, clientId string) error {
-	stringStage, err := getStageNameFromInterface(stage)
-	if err != nil {
-		return fmt.Errorf("error getting stage name: %w", err)
-	}
-
-	dirPath := filepath.Join(dir, stringStage, sourceType, clientId)
-	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
-	finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
-
-	log.Infof("Committing data from %s to %s", tempFilePath, finalFilePath)
-
-	if err := os.Rename(tempFilePath, finalFilePath); err != nil {
-		return fmt.Errorf("error renaming temp file: %w", err)
-	}
-	return nil
-}
-
-func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
-	return os.RemoveAll(dirPath)
-}
-
-func StartCleanupRoutine(dir string) {
-	ticker := time.NewTicker(CLEANUP_INTERVAL)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			err := cleanUpOldFiles(dir)
-			if err != nil {
-				log.Errorf("Error during cleanup: %s", err)
-			}
-
-		}
-	}
-}
-
-// func cleanUpOldFiles(dir string) error {
-// 	files, err := os.ReadDir(dir)
-// 	if err != nil {
-// 		return fmt.Errorf("error reading directory %s: %w", dir, err)
-// 	}
-// 	for _, file := range files {
-// 		if !file.IsDir() {
-// 			continue
-// 		}
-// 		filePath := filepath.Join(dir, file.Name())
-// 		info, err := os.Stat(filePath)
-// 		if err != nil {
-// 			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
-// 			continue
-// 		}
-// 		// Delete files older than CLEANUP_INTERVAL
-// 		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
-// 			log.Debugf("Deleting old file: %s", filePath)
-// 			if err := os.Remove(filePath); err != nil {
-// 				log.Errorf("Failed to delete file %s: %s", filePath, err)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-
-func cleanUpOldFiles(dir string) error {
-	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		info, err := d.Info()
-		if err != nil {
-			return nil
-		}
-		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
-			if err := os.Remove(path); err != nil {
-				// log error si querés
-			}
-		}
-		return nil
-	})
-}
-
 func decodeDelta2Data(decoder *json.Decoder) (map[string]*protocol.Delta_2_Data, error) {
 	var tempArray struct {
 		Data []struct {
@@ -652,28 +820,34 @@ func decodeDelta2Data(decoder *json.Decoder) (map[string]*protocol.Delta_2_Data,
 	return result, nil
 }
 
-func decodeDelta3Data(decoder *json.Decoder) (map[string]*protocol.Delta_3_Data, error) {
+func decodeDelta3Data(decoder *json.Decoder) (common.PartialData[*protocol.Delta_3_Data], error) {
 	var tempArray struct {
 		Data []struct {
 			Country       string `json:"country"`
 			PartialBudget string `json:"partialBudget"`
 		} `json:"data"`
+		Ready bool `json:"ready"`
 	}
 	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+		return common.PartialData[*protocol.Delta_3_Data]{}, fmt.Errorf("error decoding JSON array: %w", err)
 	}
 
-	result := make(map[string]*protocol.Delta_3_Data)
+	result := common.PartialData[*protocol.Delta_3_Data]{
+		Data: make(map[string]*protocol.Delta_3_Data),
+	}
+
 	for _, item := range tempArray.Data {
 		partialBudget, err := strconv.ParseUint(item.PartialBudget, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing partialBudget: %w", err)
+			return common.PartialData[*protocol.Delta_3_Data]{}, fmt.Errorf("error parsing partialBudget: %w", err)
 		}
-		result[item.Country] = &protocol.Delta_3_Data{
+		result.Data[item.Country] = &protocol.Delta_3_Data{
 			Country:       item.Country,
 			PartialBudget: partialBudget,
 		}
+
 	}
+	result.Ready = tempArray.Ready
 	return result, nil
 }
 
@@ -821,6 +995,7 @@ func decodeNu2Data(decoder *json.Decoder) (map[string]*protocol.Nu_2_Data, error
 	return result, nil
 }
 
+// UPDATE TO LOAD READY
 func decodeNu3Data(decoder *json.Decoder) (common.PartialData[*protocol.Nu_3_Data], error) {
 	var tempArray struct {
 		Data []struct {
@@ -876,29 +1051,34 @@ func decodeKappa2Data(decoder *json.Decoder) (map[string]*protocol.Kappa_2_Data,
 	return result, nil
 }
 
-func decodeKappa3Data(decoder *json.Decoder) (map[string]*protocol.Kappa_3_Data, error) {
+func decodeKappa3Data(decoder *json.Decoder) (common.PartialData[*protocol.Kappa_3_Data], error) {
 	var tempArray struct {
 		Data []struct {
 			ActorId               string `json:"actorId"`
 			ActorName             string `json:"actorName"`
 			PartialParticipations string `json:"partialParticipations"`
 		} `json:"data"`
+		Ready bool `json:"ready"`
 	}
 	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+		return common.PartialData[*protocol.Kappa_3_Data]{}, fmt.Errorf("error decoding JSON array: %w", err)
 	}
-	result := make(map[string]*protocol.Kappa_3_Data)
+	result := common.PartialData[*protocol.Kappa_3_Data]{
+		Data: make(map[string]*protocol.Kappa_3_Data),
+	}
 	for _, item := range tempArray.Data {
 		partialParticipations, err := strconv.ParseUint(item.PartialParticipations, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing partialParticipations: %w", err)
+			return common.PartialData[*protocol.Kappa_3_Data]{}, fmt.Errorf("error parsing partialParticipations: %w", err)
 		}
-		result[item.ActorId] = &protocol.Kappa_3_Data{
+		result.Data[item.ActorId] = &protocol.Kappa_3_Data{
 			ActorId:               item.ActorId,
 			ActorName:             item.ActorName,
 			PartialParticipations: partialParticipations,
 		}
+
 	}
+	result.Ready = tempArray.Ready
 	return result, nil
 }
 
@@ -926,7 +1106,7 @@ func decodeEta2Data(decoder *json.Decoder) (map[string]*protocol.Eta_2_Data, err
 	return result, nil
 }
 
-func decodeEta3Data(decoder *json.Decoder) (map[string]*protocol.Eta_3_Data, error) {
+func decodeEta3Data(decoder *json.Decoder) (common.PartialData[*protocol.Eta_3_Data], error) {
 	var tempArray struct {
 		Data []struct {
 			MovieId string  `json:"movieId"`
@@ -934,21 +1114,25 @@ func decodeEta3Data(decoder *json.Decoder) (map[string]*protocol.Eta_3_Data, err
 			Rating  float64 `json:"rating"`
 			Count   uint32  `json:"count"`
 		} `json:"data"`
+		Ready bool `json:"ready"`
 	}
 
 	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+		return common.PartialData[*protocol.Eta_3_Data]{}, fmt.Errorf("error decoding JSON array: %w", err)
 	}
-	result := make(map[string]*protocol.Eta_3_Data)
+	result := common.PartialData[*protocol.Eta_3_Data]{
+		Data: make(map[string]*protocol.Eta_3_Data),
+	}
 	for _, item := range tempArray.Data {
 
-		result[item.MovieId] = &protocol.Eta_3_Data{
+		result.Data[item.MovieId] = &protocol.Eta_3_Data{
 			MovieId: item.MovieId,
 			Title:   item.Title,
 			Rating:  item.Rating,
 			Count:   item.Count,
 		}
 	}
+	result.Ready = tempArray.Ready
 	return result, nil
 }
 
@@ -1083,8 +1267,10 @@ func processTypedStruct[T proto.Message](typedStruct common.PartialData[T], temp
 		}
 		jsonArray = append(jsonArray, marshaledData)
 	}
+
 	output := OutputFile{
 		Data:       jsonArray,
+		Ready:      typedStruct.Ready,
 		Timestamps: time.Now().UTC().Format(time.RFC3339),
 		Status:     VALID_STATUS,
 	}
@@ -1292,6 +1478,8 @@ func compareStruct(expected, actual interface{}) bool {
 			}
 			// Para el resto, usar DeepEqual
 		} else {
+			log.Infof("Comparing field %s", fieldName)
+			log.Infof("Expected: %v, Actual: %v", expectedField, actualField)
 			if !reflect.DeepEqual(expectedField, actualField) {
 				log.Errorf("Field %s does not match: expected %v, got %v", fieldName, expectedField, actualField)
 				return false
@@ -1315,23 +1503,23 @@ func CompareMergerPartialResultsMap(
 			return false
 		}
 		// Comparar Delta3
-		if !compareProtobufMaps(expectedResult.Delta3.Data, actualResult.Delta3.Data) {
+		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
 			log.Errorf("Delta3 mismatch for client %s", clientID)
 			return false
 		}
 
 		// Comparar Eta3
-		if !compareProtobufMaps(expectedResult.Eta3.Data, actualResult.Eta3.Data) {
+		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
 			log.Errorf("Eta3 mismatch for client %s", clientID)
 			return false
 		}
 		// Comparar Kappa3
-		if !compareProtobufMaps(expectedResult.Kappa3.Data, actualResult.Kappa3.Data) {
+		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
 			log.Errorf("Kappa3 mismatch for client %s", clientID)
 			return false
 		}
 		// Comparar Nu3Data
-		if !compareProtobufMaps(expectedResult.Nu3Data.Data, actualResult.Nu3Data.Data) {
+		if !compareStruct(expectedResult.Nu3Data, actualResult.Nu3Data) {
 			log.Errorf("Nu3Data mismatch for client %s", clientID)
 			return false
 		}

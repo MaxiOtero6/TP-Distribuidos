@@ -67,10 +67,11 @@ func assertDeserializationOfWorkerInfo(
 ) {
 	// Crear un directorio temporal para todas las pruebas
 	tempDir, err := os.MkdirTemp("", "test_deserialization")
+	log.Infof("Temporary directory created: %s", tempDir)
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) // Limpiar el directorio temporal después de la prueba
 
 	// Guardar y commitear todos los datos
 	for _, tc := range testCases {
@@ -85,9 +86,9 @@ func assertDeserializationOfWorkerInfo(
 	// Validar todos los datos al final
 	expected := createExpectedResult(testCases)
 
-	actualResult, err := LoadMergerPartialResultsFromDisk(tempDir, common.ANY_SOURCE)
+	actualResult, err := LoadMergerPartialResultsFromDisk(tempDir)
 	assert.NoError(t, err, "Failed to load data from file")
-	log.Infof("Loaded data: %v", actualResult)
+	log.Infof("Loaded data: %v", actualResult[CLIENT_ID].Delta3)
 
 	assert.True(t, CompareMergerPartialResultsMap(expected, actualResult), "Loaded merger partial results do not match expected")
 
@@ -162,16 +163,19 @@ func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
 		},
 		{
 			name: "Delta_3_Data",
-			data: map[string]*protocol.Delta_3_Data{
-				"country1": {Country: "country1", PartialBudget: 100},
-				"country2": {Country: "country2", PartialBudget: 200},
-				"country3": {Country: "country3", PartialBudget: 300},
+			data: common.PartialData[*protocol.Delta_3_Data]{
+				Data: map[string]*protocol.Delta_3_Data{
+					"country1": {Country: "country1", PartialBudget: 100},
+					"country2": {Country: "country2", PartialBudget: 200},
+					"country3": {Country: "country3", PartialBudget: 300},
+				},
+				Ready: false,
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
 			stage:      &protocol.Task_Delta_3{},
 			source:     common.ANY_SOURCE,
-			comparator: compareProtobufMaps,
+			comparator: compareStruct,
 		},
 	}
 
@@ -251,16 +255,19 @@ func TestSerializationAndDeserializationForEtaStage(t *testing.T) {
 
 		{
 			name: "Eta_3_Data",
-			data: map[string]*protocol.Eta_3_Data{
-				"MovieId1": {MovieId: "MovieId1", Title: "Title1", Rating: 4.5, Count: 100},
-				"MovieId2": {MovieId: "MovieId2", Title: "Title2", Rating: 3.5, Count: 200},
-				"MovieId3": {MovieId: "MovieId3", Title: "Title3", Rating: 5.0, Count: 300},
+			data: common.PartialData[*protocol.Eta_3_Data]{
+				Data: map[string]*protocol.Eta_3_Data{
+					"MovieId1": {MovieId: "MovieId1", Title: "Title1", Rating: 4.5, Count: 100},
+					"MovieId2": {MovieId: "MovieId2", Title: "Title2", Rating: 3.5, Count: 200},
+					"MovieId3": {MovieId: "MovieId3", Title: "Title3", Rating: 5.0, Count: 300},
+				},
+				Ready: false,
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
 			stage:      &protocol.Task_Eta_3{},
 			source:     common.ANY_SOURCE,
-			comparator: compareProtobufMaps,
+			comparator: compareStruct,
 		},
 	}
 
@@ -366,15 +373,18 @@ func TestSerializationAndDeserializationForAllStages(t *testing.T) {
 		},
 		{
 			name: "Kappa_3_Data",
-			data: map[string]*protocol.Kappa_3_Data{
-				"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 8},
-				"actor2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 12},
+			data: common.PartialData[*protocol.Kappa_3_Data]{
+				Data: map[string]*protocol.Kappa_3_Data{
+					"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 8},
+					"actor2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 12},
+				},
+				Ready: false,
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,
 			stage:      &protocol.Task_Kappa_3{},
 			source:     common.ANY_SOURCE,
-			comparator: compareProtobufMaps,
+			comparator: compareStruct,
 		},
 	}
 
@@ -484,8 +494,8 @@ func TestSerializationAndDeserializationOfAnEntireWorker(t *testing.T) {
 			name: "MergerPartialResults_Kappa3",
 			data: common.PartialData[*protocol.Kappa_3_Data]{
 				Data: map[string]*protocol.Kappa_3_Data{
-					"client1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 5},
-					"client2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 15},
+					"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 8},
+					"actor2": {ActorId: "actor2", ActorName: "Actor Two", PartialParticipations: 12},
 				},
 				Ready: false,
 			},
@@ -502,7 +512,7 @@ func TestSerializationAndDeserializationOfAnEntireWorker(t *testing.T) {
 					"true":  {Sentiment: true, Ratio: 0.5, Count: 100},
 					"false": {Sentiment: false, Ratio: 0.5, Count: 200},
 				},
-				Ready: false,
+				Ready: true,
 			},
 			dir:        DIR,
 			clientID:   CLIENT_ID,

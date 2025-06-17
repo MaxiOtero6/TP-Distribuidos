@@ -16,7 +16,11 @@ type NextStageData struct {
 
 type PartialData[T any] struct {
 	Data  map[string]T
-	Ready bool
+	Ready bool // No va
+	// Van para el otro modelo
+	// TaskFragments map[uint32]*protocol.TaskIdentifier
+	// OmegaReady    bool
+	// RingRound     uint32
 }
 
 type MergerPartialResults struct {
@@ -51,7 +55,7 @@ type Result3 struct {
 	MinHeap *heap.TopKHeap[float32, *protocol.Theta_Data]
 }
 
-type PartialResults struct {
+type TopperPartialResults struct {
 	EpsilonHeap *heap.TopKHeap[uint64, *protocol.Epsilon_Data]
 	ThetaData   Result3
 	LambdaHeap  *heap.TopKHeap[uint64, *protocol.Lambda_Data]
