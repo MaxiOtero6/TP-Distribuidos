@@ -23,9 +23,10 @@ const (
 
 type TaskIdentifier struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	TaskNumber         uint32                 `protobuf:"varint,1,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
-	TaskFragmentNumber uint32                 `protobuf:"varint,2,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`
-	LastFragment       bool                   `protobuf:"varint,3,opt,name=lastFragment,proto3" json:"lastFragment,omitempty"`
+	CreatorId          string                 `protobuf:"bytes,1,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
+	TaskNumber         uint32                 `protobuf:"varint,2,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
+	TaskFragmentNumber uint32                 `protobuf:"varint,3,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`
+	LastFragment       bool                   `protobuf:"varint,4,opt,name=lastFragment,proto3" json:"lastFragment,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -58,6 +59,13 @@ func (x *TaskIdentifier) ProtoReflect() protoreflect.Message {
 // Deprecated: Use TaskIdentifier.ProtoReflect.Descriptor instead.
 func (*TaskIdentifier) Descriptor() ([]byte, []int) {
 	return file_proto_task_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *TaskIdentifier) GetCreatorId() string {
+	if x != nil {
+		return x.CreatorId
+	}
+	return ""
 }
 
 func (x *TaskIdentifier) GetTaskNumber() uint32 {
@@ -599,13 +607,14 @@ var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1bproto/results/result1.proto\x1a\x1bproto/results/result2.proto\x1a\x1bproto/results/result3.proto\x1a\x1bproto/results/result4.proto\x1a\x1bproto/results/result5.proto\x1a\x18proto/eof/omegaEOF.proto\x1a\x17proto/eof/ringEOF.proto\"\x84\x01\n" +
-	"\x0eTaskIdentifier\x12\x1e\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1bproto/results/result1.proto\x1a\x1bproto/results/result2.proto\x1a\x1bproto/results/result3.proto\x1a\x1bproto/results/result4.proto\x1a\x1bproto/results/result5.proto\x1a\x18proto/eof/omegaEOF.proto\x1a\x17proto/eof/ringEOF.proto\"\xa2\x01\n" +
+	"\x0eTaskIdentifier\x12\x1c\n" +
+	"\tcreatorId\x18\x01 \x01(\tR\tcreatorId\x12\x1e\n" +
 	"\n" +
-	"taskNumber\x18\x01 \x01(\rR\n" +
+	"taskNumber\x18\x02 \x01(\rR\n" +
 	"taskNumber\x12.\n" +
-	"\x12taskFragmentNumber\x18\x02 \x01(\rR\x12taskFragmentNumber\x12\"\n" +
-	"\flastFragment\x18\x03 \x01(\bR\flastFragment\"\x97\b\n" +
+	"\x12taskFragmentNumber\x18\x03 \x01(\rR\x12taskFragmentNumber\x12\"\n" +
+	"\flastFragment\x18\x04 \x01(\bR\flastFragment\"\x97\b\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +

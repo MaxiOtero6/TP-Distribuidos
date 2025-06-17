@@ -221,9 +221,10 @@ func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.EPSILON_STAGE)
 	}
 
-	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+	creatorId := m.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
@@ -259,9 +260,10 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.THETA_STAGE)
 	}
 
-	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+	creatorId := m.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
@@ -297,9 +299,10 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.LAMBDA_STAGE)
 	}
 
-	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+	creatorId := m.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
@@ -334,9 +337,10 @@ func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+	creatorId := m.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 }
 
 // Adding EOF handler to Merger
@@ -377,8 +381,8 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 		return tasks
 	}
 
-	participatesInResults := m.participatesInResults(clientId, data.GetStage())
-	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
+	taskCount := m.participatesInResults(clientId, data.GetStage())
+	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
 	if ready {
 		err = m.addResultsToNextStage(tasks, data.GetStage(), clientId)
@@ -466,25 +470,32 @@ func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]common.Tas
 	}
 }
 
-func (m *Merger) participatesInResults(clientId string, stage string) bool {
+func (m *Merger) participatesInResults(clientId string, stage string) int {
 	partialResults, ok := m.partialResults[clientId]
 	if !ok {
-		return false
+		return 0
 	}
+
+	participates := false
 
 	switch stage {
 	case common.DELTA_STAGE_3:
-		return len(partialResults.delta3.data) > 0
+		participates = len(partialResults.delta3.data) > 0
 	case common.ETA_STAGE_3:
-		return len(partialResults.eta3.data) > 0
+		participates = len(partialResults.eta3.data) > 0
 	case common.KAPPA_STAGE_3:
-		return len(partialResults.kappa3.data) > 0
+		participates = len(partialResults.kappa3.data) > 0
 	case common.NU_STAGE_3:
-		return len(partialResults.nu3Data.data) > 0
+		participates = len(partialResults.nu3Data.data) > 0
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return false
+		return 0
 	}
+
+	if participates {
+		return 1
+	}
+	return 0
 }
 
 func (m *Merger) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {

@@ -8,9 +8,15 @@ message FragmentIdentifier {
 }
 
 message StageFragment {
-    FragmentIdentifier start = 1;
-    FragmentIdentifier end = 2;
-    bool lastFragment = 3;
+    string creatorId = 1;
+    FragmentIdentifier start = 2;
+    FragmentIdentifier end = 3;
+    bool lastFragment = 4;
+}
+
+message TaskCountByWorker {
+    string workerId = 1;
+    uint32 taskCount = 2;
 }
 
 message RingEOF {
@@ -21,5 +27,5 @@ message RingEOF {
     uint32 tasksCount = 5;
     uint32 roundNumber = 6;
     repeated StageFragment stageFragmentes = 7;
-    repeated string nextStageWorkerParticipantIds = 8;
+    repeated TaskCountByWorker nextStageTaskCountByWorker = 8;
 }

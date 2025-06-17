@@ -192,7 +192,9 @@ func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
@@ -247,7 +249,9 @@ func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
@@ -284,7 +288,9 @@ func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
@@ -394,8 +400,8 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 
 	t.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
 
-	participatesInResults := t.participatesInResults(clientId, data.GetStage())
-	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
+	taskCount := t.participatesInResults(clientId, data.GetStage())
+	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
 	if ready {
 		err = t.addResultsToNextStage(tasks, data.GetStage(), clientId)
@@ -482,24 +488,31 @@ func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]common.Tas
 	}
 }
 
-func (t *Topper) participatesInResults(clientId string, stage string) bool {
+func (t *Topper) participatesInResults(clientId string, stage string) int {
 	partialResults, ok := t.partialResults[clientId]
 	if !ok {
-		return false
+		return 0
 	}
+
+	participates := false
 
 	switch stage {
 	case common.EPSILON_STAGE:
-		return partialResults.epsilonData.heap.Len() > 0
+		participates = partialResults.epsilonData.heap.Len() > 0
 	case common.THETA_STAGE:
-		return partialResults.thetaData.minPartialData.heap.Len() > 0 ||
+		participates = partialResults.thetaData.minPartialData.heap.Len() > 0 ||
 			partialResults.thetaData.maxPartialData.heap.Len() > 0
 	case common.LAMBDA_STAGE:
-		return partialResults.lamdaData.heap.Len() > 0
+		participates = partialResults.lamdaData.heap.Len() > 0
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return false
+		return 0
 	}
+
+	if participates {
+		return 1
+	}
+	return 0
 }
 
 func processTopperStage[K heap.Ordered, V any](
@@ -510,6 +523,7 @@ func processTopperStage[K heap.Ordered, V any](
 	valueFunc func(input *V) K,
 ) {
 	taskID := common.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
 		LastFragment:       taskIdentifier.GetLastFragment(),

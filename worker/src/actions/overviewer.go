@@ -111,7 +111,9 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumb
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := o.infraConfig.GetNodeId()
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }

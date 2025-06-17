@@ -2,7 +2,7 @@ package actions
 
 import (
 	"fmt"
-	"strconv"
+	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -22,7 +22,7 @@ type JoinerTableData[T any] struct {
 type JoinerStageData[S any, B any] struct {
 	smallTable          JoinerTableData[*S]
 	bigTable            JoinerTableData[[]*B]
-	sendedFragmentCount int
+	sendedTaskCount     int
 	smallTableTaskCount int
 	ringRound           uint32
 }
@@ -467,14 +467,14 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 
 		zetaData.ringRound = ringRound
 
-		participatesInResults := zetaData.sendedFragmentCount > 0
+		resultsTaskCount := zetaData.sendedTaskCount
 		taskFragments := []common.TaskFragmentIdentifier{}
 
 		if zetaData.smallTable.ready {
 			taskFragments = utils.MapKeys(zetaData.bigTable.taskFragments)
 		}
 
-		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, participatesInResults)
+		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
 		zetaData.bigTable.ready = ready
 	case common.IOTA_STAGE:
 		iotaData := j.partialResults[clientId].iotaData
@@ -487,14 +487,14 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 
 		iotaData.ringRound = ringRound
 
-		participatesInResults := iotaData.sendedFragmentCount > 0
+		resultsTaskCount := iotaData.sendedTaskCount
 		taskFragments := []common.TaskFragmentIdentifier{}
 
 		if iotaData.smallTable.ready {
 			taskFragments = utils.MapKeys(iotaData.bigTable.taskFragments)
 		}
 
-		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, participatesInResults)
+		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
 		iotaData.bigTable.ready = ready
 	}
 
@@ -548,7 +548,6 @@ func (j *Joiner) addEta1Results(tasks common.Tasks, partialResults []*protocol.E
 	zetaData := j.partialResults[clientId].zetaData
 
 	nextStageData, _ := j.nextStageData(dataStage, clientId)
-	taskNumber, _ := strconv.Atoi(j.infraConfig.GetNodeId())
 
 	identifierFunc := func(input *protocol.Eta_1_Data) string {
 		return input.GetMovieId()
@@ -570,11 +569,11 @@ func (j *Joiner) addEta1Results(tasks common.Tasks, partialResults []*protocol.E
 		}
 	}
 
-	fragmentCount := zetaData.sendedFragmentCount
-	bigTableReady := zetaData.bigTable.ready
+	initialTaskNumber := zetaData.sendedTaskCount
+	creatorId := j.infraConfig.GetNodeId()
 
-	newFragments := AddResults(tasks, partialResults, nextStageData[0], clientId, taskNumber, fragmentCount, bigTableReady, itemHashFunc, identifierFunc, taskDataCreator)
-	zetaData.sendedFragmentCount += newFragments
+	newTaskCount := joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, initialTaskNumber, itemHashFunc, identifierFunc, taskDataCreator)
+	zetaData.sendedTaskCount += newTaskCount
 }
 
 func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResults []*protocol.Kappa_1_Data, clientId string) {
@@ -582,7 +581,6 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResults []*protocol
 	iotaData := j.partialResults[clientId].iotaData
 
 	nextStageData, _ := j.nextStageData(dataStage, clientId)
-	taskNumber, _ := strconv.Atoi(j.infraConfig.GetNodeId())
 
 	identifierFunc := func(input *protocol.Kappa_1_Data) string {
 		return input.GetMovieId()
@@ -604,11 +602,11 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResults []*protocol
 		}
 	}
 
-	fragmentCount := iotaData.sendedFragmentCount
-	bigTableReady := iotaData.bigTable.ready
+	initialTaskNumber := iotaData.sendedTaskCount
+	creatorId := j.infraConfig.GetNodeId()
 
-	newFragments := AddResults(tasks, partialResults, nextStageData[0], clientId, taskNumber, fragmentCount, bigTableReady, itemHashFunc, identifierFunc, taskDataCreator)
-	iotaData.sendedFragmentCount += newFragments
+	newTaskCount := joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, initialTaskNumber, itemHashFunc, identifierFunc, taskDataCreator)
+	iotaData.sendedTaskCount += newTaskCount
 }
 
 func processSmallTableJoinerStage[G any, S any](
@@ -620,6 +618,7 @@ func processSmallTableJoinerStage[G any, S any](
 	mappingFunc func(input G) S,
 ) {
 	taskID := common.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
 		LastFragment:       taskIdentifier.GetLastFragment(),
@@ -647,6 +646,7 @@ func processBigTableJoinerStage[G any, B any](
 	mappingFunc func(input G) B,
 ) {
 	taskID := common.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
 		LastFragment:       taskIdentifier.GetLastFragment(),
@@ -666,6 +666,59 @@ func processBigTableJoinerStage[G any, B any](
 		}
 		partialData.data[id] = append(partialData.data[id], mappingFunc(item))
 	}
+}
+
+func joinerAddResults[T any](
+	tasks common.Tasks,
+	results []T,
+	nextStageData common.NextStageData,
+	clientId string,
+	creatorId string,
+	initialTaskNumber int,
+	itemHashFunc func(workersCount int, item string) string,
+	identifierFunc func(input T) string,
+	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
+) int {
+	if _, ok := tasks[nextStageData.Exchange]; !ok {
+		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
+	}
+	if _, ok := tasks[nextStageData.Exchange][nextStageData.Stage]; !ok {
+		tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+	}
+
+	dataByNode := make(map[string][]T)
+
+	for _, data := range results {
+		nodeId := itemHashFunc(nextStageData.WorkerCount, identifierFunc(data))
+		dataByNode[nodeId] = append(dataByNode[nodeId], data)
+	}
+
+	destinationNodes := make([]string, 0, len(dataByNode))
+	for nodeId := range dataByNode {
+		destinationNodes = append(destinationNodes, nodeId)
+	}
+	slices.Sort(destinationNodes)
+
+	createTaskIdentifier := func(nodeId string, index int) *protocol.TaskIdentifier {
+		return &protocol.TaskIdentifier{
+			CreatorId:          creatorId,
+			TaskNumber:         uint32(initialTaskNumber + index),
+			TaskFragmentNumber: 0,
+			LastFragment:       true,
+		}
+	}
+
+	for index, nodeId := range destinationNodes {
+		taskIdentifier := createTaskIdentifier(nodeId, index)
+		tasks[nextStageData.Exchange][nextStageData.Stage][nodeId] = taskDataCreator(
+			nextStageData.Stage,
+			dataByNode[nodeId],
+			clientId,
+			taskIdentifier,
+		)
+	}
+
+	return len(destinationNodes)
 }
 
 // // Delete partialResult by clientId

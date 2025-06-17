@@ -143,9 +143,11 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 		}
 	}
 
-	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, taskNumber, 0, true, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
-	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, taskNumber, 0, true, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
-	AddResults(tasks, resultsIota, nextStageDataIota, clientId, taskNumber, 0, true, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
+	creatorId := f.infraConfig.GetNodeId()
+
+	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, creatorId, taskNumber, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
+	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, creatorId, taskNumber, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
+	AddResults(tasks, resultsIota, nextStageDataIota, clientId, creatorId, taskNumber, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
 
 	return tasks
 }
@@ -187,7 +189,9 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumb
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := f.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -228,7 +232,9 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNu
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := f.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }

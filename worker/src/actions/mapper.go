@@ -91,7 +91,9 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string, tas
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := m.infraConfig.GetNodeId()
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -154,7 +156,9 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string, taskNum
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := m.infraConfig.GetNodeId()
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -215,7 +219,9 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string, tas
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := m.infraConfig.GetNodeId()
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -277,7 +283,9 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string, taskNumbe
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+	creatorId := m.infraConfig.GetNodeId()
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }

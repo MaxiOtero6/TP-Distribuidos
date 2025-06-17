@@ -218,16 +218,17 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := r.nextStageData(common.DELTA_STAGE_2, clientId)
-	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	creatorId := r.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
 	AddResults(
 		tasks,
 		results,
 		nextStageData[0],
 		clientId,
+		creatorId,
 		taskNumber,
-		0,
-		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -263,16 +264,17 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := r.nextStageData(common.ETA_STAGE_2, clientId)
-	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	creatorId := r.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
 	AddResults(
 		tasks,
 		results,
 		nextStageData[0],
 		clientId,
+		creatorId,
 		taskNumber,
-		0,
-		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -307,16 +309,17 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := r.nextStageData(common.KAPPA_STAGE_2, clientId)
-	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	creatorId := r.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
 	AddResults(
 		tasks,
 		results,
 		nextStageData[0],
 		clientId,
+		creatorId,
 		taskNumber,
-		0,
-		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -351,16 +354,17 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := r.nextStageData(common.NU_STAGE_2, clientId)
-	taskNumber, _ := strconv.Atoi(r.infraConfig.GetNodeId())
+
+	creatorId := r.infraConfig.GetNodeId()
+	taskNumber, _ := strconv.Atoi(creatorId)
 
 	AddResults(
 		tasks,
 		results,
 		nextStageData[0],
 		clientId,
+		creatorId,
 		taskNumber,
-		0,
-		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -400,25 +404,32 @@ func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]common.Ta
 	}
 }
 
-func (r *Reducer) participatesInResults(clientId string, stage string) bool {
+func (r *Reducer) participatesInResults(clientId string, stage string) int {
 	partialResults, ok := r.partialResults[clientId]
 	if !ok {
-		return false
+		return 0
 	}
+
+	participates := false
 
 	switch stage {
 	case common.DELTA_STAGE_2:
-		return len(partialResults.delta2.data) > 0
+		participates = len(partialResults.delta2.data) > 0
 	case common.ETA_STAGE_2:
-		return len(partialResults.eta2.data) > 0
+		participates = len(partialResults.eta2.data) > 0
 	case common.KAPPA_STAGE_2:
-		return len(partialResults.kappa2.data) > 0
+		participates = len(partialResults.kappa2.data) > 0
 	case common.NU_STAGE_2:
-		return len(partialResults.nu2.data) > 0
+		participates = len(partialResults.nu2.data) > 0
 	default:
 		log.Errorf("Invalid stage: %s", stage)
-		return false
+		return 0
 	}
+
+	if participates {
+		return 1
+	}
+	return 0
 }
 
 func (r *Reducer) getOmegaProcessed(clientId string, stage string) (bool, error) {
@@ -521,8 +532,8 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 
 	r.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
 
-	participatesInResults := r.participatesInResults(clientId, data.GetStage())
-	ready := r.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
+	taskCount := r.participatesInResults(clientId, data.GetStage())
+	ready := r.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
 	if ready {
 		err = r.AddResultsToNextStage(tasks, data.GetStage(), clientId)

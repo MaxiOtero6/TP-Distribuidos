@@ -65,13 +65,12 @@ func AddResults[T any](
 	results []T,
 	nextStageData common.NextStageData,
 	clientId string,
+	creatorId string,
 	taskNumber int,
-	initialTaskFragmentNumber int,
-	allFragments bool,
 	itemHashFunc func(workersCount int, item string) string,
 	identifierFunc func(input T) string,
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
-) int {
+) {
 	if _, ok := tasks[nextStageData.Exchange]; !ok {
 		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
 	}
@@ -94,9 +93,10 @@ func AddResults[T any](
 
 	createTaskIdentifier := func(nodeId string, index int) *protocol.TaskIdentifier {
 		return &protocol.TaskIdentifier{
+			CreatorId:          creatorId,
 			TaskNumber:         uint32(taskNumber),
-			TaskFragmentNumber: uint32(initialTaskFragmentNumber + index),
-			LastFragment:       allFragments && index == len(destinationNodes)-1,
+			TaskFragmentNumber: uint32(index),
+			LastFragment:       index == len(destinationNodes)-1,
 		}
 	}
 
@@ -109,8 +109,6 @@ func AddResults[T any](
 			taskIdentifier,
 		)
 	}
-
-	return len(destinationNodes)
 }
 
 func ProcessStage[T any](
@@ -123,6 +121,7 @@ func ProcessStage[T any](
 ) {
 
 	taskID := common.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
 		LastFragment:       taskIdentifier.GetLastFragment(),

@@ -24,9 +24,10 @@ import "proto/eof/omegaEOF.proto";
 import "proto/eof/ringEOF.proto";
 
 message TaskIdentifier {
-    uint32 taskNumber = 1;
-    uint32 taskFragmentNumber = 2;
-    bool lastFragment = 3;
+    string creatorId = 1;
+    uint32 taskNumber = 2;
+    uint32 taskFragmentNumber = 3;
+    bool lastFragment = 4;
 }
 
 message Task {
