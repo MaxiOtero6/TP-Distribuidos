@@ -44,7 +44,7 @@ const SPAIN_COUNTRY string = "Spain"
 const MOVIE_YEAR_2000 uint32 = 2000
 const MOVIE_YEAR_2010 uint32 = 2010
 
-func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNumber int) common.Tasks {
+func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	filteredData := utils.FilterSlice(data, func(movie *protocol.Alpha_Data) bool {
@@ -143,8 +143,6 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 		}
 	}
 
-	creatorId := f.infraConfig.GetNodeId()
-
 	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, creatorId, taskNumber, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
 	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, creatorId, taskNumber, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
 	AddResults(tasks, resultsIota, nextStageDataIota, clientId, creatorId, taskNumber, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
@@ -152,7 +150,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 	return tasks
 }
 
-func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumber int) common.Tasks {
+func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 	filteredData := utils.FilterSlice(data, func(movie *protocol.Beta_Data) bool {
 		return movie.GetReleaseYear() < MOVIE_YEAR_2010 && slices.Contains(movie.GetProdCountries(), SPAIN_COUNTRY)
@@ -189,14 +187,12 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumb
 		}
 	}
 
-	creatorId := f.infraConfig.GetNodeId()
-
 	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
 
-func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNumber int) common.Tasks {
+func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	filteredData := utils.FilterSlice(data, func(movie *protocol.Gamma_Data) bool {
@@ -231,8 +227,6 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNu
 			TaskIdentifier: taskIdentifier,
 		}
 	}
-
-	creatorId := f.infraConfig.GetNodeId()
 
 	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
@@ -306,20 +300,21 @@ func filterNextStageData(stage string, clientId string, infraConfig *model.Infra
 func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	creatorId := task.GetTaskIdentifier().GetCreatorId()
 	taskNumber := int(task.GetTaskIdentifier().GetTaskNumber())
 
 	switch v := stage.(type) {
 	case *protocol.Task_Alpha:
 		data := v.Alpha.GetData()
-		return f.alphaStage(data, clientId, taskNumber), nil
+		return f.alphaStage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_Beta:
 		data := v.Beta.GetData()
-		return f.betaStage(data, clientId, taskNumber), nil
+		return f.betaStage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_Gamma:
 		data := v.Gamma.GetData()
-		return f.gammaStage(data, clientId, taskNumber), nil
+		return f.gammaStage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()

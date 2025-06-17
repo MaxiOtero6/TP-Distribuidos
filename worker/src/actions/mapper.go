@@ -38,22 +38,7 @@ func NewMapper(infraConfig *model.InfraConfig) *Mapper {
 	return m
 }
 
-/*
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"reduceExchange": {
-			"delta_2": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
-func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string, taskNumber int) common.Tasks {
+func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Delta_1_Data) *protocol.Delta_2_Data {
@@ -91,31 +76,12 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string, tas
 		}
 	}
 
-	creatorId := m.infraConfig.GetNodeId()
-
 	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
 
-/*
-eta1Stage partially counts and sum up ratings from movies
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-		"reduceExchange": {
-			"eta_2": {
-				"0": Task,
-				"1": Task
-			}
-		},
-	}
-*/
-func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string, taskNumber int) common.Tasks {
+func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Eta_1_Data) *protocol.Eta_2_Data {
@@ -156,8 +122,6 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string, taskNum
 		}
 	}
 
-	creatorId := m.infraConfig.GetNodeId()
-
 	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
@@ -180,7 +144,7 @@ Return example
 		},
 	}
 */
-func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string, taskNumber int) common.Tasks {
+func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Kappa_1_Data) *protocol.Kappa_2_Data {
@@ -219,8 +183,6 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string, tas
 		}
 	}
 
-	creatorId := m.infraConfig.GetNodeId()
-
 	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
@@ -243,7 +205,7 @@ Return example
 		},
 	}
 */
-func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string, taskNumber int) common.Tasks {
+func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	mappedData := utils.MapSlice(data, func(_ int, input *protocol.Nu_1_Data) *protocol.Nu_2_Data {
@@ -282,8 +244,6 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string, taskNumbe
 			TaskIdentifier: taskIdentifier,
 		}
 	}
-
-	creatorId := m.infraConfig.GetNodeId()
 
 	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
@@ -350,24 +310,25 @@ func mapperNextStageData(stage string, clientId string, infraConfig *model.Infra
 func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	creatorId := task.GetTaskIdentifier().GetCreatorId()
 	taskNumber := int(task.GetTaskIdentifier().GetTaskNumber())
 
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_1:
 		data := v.Delta_1.GetData()
-		return m.delta1Stage(data, clientId, taskNumber), nil
+		return m.delta1Stage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_Eta_1:
 		data := v.Eta_1.GetData()
-		return m.eta1Stage(data, clientId, taskNumber), nil
+		return m.eta1Stage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_Kappa_1:
 		data := v.Kappa_1.GetData()
-		return m.kappa1Stage(data, clientId, taskNumber), nil
+		return m.kappa1Stage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_Nu_1:
 		data := v.Nu_1.GetData()
-		return m.nu1Stage(data, clientId, taskNumber), nil
+		return m.nu1Stage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()

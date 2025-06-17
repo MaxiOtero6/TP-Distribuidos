@@ -65,7 +65,7 @@ Return example
 		}
 	}
 */
-func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumber int) common.Tasks {
+func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId, creatorId string, taskNumber int) common.Tasks {
 	tasks := make(common.Tasks)
 
 	filteredData := utils.FilterSlice(data, func(input *protocol.Mu_Data) bool {
@@ -111,8 +111,6 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumb
 		}
 	}
 
-	creatorId := o.infraConfig.GetNodeId()
-
 	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
@@ -149,12 +147,13 @@ func overviewerNextStageData(stage string, clientId string, infraConfig *model.I
 func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	creatorId := task.GetTaskIdentifier().GetCreatorId()
 	taskNumber := int(task.GetTaskIdentifier().GetTaskNumber())
 
 	switch v := stage.(type) {
 	case *protocol.Task_Mu:
 		data := v.Mu.GetData()
-		return o.muStage(data, clientId, taskNumber), nil
+		return o.muStage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
