@@ -134,7 +134,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 		// If the EOF is not ready yet, we merge the fragments and check if the stage is ready
 		h.mergeStageFragments(ringEOF, workerFragments)
 
-		if IsStageReady(ringEOF.GetStageFragmentes(), int(ringEOF.GetTasksCount())) {
+		if isStageReady(ringEOF) {
 			// If the stage is ready, we set the ReadyId to this worker and return the next stage EOF
 			ringEOF.ReadyId = h.nodeId
 			h.nextWorkerRing(tasks, ringEOF, clientId, false)
@@ -235,7 +235,10 @@ func (h *StatefulEofHandler) addToWorkerParticipantIds(
 	ringEof.NextStageWorkerParticipantIds = append(ringEof.NextStageWorkerParticipantIds, h.nodeId)
 }
 
-func IsStageReady(stageFragments []*protocol.StageFragment, taskCount int) bool {
+func isStageReady(ringEOF *protocol.RingEOF) bool {
+	stageFragments := ringEOF.GetStageFragmentes()
+	taskCount := ringEOF.GetTasksCount()
+
 	totalTasks := 0
 	for _, frag := range stageFragments {
 		// Each fragment must start with fragment 0 and be marked as last
@@ -249,5 +252,5 @@ func IsStageReady(stageFragments []*protocol.StageFragment, taskCount int) bool 
 		totalTasks += int(endTask - startTask + 1)
 	}
 
-	return totalTasks == taskCount
+	return totalTasks == int(taskCount)
 }
