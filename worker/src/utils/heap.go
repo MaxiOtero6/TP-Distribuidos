@@ -87,3 +87,7 @@ func (h *TopKHeap[V, D]) Delete() {
 	h.heap = nil
 	h.k = 0
 }
+
+func (h *TopKHeap[V, D]) Len() int {
+	return h.heap.Len()
+}

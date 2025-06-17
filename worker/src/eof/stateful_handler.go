@@ -35,12 +35,10 @@ func NewStatefulEofHandler(
 	}
 }
 
-func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, clientId string, parking bool) common.Tasks {
-	tasks := make(common.Tasks)
-
+func (h *StatefulEofHandler) nextWorkerRing(tasks common.Tasks, previousRingEOF *protocol.RingEOF, clientId string, parking bool) {
 	nextStagesData, err := h.nextStageFunc(common.RING_STAGE, clientId, h.infraConfig, h.itemHashFunc)
 	if err != nil {
-		return tasks
+		return
 	}
 
 	for _, nextStageData := range nextStagesData {
@@ -66,8 +64,6 @@ func (h *StatefulEofHandler) nextWorkerRing(previousRingEOF *protocol.RingEOF, c
 		}
 		tasks[exchange][nextStageData.Stage][routingKey] = nextStageRing
 	}
-
-	return tasks
 }
 
 func (h *StatefulEofHandler) initRingEof(omegaEOFData *protocol.OmegaEOF_Data) *protocol.RingEOF {
@@ -83,11 +79,10 @@ func (h *StatefulEofHandler) initRingEof(omegaEOFData *protocol.OmegaEOF_Data) *
 	}
 }
 
-func (h *StatefulEofHandler) nextStagesOmegaEOF(rinfEOF *protocol.RingEOF, clientId string) common.Tasks {
-	tasks := make(common.Tasks)
+func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, rinfEOF *protocol.RingEOF, clientId string) {
 	nextStagesData, err := h.nextStageFunc(rinfEOF.GetStage(), clientId, h.infraConfig, h.itemHashFunc)
 	if err != nil {
-		return tasks
+		return
 	}
 	for _, nextStageData := range nextStagesData {
 		nextStageOmegaEof := &protocol.Task{
@@ -110,20 +105,28 @@ func (h *StatefulEofHandler) nextStagesOmegaEOF(rinfEOF *protocol.RingEOF, clien
 		}
 		tasks[nextStageData.Exchange][nextStageData.Stage][nextStageData.RoutingKey] = nextStageOmegaEof
 	}
-	return tasks
 }
 
-func (h *StatefulEofHandler) HandleOmegaEOF(omegaEOFData *protocol.OmegaEOF_Data, clientId string, workerFragments []common.TaskFragmentIdentifier) common.Tasks {
+func (h *StatefulEofHandler) HandleOmegaEOF(tasks common.Tasks, omegaEOFData *protocol.OmegaEOF_Data, clientId string) {
 	ringEof := h.initRingEof(omegaEOFData)
-	h.mergeStageFragments(ringEof, workerFragments)
 
-	return h.nextWorkerRing(ringEof, clientId, false)
+	// if participatesInResults {
+	// 	h.addToWorkerParticipantIds(ringEof)
+	// }
+
+	// h.mergeStageFragments(ringEof, workerFragments)
+
+	h.nextWorkerRing(tasks, ringEof, clientId, false)
 }
 
-func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId string, workerFragments []common.TaskFragmentIdentifier) (common.Tasks, bool) {
+func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol.RingEOF, clientId string, workerFragments []common.TaskFragmentIdentifier, participatesInResults bool) bool {
 	if ringEOF.GetCreatorId() == h.nodeId {
 		// If the RingEOF is created by this worker, we advaance the round
 		ringEOF.RoundNumber++
+	}
+
+	if participatesInResults {
+		h.addToWorkerParticipantIds(ringEOF)
 	}
 
 	if ringEOF.GetReadyId() == "" {
@@ -131,20 +134,22 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 		// If the EOF is not ready yet, we merge the fragments and check if the stage is ready
 		h.mergeStageFragments(ringEOF, workerFragments)
 
-		if isStageReady(ringEOF) {
+		if IsStageReady(ringEOF.GetStageFragmentes(), int(ringEOF.GetTasksCount())) {
 			// If the stage is ready, we set the ReadyId to this worker and return the next stage EOF
 			ringEOF.ReadyId = h.nodeId
-			return h.nextWorkerRing(ringEOF, clientId, false), true
+			h.nextWorkerRing(tasks, ringEOF, clientId, false)
+			return true
 		} else {
 
-			// TODO: Handle diferent if the RingEOF which is not ready makes a full cycle
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
-				return h.nextWorkerRing(ringEOF, clientId, true), false
+				h.nextWorkerRing(tasks, ringEOF, clientId, true)
+				return false
 
 			} else {
 				// If the EOF does not do a full cycle, we continue the RingEOF cycle until it is ready
-				return h.nextWorkerRing(ringEOF, clientId, false), false
+				h.nextWorkerRing(tasks, ringEOF, clientId, false)
+				return false
 			}
 		}
 
@@ -152,10 +157,12 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 		// IF the EOF is Ready, we can return the tasks immediatel or the next stage EOF
 		if ringEOF.GetReadyId() == h.nodeId {
 			// If the EOF is ready and it is from this worker, we can send the next stage EOF cause the RingEOF do a full cycle
-			return h.nextStagesOmegaEOF(ringEOF, clientId), false
+			h.nextStagesOmegaEOF(tasks, ringEOF, clientId)
+			return false
 		} else {
 			// If the EOF is ready but it is not from this worker, we continue the RingEOF cycle
-			return h.nextWorkerRing(ringEOF, clientId, false), true
+			h.nextWorkerRing(tasks, ringEOF, clientId, false)
+			return true
 		}
 	}
 }
@@ -165,7 +172,6 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 		return
 	}
 
-	h.addToWorkerParticipantIds(ringEOF)
 	stageFragments := ringEOF.GetStageFragmentes()
 
 	for _, taskFragment := range taskFragments {
@@ -229,10 +235,7 @@ func (h *StatefulEofHandler) addToWorkerParticipantIds(
 	ringEof.NextStageWorkerParticipantIds = append(ringEof.NextStageWorkerParticipantIds, h.nodeId)
 }
 
-func isStageReady(ringEOF *protocol.RingEOF) bool {
-	stageFragments := ringEOF.GetStageFragmentes()
-	taskCount := ringEOF.GetTasksCount()
-
+func IsStageReady(stageFragments []*protocol.StageFragment, taskCount int) bool {
 	totalTasks := 0
 	for _, frag := range stageFragments {
 		// Each fragment must start with fragment 0 and be marked as last
@@ -246,5 +249,5 @@ func isStageReady(ringEOF *protocol.RingEOF) bool {
 		totalTasks += int(endTask - startTask + 1)
 	}
 
-	return totalTasks == int(taskCount)
+	return totalTasks == taskCount
 }

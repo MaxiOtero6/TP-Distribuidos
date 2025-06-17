@@ -111,7 +111,14 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string, taskNumb
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+
+	return tasks
+}
+
+func (o *Overviewer) handleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+	o.eofHandler.HandleOmegaEOF(tasks, eofData, clientId)
 
 	return tasks
 }
@@ -149,7 +156,7 @@ func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return o.eofHandler.HandleOmegaEOF(data, clientId), nil
+		return o.handleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

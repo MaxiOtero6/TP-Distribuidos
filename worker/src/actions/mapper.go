@@ -91,7 +91,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId string, tas
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -154,7 +154,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId string, taskNum
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -215,7 +215,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId string, tas
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -277,7 +277,14 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId string, taskNumbe
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+
+	return tasks
+}
+
+func (m *Mapper) handleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+	m.eofHandler.HandleOmegaEOF(tasks, eofData, clientId)
 
 	return tasks
 }
@@ -356,7 +363,7 @@ func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return m.eofHandler.HandleOmegaEOF(data, clientId), nil
+		return m.handleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

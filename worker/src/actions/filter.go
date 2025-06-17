@@ -143,9 +143,9 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId string, taskNu
 		}
 	}
 
-	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, taskNumber, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
-	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, taskNumber, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
-	AddResults(tasks, resultsIota, nextStageDataIota, clientId, taskNumber, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
+	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, taskNumber, 0, true, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
+	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, taskNumber, 0, true, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
+	AddResults(tasks, resultsIota, nextStageDataIota, clientId, taskNumber, 0, true, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
 
 	return tasks
 }
@@ -187,7 +187,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId string, taskNumb
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -228,7 +228,14 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId string, taskNu
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStagesData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
+
+	return tasks
+}
+
+func (f *Filter) handleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+	f.eofHandler.HandleOmegaEOF(tasks, eofData, clientId)
 
 	return tasks
 }
@@ -310,7 +317,7 @@ func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return f.eofHandler.HandleOmegaEOF(data, clientId), nil
+		return f.handleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

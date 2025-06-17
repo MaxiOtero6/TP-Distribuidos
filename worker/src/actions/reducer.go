@@ -226,6 +226,8 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 		nextStageData[0],
 		clientId,
 		taskNumber,
+		0,
+		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -269,6 +271,8 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 		nextStageData[0],
 		clientId,
 		taskNumber,
+		0,
+		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -311,6 +315,8 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 		nextStageData[0],
 		clientId,
 		taskNumber,
+		0,
+		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -353,6 +359,8 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 		nextStageData[0],
 		clientId,
 		taskNumber,
+		0,
+		true,
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
@@ -389,6 +397,27 @@ func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]common.Ta
 		return utils.MapKeys(partialResults.nu2.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (r *Reducer) participatesInResults(clientId string, stage string) bool {
+	partialResults, ok := r.partialResults[clientId]
+	if !ok {
+		return false
+	}
+
+	switch stage {
+	case common.DELTA_STAGE_2:
+		return len(partialResults.delta2.data) > 0
+	case common.ETA_STAGE_2:
+		return len(partialResults.eta2.data) > 0
+	case common.KAPPA_STAGE_2:
+		return len(partialResults.kappa2.data) > 0
+	case common.NU_STAGE_2:
+		return len(partialResults.nu2.data) > 0
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return false
 	}
 }
 
@@ -452,47 +481,48 @@ func (r *Reducer) updateRingRound(clientId string, stage string, round uint32) {
 }
 
 func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	omegaReady, err := r.getOmegaProcessed(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get omega ready for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if omegaReady {
 		log.Debugf("Omega EOF for stage %s has already been processed for client %s", data.GetStage(), clientId)
-		return nil
-	}
-
-	taskIdentifiers, err := r.getTaskIdentifiers(clientId, data.GetStage())
-	if err != nil {
-		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 
 	r.updateOmegaProcessed(clientId, data.GetStage())
 
-	return r.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
+	r.eofHandler.HandleOmegaEOF(tasks, data, clientId)
+
+	return tasks
 }
 
 func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	taskIdentifiers, err := r.getTaskIdentifiers(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 
 	ringRound, err := r.getRingRound(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
-		return nil
+		return tasks
 	}
 
 	r.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
 
-	tasks, ready := r.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
+	participatesInResults := r.participatesInResults(clientId, data.GetStage())
+	ready := r.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
 
 	if ready {
 		err = r.AddResultsToNextStage(tasks, data.GetStage(), clientId)
@@ -542,25 +572,25 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (r *Reducer) deleteStage(clientId string, stage string) error {
+// func (r *Reducer) deleteStage(clientId string, stage string) error {
 
-	log.Debugf("Deleting stage %s for client %s", stage, clientId)
+// 	log.Debugf("Deleting stage %s for client %s", stage, clientId)
 
-	if anStage, ok := r.partialResults[clientId]; ok {
-		switch stage {
-		case common.DELTA_STAGE_2:
-			anStage.delta2 = nil
-		case common.ETA_STAGE_2:
-			anStage.eta2 = nil
-		case common.KAPPA_STAGE_2:
-			anStage.kappa2 = nil
-		case common.NU_STAGE_2:
-			anStage.nu2 = nil
-		default:
-			log.Errorf("Invalid stage: %s", stage)
-			return fmt.Errorf("invalid stage: %s", stage)
+// 	if anStage, ok := r.partialResults[clientId]; ok {
+// 		switch stage {
+// 		case common.DELTA_STAGE_2:
+// 			anStage.delta2 = nil
+// 		case common.ETA_STAGE_2:
+// 			anStage.eta2 = nil
+// 		case common.KAPPA_STAGE_2:
+// 			anStage.kappa2 = nil
+// 		case common.NU_STAGE_2:
+// 			anStage.nu2 = nil
+// 		default:
+// 			log.Errorf("Invalid stage: %s", stage)
+// 			return fmt.Errorf("invalid stage: %s", stage)
 
-		}
-	}
-	return nil
-}
+// 		}
+// 	}
+// 	return nil
+// }

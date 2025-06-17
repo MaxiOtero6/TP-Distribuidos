@@ -24,14 +24,12 @@ func NewStatelessEofHandler(
 	}
 }
 
-func (h *StatelessEofHandler) HandleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
-	tasks := make(common.Tasks)
-
+func (h *StatelessEofHandler) HandleOmegaEOF(tasks common.Tasks, eofData *protocol.OmegaEOF_Data, clientId string) {
 	stage := eofData.Stage
 	nextStagesData, err := h.nextStageFunc(stage, clientId, h.infraConfig, h.itemHashFunc)
 
 	if err != nil {
-		return tasks
+		return
 	}
 
 	for _, nextStageData := range nextStagesData {
@@ -58,6 +56,4 @@ func (h *StatelessEofHandler) HandleOmegaEOF(eofData *protocol.OmegaEOF_Data, cl
 
 		tasks[nextStageData.Exchange][nextStageData.Stage][nextStageData.RoutingKey] = nextStageEOF
 	}
-
-	return tasks
 }

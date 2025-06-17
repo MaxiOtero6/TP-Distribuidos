@@ -43,11 +43,9 @@ type ThetaPartialData struct {
 }
 
 type TopperPartialResults struct {
-	omegaProcessed bool
-	ringRound      uint32
-	epsilonData    TopperPartialData[uint64, protocol.Epsilon_Data]
-	thetaData      ThetaPartialData
-	lamdaData      TopperPartialData[uint64, protocol.Lambda_Data]
+	epsilonData TopperPartialData[uint64, protocol.Epsilon_Data]
+	thetaData   ThetaPartialData
+	lamdaData   TopperPartialData[uint64, protocol.Lambda_Data]
 }
 
 // Topper is a struct that implements the Action interface.
@@ -194,7 +192,7 @@ func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
@@ -249,7 +247,7 @@ func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
@@ -286,7 +284,7 @@ func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, results, nextStageData[0], clientId, 0, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
@@ -356,47 +354,48 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 }
 
 func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	omegaReady, err := t.getOmegaProcessed(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get omega ready for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if omegaReady {
 		log.Debugf("Omega EOF for stage %s has already been processed for client %s", data.GetStage(), clientId)
-		return nil
-	}
-
-	taskIdentifiers, err := t.getTaskIdentifiers(clientId, data.GetStage())
-	if err != nil {
-		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 
 	t.updateOmegaProcessed(clientId, data.GetStage())
 
-	return t.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
+	t.eofHandler.HandleOmegaEOF(tasks, data, clientId)
+
+	return tasks
 }
 
 func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	taskIdentifiers, err := t.getTaskIdentifiers(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 
 	ringRound, err := t.getRingRound(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
-		return nil
+		return tasks
 	}
 
 	t.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
 
-	tasks, ready := t.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
+	participatesInResults := t.participatesInResults(clientId, data.GetStage())
+	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
 
 	if ready {
 		err = t.addResultsToNextStage(tasks, data.GetStage(), clientId)
@@ -469,10 +468,6 @@ func (t *Topper) getRingRound(clientId string, stage string) (uint32, error) {
 	}
 }
 
-func taskIdentifierKey(taskId *protocol.TaskIdentifier) string {
-	return fmt.Sprintf("%d-%d", taskId.GetTaskNumber(), taskId.GetTaskFragmentNumber())
-}
-
 func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
 	partialResults := t.partialResults[clientId]
 	switch stage {
@@ -484,6 +479,26 @@ func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]common.Tas
 		return utils.MapKeys(partialResults.lamdaData.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (t *Topper) participatesInResults(clientId string, stage string) bool {
+	partialResults, ok := t.partialResults[clientId]
+	if !ok {
+		return false
+	}
+
+	switch stage {
+	case common.EPSILON_STAGE:
+		return partialResults.epsilonData.heap.Len() > 0
+	case common.THETA_STAGE:
+		return partialResults.thetaData.minPartialData.heap.Len() > 0 ||
+			partialResults.thetaData.maxPartialData.heap.Len() > 0
+	case common.LAMBDA_STAGE:
+		return partialResults.lamdaData.heap.Len() > 0
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return false
 	}
 }
 

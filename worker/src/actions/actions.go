@@ -66,10 +66,12 @@ func AddResults[T any](
 	nextStageData common.NextStageData,
 	clientId string,
 	taskNumber int,
+	initialTaskFragmentNumber int,
+	allFragments bool,
 	itemHashFunc func(workersCount int, item string) string,
 	identifierFunc func(input T) string,
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
-) {
+) int {
 	// Ensure the nested maps exist
 	if _, ok := tasks[nextStageData.Exchange]; !ok {
 		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
@@ -91,17 +93,16 @@ func AddResults[T any](
 	}
 	slices.Sort(destinationNodes)
 
-	createTaskIdentifier := func(nodeId string, index int, totalNodes int) *protocol.TaskIdentifier {
-
+	createTaskIdentifier := func(nodeId string, index int) *protocol.TaskIdentifier {
 		return &protocol.TaskIdentifier{
 			TaskNumber:         uint32(taskNumber),
-			TaskFragmentNumber: uint32(index),
-			LastFragment:       index == totalNodes-1,
+			TaskFragmentNumber: uint32(initialTaskFragmentNumber + index),
+			LastFragment:       allFragments && index == len(destinationNodes)-1,
 		}
 	}
 
 	for index, nodeId := range destinationNodes {
-		taskIdentifier := createTaskIdentifier(nodeId, index, len(destinationNodes))
+		taskIdentifier := createTaskIdentifier(nodeId, index)
 		tasks[nextStageData.Exchange][nextStageData.Stage][nodeId] = taskDataCreator(
 			nextStageData.Stage,
 			dataByNode[nodeId],
@@ -109,6 +110,8 @@ func AddResults[T any](
 			taskIdentifier,
 		)
 	}
+
+	return len(destinationNodes) + initialTaskFragmentNumber
 }
 
 func ProcessStage[T any](

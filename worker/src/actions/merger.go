@@ -15,11 +15,11 @@ import (
 const MERGER_STAGES_COUNT uint = 4
 
 type MergerPartialResults struct {
-	toDeleteCount uint
-	delta3        PartialData[protocol.Delta_3_Data]
-	eta3          PartialData[protocol.Eta_3_Data]
-	kappa3        PartialData[protocol.Kappa_3_Data]
-	nu3Data       PartialData[protocol.Nu_3_Data]
+	// toDeleteCount uint
+	delta3  PartialData[protocol.Delta_3_Data]
+	eta3    PartialData[protocol.Eta_3_Data]
+	kappa3  PartialData[protocol.Kappa_3_Data]
+	nu3Data PartialData[protocol.Nu_3_Data]
 }
 
 // Merger is a struct that implements the Action interface.
@@ -221,7 +221,9 @@ func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.EPSILON_STAGE)
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+
+	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
@@ -257,7 +259,9 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.THETA_STAGE)
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+
+	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
@@ -293,7 +297,9 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 		return m.itemHashFunc(workersCount, clientId+common.LAMBDA_STAGE)
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+
+	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
@@ -328,54 +334,57 @@ func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
 		return clientId
 	}
 
-	AddResults(tasks, results, nextStageData[0], clientId, 0, hashFunc, identifierFunc, taskDataCreator)
+	taskNumber, _ := strconv.Atoi(m.infraConfig.GetNodeId())
+
+	AddResults(tasks, results, nextStageData[0], clientId, taskNumber, 0, true, hashFunc, identifierFunc, taskDataCreator)
 }
 
 // Adding EOF handler to Merger
 func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	omegaReady, err := m.getOmegaProcessed(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get omega ready for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if omegaReady {
 		log.Debugf("Omega EOF for stage %s has already been processed for client %s", data.GetStage(), clientId)
-		return nil
+		return tasks
 	}
 
-	taskIdentifiers, err := m.getTaskIdentifiers(clientId, data.GetStage())
-	if err != nil {
-		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
-	}
+	m.eofHandler.HandleOmegaEOF(tasks, data, clientId)
 
-	return m.eofHandler.HandleOmegaEOF(data, clientId, taskIdentifiers)
+	return tasks
 }
 
 func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
 	taskIdentifiers, err := m.getTaskIdentifiers(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 
 	ringRound, err := m.getRingRound(clientId, data.GetStage())
 	if err != nil {
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
-		return nil
+		return tasks
 	}
 	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
-		return nil
+		return tasks
 	}
 
-	tasks, ready := m.eofHandler.HandleRingEOF(data, clientId, taskIdentifiers)
+	participatesInResults := m.participatesInResults(clientId, data.GetStage())
+	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, participatesInResults)
 
 	if ready {
 		err = m.addResultsToNextStage(tasks, data.GetStage(), clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
-			return nil
+			return tasks
 		}
 	}
 
@@ -419,27 +428,26 @@ func (m *Merger) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Merger) deleteStage(clientId string, stage string) error {
+// func (m *Merger) deleteStage(clientId string, stage string) error {
+// 	log.Debugf("Deleting stage %s for client %s", stage, clientId)
 
-	log.Debugf("Deleting stage %s for client %s", stage, clientId)
-
-	if anStage, ok := m.partialResults[clientId]; ok {
-		switch stage {
-		case common.DELTA_STAGE_3:
-			anStage.delta3.data = nil
-		case common.ETA_STAGE_3:
-			anStage.eta3.data = nil
-		case common.KAPPA_STAGE_3:
-			anStage.kappa3.data = nil
-		case common.NU_STAGE_3:
-			anStage.nu3Data.data = nil
-		default:
-			log.Errorf("Invalid stage: %s", stage)
-			return fmt.Errorf("invalid stage: %s", stage)
-		}
-	}
-	return nil
-}
+// 	if anStage, ok := m.partialResults[clientId]; ok {
+// 		switch stage {
+// 		case common.DELTA_STAGE_3:
+// 			anStage.delta3.data = nil
+// 		case common.ETA_STAGE_3:
+// 			anStage.eta3.data = nil
+// 		case common.KAPPA_STAGE_3:
+// 			anStage.kappa3.data = nil
+// 		case common.NU_STAGE_3:
+// 			anStage.nu3Data.data = nil
+// 		default:
+// 			log.Errorf("Invalid stage: %s", stage)
+// 			return fmt.Errorf("invalid stage: %s", stage)
+// 		}
+// 	}
+// 	return nil
+// }
 
 // Implementing getTaskIdentifiers for Merger
 func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
@@ -455,6 +463,27 @@ func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]common.Tas
 		return utils.MapKeys(partialResults.nu3Data.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (m *Merger) participatesInResults(clientId string, stage string) bool {
+	partialResults, ok := m.partialResults[clientId]
+	if !ok {
+		return false
+	}
+
+	switch stage {
+	case common.DELTA_STAGE_3:
+		return len(partialResults.delta3.data) > 0
+	case common.ETA_STAGE_3:
+		return len(partialResults.eta3.data) > 0
+	case common.KAPPA_STAGE_3:
+		return len(partialResults.kappa3.data) > 0
+	case common.NU_STAGE_3:
+		return len(partialResults.nu3Data.data) > 0
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return false
 	}
 }
 

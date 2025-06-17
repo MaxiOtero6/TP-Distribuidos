@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"slices"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
@@ -121,7 +123,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId
 	zetaData := make(map[string][]*protocol.Zeta_Data)
 
 	for _, rating := range ratings {
-		idHash := utils.GetWorkerIdFromHash(joinersCount, rating.MovieId)
+		idHash := utils.GetWorkerIdFromHash(joinersCount, rating.MovieId+rating.UserId)
 
 		zetaData[idHash] = append(zetaData[idHash], &protocol.Zeta_Data{
 			Data: &protocol.Zeta_Data_Rating_{
@@ -133,18 +135,24 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId
 		})
 	}
 
-	for id, data := range zetaData {
-		tasks[id] = &protocol.Task{
+	destinationNodes := make([]string, 0, len(zetaData))
+	for nodeId := range zetaData {
+		destinationNodes = append(destinationNodes, nodeId)
+	}
+	slices.Sort(destinationNodes)
+
+	for index, nodeId := range destinationNodes {
+		tasks[nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Zeta{
 				Zeta: &protocol.Zeta{
-					Data: data,
+					Data: zetaData[nodeId],
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
 				TaskNumber:         taskNumber,
-				TaskFragmentNumber: 0,
-				LastFragment:       true,
+				TaskFragmentNumber: uint32(index),
+				LastFragment:       index == len(destinationNodes)-1,
 			},
 		}
 	}
@@ -157,7 +165,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId s
 	iotaData := make(map[string][]*protocol.Iota_Data)
 
 	for _, actor := range actors {
-		idHash := utils.GetWorkerIdFromHash(joinersCount, actor.MovieId)
+		idHash := utils.GetWorkerIdFromHash(joinersCount, actor.MovieId+actor.Id)
 
 		iotaData[idHash] = append(iotaData[idHash], &protocol.Iota_Data{
 			Data: &protocol.Iota_Data_Actor_{
@@ -170,18 +178,24 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId s
 		})
 	}
 
-	for id, data := range iotaData {
-		tasks[id] = &protocol.Task{
+	destinationNodes := make([]string, 0, len(iotaData))
+	for nodeId := range iotaData {
+		destinationNodes = append(destinationNodes, nodeId)
+	}
+	slices.Sort(destinationNodes)
+
+	for index, nodeId := range destinationNodes {
+		tasks[nodeId] = &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Iota{
 				Iota: &protocol.Iota{
-					Data: data,
+					Data: iotaData[nodeId],
 				},
 			},
 			TaskIdentifier: &protocol.TaskIdentifier{
 				TaskNumber:         taskNumber,
-				TaskFragmentNumber: 0,
-				LastFragment:       true,
+				TaskFragmentNumber: uint32(index),
+				LastFragment:       index == len(destinationNodes)-1,
 			},
 		}
 	}
