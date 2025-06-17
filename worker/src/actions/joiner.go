@@ -109,6 +109,27 @@ func (j *Joiner) joinZetaData(tasks common.Tasks, ratingsData map[string][]*prot
 	return joinedData
 }
 
+func (j *Joiner) joinIotaData(tasks common.Tasks, actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) []*protocol.Kappa_1_Data {
+	joinedData := make([]*protocol.Kappa_1_Data, 0)
+
+	for movieId, actors := range actorsData {
+		_, ok := j.partialResults[clientId].iotaData.smallTable.data[movieId]
+		if !ok {
+			continue
+		}
+
+		for _, actor := range actors {
+			joinedData = append(joinedData, &protocol.Kappa_1_Data{
+				MovieId:   movieId,
+				ActorId:   actor.GetActorId(),
+				ActorName: actor.GetActorName(),
+			})
+		}
+	}
+
+	return joinedData
+}
+
 func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
 	partialData := j.partialResults[clientId].zetaData.smallTable
 
@@ -130,6 +151,29 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string, ta
 	// if err != nil {
 	// 	log.Errorf("Failed to save %s data: %s", common.ZETA_STAGE, err)
 	// }
+}
+
+func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
+	partialData := j.partialResults[clientId].iotaData.smallTable
+
+	identifierFunc := func(input *protocol.Iota_Data) string {
+		return input.GetMovie().GetMovieId()
+	}
+
+	mappingFunc := func(input *protocol.Iota_Data) *protocol.Iota_Data_Movie {
+		return &protocol.Iota_Data_Movie{
+			MovieId: input.GetMovie().GetMovieId(),
+		}
+	}
+
+	processSmallTableJoinerStage(partialData, data, clientId, taskIdentifier, identifierFunc, mappingFunc)
+	return nil
+
+	// err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
+	// if err != nil {
+	// 	log.Errorf("Failed to save %s data: %s", common.IOTA_STAGE, err)
+	// }
+
 }
 
 func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
@@ -166,66 +210,6 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, t
 	return tasks
 }
 
-func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
-	if data == nil {
-		return nil
-	}
-
-	switch data[0].GetData().(type) {
-	case *protocol.Zeta_Data_Movie_:
-		return j.moviesZetaStage(data, clientId, taskIdentifier)
-	case *protocol.Zeta_Data_Rating_:
-		return j.ratingsZetaStage(data, clientId, taskIdentifier)
-
-	default:
-		return nil
-	}
-}
-
-func (j *Joiner) joinIotaData(tasks common.Tasks, actorsData map[string][]*protocol.Iota_Data_Actor, clientId string) []*protocol.Kappa_1_Data {
-	joinedData := make([]*protocol.Kappa_1_Data, 0)
-
-	for movieId, actors := range actorsData {
-		_, ok := j.partialResults[clientId].iotaData.smallTable.data[movieId]
-		if !ok {
-			continue
-		}
-
-		for _, actor := range actors {
-			joinedData = append(joinedData, &protocol.Kappa_1_Data{
-				MovieId:   movieId,
-				ActorId:   actor.GetActorId(),
-				ActorName: actor.GetActorName(),
-			})
-		}
-	}
-
-	return joinedData
-}
-
-func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
-	partialData := j.partialResults[clientId].iotaData.smallTable
-
-	identifierFunc := func(input *protocol.Iota_Data) string {
-		return input.GetMovie().GetMovieId()
-	}
-
-	mappingFunc := func(input *protocol.Iota_Data) *protocol.Iota_Data_Movie {
-		return &protocol.Iota_Data_Movie{
-			MovieId: input.GetMovie().GetMovieId(),
-		}
-	}
-
-	processSmallTableJoinerStage(partialData, data, clientId, taskIdentifier, identifierFunc, mappingFunc)
-	return nil
-
-	// err := storage.SaveDataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.SMALL_TABLE_SOURCE, dataMap)
-	// if err != nil {
-	// 	log.Errorf("Failed to save %s data: %s", common.IOTA_STAGE, err)
-	// }
-
-}
-
 func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
 	tasks := make(common.Tasks)
 
@@ -259,6 +243,22 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string, ta
 	}
 
 	return tasks
+}
+
+func (j *Joiner) zetaStage(data []*protocol.Zeta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
+	if data == nil {
+		return nil
+	}
+
+	switch data[0].GetData().(type) {
+	case *protocol.Zeta_Data_Movie_:
+		return j.moviesZetaStage(data, clientId, taskIdentifier)
+	case *protocol.Zeta_Data_Rating_:
+		return j.ratingsZetaStage(data, clientId, taskIdentifier)
+
+	default:
+		return nil
+	}
 }
 
 func (j *Joiner) iotaStage(data []*protocol.Iota_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
@@ -508,11 +508,7 @@ func (j *Joiner) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (j *Joiner) addEta1Results(
-	tasks common.Tasks,
-	partialResults []*protocol.Eta_1_Data,
-	clientId string,
-) {
+func (j *Joiner) addEta1Results(tasks common.Tasks, partialResults []*protocol.Eta_1_Data, clientId string) {
 	dataStage := common.ETA_STAGE_1
 	zetaData := j.partialResults[clientId].zetaData
 
@@ -545,11 +541,7 @@ func (j *Joiner) addEta1Results(
 	AddResults(tasks, partialResults, nextStageData[0], clientId, taskNumber, fragmentCount, bigTableReady, itemHashFunc, identifierFunc, taskDataCreator)
 }
 
-func (j *Joiner) addKappa1Results(
-	tasks common.Tasks,
-	partialResults []*protocol.Kappa_1_Data,
-	clientId string,
-) {
+func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResults []*protocol.Kappa_1_Data, clientId string) {
 	dataStage := common.KAPPA_STAGE_1
 	iotaData := j.partialResults[clientId].iotaData
 

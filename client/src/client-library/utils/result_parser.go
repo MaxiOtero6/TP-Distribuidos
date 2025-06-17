@@ -204,7 +204,7 @@ func (p *ResultParser) Save(results *protocol.ResultsResponse) {
 			log.Debugf("action: Save | result: success | Result5 received")
 			p.handleResult5(result.GetResult5())
 		case *protocol.ResultsResponse_Result_OmegaEOF:
-			p.eofCount++
+			p.eofCount++ // TODO: Queda cambiar esto, ya que ahora el EOF perse no te dice nada hay que contar la cantidad de paquetes que recibiste
 			log.Debugf("action: Save | result: success | EOF received | eofCount: %d", p.eofCount)
 		}
 	}
