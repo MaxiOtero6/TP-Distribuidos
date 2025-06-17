@@ -376,17 +376,17 @@ func (r *Reducer) AddResultsToNextStage(tasks common.Tasks, stage string, client
 	return nil
 }
 
-func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]*protocol.TaskIdentifier, error) {
+func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
 	partialResults := r.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_2:
-		return utils.MapValues(partialResults.delta2.taskFragments), nil
+		return utils.MapKeys(partialResults.delta2.taskFragments), nil
 	case common.ETA_STAGE_2:
-		return utils.MapValues(partialResults.eta2.taskFragments), nil
+		return utils.MapKeys(partialResults.eta2.taskFragments), nil
 	case common.KAPPA_STAGE_2:
-		return utils.MapValues(partialResults.kappa2.taskFragments), nil
+		return utils.MapKeys(partialResults.kappa2.taskFragments), nil
 	case common.NU_STAGE_2:
-		return utils.MapValues(partialResults.nu2.taskFragments), nil
+		return utils.MapKeys(partialResults.nu2.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
 	}

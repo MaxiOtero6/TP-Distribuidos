@@ -23,7 +23,7 @@ const TOPPER_STAGES_COUNT uint = 3
 
 type TopperPartialData[K heap.Ordered, V any] struct {
 	heap           *heap.TopKHeap[K, *V]
-	taskFragments  map[uint32]*protocol.TaskIdentifier
+	taskFragments  map[common.TaskFragmentIdentifier]struct{}
 	omegaProcessed bool
 	ringRound      uint32
 }
@@ -31,7 +31,7 @@ type TopperPartialData[K heap.Ordered, V any] struct {
 func newTopperPartialData[K heap.Ordered, V any](top_k int) TopperPartialData[K, V] {
 	return TopperPartialData[K, V]{
 		heap:           heap.NewTopKHeap[K, *V](top_k),
-		taskFragments:  make(map[uint32]*protocol.TaskIdentifier),
+		taskFragments:  make(map[common.TaskFragmentIdentifier]struct{}),
 		omegaProcessed: false,
 		ringRound:      0,
 	}
@@ -473,15 +473,15 @@ func taskIdentifierKey(taskId *protocol.TaskIdentifier) string {
 	return fmt.Sprintf("%d-%d", taskId.GetTaskNumber(), taskId.GetTaskFragmentNumber())
 }
 
-func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]*protocol.TaskIdentifier, error) {
+func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
 	partialResults := t.partialResults[clientId]
 	switch stage {
 	case common.EPSILON_STAGE:
-		return utils.MapValues(partialResults.epsilonData.taskFragments), nil
+		return utils.MapKeys(partialResults.epsilonData.taskFragments), nil
 	case common.THETA_STAGE:
-		return utils.MapValues(partialResults.thetaData.minPartialData.taskFragments), nil
+		return utils.MapKeys(partialResults.thetaData.minPartialData.taskFragments), nil
 	case common.LAMBDA_STAGE:
-		return utils.MapValues(partialResults.lamdaData.taskFragments), nil
+		return utils.MapKeys(partialResults.lamdaData.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
 	}
@@ -491,17 +491,21 @@ func processTopperStage[K heap.Ordered, V any](
 	partialData TopperPartialData[K, V],
 	data []*V,
 	clientId string,
-	taskID *protocol.TaskIdentifier,
+	taskIdentifier *protocol.TaskIdentifier,
 	valueFunc func(input *V) K,
 ) {
-	taskNum := taskID.GetTaskNumber()
+	taskID := common.TaskFragmentIdentifier{
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
 
-	if _, processed := partialData.taskFragments[taskNum]; !processed {
+	if _, processed := partialData.taskFragments[taskID]; !processed {
 		return
 	}
 
 	// Mark task as processed
-	partialData.taskFragments[taskNum] = taskID
+	partialData.taskFragments[taskID] = struct{}{}
 
 	// Aggregate data
 	for _, item := range data {

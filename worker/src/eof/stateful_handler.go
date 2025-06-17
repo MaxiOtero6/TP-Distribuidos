@@ -113,14 +113,14 @@ func (h *StatefulEofHandler) nextStagesOmegaEOF(rinfEOF *protocol.RingEOF, clien
 	return tasks
 }
 
-func (h *StatefulEofHandler) HandleOmegaEOF(omegaEOFData *protocol.OmegaEOF_Data, clientId string, workerFragments []*protocol.TaskIdentifier) common.Tasks {
+func (h *StatefulEofHandler) HandleOmegaEOF(omegaEOFData *protocol.OmegaEOF_Data, clientId string, workerFragments []common.TaskFragmentIdentifier) common.Tasks {
 	ringEof := h.initRingEof(omegaEOFData)
 	h.mergeStageFragments(ringEof, workerFragments)
 
 	return h.nextWorkerRing(ringEof, clientId, false)
 }
 
-func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId string, workerFragments []*protocol.TaskIdentifier) (common.Tasks, bool) {
+func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId string, workerFragments []common.TaskFragmentIdentifier) (common.Tasks, bool) {
 	if ringEOF.GetCreatorId() == h.nodeId {
 		// If the RingEOF is created by this worker, we advaance the round
 		ringEOF.RoundNumber++
@@ -160,7 +160,7 @@ func (h *StatefulEofHandler) HandleRingEOF(ringEOF *protocol.RingEOF, clientId s
 	}
 }
 
-func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []*protocol.TaskIdentifier) {
+func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []common.TaskFragmentIdentifier) {
 	if len(taskFragments) == 0 {
 		return
 	}

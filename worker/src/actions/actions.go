@@ -14,8 +14,7 @@ var log = logging.MustGetLogger("log")
 
 type PartialData[T any] struct {
 	data           map[string]*T
-	taskFragments  map[uint32]*protocol.TaskIdentifier
-	ready          bool
+	taskFragments  map[common.TaskFragmentIdentifier]struct{}
 	omegaProcessed bool
 	ringRound      uint32
 }
@@ -23,8 +22,7 @@ type PartialData[T any] struct {
 func NewPartialData[T any]() *PartialData[T] {
 	return &PartialData[T]{
 		data:           make(map[string]*T),
-		taskFragments:  make(map[uint32]*protocol.TaskIdentifier),
-		ready:          false,
+		taskFragments:  make(map[common.TaskFragmentIdentifier]struct{}),
 		omegaProcessed: false,
 		ringRound:      0,
 	}
@@ -117,19 +115,24 @@ func ProcessStage[T any](
 	partial *PartialData[T],
 	newItems []*T,
 	clientID string,
-	taskID *protocol.TaskIdentifier,
+	taskIdentifier *protocol.TaskIdentifier,
 	merge func(*T, *T),
 	keySelector func(*T) string,
 ) {
-	taskNum := taskID.GetTaskNumber()
 
-	if _, processed := partial.taskFragments[taskNum]; processed {
+	taskID := common.TaskFragmentIdentifier{
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
+
+	if _, processed := partial.taskFragments[taskID]; processed {
 		// Task already handled
 		return
 	}
 
 	// Mark task as processed
-	partial.taskFragments[taskNum] = taskID
+	partial.taskFragments[taskID] = struct{}{}
 
 	// Aggregate data
 	utils.MergeIntoMap(partial.data, newItems, keySelector, merge)

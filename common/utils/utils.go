@@ -95,6 +95,14 @@ func GetRabbitConfig(nodeType string, v *viper.Viper) (exchanges []map[string]st
 	return exchanges, queues, binds, nil
 }
 
+func MapKeys[T any, K comparable](dataMap map[K]T) []K {
+	result := make([]K, 0, len(dataMap))
+	for key := range dataMap {
+		result = append(result, key)
+	}
+	return result
+}
+
 func MapValues[T any, K comparable](dataMap map[K]T) []T {
 	result := make([]T, 0, len(dataMap))
 	for _, value := range dataMap {

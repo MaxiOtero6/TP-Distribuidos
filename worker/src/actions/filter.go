@@ -251,13 +251,13 @@ func filterNextStageData(stage string, clientId string, infraConfig *model.Infra
 				Stage:       common.ZETA_STAGE,
 				Exchange:    infraConfig.GetJoinExchange(),
 				WorkerCount: infraConfig.GetJoinCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetJoinCount(), clientId+common.ZETA_STAGE),
+				RoutingKey:  infraConfig.GetBroadcastID(),
 			},
 			{
 				Stage:       common.IOTA_STAGE,
 				Exchange:    infraConfig.GetJoinExchange(),
 				WorkerCount: infraConfig.GetJoinCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetJoinCount(), clientId+common.IOTA_STAGE),
+				RoutingKey:  infraConfig.GetBroadcastID(),
 			},
 		}, nil
 

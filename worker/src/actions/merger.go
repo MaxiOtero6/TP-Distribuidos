@@ -37,20 +37,16 @@ func (m *Merger) makePartialResults(clientId string) {
 
 	m.partialResults[clientId] = &MergerPartialResults{
 		delta3: PartialData[protocol.Delta_3_Data]{
-			data:  make(map[string]*protocol.Delta_3_Data),
-			ready: false,
+			data: make(map[string]*protocol.Delta_3_Data),
 		},
 		eta3: PartialData[protocol.Eta_3_Data]{
-			data:  make(map[string]*protocol.Eta_3_Data),
-			ready: false,
+			data: make(map[string]*protocol.Eta_3_Data),
 		},
 		kappa3: PartialData[protocol.Kappa_3_Data]{
-			data:  make(map[string]*protocol.Kappa_3_Data),
-			ready: false,
+			data: make(map[string]*protocol.Kappa_3_Data),
 		},
 		nu3Data: PartialData[protocol.Nu_3_Data]{
-			data:  make(map[string]*protocol.Nu_3_Data),
-			ready: false,
+			data: make(map[string]*protocol.Nu_3_Data),
 		},
 	}
 }
@@ -446,17 +442,17 @@ func (m *Merger) deleteStage(clientId string, stage string) error {
 }
 
 // Implementing getTaskIdentifiers for Merger
-func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]*protocol.TaskIdentifier, error) {
+func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
 	partialResults := m.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_3:
-		return utils.MapValues(partialResults.delta3.taskFragments), nil
+		return utils.MapKeys(partialResults.delta3.taskFragments), nil
 	case common.ETA_STAGE_3:
-		return utils.MapValues(partialResults.eta3.taskFragments), nil
+		return utils.MapKeys(partialResults.eta3.taskFragments), nil
 	case common.KAPPA_STAGE_3:
-		return utils.MapValues(partialResults.kappa3.taskFragments), nil
+		return utils.MapKeys(partialResults.kappa3.taskFragments), nil
 	case common.NU_STAGE_3:
-		return utils.MapValues(partialResults.nu3Data.taskFragments), nil
+		return utils.MapKeys(partialResults.nu3Data.taskFragments), nil
 	default:
 		return nil, fmt.Errorf("invalid stage: %s", stage)
 	}
