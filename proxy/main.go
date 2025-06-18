@@ -8,7 +8,6 @@ import (
 	"sync"
 	"syscall"
 
-	client_server_communication "github.com/MaxiOtero6/TP-Distribuidos/common/communication/client-server"
 	proxy "github.com/MaxiOtero6/TP-Distribuidos/proxy/src"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
@@ -95,10 +94,12 @@ func handleSigterm(signalChan chan os.Signal, stoppable Instance, wg *sync.WaitG
 	}
 }
 
-func initConnectionHandler(v *viper.Viper) *client_server_communication.ConnectionHandler {
-	address := v.GetString("address")
+func initConnectionHandler(v *viper.Viper) *proxy.Proxy {
+	proxyAddress := v.GetString("address")
 
-	s, err := client_server_communication.NewConnectionHandler(NODE_TYPE, address)
+	serverAddresses := loadServerConfig(v)
+
+	s, err := proxy.NewConnectionHandler(NODE_TYPE, proxyAddress, serverAddresses)
 
 	if err != nil {
 		log.Panicf("Failed to initialize proxy: %s", err)
@@ -125,12 +126,12 @@ func loadServerConfig(v *viper.Viper) []string {
 	return serverAddress
 }
 
-func initHandler(v *viper.Viper) *proxy.Handler {
+func initHandler(v *viper.Viper, addressIndex string) *proxy.Handler {
 	const SOCKET_FD uintptr = 3
 
 	serverAddresses := loadServerConfig(v)
 
-	handler, err := proxy.NewHandler(serverAddresses, SOCKET_FD)
+	handler, err := proxy.NewHandler(serverAddresses, addressIndex, SOCKET_FD)
 	if err != nil {
 		log.Panicf("Failed to initialize client handler: %s", err)
 	}
@@ -148,7 +149,7 @@ func main() {
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-	isChild := len(os.Args) == 2 && os.Args[1] == "child"
+	isChild := len(os.Args) == 3 && os.Args[1] == "child"
 
 	if err := InitLogger(v.GetString("log.level"), isChild); err != nil {
 		log.Criticalf("%s", err)
@@ -159,7 +160,10 @@ func main() {
 	if len(os.Args) == 1 {
 		instance = initConnectionHandler(v)
 	} else if isChild {
-		instance = initHandler(v)
+
+		serverIndex := os.Args[2]
+		instance = initHandler(v, serverIndex)
+
 	} else {
 		log.Panicf("Bad call to server. Usage for server: %s ; Usage for clientHandler: %s child", os.Args[0], os.Args[0])
 	}

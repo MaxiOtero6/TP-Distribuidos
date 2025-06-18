@@ -82,8 +82,9 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func appendEOFInfra(
+func appendExtraInfra(
 	eofExchangeName string,
+	controlExchangeName string,
 	queues []map[string]string,
 	binds []map[string]string,
 	workerId string,
@@ -92,6 +93,7 @@ func appendEOFInfra(
 	eofBroadcastRK string,
 	parkingEofExchange string,
 	needParking bool,
+	controlBroadcastRK string,
 ) ([]map[string]string, []map[string]string) {
 	qName := fmt.Sprintf("%s_%s_queue", workerType, workerId)
 	eofQName := "eof_" + qName
@@ -127,10 +129,23 @@ func appendEOFInfra(
 	binds[0]["extraRK"] = eofBroadcastRK
 	binds[0]["queue"] = queues[0]["name"]
 
+	// Eof
 	binds = append(binds, map[string]string{
 		"queue":    eofQName,
 		"exchange": eofExchangeName,
 		"extraRK":  workerType + "_" + workerId,
+	})
+
+	controlQName := "control_" + qName
+
+	queues = append(queues, map[string]string{
+		"name": controlQName,
+	})
+	// Control
+	binds = append(binds, map[string]string{
+		"queue":    controlQName,
+		"exchange": controlExchangeName,
+		"extraRK":  controlBroadcastRK,
 	})
 
 	return queues, binds
@@ -166,6 +181,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		BroadcastID:        v.GetString("consts.broadcastId"),
 		EofBroadcastRK:     v.GetString("consts.eofBroadcastRK"),
 		ParkingEOFExchange: v.GetString("consts.parkingEofExchange"),
+		ControlExchange:    v.GetString("consts.controlExchange"),
+		ControlBroadcastRK: v.GetString("consts.controlBroadcastRK"),
+		LeaderRK:           v.GetString("consts.leaderRK"),
 	}
 
 	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
@@ -186,8 +204,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		}
 	}
 
-	queues, binds = appendEOFInfra(
+	queues, binds = appendExtraInfra(
 		infraConfig.GetEofExchange(),
+		infraConfig.GetControlExchange(),
 		queues,
 		binds,
 		nodeId,
@@ -196,9 +215,10 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		infraConfig.GetEofBroadcastRK(),
 		infraConfig.GetParkingEOFExchange(),
 		needParking,
+		infraConfig.GetControlBroadcastRK(),
 	)
 
-	w := worker.NewWorker(workerType, infraConfig, signalChan)
+	w := worker.NewWorker(workerType, infraConfig, signalChan, v.GetString("name"))
 	w.InitConfig(exchanges, queues, binds)
 
 	log.Infof("Worker %v ready", w.WorkerId)

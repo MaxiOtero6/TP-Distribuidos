@@ -38,6 +38,11 @@ type RabbitConfig struct {
 	BroadcastID        string
 	EofBroadcastRK     string
 	ParkingEOFExchange string
+	ControlExchange    string
+	ControlBroadcastRK string
+	LeaderRK           string
+	HealthExchange     string
+	ClientQueueTTL     string
 }
 
 type InfraConfig struct {
@@ -159,6 +164,22 @@ func (i *InfraConfig) GetEofExchange() string {
 	return i.rabbit.EofExchange
 }
 
+func (i *InfraConfig) GetControlExchange() string {
+	return i.rabbit.ControlExchange
+}
+
+func (i *InfraConfig) GetHealthExchange() string {
+	return i.rabbit.HealthExchange
+}
+
+func (i *InfraConfig) GetControlBroadcastRK() string {
+	return i.rabbit.ControlBroadcastRK
+}
+
+func (i *InfraConfig) GetLeaderRK() string {
+	return i.rabbit.LeaderRK
+}
+
 func (i *InfraConfig) GetBroadcastID() string {
 	return i.rabbit.BroadcastID
 }
@@ -177,4 +198,11 @@ func (i *InfraConfig) GetDirectory() string {
 
 func (i *InfraConfig) GetParkingEOFExchange() string {
 	return i.rabbit.ParkingEOFExchange
+}
+
+func (i *InfraConfig) GetClientQueueTTL() string {
+	if i.rabbit.ClientQueueTTL == "" {
+		return "1800000" // Default to 30 minutes if not set
+	}
+	return i.rabbit.ClientQueueTTL
 }

@@ -1,5 +1,8 @@
 import sys
 
+PACKET_TTL = 120000  # 2 minutes
+CLIENT_QUEUE_TTL = 1800000  # 30 minutes
+
 FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 
 OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
@@ -18,6 +21,10 @@ RESULT_EXCHANGE = {"name": "resultExchange", "kind": "direct"}
 
 EOF_EXCHANGE = {"name": "eofExchange", "kind": "direct"}
 
+CONTROL_EXCHANGE = {"name": "controlExchange", "kind": "direct"}
+
+HEALTH_EXCHANGE = {"name": "healthExchange", "kind": "fanout"}
+
 FILTER_QUEUE = {"name": "filterQueue"}
 
 OVERVIEW_QUEUE = {"name": "overviewQueue"}
@@ -32,9 +39,17 @@ MERGE_QUEUE = {"name": ""}
 
 TOP_QUEUE = {"name": ""}
 
+CONTROL_QUEUE = {"name": ""}
+
+HEALTH_QUEUE = {"name": ""}
+
+LEADER_QUEUE = {"name": "leaderQueue"}
+
 BROADCAST_ID = ""
 
 BROADCAST_EOF_ROUTING_KEY = "eof"
+PING_ROUTING_KEY = "ping"
+LEADER_ROUTING_KEY = "leader"
 
 PARKING_EOF_EXCHANGE = {
     "name": "parkingEofExchange",
@@ -63,6 +78,10 @@ class Server:
         lines.append(f'{" " * 6}resultExchange:')
         lines.append(f'{" " * 8}name: "{RESULT_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{RESULT_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}binds:')
         lines.append(f'{" " * 6}resultQueue:')
@@ -95,6 +114,10 @@ class Filter:
         lines.append(f'{" " * 6}eofExchange:')
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}filterQueue:')
@@ -129,6 +152,10 @@ class Overview:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}overviewQueue:')
         lines.append(f'{" " * 8}name: "{OVERVIEW_QUEUE["name"]}"')
@@ -157,6 +184,10 @@ class Map:
         lines.append(f'{" " * 6}eofExchange:')
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mapQueue:')
@@ -191,6 +222,10 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}reduceQueue:')
         lines.append(f'{" " * 8}name: "{REDUCE_QUEUE["name"]}"')
@@ -223,6 +258,10 @@ class Join:
         lines.append(f'{" " * 6}parkingEofExchange:')
         lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}joinQueue:')
@@ -261,6 +300,10 @@ class Merge:
         lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}mergeQueue:')
         lines.append(f'{" " * 8}name: "{MERGE_QUEUE["name"]}"')
@@ -294,6 +337,10 @@ class Top:
         lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 4}queues:')
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}name: "{TOP_QUEUE["name"]}"')
@@ -302,6 +349,27 @@ class Top:
         lines.append(f'{" " * 6}topQueue:')
         lines.append(f'{" " * 8}exchange: "{TOP_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}queue: "{TOP_QUEUE["name"]}"')
+
+        return "\n".join(lines) + "\n"
+
+
+class HealthChecker:
+    def __str__(self) -> str:
+        lines: list[str] = []
+        lines.append(f'{" " * 2}HEALTH:')
+        lines.append(f'{" " * 4}exchanges:')
+        lines.append(f'{" " * 6}controlExchange:')
+        lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}healthExchange:')
+        lines.append(f'{" " * 8}name: "{HEALTH_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{HEALTH_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 4}queues:')
+        lines.append(f'{" " * 6}leaderQueue:')
+        lines.append(f'{" " * 8}name: "{LEADER_QUEUE["name"]}"')
+        lines.append("")
 
         return "\n".join(lines) + "\n"
 
@@ -322,6 +390,8 @@ class RabbitConfig:
             "resultExchange": RESULT_EXCHANGE,
             "eofExchange": EOF_EXCHANGE,
             "parkingEofExchange": PARKING_EOF_EXCHANGE,
+            "controlExchange": CONTROL_EXCHANGE,
+            "healthExchange": HEALTH_EXCHANGE,
         }
 
     def __str__(self):
@@ -333,7 +403,17 @@ class RabbitConfig:
 
         lines.append(f'{" " * 2}broadcastId: "{BROADCAST_ID}"\n')
         lines.append(
-            f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n')
+            f'{" " * 2}eofBroadcastRK: "{BROADCAST_EOF_ROUTING_KEY}"\n'
+        )
+        lines.append(
+            f'{" " * 2}controlBroadcastRK: "{PING_ROUTING_KEY}"\n'
+        )
+        lines.append(
+            f'{" " * 2}leaderRK: "{LEADER_ROUTING_KEY}"\n'
+        )
+        lines.append(
+            f'{" " * 2}clientQueueTTL: "{CLIENT_QUEUE_TTL}"\n'
+        )
 
         lines.append("rabbitmq:")
         lines.append(str(Server()))
@@ -344,6 +424,7 @@ class RabbitConfig:
         lines.append(str(Reduce()))
         lines.append(str(Merge()))
         lines.append(str(Top()))
+        lines.append(str(HealthChecker()))
 
         return "\n".join(lines) + "\n"
 

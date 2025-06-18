@@ -127,14 +127,14 @@ func (c *ClientHandler) handleConnectionMessage(syncMessage *protocol.Sync) {
 		},
 	}
 
+	c.ClientID = clientID
+	log.Infof("Client connected with ID: %s", clientID)
+	c.rabbitHandler.RegisterNewClient(clientID)
+
 	if err := c.socket.Write(idMessage); err != nil {
 		log.Errorf("Error sending ID to client: %v", err)
 		return
 	}
-
-	c.ClientID = clientID
-	log.Infof("Client connected with ID: %s", clientID)
-	c.rabbitHandler.RegisterNewClient(clientID)
 }
 
 func (c *ClientHandler) handleBatchMessage(batchMessage *protocol.Batch) error {
@@ -302,7 +302,7 @@ func (c *ClientHandler) handleDisconnectMessage(disconnectMessage *protocol.Disc
 func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) error {
 	log.Infof("Received result message from user: %v ", resultMessage.ClientId)
 
-	results := c.rabbitHandler.GetResults(resultMessage.ClientId)
+	results, msg := c.rabbitHandler.GetResults(resultMessage.ClientId)
 
 	message := &protocol.Message{
 		Message: &protocol.Message_ServerClientMessage{
@@ -320,6 +320,8 @@ func (c *ClientHandler) handleResultMessage(resultMessage *protocol.Result) erro
 		log.Errorf("Error sending results: %v", err)
 		return err
 	}
+
+	c.rabbitHandler.AckResults(msg)
 
 	return nil
 }
