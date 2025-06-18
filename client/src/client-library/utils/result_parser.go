@@ -159,11 +159,6 @@ func (p *ResultParser) handleResult4(data []*protocol.Result4_Data, taskIdentifi
 // It checks if the negative and positive keys already exist in the map.
 // If they do, an error is logged.
 func (p *ResultParser) handleResult5(data []*protocol.Result5_Data, taskIdentifier *protocol.TaskIdentifier) {
-	if len(data) != 2 {
-		log.Errorf("action: handleResult5 | result: fail | error: expected 2 elements, got %d", len(data))
-		return
-	}
-
 	processResult := func() {
 		for _, d := range data {
 			var key string
