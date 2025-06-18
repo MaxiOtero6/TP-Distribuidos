@@ -14,7 +14,7 @@ var log = logging.MustGetLogger("log")
 
 type PartialData[T any] struct {
 	data           map[string]T
-	taskFragments  map[common.TaskFragmentIdentifier]struct{}
+	taskFragments  map[model.TaskFragmentIdentifier]struct{}
 	omegaProcessed bool
 	ringRound      uint32
 }
@@ -22,7 +22,7 @@ type PartialData[T any] struct {
 func NewPartialData[T any]() *PartialData[T] {
 	return &PartialData[T]{
 		data:           make(map[string]T),
-		taskFragments:  make(map[common.TaskFragmentIdentifier]struct{}),
+		taskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
 		omegaProcessed: false,
 		ringRound:      0,
 	}
@@ -89,9 +89,15 @@ func AddResults[T any](
 	for nodeId := range dataByNode {
 		destinationNodes = append(destinationNodes, nodeId)
 	}
+
+	// Esto sirve para el filter
+	if len(destinationNodes) == 0 {
+		destinationNodes = append(destinationNodes, nextStageData.RoutingKey)
+	}
+
 	slices.Sort(destinationNodes)
 
-	createTaskIdentifier := func(nodeId string, index int) *protocol.TaskIdentifier {
+	createTaskIdentifier := func(_ string, index int) *protocol.TaskIdentifier {
 		return &protocol.TaskIdentifier{
 			CreatorId:          creatorId,
 			TaskNumber:         uint32(taskNumber),
@@ -120,7 +126,7 @@ func ProcessStage[T any](
 	keySelector func(*T) string,
 ) {
 
-	taskID := common.TaskFragmentIdentifier{
+	taskID := model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),

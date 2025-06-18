@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 type Query1 struct {
@@ -33,7 +33,7 @@ type Query5 struct {
 
 type QueryResults[T any] struct {
 	Results         T
-	TaskIdentifiers map[common.TaskFragmentIdentifier]struct{}
+	TaskIdentifiers map[model.TaskFragmentIdentifier]struct{}
 	omegaProcessed  bool
 	TaskCount       int
 }
@@ -42,7 +42,7 @@ func NewQueryResults[T any](initialResults T) QueryResults[T] {
 	return QueryResults[T]{
 		Results:         initialResults,
 		TaskCount:       0,
-		TaskIdentifiers: make(map[common.TaskFragmentIdentifier]struct{}),
+		TaskIdentifiers: make(map[model.TaskFragmentIdentifier]struct{}),
 	}
 }
 
@@ -51,7 +51,7 @@ func (qr *QueryResults[T]) IsComplete() bool {
 }
 
 func (qr *QueryResults[T]) ProccessResult(processResult func(), taskIdentifier *protocol.TaskIdentifier) {
-	taskID := common.TaskFragmentIdentifier{
+	taskID := model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),

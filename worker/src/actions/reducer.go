@@ -180,7 +180,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetEofExchange(),
+				Exchange:    infraConfig.GetReduceExchange(),
 				WorkerCount: infraConfig.GetReduceCount(),
 				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetReduceCount()),
 			},
@@ -388,7 +388,7 @@ func (r *Reducer) AddResultsToNextStage(tasks common.Tasks, stage string, client
 	return nil
 }
 
-func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
+func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {
 	partialResults := r.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_2:
@@ -551,6 +551,8 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	taskIdentifier := task.GetTaskIdentifier()
+
+	log.Debugf("REDUCER DATA: %s", task)
 
 	r.makePartialResults(clientId)
 

@@ -64,4 +64,5 @@ message Task {
     
     string clientId = 29;
     TaskIdentifier taskIdentifier = 30;
+    string tableType = 31;
 }

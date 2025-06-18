@@ -34,7 +34,6 @@ type ClientConfig struct {
 
 type Library struct {
 	socket        *client_communication.Socket
-	fileNames     []string
 	retryNumber   float64
 	responseCount int
 	isRunning     bool
@@ -138,7 +137,7 @@ func (l *Library) sendFileEOF(fileType protocol.FileType, batchCount int, filena
 		return err
 	}
 
-	log.Debugf("action: sendFile | result: file_eof_sent | clientId: %v | file: %s", l.config.ClientId, filename)
+	log.Debugf("action: sendFile | result: file_eof_sent | clientId: %v | file: %s | batchCount: %d", l.config.ClientId, filename, batchCount)
 
 	if err := l.waitACK(); err != nil {
 		log.Errorf("action: waitFileEofACK | result: fail | clientId: %v | file: %s", l.config.ClientId, filename)

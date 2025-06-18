@@ -212,9 +212,9 @@ func TestFilter(t *testing.T) {
 			result := testFilter.betaStage(nil, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][model.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][model.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
@@ -222,9 +222,9 @@ func TestFilter(t *testing.T) {
 			result := testFilter.betaStage([]*protocol.Beta_Data{}, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][model.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][model.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 0, "Expected empty slice")
 		})
 
@@ -271,9 +271,9 @@ func TestFilter(t *testing.T) {
 			result := testFilter.betaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 1, "Expected 1 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][model.RESULT_1_STAGE], 1, "Expected 1 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][model.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Len(t, res, 2, "Expected 2 movies")
 
 			assert.Equal(t, "3", res[0].GetId(), "Expected movie ID 3")
@@ -314,9 +314,9 @@ func TestFilter(t *testing.T) {
 			result := testFilter.betaStage(data, CLIENT_ID, CLIENT_ID, 0)
 			assert.Len(t, result, 1, "Expected 1 exchange")
 			assert.Len(t, result[RESULT_EXCHANGE], 1, "Expected 1 stage")
-			assert.Len(t, result[RESULT_EXCHANGE][c.RESULT_1_STAGE], 0, "Expected 0 destination ID")
+			assert.Len(t, result[RESULT_EXCHANGE][model.RESULT_1_STAGE], 0, "Expected 0 destination ID")
 
-			res := result[RESULT_EXCHANGE][c.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
+			res := result[RESULT_EXCHANGE][model.RESULT_1_STAGE][CLIENT_ID].GetResult1().GetData()
 			assert.Empty(t, res, "Expected empty slice")
 		})
 	})

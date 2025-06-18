@@ -215,6 +215,8 @@ func (r *RabbitHandler) GetResults(clientId string) *protocol.ResultsResponse {
 
 		r, err := unmarshallResult(msg)
 
+		log.Debugf("Received QUERY MESSAGE: %s", r)
+
 		if err != nil {
 			log.Errorf("Error unmarshalling task: %v", err)
 			continue

@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	m "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 var QUERIES_AMOUNT int = 5
@@ -186,15 +186,15 @@ func (p *ResultParser) handleOmegaEOF(omegaEOF *protocol.OmegaEOF_Data) {
 	query := omegaEOF.GetStage()
 
 	switch query {
-	case common.RESULT_1_STAGE:
+	case m.RESULT_1_STAGE:
 		p.results.Query1.ProcessOmega(omegaEOF)
-	case common.RESULT_2_STAGE:
+	case m.RESULT_2_STAGE:
 		p.results.Query2.ProcessOmega(omegaEOF)
-	case common.RESULT_3_STAGE:
+	case m.RESULT_3_STAGE:
 		p.results.Query3.ProcessOmega(omegaEOF)
-	case common.RESULT_4_STAGE:
+	case m.RESULT_4_STAGE:
 		p.results.Query4.ProcessOmega(omegaEOF)
-	case common.RESULT_5_STAGE:
+	case m.RESULT_5_STAGE:
 		p.results.Query5.ProcessOmega(omegaEOF)
 	default:
 		log.Errorf("action: handleOmegaEOF | result: fail | error: unknown query stage: %s", query)

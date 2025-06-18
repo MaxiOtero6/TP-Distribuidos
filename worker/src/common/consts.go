@@ -1,10 +1,5 @@
 package common
 
-// EOF Types
-const SMALL_TABLE string = "small"
-const BIG_TABLE string = "big"
-const GENERAL string = "general"
-
 // Query 1
 const ALPHA_STAGE string = "alpha"
 const BETA_STAGE string = "beta"
@@ -35,13 +30,6 @@ const MU_STAGE string = "mu"
 const NU_STAGE_1 string = "nu_1"
 const NU_STAGE_2 string = "nu_2"
 const NU_STAGE_3 string = "nu_3"
-
-// Results
-const RESULT_1_STAGE string = "result_1"
-const RESULT_2_STAGE string = "result_2"
-const RESULT_3_STAGE string = "result_3"
-const RESULT_4_STAGE string = "result_4"
-const RESULT_5_STAGE string = "result_5"
 
 // EOF
 const RING_STAGE string = "ringEOF"

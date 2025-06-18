@@ -124,6 +124,7 @@ type Task struct {
 	Stage          isTask_Stage    `protobuf_oneof:"Stage"`
 	ClientId       string          `protobuf:"bytes,29,opt,name=clientId,proto3" json:"clientId,omitempty"`
 	TaskIdentifier *TaskIdentifier `protobuf:"bytes,30,opt,name=taskIdentifier,proto3" json:"taskIdentifier,omitempty"`
+	TableType      string          `protobuf:"bytes,31,opt,name=tableType,proto3" json:"tableType,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -431,6 +432,13 @@ func (x *Task) GetTaskIdentifier() *TaskIdentifier {
 	return nil
 }
 
+func (x *Task) GetTableType() string {
+	if x != nil {
+		return x.TableType
+	}
+	return ""
+}
+
 type isTask_Stage interface {
 	isTask_Stage()
 }
@@ -614,7 +622,7 @@ const file_proto_task_proto_rawDesc = "" +
 	"taskNumber\x18\x02 \x01(\rR\n" +
 	"taskNumber\x12.\n" +
 	"\x12taskFragmentNumber\x18\x03 \x01(\rR\x12taskFragmentNumber\x12\"\n" +
-	"\flastFragment\x18\x04 \x01(\bR\flastFragment\"\x97\b\n" +
+	"\flastFragment\x18\x04 \x01(\bR\flastFragment\"\xb5\b\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
@@ -646,7 +654,8 @@ const file_proto_task_proto_rawDesc = "" +
 	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOF\x12$\n" +
 	"\aringEOF\x18\x1c \x01(\v2\b.RingEOFH\x00R\aringEOF\x12\x1a\n" +
 	"\bclientId\x18\x1d \x01(\tR\bclientId\x127\n" +
-	"\x0etaskIdentifier\x18\x1e \x01(\v2\x0f.TaskIdentifierR\x0etaskIdentifierB\a\n" +
+	"\x0etaskIdentifier\x18\x1e \x01(\v2\x0f.TaskIdentifierR\x0etaskIdentifier\x12\x1c\n" +
+	"\ttableType\x18\x1f \x01(\tR\ttableTypeB\a\n" +
 	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (

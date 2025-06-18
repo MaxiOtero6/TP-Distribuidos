@@ -8,8 +8,8 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
-	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+	topkheap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/topkheap"
 )
 
 const EPSILON_TOP_K = 5
@@ -21,31 +21,49 @@ const TOPPER_STAGES_COUNT uint = 3
 
 // ParcilResult is a struct that holds the results of the different stages.
 
-type TopperPartialData[K heap.Ordered, V any] struct {
-	heap           *heap.TopKHeap[K, *V]
-	taskFragments  map[common.TaskFragmentIdentifier]struct{}
+type TopperPartialData[K topkheap.Ordered, V any] struct {
+	heap           topkheap.TopKHeap[K, V]
+	taskFragments  map[model.TaskFragmentIdentifier]struct{}
 	omegaProcessed bool
 	ringRound      uint32
 }
 
-func newTopperPartialData[K heap.Ordered, V any](top_k int) TopperPartialData[K, V] {
-	return TopperPartialData[K, V]{
-		heap:           heap.NewTopKHeap[K, *V](top_k),
-		taskFragments:  make(map[common.TaskFragmentIdentifier]struct{}),
+type ThetaPartialData struct {
+	minPartialData *TopperPartialData[float32, *protocol.Theta_Data]
+	maxPartialData *TopperPartialData[float32, *protocol.Theta_Data]
+}
+
+func newTopperPartialData[K topkheap.Ordered, V any](top_k int, max bool) *TopperPartialData[K, V] {
+	var heapInstance topkheap.TopKHeap[K, V]
+	if max {
+		heapInstance = topkheap.NewTopKMaxHeap[K, V](top_k)
+	} else {
+		heapInstance = topkheap.NewTopKMinHeap[K, V](top_k)
+	}
+
+	return &TopperPartialData[K, V]{
+		heap:           heapInstance,
+		taskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
 		omegaProcessed: false,
 		ringRound:      0,
 	}
 }
 
-type ThetaPartialData struct {
-	minPartialData TopperPartialData[float32, protocol.Theta_Data]
-	maxPartialData TopperPartialData[float32, protocol.Theta_Data]
+type TopperPartialResults struct {
+	epsilonData *TopperPartialData[uint64, *protocol.Epsilon_Data]
+	thetaData   *ThetaPartialData
+	lamdaData   *TopperPartialData[uint64, *protocol.Lambda_Data]
 }
 
-type TopperPartialResults struct {
-	epsilonData TopperPartialData[uint64, protocol.Epsilon_Data]
-	thetaData   ThetaPartialData
-	lamdaData   TopperPartialData[uint64, protocol.Lambda_Data]
+func NewTopperPartialResults() *TopperPartialResults {
+	return &TopperPartialResults{
+		epsilonData: newTopperPartialData[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K, true),
+		thetaData: &ThetaPartialData{
+			minPartialData: newTopperPartialData[float32, *protocol.Theta_Data](THETA_TOP_K, false),
+			maxPartialData: newTopperPartialData[float32, *protocol.Theta_Data](THETA_TOP_K, true),
+		},
+		lamdaData: newTopperPartialData[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K, true),
+	}
 }
 
 // Topper is a struct that implements the Action interface.
@@ -61,14 +79,7 @@ func (t *Topper) makePartialResults(clientId string) {
 		return
 	}
 
-	t.partialResults[clientId] = &TopperPartialResults{
-		epsilonData: newTopperPartialData[uint64, protocol.Epsilon_Data](EPSILON_TOP_K),
-		thetaData: ThetaPartialData{
-			minPartialData: newTopperPartialData[float32, protocol.Theta_Data](THETA_TOP_K),
-			maxPartialData: newTopperPartialData[float32, protocol.Theta_Data](THETA_TOP_K),
-		},
-		lamdaData: newTopperPartialData[uint64, protocol.Lambda_Data](LAMBDA_TOP_K),
-	}
+	t.partialResults[clientId] = NewTopperPartialResults()
 }
 
 // NewTopper creates a new Topper instance.
@@ -103,7 +114,6 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string, ta
 	processTopperStage(
 		partialData,
 		data,
-		clientId,
 		taskIdentifier,
 		valueFunc,
 	)
@@ -117,8 +127,9 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string, taskId
 	maxPartialData := partialData.maxPartialData
 
 	minValueFunc := func(input *protocol.Theta_Data) float32 {
-		return -input.GetAvgRating()
+		return input.GetAvgRating()
 	}
+
 	maxValueFunc := func(input *protocol.Theta_Data) float32 {
 		return input.GetAvgRating()
 	}
@@ -126,14 +137,13 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string, taskId
 	processTopperStage(
 		minPartialData,
 		data,
-		clientId,
 		taskIdentifier,
 		minValueFunc,
 	)
+
 	processTopperStage(
 		maxPartialData,
 		data,
-		clientId,
 		taskIdentifier,
 		maxValueFunc,
 	)
@@ -151,7 +161,6 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string, task
 	processTopperStage(
 		partialData,
 		data,
-		clientId,
 		taskIdentifier,
 		valueFunc,
 	)
@@ -200,8 +209,8 @@ func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 	thetaData := t.partialResults[clientId].thetaData
 
-	minHeapData := thetaData.maxPartialData.heap
-	maxHeapData := thetaData.minPartialData.heap
+	minHeapData := thetaData.minPartialData.heap
+	maxHeapData := thetaData.maxPartialData.heap
 
 	minPartialData := minHeapData.GetTopK()
 	maxPartialData := maxHeapData.GetTopK()
@@ -211,7 +220,7 @@ func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 			Type:   TYPE_MIN,
 			Id:     data.GetId(),
 			Title:  data.GetTitle(),
-			Rating: -data.GetAvgRating(), // Negate for min heap
+			Rating: data.GetAvgRating(),
 		}
 	})
 
@@ -321,7 +330,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.EPSILON_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_2_STAGE,
+				Stage:       model.RESULT_2_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -330,7 +339,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.THETA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_3_STAGE,
+				Stage:       model.RESULT_3_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -339,7 +348,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.LAMBDA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_4_STAGE,
+				Stage:       model.RESULT_4_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
@@ -474,7 +483,7 @@ func (t *Topper) getRingRound(clientId string, stage string) (uint32, error) {
 	}
 }
 
-func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]common.TaskFragmentIdentifier, error) {
+func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {
 	partialResults := t.partialResults[clientId]
 	switch stage {
 	case common.EPSILON_STAGE:
@@ -515,21 +524,20 @@ func (t *Topper) participatesInResults(clientId string, stage string) int {
 	return 0
 }
 
-func processTopperStage[K heap.Ordered, V any](
-	partialData TopperPartialData[K, V],
+func processTopperStage[K topkheap.Ordered, V any](
+	partialData *TopperPartialData[K, *V],
 	data []*V,
-	clientId string,
 	taskIdentifier *protocol.TaskIdentifier,
 	valueFunc func(input *V) K,
 ) {
-	taskID := common.TaskFragmentIdentifier{
+	taskID := model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
-	if _, processed := partialData.taskFragments[taskID]; !processed {
+	if _, processed := partialData.taskFragments[taskID]; processed {
 		return
 	}
 

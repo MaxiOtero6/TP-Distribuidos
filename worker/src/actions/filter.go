@@ -92,8 +92,13 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId str
 		return f.infraConfig.GetBroadcastID()
 	}
 
-	hashFuncZeta := f.itemHashFunc
-	hashFuncIota := f.itemHashFunc
+	hashFuncZeta := func(workersCount int, item string) string {
+		return f.infraConfig.GetBroadcastID()
+	}
+
+	hashFuncIota := func(workersCount int, item string) string {
+		return f.infraConfig.GetBroadcastID()
+	}
 
 	identifierFuncBeta := func(input *protocol.Beta_Data) string {
 		return input.Id
@@ -128,6 +133,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId str
 				},
 			},
 			TaskIdentifier: taskIdentifier,
+			TableType:      model.SMALL_TABLE,
 		}
 	}
 
@@ -140,6 +146,7 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId str
 				},
 			},
 			TaskIdentifier: taskIdentifier,
+			TableType:      model.SMALL_TABLE,
 		}
 	}
 
@@ -168,7 +175,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId, creatorId strin
 	nextStagesData, _ := f.nextStageData(common.BETA_STAGE, clientId)
 
 	hashFunc := func(workersCount int, item string) string {
-		return f.infraConfig.GetBroadcastID()
+		return clientId
 	}
 
 	identifierFunc := func(input *protocol.Result1_Data) string {
@@ -206,7 +213,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId, creatorId str
 		}
 	})
 
-	nextStagesData, _ := f.nextStageData(common.DELTA_STAGE_1, clientId)
+	nextStagesData, _ := f.nextStageData(common.GAMMA_STAGE, clientId)
 
 	hashFunc := func(workersCount int, item string) string {
 		return clientId
@@ -271,7 +278,7 @@ func filterNextStageData(stage string, clientId string, infraConfig *model.Infra
 	case common.BETA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_1_STAGE,
+				Stage:       model.RESULT_1_STAGE,
 				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,

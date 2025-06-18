@@ -82,6 +82,7 @@ func (r *RabbitMQ) InitConfig(
 		}
 
 		r.BindQueue(bind["queue"], bind["exchange"], routingKey)
+		r.BindQueue(bind["queue"], bind["exchange"], "")
 	}
 }
 

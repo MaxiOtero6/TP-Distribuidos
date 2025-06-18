@@ -228,4 +228,3 @@ rabbitmq:
       topQueue:
         exchange: "topExchange"
         queue: ""
-

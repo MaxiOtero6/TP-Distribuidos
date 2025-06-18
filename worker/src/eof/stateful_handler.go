@@ -6,7 +6,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("log")
 
 type StatefulEofHandler struct {
 	workerType    model.ActionType
@@ -124,10 +127,15 @@ func (h *StatefulEofHandler) HandleOmegaEOF(tasks common.Tasks, omegaEOFData *pr
 	h.nextWorkerRing(tasks, ringEof, clientId, false)
 }
 
-func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol.RingEOF, clientId string, workerFragments []common.TaskFragmentIdentifier, resultsTaskCount int) bool {
+func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol.RingEOF, clientId string, workerFragments []model.TaskFragmentIdentifier, resultsTaskCount int) bool {
 	if ringEOF.GetCreatorId() == h.nodeId {
 		// If the RingEOF is created by this worker, we advaance the round
 		ringEOF.RoundNumber++
+	}
+
+	// TODO: @MaxiOtero6 como harías esto ?
+	if ringEOF.RoundNumber > 2000 {
+		return false // If the round number is greater than 20, we stop the RingEOF cycle to avoid infinite loops
 	}
 
 	h.updateNextStageTaskCount(ringEOF, resultsTaskCount)
@@ -170,7 +178,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 	}
 }
 
-func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []common.TaskFragmentIdentifier) {
+func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
 	if len(taskFragments) == 0 {
 		return
 	}
@@ -282,6 +290,8 @@ func isStageReady(ringEOF *protocol.RingEOF) bool {
 
 		totalTasks += int(endTask - startTask + 1)
 	}
+
+	log.Debugf("Stage %s is ready: total tasks %d, expected %d", ringEOF.GetStage(), totalTasks, taskCount)
 
 	return totalTasks == int(taskCount)
 }

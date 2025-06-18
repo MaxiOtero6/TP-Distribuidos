@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
@@ -56,12 +57,8 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId, creatorId 
 
 	nextStagesData, _ := m.nextStageData(common.DELTA_STAGE_1, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
 	identifierFunc := func(input *protocol.Delta_2_Data) string {
-		return input.Country
+		return input.Country + strconv.Itoa(int(input.PartialBudget))
 	}
 
 	taskDataCreator := func(stage string, data []*protocol.Delta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
@@ -76,7 +73,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId, creatorId 
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -102,12 +99,8 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId, creatorId stri
 
 	nextStagesData, _ := m.nextStageData(common.ETA_STAGE_1, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
 	identifierFunc := func(input *protocol.Eta_2_Data) string {
-		return input.MovieId
+		return input.MovieId + strconv.Itoa(int(input.Rating)) + strconv.Itoa(int(input.Count))
 	}
 
 	taskDataCreator := func(stage string, data []*protocol.Eta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
@@ -122,7 +115,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId, creatorId stri
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -163,12 +156,8 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId, creatorId 
 
 	nextStagesData, _ := m.nextStageData(common.KAPPA_STAGE_1, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
 	identifierFunc := func(input *protocol.Kappa_2_Data) string {
-		return input.ActorId
+		return input.ActorId + strconv.Itoa(int(input.PartialParticipations))
 	}
 
 	taskDataCreator := func(stage string, data []*protocol.Kappa_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
@@ -183,7 +172,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId, creatorId 
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
@@ -225,12 +214,8 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId, creatorId string
 
 	nextStagesData, _ := m.nextStageData(common.NU_STAGE_1, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
 	identifierFunc := func(input *protocol.Nu_2_Data) string {
-		return fmt.Sprintf("%t", input.Sentiment)
+		return strconv.FormatBool(input.Sentiment) + strconv.Itoa(int(input.Ratio)) + strconv.Itoa(int(input.Count))
 	}
 
 	taskDataCreator := func(stage string, data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
@@ -245,7 +230,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId, creatorId string
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }

@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	m "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 )
@@ -14,11 +15,6 @@ const IOTA_STAGE = "iota"
 const MU_STAGE = "mu"
 const GAMMA_STAGE = "gamma"
 
-// EOF Types
-const SMALL_TABLE string = "small"
-const BIG_TABLE string = "big"
-const GENERAL string = "general"
-
 const EOF_BROADCAST_RK string = "eof"
 
 func GetEOFTask(workersCount int, clientId string, stage string, taskCount uint32) map[string]*protocol.Task {
@@ -28,14 +24,13 @@ func GetEOFTask(workersCount int, clientId string, stage string, taskCount uint3
 
 	switch stage {
 	case ALPHA_STAGE:
-		EofType = SMALL_TABLE
+		EofType = m.SMALL_TABLE
 	case ZETA_STAGE:
-		EofType = BIG_TABLE
+		EofType = m.BIG_TABLE
 	case IOTA_STAGE:
-		EofType = BIG_TABLE
-
+		EofType = m.BIG_TABLE
 	default:
-		EofType = GENERAL
+		EofType = m.GENERAL
 	}
 
 	tasks[EOF_BROADCAST_RK] = &protocol.Task{
@@ -157,6 +152,7 @@ func GetZetaStageRatingsTask(ratings []*model.Rating, joinersCount int, clientId
 				TaskFragmentNumber: uint32(index),
 				LastFragment:       index == len(destinationNodes)-1,
 			},
+			TableType: m.BIG_TABLE,
 		}
 	}
 
@@ -201,6 +197,7 @@ func GetIotaStageCreditsTask(actors []*model.Actor, joinersCount int, clientId s
 				TaskFragmentNumber: uint32(index),
 				LastFragment:       index == len(destinationNodes)-1,
 			},
+			TableType: m.BIG_TABLE,
 		}
 	}
 
