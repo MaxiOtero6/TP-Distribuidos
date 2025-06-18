@@ -16,7 +16,7 @@ import (
 
 const SLEEP_TIME time.Duration = 5 * time.Second
 const DELAY_MULTIPLIER int = 2
-const MAX_RETRIES int = 7.0
+const MAX_RETRIES int = 7
 const QUERIES_AMOUNT int = 5
 
 var log = logging.MustGetLogger("log")
