@@ -6,6 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/mom"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	common_model "github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	common_utils "github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/server/src/utils"
 	"github.com/op/go-logging"
@@ -97,9 +98,12 @@ func (r *RabbitHandler) SendMoviesEOFRabbit(clientId string, taskCount uint32) {
 	FILTER_EXCHANGE := r.infraConfig.GetFilterExchange()
 	OVERVIEW_EXCHANGE := r.infraConfig.GetOverviewExchange()
 
-	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE, taskCount), FILTER_EXCHANGE)
-	r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE, taskCount), OVERVIEW_EXCHANGE)
-	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE, taskCount), FILTER_EXCHANGE)
+	FILTER_ROUTING_KEY := r.infraConfig.GetEofBroadcastRK()
+	OVERVIEW_ROUTING_KEY := r.infraConfig.GetEofBroadcastRK()
+
+	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.ALPHA_STAGE, FILTER_ROUTING_KEY, taskCount), FILTER_EXCHANGE)
+	r.publishTasksRabbit(utils.GetEOFTask(OVERVIEW_COUNT, clientId, utils.MU_STAGE, OVERVIEW_ROUTING_KEY, taskCount), OVERVIEW_EXCHANGE)
+	r.publishTasksRabbit(utils.GetEOFTask(FILTER_COUNT, clientId, utils.GAMMA_STAGE, FILTER_ROUTING_KEY, taskCount), FILTER_EXCHANGE)
 }
 
 // SendRatingsRabbit sends the ratings to the join exchange
@@ -116,8 +120,9 @@ func (r *RabbitHandler) SendRatingsRabbit(ratings []*model.Rating, clientId stri
 func (r *RabbitHandler) SendRatingsEOFRabbit(clientId string, taskCount uint32) {
 	JOINER_COUNT := r.infraConfig.GetJoinCount()
 	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+	JOINER_ROUTING_KEY := common_utils.GetWorkerIdFromHash(JOINER_COUNT, clientId+utils.ZETA_STAGE)
 
-	eofTasks := utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE, taskCount)
+	eofTasks := utils.GetEOFTask(JOINER_COUNT, clientId, utils.ZETA_STAGE, JOINER_ROUTING_KEY, taskCount)
 	r.publishTasksRabbit(eofTasks, JOINER_EXCHANGE)
 }
 
@@ -135,8 +140,9 @@ func (r *RabbitHandler) SendActorsRabbit(actors []*model.Actor, clientId string,
 func (r *RabbitHandler) SendActorsEOFRabbit(clientId string, taskCount uint32) {
 	JOINER_COUNT := r.infraConfig.GetJoinCount()
 	JOINER_EXCHANGE := r.infraConfig.GetJoinExchange()
+	JOINER_ROUTING_KEY := common_utils.GetWorkerIdFromHash(JOINER_COUNT, clientId+utils.IOTA_STAGE)
 
-	r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE, taskCount), JOINER_EXCHANGE)
+	r.publishTasksRabbit(utils.GetEOFTask(JOINER_COUNT, clientId, utils.IOTA_STAGE, JOINER_ROUTING_KEY, taskCount), JOINER_EXCHANGE)
 }
 
 // publishTasksRabbit publishes the tasks to the specified exchange

@@ -535,9 +535,8 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 	taskCount := r.participatesInResults(clientId, data.GetStage())
 	ready := r.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready {
+	if ready && taskCount > 0 {
 		err = r.AddResultsToNextStage(tasks, data.GetStage(), clientId)
-
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
 			return nil
@@ -551,8 +550,6 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	taskIdentifier := task.GetTaskIdentifier()
-
-	log.Debugf("REDUCER DATA: %s", task)
 
 	r.makePartialResults(clientId)
 

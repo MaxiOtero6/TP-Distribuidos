@@ -15,9 +15,7 @@ const IOTA_STAGE = "iota"
 const MU_STAGE = "mu"
 const GAMMA_STAGE = "gamma"
 
-const EOF_BROADCAST_RK string = "eof"
-
-func GetEOFTask(workersCount int, clientId string, stage string, taskCount uint32) map[string]*protocol.Task {
+func GetEOFTask(workersCount int, clientId string, stage string, routingKey string, taskCount uint32) map[string]*protocol.Task {
 	tasks := make(map[string]*protocol.Task)
 
 	var EofType string
@@ -33,7 +31,7 @@ func GetEOFTask(workersCount int, clientId string, stage string, taskCount uint3
 		EofType = m.GENERAL
 	}
 
-	tasks[EOF_BROADCAST_RK] = &protocol.Task{
+	tasks[routingKey] = &protocol.Task{
 		ClientId: clientId,
 		Stage: &protocol.Task_OmegaEOF{
 			OmegaEOF: &protocol.OmegaEOF{

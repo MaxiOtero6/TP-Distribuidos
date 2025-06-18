@@ -6,10 +6,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/op/go-logging"
 )
-
-var log = logging.MustGetLogger("log")
 
 type StatefulEofHandler struct {
 	workerType    model.ActionType
@@ -80,15 +77,15 @@ func (h *StatefulEofHandler) initRingEof(omegaEOFData *protocol.OmegaEOF_Data) *
 	}
 }
 
-func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, rinfEOF *protocol.RingEOF, clientId string) {
-	nextStagesData, err := h.nextStageFunc(rinfEOF.GetStage(), clientId, h.infraConfig, h.itemHashFunc)
+func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, ringEOF *protocol.RingEOF, clientId string) {
+	nextStagesData, err := h.nextStageFunc(ringEOF.GetStage(), clientId, h.infraConfig, h.itemHashFunc)
 	if err != nil {
 		return
 	}
 
 	tasksCount := 0
 
-	for _, workerTaskCount := range rinfEOF.GetNextStageTaskCountByWorker() {
+	for _, workerTaskCount := range ringEOF.GetNextStageTaskCountByWorker() {
 		tasksCount += int(workerTaskCount.GetTaskCount())
 	}
 
@@ -99,7 +96,7 @@ func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, rinfEOF *pro
 				OmegaEOF: &protocol.OmegaEOF{
 					Data: &protocol.OmegaEOF_Data{
 						Stage:      nextStageData.Stage,
-						EofType:    rinfEOF.GetEofType(),
+						EofType:    ringEOF.GetEofType(),
 						TasksCount: uint32(tasksCount),
 					},
 				},
@@ -117,12 +114,6 @@ func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, rinfEOF *pro
 
 func (h *StatefulEofHandler) HandleOmegaEOF(tasks common.Tasks, omegaEOFData *protocol.OmegaEOF_Data, clientId string) {
 	ringEof := h.initRingEof(omegaEOFData)
-
-	// if participatesInResults {
-	// 	h.addToWorkerParticipantIds(ringEof)
-	// }
-
-	// h.mergeStageFragments(ringEof, workerFragments)
 
 	h.nextWorkerRing(tasks, ringEof, clientId, false)
 }
@@ -151,7 +142,6 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 			h.nextWorkerRing(tasks, ringEOF, clientId, false)
 			return true
 		} else {
-
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
 				h.nextWorkerRing(tasks, ringEOF, clientId, true)
@@ -163,7 +153,6 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 				return false
 			}
 		}
-
 	} else {
 		// IF the EOF is Ready, we can return the tasks immediatel or the next stage EOF
 		if ringEOF.GetReadyId() == h.nodeId {
@@ -290,8 +279,6 @@ func isStageReady(ringEOF *protocol.RingEOF) bool {
 
 		totalTasks += int(endTask - startTask + 1)
 	}
-
-	log.Debugf("Stage %s is ready: total tasks %d, expected %d", ringEOF.GetStage(), totalTasks, taskCount)
 
 	return totalTasks == int(taskCount)
 }

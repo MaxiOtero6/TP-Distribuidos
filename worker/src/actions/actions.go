@@ -85,13 +85,10 @@ func AddResults[T any](
 		dataByNode[nodeId] = append(dataByNode[nodeId], data)
 	}
 
-	destinationNodes := make([]string, 0, len(dataByNode))
-	for nodeId := range dataByNode {
-		destinationNodes = append(destinationNodes, nodeId)
-	}
+	destinationNodes := utils.MapKeys(dataByNode)
 
 	// Esto sirve para el filter
-	if len(destinationNodes) == 0 {
+	if len(destinationNodes) == 0 && creatorId == clientId {
 		destinationNodes = append(destinationNodes, nextStageData.RoutingKey)
 	}
 

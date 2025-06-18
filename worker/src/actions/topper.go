@@ -412,7 +412,7 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 	taskCount := t.participatesInResults(clientId, data.GetStage())
 	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready {
+	if ready && taskCount > 0 {
 		err = t.addResultsToNextStage(tasks, data.GetStage(), clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)

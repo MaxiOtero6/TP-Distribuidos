@@ -209,7 +209,7 @@ func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := m.getNextStageData(common.DELTA_STAGE_3, clientId)
-	hashFunc := func(workersCount int, item string) string {
+	hashFunc := func(workersCount int, _ string) string {
 		return m.itemHashFunc(workersCount, clientId+common.EPSILON_STAGE)
 	}
 
@@ -248,7 +248,7 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := m.getNextStageData(common.ETA_STAGE_3, clientId)
-	hashFunc := func(workersCount int, item string) string {
+	hashFunc := func(workersCount int, _ string) string {
 		return m.itemHashFunc(workersCount, clientId+common.THETA_STAGE)
 	}
 
@@ -287,7 +287,7 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := m.getNextStageData(common.KAPPA_STAGE_3, clientId)
-	hashFunc := func(workersCount int, item string) string {
+	hashFunc := func(workersCount int, _ string) string {
 		return m.itemHashFunc(workersCount, clientId+common.LAMBDA_STAGE)
 	}
 
@@ -358,32 +358,33 @@ func (m *Merger) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) co
 
 func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
 	tasks := make(common.Tasks)
+	stage := data.GetStage()
 
-	taskIdentifiers, err := m.getTaskIdentifiers(clientId, data.GetStage())
+	taskIdentifiers, err := m.getTaskIdentifiers(clientId, stage)
 	if err != nil {
-		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		log.Errorf("Failed to get task identifiers for stage %s: %s", stage, err)
 		return tasks
 	}
 
-	ringRound, err := m.getRingRound(clientId, data.GetStage())
+	ringRound, err := m.getRingRound(clientId, stage)
 	if err != nil {
-		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
+		log.Errorf("Failed to get ring round for stage %s: %s", stage, err)
 		return tasks
 	}
 	if ringRound >= data.GetRoundNumber() {
-		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
+		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", stage, clientId, ringRound)
 		return tasks
 	}
 
-	m.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
+	m.updateRingRound(clientId, stage, data.GetRoundNumber())
 
-	taskCount := m.participatesInResults(clientId, data.GetStage())
+	taskCount := m.participatesInResults(clientId, stage)
 	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready {
-		err = m.addResultsToNextStage(tasks, data.GetStage(), clientId)
+	if ready && taskCount > 0 {
+		err = m.addResultsToNextStage(tasks, stage, clientId)
 		if err != nil {
-			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
+			log.Errorf("Failed to add results to next stage for stage %s: %s", stage, err)
 			return tasks
 		}
 	}

@@ -14,9 +14,9 @@ import (
 	"github.com/op/go-logging"
 )
 
-const SLEEP_TIME time.Duration = 1 * time.Second
+const SLEEP_TIME time.Duration = 5 * time.Second
 const DELAY_MULTIPLIER int = 2
-const MAX_RETRIES float64 = 6.0
+const MAX_RETRIES int = 7.0
 const QUERIES_AMOUNT int = 5
 
 var log = logging.MustGetLogger("log")
@@ -34,7 +34,7 @@ type ClientConfig struct {
 
 type Library struct {
 	socket        *client_communication.Socket
-	retryNumber   float64
+	retryNumber   int
 	responseCount int
 	isRunning     bool
 	config        ClientConfig
@@ -333,7 +333,7 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 			l.disconnectFromServer()
 
 			// Exponential backoff + jitter
-			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, l.retryNumber))) + jitter
+			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, float64(l.retryNumber)))) + jitter
 			l.retryNumber++
 			log.Warningf("action: waitForResultServerResponse | result: fail | retryNumber: %v | sleepTime: %v", l.retryNumber, sleepTime)
 			time.Sleep(sleepTime)
