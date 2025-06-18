@@ -1,6 +1,7 @@
 import sys
 
 PACKET_TTL = 120000  # 2 minutes
+CLIENT_QUEUE_TTL = 1800000  # 30 minutes
 
 FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 
@@ -387,6 +388,9 @@ class RabbitConfig:
         )
         lines.append(
             f'{" " * 2}leaderRK: "{LEADER_ROUTING_KEY}"\n'
+        )
+        lines.append(
+            f'{" " * 2}clientQueueTTL: "{CLIENT_QUEUE_TTL}"\n'
         )
 
         lines.append("rabbitmq:")

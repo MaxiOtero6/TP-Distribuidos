@@ -41,6 +41,7 @@ type RabbitConfig struct {
 	ControlBroadcastRK string
 	LeaderRK           string
 	HealthExchange     string
+	ClientQueueTTL     string
 }
 
 type InfraConfig struct {
@@ -192,4 +193,11 @@ func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) str
 
 func (i *InfraConfig) GetDirectory() string {
 	return i.volumeBaseDir
+}
+
+func (i *InfraConfig) GetClientQueueTTL() string {
+	if i.rabbit.ClientQueueTTL == "" {
+		return "1800000" // Default to 30 minutes if not set
+	}
+	return i.rabbit.ClientQueueTTL
 }

@@ -18,6 +18,8 @@ consts:
 
   leaderRK: "leader"
 
+  clientQueueTTL: "60000"
+
 rabbitmq:
   SERVER:
     exchanges:
