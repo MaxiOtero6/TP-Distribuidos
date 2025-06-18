@@ -61,7 +61,7 @@ func (p *ResultParser) handleResult1(data []*protocol.Result1_Data, taskIdentifi
 
 	}
 
-	p.results.Query1.ProccessResult(processResult, taskIdentifier)
+	p.results.Query1.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult2 processes the Result2 message from the server.
@@ -87,7 +87,7 @@ func (p *ResultParser) handleResult2(data []*protocol.Result2_Data, taskIdentifi
 		}
 	}
 
-	p.results.Query2.ProccessResult(processResult, taskIdentifier)
+	p.results.Query2.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult3 processes the Result3 message from the server.
@@ -119,7 +119,7 @@ func (p *ResultParser) handleResult3(data []*protocol.Result3_Data, taskIdentifi
 		p.results.Query3.Results["min"] = min
 	}
 
-	p.results.Query3.ProccessResult(processResult, taskIdentifier)
+	p.results.Query3.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult4 processes the Result4 message from the server.
@@ -150,7 +150,7 @@ func (p *ResultParser) handleResult4(data []*protocol.Result4_Data, taskIdentifi
 		}
 	}
 
-	p.results.Query4.ProccessResult(processResult, taskIdentifier)
+	p.results.Query4.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult5 processes the Result5 message from the server.
@@ -174,7 +174,7 @@ func (p *ResultParser) handleResult5(data []*protocol.Result5_Data, taskIdentifi
 		}
 	}
 
-	p.results.Query5.ProccessResult(processResult, taskIdentifier)
+	p.results.Query5.ProcessResult(processResult, taskIdentifier)
 }
 
 func (p *ResultParser) handleOmegaEOF(omegaEOF *protocol.OmegaEOF_Data) {

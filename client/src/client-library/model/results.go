@@ -50,7 +50,7 @@ func (qr *QueryResults[T]) IsComplete() bool {
 	return qr.omegaProcessed && qr.TaskCount == len(qr.TaskIdentifiers)
 }
 
-func (qr *QueryResults[T]) ProccessResult(processResult func(), taskIdentifier *protocol.TaskIdentifier) {
+func (qr *QueryResults[T]) ProcessResult(processResult func(), taskIdentifier *protocol.TaskIdentifier) {
 	taskID := model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
