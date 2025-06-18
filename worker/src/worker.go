@@ -144,9 +144,9 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
 	}
 
-	for exchange, stages := range subTasks {
-		for _, stage := range stages {
-			for routingKey, task := range stage {
+	for exchange, routingKeys := range subTasks {
+		for routingKey, tasks := range routingKeys {
+			for _, task := range tasks {
 				if task.GetRingEOF() != nil || task.GetOmegaEOF() != nil {
 					defer sendTask(exchange, routingKey, task)
 					continue

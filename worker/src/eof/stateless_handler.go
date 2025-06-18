@@ -46,14 +46,17 @@ func (h *StatelessEofHandler) HandleOmegaEOF(tasks common.Tasks, eofData *protoc
 			},
 		}
 
-		if _, exists := tasks[nextStageData.Exchange]; !exists {
-			tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
+		exchange := nextStageData.Exchange
+		routingKey := nextStageData.RoutingKey
+
+		if _, exists := tasks[exchange]; !exists {
+			tasks[exchange] = make(map[string][]*protocol.Task)
 		}
 
-		if _, exists := tasks[nextStageData.Exchange][nextStageData.Stage]; !exists {
-			tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+		if _, exists := tasks[exchange][routingKey]; !exists {
+			tasks[exchange][routingKey] = []*protocol.Task{}
 		}
 
-		tasks[nextStageData.Exchange][nextStageData.Stage][nextStageData.RoutingKey] = nextStageEOF
+		tasks[exchange][routingKey] = append(tasks[exchange][routingKey], nextStageEOF)
 	}
 }

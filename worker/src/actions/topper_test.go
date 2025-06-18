@@ -58,7 +58,7 @@ func TestTopperExecute(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.epsilonResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult2().GetData()
 
 		assert.Len(t, resultData, 5, "Expected 5 countries in the result")
@@ -105,7 +105,7 @@ func TestTopperExecute(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.epsilonResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult2().GetData()
 
 		assert.Len(t, resultData, 5, "Expected 5 countries in the result")
@@ -138,7 +138,7 @@ func TestTopperExecute(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.thetaResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult3().GetData()
 
 		assert.Len(t, resultData, 2, "Expected 2 movies in the result (highest and lowest)")
@@ -186,7 +186,7 @@ func TestTopperExecute(t *testing.T) {
 
 		taskToProcess := make(c.Tasks)
 		testTopper.thetaResultStage(taskToProcess, CLIENT_ID)
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult3().GetData()
 
 		assert.Len(t, resultData, 2, "Expected 2 movies in the result (highest and lowest)")
@@ -230,7 +230,7 @@ func TestTopperExecute(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.lambdaResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult4().GetData()
 
 		assert.Len(t, resultData, 10, "Expected 10 actors in the result")
@@ -290,7 +290,7 @@ func TestTopperExecute(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.lambdaResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult4().GetData()
 
 		assert.Len(t, resultData, 10, "Expected 10 actors in the result")
@@ -339,7 +339,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.epsilonResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult4().GetData()
 
 		assert.Len(t, resultData, 0, "Expected no tasks to be created for empty input")
@@ -364,7 +364,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.lambdaResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult4().GetData()
 
 		assert.Len(t, resultData, 0, "Expected no tasks to be created for empty input")
@@ -388,7 +388,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 		taskToProcess := make(c.Tasks)
 		testTopper.thetaResultStage(taskToProcess, CLIENT_ID)
 
-		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+		resultTask := taskToProcess[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 		resultData := resultTask.GetResult3().GetData()
 
 		assert.Len(t, resultData, 0, "Expected no tasks to be created for empty input")
@@ -449,10 +449,10 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 // 		tasks, err := testTopper.Execute(eofTask)
 // 		assert.NoError(t, err, "Expected no error during execution")
 
-// 		resultTask := tasks[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+// 		resultTask := tasks[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 // 		resultData := resultTask.GetResult2().GetData()
 // 		circularEofTask := tasks[testInfraConfig.GetTopExchange()][EPSILON_STAGE][testInfraConfig.GetNodeId()]
-// 		resultEofTask := tasks[testInfraConfig.GetResultExchange()][model.RESULT_5_STAGE][CLIENT_ID]
+// 		resultEofTask := tasks[testInfraConfig.GetResultExchange()][CLIENT_ID][0]
 
 // 		assert.Len(t, resultData, 5, "Expected 5 results for EOF arrival")
 // 		assert.NotNil(t, circularEofTask, "Expected EOF task to be present in the tasks")

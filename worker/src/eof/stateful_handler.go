@@ -49,18 +49,22 @@ func (h *StatefulEofHandler) nextWorkerRing(tasks common.Tasks, previousRingEOF 
 
 		exchange := nextStageData.Exchange
 		routingKey := nextStageData.RoutingKey
+
 		if parking {
 			exchange = h.infraConfig.GetParkingEOFExchange()
 			routingKey = string(h.workerType) + "_" + nextStageData.RoutingKey
 		}
 
 		if _, exists := tasks[exchange]; !exists {
-			tasks[exchange] = make(map[string]map[string]*protocol.Task)
+			tasks[exchange] = make(map[string][]*protocol.Task)
 		}
-		if _, exists := tasks[exchange][nextStageData.Stage]; !exists {
-			tasks[exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+
+		if _, exists := tasks[exchange][routingKey]; !exists {
+			tasks[exchange][routingKey] = []*protocol.Task{}
 		}
-		tasks[exchange][nextStageData.Stage][routingKey] = nextStageRing
+
+		tasks[exchange][routingKey] = append(tasks[exchange][routingKey], nextStageRing)
+
 	}
 }
 
@@ -102,13 +106,19 @@ func (h *StatefulEofHandler) nextStagesOmegaEOF(tasks common.Tasks, ringEOF *pro
 				},
 			},
 		}
-		if _, exists := tasks[nextStageData.Exchange]; !exists {
-			tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
+
+		exchange := nextStageData.Exchange
+		routingKey := nextStageData.RoutingKey
+
+		if _, exists := tasks[exchange]; !exists {
+			tasks[exchange] = make(map[string][]*protocol.Task)
 		}
-		if _, exists := tasks[nextStageData.Exchange][nextStageData.Stage]; !exists {
-			tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+
+		if _, exists := tasks[exchange][routingKey]; !exists {
+			tasks[exchange][routingKey] = []*protocol.Task{}
 		}
-		tasks[nextStageData.Exchange][nextStageData.Stage][nextStageData.RoutingKey] = nextStageOmegaEof
+
+		tasks[exchange][routingKey] = append(tasks[exchange][routingKey], nextStageOmegaEof)
 	}
 }
 

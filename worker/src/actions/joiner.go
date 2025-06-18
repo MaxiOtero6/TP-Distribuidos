@@ -684,11 +684,11 @@ func joinerAddResults[T any](
 	identifierFunc func(input T) string,
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
 ) int {
-	if _, ok := tasks[nextStageData.Exchange]; !ok {
-		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
-	}
-	if _, ok := tasks[nextStageData.Exchange][nextStageData.Stage]; !ok {
-		tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+
+	exchange := nextStageData.Exchange
+
+	if _, ok := tasks[exchange]; !ok {
+		tasks[exchange] = make(map[string][]*protocol.Task)
 	}
 
 	dataByNode := make(map[string][]T)
@@ -715,12 +715,17 @@ func joinerAddResults[T any](
 
 	for index, nodeId := range destinationNodes {
 		taskIdentifier := createTaskIdentifier(nodeId, index)
-		tasks[nextStageData.Exchange][nextStageData.Stage][nodeId] = taskDataCreator(
+		task := taskDataCreator(
 			nextStageData.Stage,
 			dataByNode[nodeId],
 			clientId,
 			taskIdentifier,
 		)
+
+		if _, ok := tasks[exchange][nodeId]; !ok {
+			tasks[exchange][nodeId] = []*protocol.Task{}
+		}
+		tasks[exchange][nodeId] = append(tasks[exchange][nodeId], task)
 	}
 
 	return len(destinationNodes)

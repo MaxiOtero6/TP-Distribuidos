@@ -72,10 +72,7 @@ func AddResults[T any](
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
 ) {
 	if _, ok := tasks[nextStageData.Exchange]; !ok {
-		tasks[nextStageData.Exchange] = make(map[string]map[string]*protocol.Task)
-	}
-	if _, ok := tasks[nextStageData.Exchange][nextStageData.Stage]; !ok {
-		tasks[nextStageData.Exchange][nextStageData.Stage] = make(map[string]*protocol.Task)
+		tasks[nextStageData.Exchange] = make(map[string][]*protocol.Task)
 	}
 
 	dataByNode := make(map[string][]T)
@@ -105,12 +102,16 @@ func AddResults[T any](
 
 	for index, nodeId := range destinationNodes {
 		taskIdentifier := createTaskIdentifier(nodeId, index)
-		tasks[nextStageData.Exchange][nextStageData.Stage][nodeId] = taskDataCreator(
+		task := taskDataCreator(
 			nextStageData.Stage,
 			dataByNode[nodeId],
 			clientId,
 			taskIdentifier,
 		)
+		if _, ok := tasks[nextStageData.Exchange][nodeId]; !ok {
+			tasks[nextStageData.Exchange][nodeId] = []*protocol.Task{}
+		}
+		tasks[nextStageData.Exchange][nodeId] = append(tasks[nextStageData.Exchange][nodeId], task)
 	}
 }
 
