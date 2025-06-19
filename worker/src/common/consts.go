@@ -41,6 +41,7 @@ const RESULT_STAGE string = "result"
 
 // EOF
 const RING_STAGE string = "ringEOF"
+const OMEGA_STAGE string = "omegaEOF"
 
 // Consts for tests
 const TEST_WORKER_COUNT int = 1

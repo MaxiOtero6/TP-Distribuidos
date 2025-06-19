@@ -407,12 +407,20 @@ func CommitPartialDataToFinal(dir string, stage interface{}, sourceType string, 
 	return nil
 }
 
-func DeletePartialResults(dir string, clientId string, stage string, sourceType string) error {
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
-	return os.RemoveAll(dirPath)
+func DeletePartialResults(dir string, stage interface{}, sourceType string, clientId string) error {
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+	//TODO hablar bien este caso con Maxi, no se si me falta algun caso en particular
+	if stringStage == common.OMEGA_STAGE || stringStage == common.RING_STAGE {
+		dirPath := filepath.Join(dir, stringStage, sourceType, clientId)
+		return os.RemoveAll(dirPath)
+	}
+	return nil
 }
 
-func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
+func SaveDataToFile[T any](dir string, clientId string, stage string, sourceType string, data common.PartialData[T]) error {
 
 	dirPath := filepath.Join(dir, stage, sourceType, clientId)
 	err := os.MkdirAll(dirPath, os.ModePerm)
@@ -547,6 +555,44 @@ func StartCleanupRoutine(dir string) {
 	}
 }
 
+func CompareMergerPartialResultsMap(
+	expected, actual map[string]*common.MergerPartialResults,
+) bool {
+	if len(expected) != len(actual) {
+		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
+		return false
+	}
+	for clientID, expectedResult := range expected {
+		actualResult, ok := actual[clientID]
+		if !ok {
+			log.Errorf("Client %s not found in actual results", clientID)
+			return false
+		}
+		// Comparar Delta3
+		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
+			log.Errorf("Delta3 mismatch for client %s", clientID)
+			return false
+		}
+
+		// Comparar Eta3
+		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
+			log.Errorf("Eta3 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Kappa3
+		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
+			log.Errorf("Kappa3 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Nu3Data
+		if !compareStruct(expectedResult.Nu3Data, actualResult.Nu3Data) {
+			log.Errorf("Nu3Data mismatch for client %s", clientID)
+			return false
+		}
+	}
+	return true
+}
+
 // func cleanUpOldFiles(dir string) error {
 // 	files, err := os.ReadDir(dir)
 // 	if err != nil {
@@ -579,8 +625,9 @@ func saveDataToFile(tempFilePath string, data interface{}) error {
 		Indent:          "  ", // Pretty print
 		EmitUnpopulated: true, // Include unpopulated fields
 	}
+	//return processTypedStruct(data, tempFilePath, marshaler)
 
-	switch v := data.(type) {
+	switch v := any(data).(type) {
 	case map[string]*protocol.Epsilon_Data:
 		return processTypedMap(v, tempFilePath, marshaler)
 
@@ -1337,6 +1384,8 @@ func getStageNameFromInterface(stage interface{}) (string, error) {
 		return common.RESULT_STAGE, nil
 	case *protocol.Task_RingEOF:
 		return common.RING_STAGE, nil
+	case *protocol.Task_OmegaEOF:
+		return common.OMEGA_STAGE, nil
 	default:
 		return "", fmt.Errorf("unknown stage type")
 	}
@@ -1484,44 +1533,6 @@ func compareStruct(expected, actual interface{}) bool {
 				log.Errorf("Field %s does not match: expected %v, got %v", fieldName, expectedField, actualField)
 				return false
 			}
-		}
-	}
-	return true
-}
-
-func CompareMergerPartialResultsMap(
-	expected, actual map[string]*common.MergerPartialResults,
-) bool {
-	if len(expected) != len(actual) {
-		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
-		return false
-	}
-	for clientID, expectedResult := range expected {
-		actualResult, ok := actual[clientID]
-		if !ok {
-			log.Errorf("Client %s not found in actual results", clientID)
-			return false
-		}
-		// Comparar Delta3
-		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
-			log.Errorf("Delta3 mismatch for client %s", clientID)
-			return false
-		}
-
-		// Comparar Eta3
-		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
-			log.Errorf("Eta3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Kappa3
-		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
-			log.Errorf("Kappa3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Nu3Data
-		if !compareStruct(expectedResult.Nu3Data, actualResult.Nu3Data) {
-			log.Errorf("Nu3Data mismatch for client %s", clientID)
-			return false
 		}
 	}
 	return true
