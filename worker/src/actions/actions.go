@@ -7,24 +7,19 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 	"github.com/op/go-logging"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.MustGetLogger("log")
 
-type PartialData[T any] struct {
-	data           map[string]T
-	taskFragments  map[model.TaskFragmentIdentifier]struct{}
-	omegaProcessed bool
-	ringRound      uint32
-}
-
-func NewPartialData[T any]() *PartialData[T] {
-	return &PartialData[T]{
-		data:           make(map[string]T),
-		taskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
-		omegaProcessed: false,
-		ringRound:      0,
+func NewPartialData[T proto.Message]() *common.PartialData[T] {
+	return &common.PartialData[T]{
+		Data:           make(map[string]T),
+		TaskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
+		OmegaProcessed: false,
+		RingRound:      0,
 	}
 }
 
@@ -115,13 +110,17 @@ func AddResults[T any](
 	}
 }
 
-func ProcessStage[T any](
-	partial *PartialData[*T],
-	newItems []*T,
+func ProcessStage[T proto.Message](
+	partial *common.PartialData[T],
+	newItems []T,
 	clientID string,
 	taskIdentifier *protocol.TaskIdentifier,
-	merge func(*T, *T),
-	keySelector func(*T) string,
+	merge func(T, T),
+	keySelector func(T) string,
+	infraConfig *model.InfraConfig,
+	stage string,
+	fileType string,
+
 ) {
 
 	taskID := model.TaskFragmentIdentifier{
@@ -131,14 +130,15 @@ func ProcessStage[T any](
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
-	if _, processed := partial.taskFragments[taskID]; processed {
+	if _, processed := partial.TaskFragments[taskID]; processed {
 		// Task already handled
 		return
 	}
 
 	// Mark task as processed
-	partial.taskFragments[taskID] = struct{}{}
+	partial.TaskFragments[taskID] = struct{}{}
 
 	// Aggregate data
-	utils.MergeIntoMap(partial.data, newItems, keySelector, merge)
+	utils.MergeIntoMap(partial.Data, newItems, keySelector, merge)
+	storage.SaveDataToFile(infraConfig.GetDirectory(), clientID, stage, fileType, partial)
 }
