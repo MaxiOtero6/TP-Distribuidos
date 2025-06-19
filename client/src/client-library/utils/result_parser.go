@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/MaxiOtero6/TP-Distribuidos/client/src/client-library/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+	m "github.com/MaxiOtero6/TP-Distribuidos/common/model"
 )
 
 var QUERIES_AMOUNT int = 5
@@ -11,8 +12,7 @@ var QUERIES_AMOUNT int = 5
 // and stores them in a Results struct.
 // It also keeps track of the number of EOF messages received.
 type ResultParser struct {
-	results  model.Results
-	eofCount int
+	results model.Results
 }
 
 // NewResultParser creates a new ResultParser instance
@@ -20,20 +20,23 @@ type ResultParser struct {
 func NewResultParser() *ResultParser {
 	return &ResultParser{
 		results: model.Results{
-			Query1: make([]*model.Query1, 0),
-			Query2: make([]*model.Query2, 0),
-			Query3: make(map[string]*model.Query3, 0),
-			Query4: make([]*model.Query4, 0),
-			Query5: make(map[string]*model.Query5, 0),
+			Query1: model.NewQueryResults(make([]*model.Query1, 0)),
+			Query2: model.NewQueryResults(make([]*model.Query2, 0)),
+			Query3: model.NewQueryResults(make(map[string]*model.Query3, 0)),
+			Query4: model.NewQueryResults(make([]*model.Query4, 0)),
+			Query5: model.NewQueryResults(make(map[string]*model.Query5, 0)),
 		},
-		eofCount: 0,
 	}
 }
 
 // IsDone checks if the ResultParser has received the expected number of EOF messages.
 // If it has, it means that all results have been received and processed.
 func (p *ResultParser) IsDone() bool {
-	return p.eofCount >= QUERIES_AMOUNT
+	return p.results.Query1.IsComplete() &&
+		p.results.Query2.IsComplete() &&
+		p.results.Query3.IsComplete() &&
+		p.results.Query4.IsComplete() &&
+		p.results.Query5.IsComplete()
 }
 
 // GetResults returns the parsed results at the moment.
@@ -44,16 +47,21 @@ func (p *ResultParser) GetResults() *model.Results {
 // handleResult1 processes the Result1 message from the server.
 // It extracts the movie ID, title, and genres from the message
 // and appends them to the Query1 slice in the results struct.
-func (p *ResultParser) handleResult1(result *protocol.Result1) {
-	for _, data := range result.GetData() {
-		query1 := &model.Query1{
-			MovieId: data.GetId(),
-			Title:   data.GetTitle(),
-			Genres:  data.GetGenres(),
+func (p *ResultParser) handleResult1(data []*protocol.Result1_Data, taskIdentifier *protocol.TaskIdentifier) {
+	processResult := func() {
+		for _, data := range data {
+			query1 := &model.Query1{
+				MovieId: data.GetId(),
+				Title:   data.GetTitle(),
+				Genres:  data.GetGenres(),
+			}
+
+			p.results.Query1.Results = append(p.results.Query1.Results, query1)
 		}
 
-		p.results.Query1 = append(p.results.Query1, query1)
 	}
+
+	p.results.Query1.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult2 processes the Result2 message from the server.
@@ -62,31 +70,24 @@ func (p *ResultParser) handleResult1(result *protocol.Result1) {
 // It also checks if the number of countries returned is within the expected range (up to 5).
 // If the number of countries exceeds 5, an error is logged.
 // If the Query2 slice already contains data, an error is logged.
-func (p *ResultParser) handleResult2(result *protocol.Result2) {
-	allData := result.GetData()
-
-	// Less countries can be returned, but not more than 5
-	// This is because the server sends a batch of more than 5 countries, but the client can
-	// receive less than 5 countries if in the processing of the batch
-	// the server has less than 5 countries
-	if len(allData) > 5 {
-		log.Errorf("action: handleResult2 | result: fail | error: expected up to 5 elements, got %d", len(allData))
+func (p *ResultParser) handleResult2(data []*protocol.Result2_Data, taskIdentifier *protocol.TaskIdentifier) {
+	if len(data) > 5 {
+		log.Errorf("action: handleResult2 | result: fail | error: expected up to 5 elements, got %d", len(data))
 		return
 	}
 
-	if len(p.results.Query2) != 0 {
-		log.Errorf("action: handleResult2 | result: fail | error: Query2 already exists")
-		return
-	}
+	processResult := func() {
+		for _, data := range data {
+			query2 := &model.Query2{
+				Country:         data.GetCountry(),
+				TotalInvestment: data.GetTotalInvestment(),
+			}
 
-	for _, data := range allData {
-		query2 := &model.Query2{
-			Country:         data.GetCountry(),
-			TotalInvestment: data.GetTotalInvestment(),
+			p.results.Query2.Results = append(p.results.Query2.Results, query2)
 		}
-
-		p.results.Query2 = append(p.results.Query2, query2)
 	}
+
+	p.results.Query2.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult3 processes the Result3 message from the server.
@@ -97,36 +98,28 @@ func (p *ResultParser) handleResult2(result *protocol.Result2) {
 // It also checks if the number of elements in the data slice is exactly 2.
 // If not, an error is logged.
 // The maximum and minimum ratings are stored in the map with keys "max" and "min".
-func (p *ResultParser) handleResult3(result *protocol.Result3) {
-	if _, ok := p.results.Query3["max"]; ok {
-		log.Errorf("action: handleResult3 | result: fail | error: max already exists")
-		return
-	}
-
-	if _, ok := p.results.Query3["min"]; ok {
-		log.Errorf("action: handleResult3 | result: fail | error: min already exists")
-		return
-	}
-
-	data := result.GetData()
-
+func (p *ResultParser) handleResult3(data []*protocol.Result3_Data, taskIdentifier *protocol.TaskIdentifier) {
 	if len(data) != 2 {
 		log.Errorf("action: handleResult3 | result: fail | error: expected 2 elements, got %d", len(data))
 		return
 	}
 
-	max := &model.Query3{
-		AvgRating: data[0].GetRating(),
-		Title:     data[0].GetTitle(),
+	processResult := func() {
+		max := &model.Query3{
+			AvgRating: data[0].GetRating(),
+			Title:     data[0].GetTitle(),
+		}
+
+		min := &model.Query3{
+			AvgRating: data[1].GetRating(),
+			Title:     data[1].GetTitle(),
+		}
+
+		p.results.Query3.Results["max"] = max
+		p.results.Query3.Results["min"] = min
 	}
 
-	min := &model.Query3{
-		AvgRating: data[1].GetRating(),
-		Title:     data[1].GetTitle(),
-	}
-
-	p.results.Query3["max"] = max
-	p.results.Query3["min"] = min
+	p.results.Query3.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult4 processes the Result4 message from the server.
@@ -136,30 +129,28 @@ func (p *ResultParser) handleResult3(result *protocol.Result3) {
 // If the number of actors exceeds 10, an error is logged.
 // If the Query4 slice already contains data, an error is logged.
 // The actors are stored in the Query4 slice.
-func (p *ResultParser) handleResult4(result *protocol.Result4) {
-	allData := result.GetData()
-
+func (p *ResultParser) handleResult4(data []*protocol.Result4_Data, taskIdentifier *protocol.TaskIdentifier) {
 	// Less actors can be returned, but not more than 10
 	// This is because the server sends a batch of 10 actors, but the client can
 	// receive less than 10 actors if the server has less than 10 actors
-	if len(allData) > 10 {
-		log.Errorf("action: handleResult4 | result: fail | error: expected up to 10 elements, got %d", len(allData))
+	if len(data) > 10 {
+		log.Errorf("action: handleResult4 | result: fail | error: expected up to 10 elements, got %d", len(data))
 		return
 	}
 
-	if len(p.results.Query4) != 0 {
-		log.Errorf("action: handleResult4 | result: fail | error: Query4 already exists")
-		return
-	}
+	processResult := func() {
+		for _, data := range data {
+			query4 := &model.Query4{
+				ActorId:        data.GetActorId(),
+				ActorName:      data.GetActorName(),
+				Participations: data.GetParticipations(),
+			}
 
-	for _, data := range allData {
-		query4 := &model.Query4{
-			ActorId:        data.GetActorId(),
-			ActorName:      data.GetActorName(),
-			Participations: data.GetParticipations(),
+			p.results.Query4.Results = append(p.results.Query4.Results, query4)
 		}
-		p.results.Query4 = append(p.results.Query4, query4)
 	}
+
+	p.results.Query4.ProcessResult(processResult, taskIdentifier)
 }
 
 // handleResult5 processes the Result5 message from the server.
@@ -167,45 +158,69 @@ func (p *ResultParser) handleResult4(result *protocol.Result4) {
 // and stores it in the Query5 map in the results struct.
 // It checks if the negative and positive keys already exist in the map.
 // If they do, an error is logged.
-func (p *ResultParser) handleResult5(result *protocol.Result5) {
-	data := result.GetData()
+func (p *ResultParser) handleResult5(data []*protocol.Result5_Data, taskIdentifier *protocol.TaskIdentifier) {
+	processResult := func() {
+		for _, d := range data {
+			var key string
+			if d.GetSentiment() {
+				key = "POSITIVE"
+			} else {
+				key = "NEGATIVE"
+			}
 
-	for _, d := range data {
-		var key string
-
-		if d.GetSentiment() {
-			key = "POSITIVE"
-		} else {
-			key = "NEGATIVE"
+			p.results.Query5.Results[key] = &model.Query5{
+				RevenueBudgetRatio: d.GetRatio(),
+			}
 		}
+	}
 
-		p.results.Query5[key] = &model.Query5{
-			RevenueBudgetRatio: d.GetRatio(),
-		}
+	p.results.Query5.ProcessResult(processResult, taskIdentifier)
+}
+
+func (p *ResultParser) handleOmegaEOF(omegaEOF *protocol.OmegaEOF_Data) {
+	query := omegaEOF.GetStage()
+
+	switch query {
+	case m.RESULT_1_STAGE:
+		p.results.Query1.ProcessOmega(omegaEOF)
+	case m.RESULT_2_STAGE:
+		p.results.Query2.ProcessOmega(omegaEOF)
+	case m.RESULT_3_STAGE:
+		p.results.Query3.ProcessOmega(omegaEOF)
+	case m.RESULT_4_STAGE:
+		p.results.Query4.ProcessOmega(omegaEOF)
+	case m.RESULT_5_STAGE:
+		p.results.Query5.ProcessOmega(omegaEOF)
+	default:
+		log.Errorf("action: handleOmegaEOF | result: fail | error: unknown query stage: %s", query)
+		return
 	}
 }
 
 func (p *ResultParser) Save(results *protocol.ResultsResponse) {
 	for _, result := range results.GetResults() {
+		taskIdentifier := result.GetTaskIdentifier()
+
 		switch result.Message.(type) {
 		case *protocol.ResultsResponse_Result_Result1:
 			log.Debugf("action: Save | result: success | Result1 received")
-			p.handleResult1(result.GetResult1())
+			p.handleResult1(result.GetResult1().GetData(), taskIdentifier)
 		case *protocol.ResultsResponse_Result_Result2:
 			log.Debugf("action: Save | result: success | Result2 received")
-			p.handleResult2(result.GetResult2())
+			p.handleResult2(result.GetResult2().GetData(), taskIdentifier)
 		case *protocol.ResultsResponse_Result_Result3:
 			log.Debugf("action: Save | result: success | Result3 received")
-			p.handleResult3(result.GetResult3())
+			p.handleResult3(result.GetResult3().GetData(), taskIdentifier)
 		case *protocol.ResultsResponse_Result_Result4:
 			log.Debugf("action: Save | result: success | Result4 received")
-			p.handleResult4(result.GetResult4())
+			p.handleResult4(result.GetResult4().GetData(), taskIdentifier)
 		case *protocol.ResultsResponse_Result_Result5:
 			log.Debugf("action: Save | result: success | Result5 received")
-			p.handleResult5(result.GetResult5())
+			p.handleResult5(result.GetResult5().GetData(), taskIdentifier)
 		case *protocol.ResultsResponse_Result_OmegaEOF:
-			p.eofCount++
-			log.Debugf("action: Save | result: success | EOF received | eofCount: %d", p.eofCount)
+			data := result.GetOmegaEOF().GetData()
+			log.Debugf("action: Save | result: success | EOF received | Query: %s | TaskCount: %d", data.GetStage(), data.GetTasksCount())
+			p.handleOmegaEOF(data)
 		}
 	}
 }

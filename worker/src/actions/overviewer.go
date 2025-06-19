@@ -7,7 +7,9 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
+
+	// "github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
 	"github.com/cdipaolo/sentiment"
 )
 
@@ -17,25 +19,33 @@ type Overviewer struct {
 	infraConfig    *model.InfraConfig
 	itemHashFunc   func(workersCount int, item string) string
 	randomHashFunc func(workersCount int) string
-	eofHandler     eof_handler.IEOFHandler
+	eofHandler     *eof.StatelessEofHandler
 }
 
 // NewOverviewer creates a new Overviewer instance.
 // It loads the sentiment model and initializes the worker count.
 // If the model fails to load, it panics with an error message.
-func NewOverviewer(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Overviewer {
+func NewOverviewer(infraConfig *model.InfraConfig) *Overviewer {
 	model, err := sentiment.Restore()
 	if err != nil {
 		log.Panicf("Failed to load sentiment model: %s", err)
 	}
 
-	return &Overviewer{
+	eofHandler := eof.NewStatelessEofHandler(
+		infraConfig,
+		overviewerNextStageData,
+		utils.GetWorkerIdFromHash,
+	)
+
+	o := &Overviewer{
 		model:          model,
 		infraConfig:    infraConfig,
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		randomHashFunc: utils.RandomHash,
 		eofHandler:     eofHandler,
 	}
+
+	return o
 }
 
 /*
@@ -55,60 +65,77 @@ Return example
 		}
 	}
 */
-func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId string) (tasks common.Tasks) {
-	MAP_EXCHANGE := o.infraConfig.GetMapExchange()
+func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId, creatorId string, taskNumber int) common.Tasks {
+	tasks := make(common.Tasks)
 
-	tasks = make(common.Tasks)
-	tasks[MAP_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	tasks[MAP_EXCHANGE][common.NU_STAGE_1] = make(map[string]*protocol.Task)
-	nuData := make(map[string][]*protocol.Nu_1_Data)
+	filteredData := utils.FilterSlice(data, func(input *protocol.Mu_Data) bool {
+		return input.GetBudget() != 0 && input.GetRevenue() != 0 && input.GetOverview() != ""
+	})
 
-	for _, movie := range data {
-		if movie == nil {
-			continue
+	mappedData := utils.MapSlice(filteredData, func(_ int, input *protocol.Mu_Data) *protocol.Nu_1_Data {
+		return &protocol.Nu_1_Data{
+			Id:        input.GetId(),
+			Title:     input.GetTitle(),
+			Revenue:   input.GetRevenue(),
+			Budget:    input.GetBudget(),
+			Sentiment: o.model.SentimentAnalysis(input.GetOverview(), sentiment.English).Score == 1,
 		}
+	})
 
-		if movie.GetBudget() == 0 || movie.GetRevenue() == 0 {
-			continue
-		}
+	groupedData := utils.GroupByKey(mappedData, func(item *protocol.Nu_1_Data) string {
+		return item.Id
+	}, func(acc *protocol.Nu_1_Data, item *protocol.Nu_1_Data) {
+		acc.Revenue += item.GetRevenue()
+		acc.Budget += item.GetBudget()
+	})
 
-		analysis := o.model.SentimentAnalysis(movie.GetOverview(), sentiment.English)
-		// mapIdHash := o.itemHashFunc(MAP_COUNT, movie.GetId())
+	nextStagesData, _ := o.nextStageData(common.MU_STAGE, clientId)
 
-		// true: POSITIVE
-		// false: NEGATIVE
-		nuData[""] = append(nuData[""], &protocol.Nu_1_Data{
-			Id:        movie.GetId(),
-			Title:     movie.GetTitle(),
-			Revenue:   movie.GetRevenue(),
-			Budget:    movie.GetBudget(),
-			Sentiment: analysis.Score == 1,
-		})
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
 	}
 
-	for nodeId, data := range nuData {
-		tasks[MAP_EXCHANGE][common.NU_STAGE_1][nodeId] = &protocol.Task{
+	identifierFunc := func(input *protocol.Nu_1_Data) string {
+		return input.Id
+	}
+
+	taskDataCreator := func(stage string, data []*protocol.Nu_1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Nu_1{
 				Nu_1: &protocol.Nu_1{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
 
 	return tasks
 }
 
-func (o *Overviewer) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+func (o *Overviewer) handleOmegaEOF(eofData *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+	o.eofHandler.HandleOmegaEOF(tasks, eofData, clientId)
+
+	return tasks
+}
+
+func (o *Overviewer) nextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+	return overviewerNextStageData(stage, clientId, o.infraConfig, o.itemHashFunc)
+}
+
+func overviewerNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
 	switch stage {
 	case common.MU_STAGE:
 		return []common.NextStageData{
 			{
 				Stage:       common.NU_STAGE_1,
-				Exchange:    o.infraConfig.GetMapExchange(),
-				WorkerCount: o.infraConfig.GetMapCount(),
-				RoutingKey:  o.infraConfig.GetBroadcastID(),
+				Exchange:    infraConfig.GetMapExchange(),
+				WorkerCount: infraConfig.GetMapCount(),
+				RoutingKey:  infraConfig.GetBroadcastID(),
 			},
 		}, nil
 	default:
@@ -117,32 +144,20 @@ func (o *Overviewer) getNextStageData(stage string, clientId string) ([]common.N
 	}
 }
 
-func (o *Overviewer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	return o.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
-}
-
-func (o *Overviewer) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// For overviewers eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	return o.eofHandler.HandleRing(data, clientId, o.getNextStageData, true)
-}
-
 func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	creatorId := task.GetTaskIdentifier().GetCreatorId()
+	taskNumber := int(task.GetTaskIdentifier().GetTaskNumber())
 
 	switch v := stage.(type) {
 	case *protocol.Task_Mu:
 		data := v.Mu.GetData()
-		return o.muStage(data, clientId), nil
+		return o.muStage(data, clientId, creatorId, taskNumber), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-		return o.omegaEOFStage(data, clientId), nil
-
-	case *protocol.Task_RingEOF:
-		return o.ringEOFStage(v.RingEOF, clientId), nil
+		return o.handleOmegaEOF(data, clientId), nil
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)

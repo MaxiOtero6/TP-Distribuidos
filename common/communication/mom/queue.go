@@ -35,16 +35,28 @@ type queue struct {
 func newQueue(ch *amqp.Channel, name string, args map[string]string) *queue {
 	qArgs := amqp.Table{}
 
-	if v, ok := args["expires"]; ok {
+	if v, ok := args["expires"]; ok && v != "" {
 		if val, err := strconv.Atoi(v); err == nil {
+			log.Debugf("Setting expires for queue '%v': %v", name, v)
 			qArgs["x-expires"] = val
 		} else {
 			log.Warningf("expires is not an int: %v", v)
 		}
 	}
 
-	if v, ok := args["ttl"]; ok {
+	if v, ok := args["dlx_exchange"]; ok && v != "" {
+		log.Debugf("Setting dead letter exchange for queue '%v': %v", name, v)
+		qArgs["x-dead-letter-exchange"] = v
+	}
+
+	if v, ok := args["dlx_routingKey"]; ok && v != "" {
+		log.Debugf("Setting dead letter routing key for queue '%v': %v", name, v)
+		qArgs["x-dead-letter-routing-key"] = v
+	}
+
+	if v, ok := args["ttl"]; ok && v != "" {
 		if val, err := strconv.Atoi(v); err == nil {
+			log.Debugf("Setting message TTL for queue '%v': %v", name, v)
 			qArgs["x-message-ttl"] = val
 		} else {
 			log.Warningf("ttl is not an int: %v", v)

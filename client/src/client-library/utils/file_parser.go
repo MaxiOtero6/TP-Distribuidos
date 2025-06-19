@@ -49,17 +49,17 @@ func NewParser(maxBatch int, filename string, fileType protocol.FileType) (*Pars
 	}, nil
 }
 
-func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
+func (p *Parser) ReadBatch(clientId string, batchNumber int) (*protocol.Message, error) {
 
 	batchMessage := &protocol.Message{
 		Message: &protocol.Message_ClientServerMessage{
 			ClientServerMessage: &protocol.ClientServerMessage{
 				Message: &protocol.ClientServerMessage_Batch{
 					Batch: &protocol.Batch{
-						Type:     p.fileType,
-						Data:     make([]*protocol.Batch_Row, 0),
-						ClientId: clientId,
-						EOF:      false,
+						Type:        p.fileType,
+						Data:        make([]*protocol.Batch_Row, 0),
+						ClientId:    clientId,
+						BatchNumber: uint32(batchNumber),
 					},
 				},
 			},
@@ -81,24 +81,29 @@ func (p *Parser) ReadBatch(clientId string) (*protocol.Message, error) {
 
 	for {
 		line, err := p.bufReader.ReadString(COMMUNICATION_DELIMITER)
+
+		// EOF with no data left
+		if len(line) == 0 && err == io.EOF {
+			if len(batch.Data) > 0 {
+				break
+			}
+			return nil, io.EOF
+		}
+
+		// Error reading (not EOF)
 		if err != nil && err != io.EOF {
 			return nil, err
 		}
 
+		// If batch would overflow, save for next call
 		if totalSize+len(line) > p.maxSize {
 			p.leftoverLine = line
 			break
 		}
 
-		if len(line) > 0 {
-			batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
-			totalSize += len(line)
-		}
-
-		if err == io.EOF {
-			batch.EOF = true
-			return batchMessage, io.EOF
-		}
+		// Add line to batch
+		batch.Data = append(batch.Data, &protocol.Batch_Row{Data: line})
+		totalSize += len(line)
 	}
 
 	return batchMessage, nil

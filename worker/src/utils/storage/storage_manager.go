@@ -26,7 +26,12 @@ const TEMPORARY_FILE_NAME = "data_temp.json"
 
 var log = logging.MustGetLogger("log")
 
-// var processTypedMapFirstTime = true
+// func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data any) error {
+// 	err := os.MkdirAll(dir, os.ModePerm)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to create directory: %w", err)
+// 	}
+// }
 
 type OutputFile struct {
 	Data          interface{} `json:"data"`
@@ -1372,16 +1377,16 @@ func getStageNameFromInterface(stage interface{}) (string, error) {
 		return common.NU_STAGE_2, nil
 	case *protocol.Task_Nu_3:
 		return common.NU_STAGE_3, nil
-	case *protocol.Task_Result1:
-		return common.RESULT_STAGE, nil
-	case *protocol.Task_Result2:
-		return common.RESULT_STAGE, nil
-	case *protocol.Task_Result3:
-		return common.RESULT_STAGE, nil
-	case *protocol.Task_Result4:
-		return common.RESULT_STAGE, nil
-	case *protocol.Task_Result5:
-		return common.RESULT_STAGE, nil
+	// case *protocol.Task_Result1:
+	// 	return common.RESULT_STAGE, nil
+	// case *protocol.Task_Result2:
+	// 	return common.RESULT_STAGE, nil
+	// case *protocol.Task_Result3:
+	// 	return common.RESULT_STAGE, nil
+	// case *protocol.Task_Result4:
+	// 	return common.RESULT_STAGE, nil
+	// case *protocol.Task_Result5:
+	// 	return common.RESULT_STAGE, nil
 	case *protocol.Task_RingEOF:
 		return common.RING_STAGE, nil
 	case *protocol.Task_OmegaEOF:

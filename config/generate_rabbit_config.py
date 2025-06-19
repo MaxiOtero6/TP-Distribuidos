@@ -1,6 +1,7 @@
 import sys
 
 PACKET_TTL = 120000  # 2 minutes
+CLIENT_QUEUE_TTL = 1800000  # 30 minutes
 
 FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 
@@ -8,7 +9,7 @@ OVERVIEW_EXCHANGE = {"name": "overviewExchange", "kind": "fanout"}
 
 MAP_EXCHANGE = {"name": "mapExchange", "kind": "fanout"}
 
-REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "fanout"}
+REDUCE_EXCHANGE = {"name": "reduceExchange", "kind": "direct"}
 
 JOIN_EXCHANGE = {"name": "joinExchange", "kind": "direct"}
 
@@ -30,7 +31,7 @@ OVERVIEW_QUEUE = {"name": "overviewQueue"}
 
 MAP_QUEUE = {"name": "mapQueue"}
 
-REDUCE_QUEUE = {"name": "reduceQueue"}
+REDUCE_QUEUE = {"name": ""}
 
 JOIN_QUEUE = {"name": ""}
 
@@ -49,6 +50,11 @@ BROADCAST_ID = ""
 BROADCAST_EOF_ROUTING_KEY = "eof"
 PING_ROUTING_KEY = "ping"
 LEADER_ROUTING_KEY = "leader"
+
+PARKING_EOF_EXCHANGE = {
+    "name": "parkingEofExchange",
+    "kind": "direct",
+}
 
 
 class Server:
@@ -212,6 +218,10 @@ class Reduce:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 6}controlExchange:')
         lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
@@ -244,6 +254,10 @@ class Join:
         lines.append(f'{" " * 6}eofExchange:')
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 6}controlExchange:')
         lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
@@ -282,6 +296,10 @@ class Merge:
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
         lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
+        lines.append("")
         lines.append(f'{" " * 6}controlExchange:')
         lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{CONTROL_EXCHANGE["kind"]}"')
@@ -314,6 +332,10 @@ class Top:
         lines.append(f'{" " * 6}eofExchange:')
         lines.append(f'{" " * 8}name: "{EOF_EXCHANGE["name"]}"')
         lines.append(f'{" " * 8}kind: "{EOF_EXCHANGE["kind"]}"')
+        lines.append("")
+        lines.append(f'{" " * 6}parkingEofExchange:')
+        lines.append(f'{" " * 8}name: "{PARKING_EOF_EXCHANGE["name"]}"')
+        lines.append(f'{" " * 8}kind: "{PARKING_EOF_EXCHANGE["kind"]}"')
         lines.append("")
         lines.append(f'{" " * 6}controlExchange:')
         lines.append(f'{" " * 8}name: "{CONTROL_EXCHANGE["name"]}"')
@@ -367,6 +389,7 @@ class RabbitConfig:
             "topExchange": TOP_EXCHANGE,
             "resultExchange": RESULT_EXCHANGE,
             "eofExchange": EOF_EXCHANGE,
+            "parkingEofExchange": PARKING_EOF_EXCHANGE,
             "controlExchange": CONTROL_EXCHANGE,
             "healthExchange": HEALTH_EXCHANGE,
         }
@@ -387,6 +410,9 @@ class RabbitConfig:
         )
         lines.append(
             f'{" " * 2}leaderRK: "{LEADER_ROUTING_KEY}"\n'
+        )
+        lines.append(
+            f'{" " * 2}clientQueueTTL: "{CLIENT_QUEUE_TTL}"\n'
         )
 
         lines.append("rabbitmq:")

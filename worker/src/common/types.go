@@ -5,7 +5,8 @@ import (
 	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
 )
 
-type Tasks map[string]map[string]map[string]*protocol.Task
+// map[Exchange][RoutingKey][]*protocol.Task
+type Tasks map[string]map[string][]*protocol.Task
 
 type NextStageData struct {
 	Stage       string

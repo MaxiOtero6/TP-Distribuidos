@@ -58,10 +58,6 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 3 {
-		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof + control), got %d", len(binds))
-	}
-
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
 	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])
@@ -177,9 +173,9 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
 	}
 
-	for exchange, stages := range subTasks {
-		for _, stage := range stages {
-			for routingKey, task := range stage {
+	for exchange, routingKeys := range subTasks {
+		for routingKey, tasks := range routingKeys {
+			for _, task := range tasks {
 				if task.GetRingEOF() != nil || task.GetOmegaEOF() != nil {
 					defer sendTask(exchange, routingKey, task)
 					continue

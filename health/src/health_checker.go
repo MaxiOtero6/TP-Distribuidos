@@ -105,7 +105,7 @@ func (hc *HealthChecker) stopLeaderTimeout() {
 
 func (hc *HealthChecker) sendLeader() {
 	// Logic to send a leader message to the leader queue
-	log.Debug("I'm the leader, sending leader message")
+	log.Info("I'm the leader, sending leader message")
 	hc.stopLeaderTimeout()
 	hc.stopElectionTimeout()
 

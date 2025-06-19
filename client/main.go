@@ -116,27 +116,27 @@ func logResults(results *model.Results) {
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query1 results:" + RESET)
-	for index, movie := range results.Query1 {
+	for index, movie := range results.Query1.Results {
 		log.Infof(BOLD+"[%d] MovieId: %s | Title: %s | Genres: %v"+RESET, index+1, movie.MovieId, movie.Title, movie.Genres)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query2 results:" + RESET)
-	for position, country := range results.Query2 {
+	for position, country := range results.Query2.Results {
 		log.Infof(BOLD+"[%d] Country: %s | TotalInvestment: %d"+RESET, position+1, country.Country, country.TotalInvestment)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query3 results:" + RESET)
-	for kind, data := range results.Query3 {
+	for kind, data := range results.Query3.Results {
 		log.Infof(BOLD+"[%v] Movie: %s | AvgRating: %.2f"+RESET, strings.ToUpper(kind), data.Title, data.AvgRating)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query4 results:" + RESET)
-	for position, actor := range results.Query4 {
+	for position, actor := range results.Query4.Results {
 		log.Infof(BOLD+"[%d] ActorId: %s | ActorName: %s | Participations: %v"+RESET, position+1, actor.ActorId, actor.ActorName, actor.Participations)
 	}
 
 	log.Infof(CYAN + UNDERLINE + "Query5 results:" + RESET)
-	for sentiment, data := range results.Query5 {
+	for sentiment, data := range results.Query5.Results {
 		log.Infof(BOLD+"[%s] RevenueBudgetRatio: %.2f"+RESET, strings.ToUpper(sentiment), data.RevenueBudgetRatio)
 	}
 }

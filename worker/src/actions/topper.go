@@ -5,10 +5,11 @@ import (
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
+	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof_handler"
-	heap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+	topkheap "github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/topkheap"
 )
 
 const EPSILON_TOP_K = 5
@@ -20,11 +21,57 @@ const TOPPER_STAGES_COUNT uint = 3
 
 // ParcilResult is a struct that holds the results of the different stages.
 
+type TopperPartialData[K topkheap.Ordered, V any] struct {
+	heap           topkheap.TopKHeap[K, V]
+	taskFragments  map[model.TaskFragmentIdentifier]struct{}
+	omegaProcessed bool
+	ringRound      uint32
+}
+
+type ThetaPartialData struct {
+	minPartialData *TopperPartialData[float32, *protocol.Theta_Data]
+	maxPartialData *TopperPartialData[float32, *protocol.Theta_Data]
+}
+
+func newTopperPartialData[K topkheap.Ordered, V any](top_k int, max bool) *TopperPartialData[K, V] {
+	var heapInstance topkheap.TopKHeap[K, V]
+	if max {
+		heapInstance = topkheap.NewTopKMaxHeap[K, V](top_k)
+	} else {
+		heapInstance = topkheap.NewTopKMinHeap[K, V](top_k)
+	}
+
+	return &TopperPartialData[K, V]{
+		heap:           heapInstance,
+		taskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
+		omegaProcessed: false,
+		ringRound:      0,
+	}
+}
+
+type TopperPartialResults struct {
+	epsilonData *TopperPartialData[uint64, *protocol.Epsilon_Data]
+	thetaData   *ThetaPartialData
+	lamdaData   *TopperPartialData[uint64, *protocol.Lambda_Data]
+}
+
+func NewTopperPartialResults() *TopperPartialResults {
+	return &TopperPartialResults{
+		epsilonData: newTopperPartialData[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K, true),
+		thetaData: &ThetaPartialData{
+			minPartialData: newTopperPartialData[float32, *protocol.Theta_Data](THETA_TOP_K, false),
+			maxPartialData: newTopperPartialData[float32, *protocol.Theta_Data](THETA_TOP_K, true),
+		},
+		lamdaData: newTopperPartialData[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K, true),
+	}
+}
+
 // Topper is a struct that implements the Action interface.
 type Topper struct {
 	infraConfig    *model.InfraConfig
-	partialResults map[string]*common.TopperPartialResults
-	eofHandler     eof_handler.IEOFHandler
+	partialResults map[string]*TopperPartialResults
+	itemHashFunc   func(workersCount int, item string) string
+	eofHandler     *eof.StatefulEofHandler
 }
 
 func (t *Topper) makePartialResults(clientId string) {
@@ -32,302 +79,241 @@ func (t *Topper) makePartialResults(clientId string) {
 		return
 	}
 
-	t.partialResults[clientId] = &common.TopperPartialResults{
-		EpsilonHeap: heap.NewTopKHeap[uint64, *protocol.Epsilon_Data](EPSILON_TOP_K),
-		ThetaData: common.Result3{
-			MaxHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
-			MinHeap: heap.NewTopKHeap[float32, *protocol.Theta_Data](THETA_TOP_K),
-		},
-		LambdaHeap: heap.NewTopKHeap[uint64, *protocol.Lambda_Data](LAMBDA_TOP_K),
-	}
+	t.partialResults[clientId] = NewTopperPartialResults()
 }
 
 // NewTopper creates a new Topper instance.
 // It initializes the worker count and returns a pointer to the Topper struct.
-func NewTopper(infraConfig *model.InfraConfig, eofHandler eof_handler.IEOFHandler) *Topper {
+func NewTopper(infraConfig *model.InfraConfig) *Topper {
+	eofHandler := eof.NewStatefulEofHandler(
+		model.TopperAction,
+		infraConfig,
+		topperNextStageData,
+		utils.GetWorkerIdFromHash,
+	)
+
 	topper := &Topper{
 		infraConfig:    infraConfig,
-		partialResults: make(map[string]*common.TopperPartialResults),
+		partialResults: make(map[string]*TopperPartialResults),
+		itemHashFunc:   utils.GetWorkerIdFromHash,
 		eofHandler:     eofHandler,
 	}
+
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 
 	return topper
 }
 
-func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string) (tasks common.Tasks) {
-	epsilonHeap := t.partialResults[clientId].EpsilonHeap
+func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
+	partialData := t.partialResults[clientId].epsilonData
 
-	for _, eData := range data {
-		investment := eData.GetTotalInvestment()
-		epsilonHeap.Insert(investment, eData)
+	valueFunc := func(input *protocol.Epsilon_Data) uint64 {
+		return input.GetTotalInvestment()
 	}
 
-	// Prepare the data to be saved
-	convertedData := make(map[string]*protocol.Epsilon_Data)
-
-	for value, element := range epsilonHeap.GetTopK() {
-		convertedData[fmt.Sprintf("%d", value)] = element.Data
-	}
-
-	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.EPSILON_STAGE, common.ANY_SOURCE, convertedData)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.EPSILON_STAGE, err)
-	}
+	processTopperStage(
+		partialData,
+		data,
+		taskIdentifier,
+		valueFunc,
+	)
 
 	return nil
 }
 
-func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string) (tasks common.Tasks) {
-	LambdaHeap := t.partialResults[clientId].LambdaHeap
+func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
+	partialData := t.partialResults[clientId].thetaData
+	minPartialData := partialData.minPartialData
+	maxPartialData := partialData.maxPartialData
 
-	for _, lData := range data {
-		participations := lData.GetParticipations()
-
-		LambdaHeap.Insert(participations, lData)
-
+	minValueFunc := func(input *protocol.Theta_Data) float32 {
+		return input.GetAvgRating()
 	}
 
-	// Prepare the data to be saved
-	convertedData := make(map[string]*protocol.Lambda_Data)
-
-	for value, element := range LambdaHeap.GetTopK() {
-		convertedData[fmt.Sprintf("%d", value)] = element.Data
+	maxValueFunc := func(input *protocol.Theta_Data) float32 {
+		return input.GetAvgRating()
 	}
 
-	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.LAMBDA_STAGE, common.ANY_SOURCE, convertedData)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.LAMBDA_STAGE, err)
-	}
+	processTopperStage(
+		minPartialData,
+		data,
+		taskIdentifier,
+		minValueFunc,
+	)
+
+	processTopperStage(
+		maxPartialData,
+		data,
+		taskIdentifier,
+		maxValueFunc,
+	)
 
 	return nil
 }
 
-func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string) (tasks common.Tasks) {
-	thetaMinHeap := t.partialResults[clientId].ThetaData.MinHeap
-	thetaMaxHeap := t.partialResults[clientId].ThetaData.MaxHeap
+func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) common.Tasks {
+	partialData := t.partialResults[clientId].lamdaData
 
-	for _, tData := range data {
-		avgRating := tData.GetAvgRating()
-
-		thetaMaxHeap.Insert(avgRating, tData)
-		thetaMinHeap.Insert(-avgRating, tData)
+	valueFunc := func(input *protocol.Lambda_Data) uint64 {
+		return input.GetParticipations()
 	}
 
-	// Prepare the data to be saved
-	convertedData := make(map[string]*protocol.Theta_Data)
-
-	if len(thetaMaxHeap.GetTopK()) == 0 || len(thetaMinHeap.GetTopK()) == 0 {
-		log.Errorf("No data found for %s stage", common.THETA_STAGE)
-		return nil
-	}
-
-	elementMax := thetaMaxHeap.GetTopK()[0]
-	elementMin := thetaMinHeap.GetTopK()[0]
-
-	convertedData[fmt.Sprintf("%f", elementMax.Value)] = elementMax.Data
-	convertedData[fmt.Sprintf("%f", elementMin.Value)] = elementMin.Data
-
-	err := storage.SaveDataToFile(t.infraConfig.GetDirectory(), clientId, common.THETA_STAGE, common.ANY_SOURCE, convertedData)
-	if err != nil {
-		log.Errorf("Failed to save %s data: %s", common.THETA_STAGE, err)
-	}
+	processTopperStage(
+		partialData,
+		data,
+		taskIdentifier,
+		valueFunc,
+	)
 
 	return nil
 }
 
-/*
-epsilonStage get the top 5 countries that invested the most in movies in desc order
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-	    "resultExchange": {
-	        "result": {
-	            "": Task,
-	        }
-	    },
-	}
-*/
 func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
-	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+	epsilonHeap := t.partialResults[clientId].epsilonData.heap
+	partialData := epsilonHeap.GetTopK()
 
-	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
-		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	results := utils.MapSlice(partialData, func(position int, data *protocol.Epsilon_Data) *protocol.Result2_Data {
+		return &protocol.Result2_Data{
+			Position:        uint32(position + 1),
+			Country:         data.GetProdCountry(),
+			TotalInvestment: data.GetTotalInvestment(),
+		}
+	})
+
+	identifierFunc := func(data *protocol.Result2_Data) string {
+		return data.GetCountry()
 	}
 
-	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
-	result2Data := make(map[string][]*protocol.Result2_Data)
-
-	resultHeap := t.partialResults[clientId].EpsilonHeap
-
-	// Asign the data to the corresponding worker
-	nodeId := clientId
-
-	position := uint32(1)
-	for _, element := range resultHeap.GetTopK() {
-		eData := element.Data
-
-		result2Data[nodeId] = append(result2Data[nodeId], &protocol.Result2_Data{
-			Position:        position,
-			Country:         eData.GetProdCountry(),
-			TotalInvestment: element.Value,
-		})
-		position++
-	}
-
-	for id, data := range result2Data {
-		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Result2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result2{
 				Result2: &protocol.Result2{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
 
+	nextStageData, _ := t.getNextStageData(common.EPSILON_STAGE, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
+	}
+
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
-/*
-thetaStage get one of the best and one of the worst rated movies
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-	    "resultExchange": {
-	        "result": {
-	            "": Task
-	        }
-	    },
-	}
-*/
 func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
-	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+	thetaData := t.partialResults[clientId].thetaData
 
-	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
-		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
-	}
+	minHeapData := thetaData.minPartialData.heap
+	maxHeapData := thetaData.maxPartialData.heap
 
-	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
-	result3Data := make(map[string][]*protocol.Result3_Data)
+	minPartialData := minHeapData.GetTopK()
+	maxPartialData := maxHeapData.GetTopK()
 
-	resultHeapMax := t.partialResults[clientId].ThetaData.MaxHeap
-	resultHeapMin := t.partialResults[clientId].ThetaData.MinHeap
-
-	nodeId := clientId
-
-	// Process the maximum value
-	if len(resultHeapMax.GetTopK()) > 0 {
-		element := resultHeapMax.GetTopK()[0]
-		tData := element.Data
-
-		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
-			Type:   TYPE_MAX,
-			Id:     tData.GetId(),
-			Title:  tData.GetTitle(),
-			Rating: element.Value,
-		})
-	}
-
-	// Process the minimum value
-	if len(resultHeapMin.GetTopK()) > 0 {
-		element := resultHeapMin.GetTopK()[0]
-		tData := element.Data
-		result3Data[nodeId] = append(result3Data[nodeId], &protocol.Result3_Data{
+	minResults := utils.MapSlice(minPartialData, func(_ int, data *protocol.Theta_Data) *protocol.Result3_Data {
+		return &protocol.Result3_Data{
 			Type:   TYPE_MIN,
-			Id:     tData.GetId(),
-			Title:  tData.GetTitle(),
-			Rating: -element.Value,
-		})
+			Id:     data.GetId(),
+			Title:  data.GetTitle(),
+			Rating: data.GetAvgRating(),
+		}
+	})
+
+	maxResults := utils.MapSlice(maxPartialData, func(_ int, data *protocol.Theta_Data) *protocol.Result3_Data {
+		return &protocol.Result3_Data{
+			Type:   TYPE_MAX,
+			Id:     data.GetId(),
+			Title:  data.GetTitle(),
+			Rating: data.GetAvgRating(),
+		}
+	})
+
+	results := make([]*protocol.Result3_Data, 0, len(minResults)+len(maxResults))
+	results = append(results, maxResults...)
+	results = append(results, minResults...)
+
+	identifierFunc := func(data *protocol.Result3_Data) string {
+		return data.GetId()
 	}
 
-	for id, data := range result3Data {
-		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Result3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result3{
 				Result3: &protocol.Result3{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := t.getNextStageData(common.THETA_STAGE, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
+	}
+
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
-/*
-lambdaStage get the top 10 actors that participated in the most movies in desc order
-
-This function is nil-safe, meaning it will not panic if the input is nil.
-It will simply return a map with empty data.
-
-Return example
-
-	{
-	    "resultExchange": {
-	        "result": {
-	            "": Task
-	        }
-	    },
-	}
-*/
 func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
-	RESULT_EXCHANGE := t.infraConfig.GetResultExchange()
+	lambdaHeap := t.partialResults[clientId].lamdaData.heap
+	partialData := lambdaHeap.GetTopK()
 
-	if _, ok := tasks[RESULT_EXCHANGE]; !ok {
-		tasks[RESULT_EXCHANGE] = make(map[string]map[string]*protocol.Task)
+	results := utils.MapSlice(partialData, func(position int, data *protocol.Lambda_Data) *protocol.Result4_Data {
+		return &protocol.Result4_Data{
+			Position:       uint32(position + 1),
+			ActorId:        data.GetActorId(),
+			ActorName:      data.GetActorName(),
+			Participations: data.GetParticipations(),
+		}
+	})
+
+	identifierFunc := func(data *protocol.Result4_Data) string {
+		return data.GetActorId()
 	}
 
-	tasks[RESULT_EXCHANGE][common.RESULT_STAGE] = make(map[string]*protocol.Task)
-	result4Data := make(map[string][]*protocol.Result4_Data)
-
-	resultHeap := t.partialResults[clientId].LambdaHeap
-
-	nodeId := clientId
-
-	position := uint32(1)
-
-	for _, element := range resultHeap.GetTopK() {
-		lData := element.Data
-
-		result4Data[nodeId] = append(result4Data[nodeId], &protocol.Result4_Data{
-			Position:       position,
-			ActorName:      lData.GetActorName(),
-			ActorId:        lData.GetActorId(),
-			Participations: element.Value,
-		})
-		position++
-	}
-
-	for id, data := range result4Data {
-		tasks[RESULT_EXCHANGE][common.RESULT_STAGE][id] = &protocol.Task{
+	taskDataCreator := func(stage string, data []*protocol.Result4_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
+		return &protocol.Task{
 			ClientId: clientId,
 			Stage: &protocol.Task_Result4{
 				Result4: &protocol.Result4{
 					Data: data,
 				},
 			},
+			TaskIdentifier: taskIdentifier,
 		}
 	}
+
+	nextStageData, _ := t.getNextStageData(common.LAMBDA_STAGE, clientId)
+	hashFunc := func(workersCount int, item string) string {
+		return clientId
+	}
+
+	creatorId := t.infraConfig.GetNodeId()
+
+	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
 }
 
 func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
 	switch stage {
 	case common.EPSILON_STAGE:
 		t.epsilonResultStage(tasks, clientId)
-		t.partialResults[clientId].EpsilonHeap.Delete()
+		// t.partialResults[clientId].epsilonData.Delete()
 	case common.LAMBDA_STAGE:
 		t.lambdaResultStage(tasks, clientId)
-		t.partialResults[clientId].LambdaHeap.Delete()
+		// t.partialResults[clientId].lamdaData.Delete()
 	case common.THETA_STAGE:
 		t.thetaResultStage(tasks, clientId)
-		t.partialResults[clientId].ThetaData.MaxHeap.Delete()
-		t.partialResults[clientId].ThetaData.MinHeap.Delete()
+		// t.partialResults[clientId].thetaData.maxHeap.Delete()
+		// t.partialResults[clientId].thetaData.minHeap.Delete()
 	default:
 		return fmt.Errorf("invalid stage: %s", stage)
 	}
@@ -336,12 +322,16 @@ func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientI
 }
 
 func (t *Topper) getNextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+	return topperNextStageData(stage, clientId, t.infraConfig, t.itemHashFunc)
+}
+
+func topperNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
 	switch stage {
 	case common.EPSILON_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
-				Exchange:    t.infraConfig.GetResultExchange(),
+				Stage:       model.RESULT_2_STAGE,
+				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
@@ -349,8 +339,8 @@ func (t *Topper) getNextStageData(stage string, clientId string) ([]common.NextS
 	case common.THETA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
-				Exchange:    t.infraConfig.GetResultExchange(),
+				Stage:       model.RESULT_3_STAGE,
+				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
@@ -358,58 +348,100 @@ func (t *Topper) getNextStageData(stage string, clientId string) ([]common.NextS
 	case common.LAMBDA_STAGE:
 		return []common.NextStageData{
 			{
-				Stage:       common.RESULT_STAGE,
-				Exchange:    t.infraConfig.GetResultExchange(),
+				Stage:       model.RESULT_4_STAGE,
+				Exchange:    infraConfig.GetResultExchange(),
 				WorkerCount: 1,
 				RoutingKey:  clientId,
 			},
 		}, nil
+	case common.RING_STAGE:
+		return []common.NextStageData{
+			{
+				Stage:       common.RING_STAGE,
+				Exchange:    infraConfig.GetTopExchange(),
+				WorkerCount: infraConfig.GetTopCount(),
+				RoutingKey:  infraConfig.GetNodeId(),
+			},
+		}, nil
 	default:
-		log.Errorf("Invalid stage: %s", stage)
-		return []common.NextStageData{}, fmt.Errorf("invalid stage: %s", stage)
+		return nil, fmt.Errorf("invalid stage: %s", stage)
 	}
 }
 
-func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (tasks common.Tasks) {
-	tasks = t.eofHandler.InitRing(data.GetStage(), data.GetEofType(), clientId)
+func (t *Topper) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
 
-	if err := t.addResultsToNextStage(tasks, data.GetStage(), clientId); err == nil {
-		if err := storage.DeletePartialResults(t.infraConfig.GetDirectory(), clientId, data.Stage, common.ANY_SOURCE); err != nil {
-			log.Errorf("Failed to delete partial results: %s", err)
+	omegaReady, err := t.getOmegaProcessed(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get omega ready for stage %s: %s", data.GetStage(), err)
+		return tasks
+	}
+	if omegaReady {
+		log.Debugf("Omega EOF for stage %s has already been processed for client %s", data.GetStage(), clientId)
+		return tasks
+	}
+
+	t.updateOmegaProcessed(clientId, data.GetStage())
+
+	t.eofHandler.HandleOmegaEOF(tasks, data, clientId)
+
+	return tasks
+}
+
+func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+	tasks := make(common.Tasks)
+
+	taskIdentifiers, err := t.getTaskIdentifiers(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get task identifiers for stage %s: %s", data.GetStage(), err)
+		return tasks
+	}
+
+	ringRound, err := t.getRingRound(clientId, data.GetStage())
+	if err != nil {
+		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
+		return tasks
+	}
+	if ringRound >= data.GetRoundNumber() {
+		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
+		return tasks
+	}
+
+	t.updateRingRound(clientId, data.GetStage(), data.GetRoundNumber())
+
+	taskCount := t.participatesInResults(clientId, data.GetStage())
+	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
+
+	if ready && taskCount > 0 {
+		err = t.addResultsToNextStage(tasks, data.GetStage(), clientId)
+		if err != nil {
+			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
+			return nil
 		}
-	} else {
-		log.Errorf("Failed to add results to next stage: %s", err)
 	}
 
 	return tasks
 }
 
-func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
-	// For toppers eofStatus is always true
-	// because one of them receives the EOF and init the ring
-	// and the others just declare that they are alive
-	// Only one topper resolves the query for a client
-	return t.eofHandler.HandleRing(data, clientId, t.getNextStageData, true)
-}
-
 func (t *Topper) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
+	taskIdentifier := task.GetTaskIdentifier()
 
 	t.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:
 		data := v.Epsilon.GetData()
-		return t.epsilonStage(data, clientId), nil
+		return t.epsilonStage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Theta:
 		data := v.Theta.GetData()
-		return t.thetaStage(data, clientId), nil
+		return t.thetaStage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_Lambda:
 		data := v.Lambda.GetData()
-		return t.lambdaStage(data, clientId), nil
+		return t.lambdaStage(data, clientId, taskIdentifier), nil
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
@@ -420,5 +452,125 @@ func (t *Topper) Execute(task *protocol.Task) (common.Tasks, error) {
 
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
+	}
+}
+
+func (t *Topper) getOmegaProcessed(clientId string, stage string) (bool, error) {
+	partialResults := t.partialResults[clientId]
+	switch stage {
+	case common.EPSILON_STAGE:
+		return partialResults.epsilonData.omegaProcessed, nil
+	case common.THETA_STAGE:
+		return partialResults.thetaData.minPartialData.omegaProcessed, nil
+	case common.LAMBDA_STAGE:
+		return partialResults.lamdaData.omegaProcessed, nil
+	default:
+		return false, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (t *Topper) getRingRound(clientId string, stage string) (uint32, error) {
+	partialResults := t.partialResults[clientId]
+	switch stage {
+	case common.EPSILON_STAGE:
+		return partialResults.epsilonData.ringRound, nil
+	case common.THETA_STAGE:
+		return partialResults.thetaData.minPartialData.ringRound, nil
+	case common.LAMBDA_STAGE:
+		return partialResults.lamdaData.ringRound, nil
+	default:
+		return 0, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (t *Topper) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {
+	partialResults := t.partialResults[clientId]
+	switch stage {
+	case common.EPSILON_STAGE:
+		return utils.MapKeys(partialResults.epsilonData.taskFragments), nil
+	case common.THETA_STAGE:
+		return utils.MapKeys(partialResults.thetaData.minPartialData.taskFragments), nil
+	case common.LAMBDA_STAGE:
+		return utils.MapKeys(partialResults.lamdaData.taskFragments), nil
+	default:
+		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+}
+
+func (t *Topper) participatesInResults(clientId string, stage string) int {
+	partialResults, ok := t.partialResults[clientId]
+	if !ok {
+		return 0
+	}
+
+	participates := false
+
+	switch stage {
+	case common.EPSILON_STAGE:
+		participates = partialResults.epsilonData.heap.Len() > 0
+	case common.THETA_STAGE:
+		participates = partialResults.thetaData.minPartialData.heap.Len() > 0 ||
+			partialResults.thetaData.maxPartialData.heap.Len() > 0
+	case common.LAMBDA_STAGE:
+		participates = partialResults.lamdaData.heap.Len() > 0
+	default:
+		log.Errorf("Invalid stage: %s", stage)
+		return 0
+	}
+
+	if participates {
+		return 1
+	}
+	return 0
+}
+
+func processTopperStage[K topkheap.Ordered, V any](
+	partialData *TopperPartialData[K, *V],
+	data []*V,
+	taskIdentifier *protocol.TaskIdentifier,
+	valueFunc func(input *V) K,
+) {
+	taskID := model.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
+
+	if _, processed := partialData.taskFragments[taskID]; processed {
+		return
+	}
+
+	// Mark task as processed
+	partialData.taskFragments[taskID] = struct{}{}
+
+	// Aggregate data
+	for _, item := range data {
+		partialData.heap.Insert(valueFunc(item), item)
+	}
+}
+
+// Actualizar funciones para usar las constantes de etapas del paquete common
+func (t *Topper) updateOmegaProcessed(clientId string, stage string) {
+	switch stage {
+	case common.EPSILON_STAGE:
+		t.partialResults[clientId].epsilonData.omegaProcessed = true
+	case common.THETA_STAGE:
+		t.partialResults[clientId].thetaData.minPartialData.omegaProcessed = true
+		t.partialResults[clientId].thetaData.maxPartialData.omegaProcessed = true
+	case common.LAMBDA_STAGE:
+		t.partialResults[clientId].lamdaData.omegaProcessed = true
+	}
+}
+
+func (t *Topper) updateRingRound(clientId string, stage string, round uint32) {
+	switch stage {
+	case common.EPSILON_STAGE:
+		t.partialResults[clientId].epsilonData.ringRound = round
+	case common.THETA_STAGE:
+		t.partialResults[clientId].thetaData.minPartialData.ringRound = round
+		t.partialResults[clientId].thetaData.maxPartialData.ringRound = round
+	case common.LAMBDA_STAGE:
+		t.partialResults[clientId].lamdaData.ringRound = round
 	}
 }

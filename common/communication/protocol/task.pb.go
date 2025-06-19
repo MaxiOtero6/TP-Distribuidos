@@ -21,6 +21,74 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TaskIdentifier struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	CreatorId          string                 `protobuf:"bytes,1,opt,name=creatorId,proto3" json:"creatorId,omitempty"`
+	TaskNumber         uint32                 `protobuf:"varint,2,opt,name=taskNumber,proto3" json:"taskNumber,omitempty"`
+	TaskFragmentNumber uint32                 `protobuf:"varint,3,opt,name=taskFragmentNumber,proto3" json:"taskFragmentNumber,omitempty"`
+	LastFragment       bool                   `protobuf:"varint,4,opt,name=lastFragment,proto3" json:"lastFragment,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *TaskIdentifier) Reset() {
+	*x = TaskIdentifier{}
+	mi := &file_proto_task_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaskIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskIdentifier) ProtoMessage() {}
+
+func (x *TaskIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_task_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskIdentifier.ProtoReflect.Descriptor instead.
+func (*TaskIdentifier) Descriptor() ([]byte, []int) {
+	return file_proto_task_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *TaskIdentifier) GetCreatorId() string {
+	if x != nil {
+		return x.CreatorId
+	}
+	return ""
+}
+
+func (x *TaskIdentifier) GetTaskNumber() uint32 {
+	if x != nil {
+		return x.TaskNumber
+	}
+	return 0
+}
+
+func (x *TaskIdentifier) GetTaskFragmentNumber() uint32 {
+	if x != nil {
+		return x.TaskFragmentNumber
+	}
+	return 0
+}
+
+func (x *TaskIdentifier) GetLastFragment() bool {
+	if x != nil {
+		return x.LastFragment
+	}
+	return false
+}
+
 type Task struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Stage:
@@ -53,15 +121,17 @@ type Task struct {
 	//	*Task_Result5
 	//	*Task_OmegaEOF
 	//	*Task_RingEOF
-	Stage         isTask_Stage `protobuf_oneof:"Stage"`
-	ClientId      string       `protobuf:"bytes,29,opt,name=clientId,proto3" json:"clientId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Stage          isTask_Stage    `protobuf_oneof:"Stage"`
+	ClientId       string          `protobuf:"bytes,29,opt,name=clientId,proto3" json:"clientId,omitempty"`
+	TaskIdentifier *TaskIdentifier `protobuf:"bytes,30,opt,name=taskIdentifier,proto3" json:"taskIdentifier,omitempty"`
+	TableType      string          `protobuf:"bytes,31,opt,name=tableType,proto3" json:"tableType,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
 	*x = Task{}
-	mi := &file_proto_task_proto_msgTypes[0]
+	mi := &file_proto_task_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -73,7 +143,7 @@ func (x *Task) String() string {
 func (*Task) ProtoMessage() {}
 
 func (x *Task) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_task_proto_msgTypes[0]
+	mi := &file_proto_task_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -86,7 +156,7 @@ func (x *Task) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Task.ProtoReflect.Descriptor instead.
 func (*Task) Descriptor() ([]byte, []int) {
-	return file_proto_task_proto_rawDescGZIP(), []int{0}
+	return file_proto_task_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Task) GetStage() isTask_Stage {
@@ -355,6 +425,20 @@ func (x *Task) GetClientId() string {
 	return ""
 }
 
+func (x *Task) GetTaskIdentifier() *TaskIdentifier {
+	if x != nil {
+		return x.TaskIdentifier
+	}
+	return nil
+}
+
+func (x *Task) GetTableType() string {
+	if x != nil {
+		return x.TableType
+	}
+	return ""
+}
+
 type isTask_Stage interface {
 	isTask_Stage()
 }
@@ -531,7 +615,14 @@ var File_proto_task_proto protoreflect.FileDescriptor
 
 const file_proto_task_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\x1a\x1bproto/stages/omegaEOF.proto\x1a\x13proto/ringEOF.proto\"\xde\a\n" +
+	"\x10proto/task.proto\x1a\x18proto/stages/alpha.proto\x1a\x17proto/stages/beta.proto\x1a\x18proto/stages/gamma.proto\x1a\x18proto/stages/delta.proto\x1a\x1aproto/stages/epsilon.proto\x1a\x17proto/stages/zeta.proto\x1a\x16proto/stages/eta.proto\x1a\x18proto/stages/theta.proto\x1a\x17proto/stages/iota.proto\x1a\x18proto/stages/kappa.proto\x1a\x19proto/stages/lambda.proto\x1a\x15proto/stages/mu.proto\x1a\x15proto/stages/nu.proto\x1a\x1bproto/results/result1.proto\x1a\x1bproto/results/result2.proto\x1a\x1bproto/results/result3.proto\x1a\x1bproto/results/result4.proto\x1a\x1bproto/results/result5.proto\x1a\x18proto/eof/omegaEOF.proto\x1a\x17proto/eof/ringEOF.proto\"\xa2\x01\n" +
+	"\x0eTaskIdentifier\x12\x1c\n" +
+	"\tcreatorId\x18\x01 \x01(\tR\tcreatorId\x12\x1e\n" +
+	"\n" +
+	"taskNumber\x18\x02 \x01(\rR\n" +
+	"taskNumber\x12.\n" +
+	"\x12taskFragmentNumber\x18\x03 \x01(\rR\x12taskFragmentNumber\x12\"\n" +
+	"\flastFragment\x18\x04 \x01(\bR\flastFragment\"\xb5\b\n" +
 	"\x04Task\x12\x1e\n" +
 	"\x05alpha\x18\x01 \x01(\v2\x06.AlphaH\x00R\x05alpha\x12\x1b\n" +
 	"\x04beta\x18\x02 \x01(\v2\x05.BetaH\x00R\x04beta\x12\x1e\n" +
@@ -562,7 +653,9 @@ const file_proto_task_proto_rawDesc = "" +
 	"\aresult5\x18\x1a \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
 	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOF\x12$\n" +
 	"\aringEOF\x18\x1c \x01(\v2\b.RingEOFH\x00R\aringEOF\x12\x1a\n" +
-	"\bclientId\x18\x1d \x01(\tR\bclientIdB\a\n" +
+	"\bclientId\x18\x1d \x01(\tR\bclientId\x127\n" +
+	"\x0etaskIdentifier\x18\x1e \x01(\v2\x0f.TaskIdentifierR\x0etaskIdentifier\x12\x1c\n" +
+	"\ttableType\x18\x1f \x01(\tR\ttableTypeB\a\n" +
 	"\x05StageB\x1fZ\x1dcommon/communication/protocolb\x06proto3"
 
 var (
@@ -577,72 +670,74 @@ func file_proto_task_proto_rawDescGZIP() []byte {
 	return file_proto_task_proto_rawDescData
 }
 
-var file_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_task_proto_goTypes = []any{
-	(*Task)(nil),     // 0: Task
-	(*Alpha)(nil),    // 1: Alpha
-	(*Beta)(nil),     // 2: Beta
-	(*Gamma)(nil),    // 3: Gamma
-	(*Delta_1)(nil),  // 4: Delta_1
-	(*Delta_2)(nil),  // 5: Delta_2
-	(*Delta_3)(nil),  // 6: Delta_3
-	(*Epsilon)(nil),  // 7: Epsilon
-	(*Zeta)(nil),     // 8: Zeta
-	(*Eta_1)(nil),    // 9: Eta_1
-	(*Eta_2)(nil),    // 10: Eta_2
-	(*Eta_3)(nil),    // 11: Eta_3
-	(*Theta)(nil),    // 12: Theta
-	(*Iota)(nil),     // 13: Iota
-	(*Kappa_1)(nil),  // 14: Kappa_1
-	(*Kappa_2)(nil),  // 15: Kappa_2
-	(*Kappa_3)(nil),  // 16: Kappa_3
-	(*Lambda)(nil),   // 17: Lambda
-	(*Mu)(nil),       // 18: Mu
-	(*Nu_1)(nil),     // 19: Nu_1
-	(*Nu_2)(nil),     // 20: Nu_2
-	(*Nu_3)(nil),     // 21: Nu_3
-	(*Result1)(nil),  // 22: Result1
-	(*Result2)(nil),  // 23: Result2
-	(*Result3)(nil),  // 24: Result3
-	(*Result4)(nil),  // 25: Result4
-	(*Result5)(nil),  // 26: Result5
-	(*OmegaEOF)(nil), // 27: OmegaEOF
-	(*RingEOF)(nil),  // 28: RingEOF
+	(*TaskIdentifier)(nil), // 0: TaskIdentifier
+	(*Task)(nil),           // 1: Task
+	(*Alpha)(nil),          // 2: Alpha
+	(*Beta)(nil),           // 3: Beta
+	(*Gamma)(nil),          // 4: Gamma
+	(*Delta_1)(nil),        // 5: Delta_1
+	(*Delta_2)(nil),        // 6: Delta_2
+	(*Delta_3)(nil),        // 7: Delta_3
+	(*Epsilon)(nil),        // 8: Epsilon
+	(*Zeta)(nil),           // 9: Zeta
+	(*Eta_1)(nil),          // 10: Eta_1
+	(*Eta_2)(nil),          // 11: Eta_2
+	(*Eta_3)(nil),          // 12: Eta_3
+	(*Theta)(nil),          // 13: Theta
+	(*Iota)(nil),           // 14: Iota
+	(*Kappa_1)(nil),        // 15: Kappa_1
+	(*Kappa_2)(nil),        // 16: Kappa_2
+	(*Kappa_3)(nil),        // 17: Kappa_3
+	(*Lambda)(nil),         // 18: Lambda
+	(*Mu)(nil),             // 19: Mu
+	(*Nu_1)(nil),           // 20: Nu_1
+	(*Nu_2)(nil),           // 21: Nu_2
+	(*Nu_3)(nil),           // 22: Nu_3
+	(*Result1)(nil),        // 23: Result1
+	(*Result2)(nil),        // 24: Result2
+	(*Result3)(nil),        // 25: Result3
+	(*Result4)(nil),        // 26: Result4
+	(*Result5)(nil),        // 27: Result5
+	(*OmegaEOF)(nil),       // 28: OmegaEOF
+	(*RingEOF)(nil),        // 29: RingEOF
 }
 var file_proto_task_proto_depIdxs = []int32{
-	1,  // 0: Task.alpha:type_name -> Alpha
-	2,  // 1: Task.beta:type_name -> Beta
-	3,  // 2: Task.gamma:type_name -> Gamma
-	4,  // 3: Task.delta_1:type_name -> Delta_1
-	5,  // 4: Task.delta_2:type_name -> Delta_2
-	6,  // 5: Task.delta_3:type_name -> Delta_3
-	7,  // 6: Task.epsilon:type_name -> Epsilon
-	8,  // 7: Task.zeta:type_name -> Zeta
-	9,  // 8: Task.eta_1:type_name -> Eta_1
-	10, // 9: Task.eta_2:type_name -> Eta_2
-	11, // 10: Task.eta_3:type_name -> Eta_3
-	12, // 11: Task.theta:type_name -> Theta
-	13, // 12: Task.iota:type_name -> Iota
-	14, // 13: Task.kappa_1:type_name -> Kappa_1
-	15, // 14: Task.kappa_2:type_name -> Kappa_2
-	16, // 15: Task.kappa_3:type_name -> Kappa_3
-	17, // 16: Task.lambda:type_name -> Lambda
-	18, // 17: Task.mu:type_name -> Mu
-	19, // 18: Task.nu_1:type_name -> Nu_1
-	20, // 19: Task.nu_2:type_name -> Nu_2
-	21, // 20: Task.nu_3:type_name -> Nu_3
-	22, // 21: Task.result1:type_name -> Result1
-	23, // 22: Task.result2:type_name -> Result2
-	24, // 23: Task.result3:type_name -> Result3
-	25, // 24: Task.result4:type_name -> Result4
-	26, // 25: Task.result5:type_name -> Result5
-	27, // 26: Task.omegaEOF:type_name -> OmegaEOF
-	28, // 27: Task.ringEOF:type_name -> RingEOF
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	2,  // 0: Task.alpha:type_name -> Alpha
+	3,  // 1: Task.beta:type_name -> Beta
+	4,  // 2: Task.gamma:type_name -> Gamma
+	5,  // 3: Task.delta_1:type_name -> Delta_1
+	6,  // 4: Task.delta_2:type_name -> Delta_2
+	7,  // 5: Task.delta_3:type_name -> Delta_3
+	8,  // 6: Task.epsilon:type_name -> Epsilon
+	9,  // 7: Task.zeta:type_name -> Zeta
+	10, // 8: Task.eta_1:type_name -> Eta_1
+	11, // 9: Task.eta_2:type_name -> Eta_2
+	12, // 10: Task.eta_3:type_name -> Eta_3
+	13, // 11: Task.theta:type_name -> Theta
+	14, // 12: Task.iota:type_name -> Iota
+	15, // 13: Task.kappa_1:type_name -> Kappa_1
+	16, // 14: Task.kappa_2:type_name -> Kappa_2
+	17, // 15: Task.kappa_3:type_name -> Kappa_3
+	18, // 16: Task.lambda:type_name -> Lambda
+	19, // 17: Task.mu:type_name -> Mu
+	20, // 18: Task.nu_1:type_name -> Nu_1
+	21, // 19: Task.nu_2:type_name -> Nu_2
+	22, // 20: Task.nu_3:type_name -> Nu_3
+	23, // 21: Task.result1:type_name -> Result1
+	24, // 22: Task.result2:type_name -> Result2
+	25, // 23: Task.result3:type_name -> Result3
+	26, // 24: Task.result4:type_name -> Result4
+	27, // 25: Task.result5:type_name -> Result5
+	28, // 26: Task.omegaEOF:type_name -> OmegaEOF
+	29, // 27: Task.ringEOF:type_name -> RingEOF
+	0,  // 28: Task.taskIdentifier:type_name -> TaskIdentifier
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_proto_task_proto_init() }
@@ -663,14 +758,14 @@ func file_proto_task_proto_init() {
 	file_proto_stages_lambda_proto_init()
 	file_proto_stages_mu_proto_init()
 	file_proto_stages_nu_proto_init()
-	file_proto_stages_result1_proto_init()
-	file_proto_stages_result2_proto_init()
-	file_proto_stages_result3_proto_init()
-	file_proto_stages_result4_proto_init()
-	file_proto_stages_result5_proto_init()
-	file_proto_stages_omegaEOF_proto_init()
-	file_proto_ringEOF_proto_init()
-	file_proto_task_proto_msgTypes[0].OneofWrappers = []any{
+	file_proto_results_result1_proto_init()
+	file_proto_results_result2_proto_init()
+	file_proto_results_result3_proto_init()
+	file_proto_results_result4_proto_init()
+	file_proto_results_result5_proto_init()
+	file_proto_eof_omegaEOF_proto_init()
+	file_proto_eof_ringEOF_proto_init()
+	file_proto_task_proto_msgTypes[1].OneofWrappers = []any{
 		(*Task_Alpha)(nil),
 		(*Task_Beta)(nil),
 		(*Task_Gamma)(nil),
@@ -706,7 +801,7 @@ func file_proto_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_task_proto_rawDesc), len(file_proto_task_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

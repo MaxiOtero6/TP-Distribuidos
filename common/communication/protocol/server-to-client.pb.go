@@ -122,6 +122,50 @@ func (x *BatchAck) GetStatus() MessageStatus {
 	return MessageStatus_SUCCESS
 }
 
+type FileEOFAck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        MessageStatus          `protobuf:"varint,1,opt,name=status,proto3,enum=MessageStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileEOFAck) Reset() {
+	*x = FileEOFAck{}
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileEOFAck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileEOFAck) ProtoMessage() {}
+
+func (x *FileEOFAck) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileEOFAck.ProtoReflect.Descriptor instead.
+func (*FileEOFAck) Descriptor() ([]byte, []int) {
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *FileEOFAck) GetStatus() MessageStatus {
+	if x != nil {
+		return x.Status
+	}
+	return MessageStatus_SUCCESS
+}
+
 type SyncAck struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
@@ -131,7 +175,7 @@ type SyncAck struct {
 
 func (x *SyncAck) Reset() {
 	*x = SyncAck{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -143,7 +187,7 @@ func (x *SyncAck) String() string {
 func (*SyncAck) ProtoMessage() {}
 
 func (x *SyncAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[1]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -156,7 +200,7 @@ func (x *SyncAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncAck.ProtoReflect.Descriptor instead.
 func (*SyncAck) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{1}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SyncAck) GetClientId() string {
@@ -174,7 +218,7 @@ type FinishAck struct {
 
 func (x *FinishAck) Reset() {
 	*x = FinishAck{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -186,7 +230,7 @@ func (x *FinishAck) String() string {
 func (*FinishAck) ProtoMessage() {}
 
 func (x *FinishAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[2]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -199,7 +243,7 @@ func (x *FinishAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishAck.ProtoReflect.Descriptor instead.
 func (*FinishAck) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{2}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{3}
 }
 
 type DisconnectAck struct {
@@ -210,7 +254,7 @@ type DisconnectAck struct {
 
 func (x *DisconnectAck) Reset() {
 	*x = DisconnectAck{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -222,7 +266,7 @@ func (x *DisconnectAck) String() string {
 func (*DisconnectAck) ProtoMessage() {}
 
 func (x *DisconnectAck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[3]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -235,7 +279,7 @@ func (x *DisconnectAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisconnectAck.ProtoReflect.Descriptor instead.
 func (*DisconnectAck) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{3}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{4}
 }
 
 type ResultsResponse struct {
@@ -248,7 +292,7 @@ type ResultsResponse struct {
 
 func (x *ResultsResponse) Reset() {
 	*x = ResultsResponse{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -260,7 +304,7 @@ func (x *ResultsResponse) String() string {
 func (*ResultsResponse) ProtoMessage() {}
 
 func (x *ResultsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[4]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,7 +317,7 @@ func (x *ResultsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultsResponse.ProtoReflect.Descriptor instead.
 func (*ResultsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{4}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ResultsResponse) GetStatus() MessageStatus {
@@ -295,6 +339,7 @@ type ServerClientMessage struct {
 	// Types that are valid to be assigned to Message:
 	//
 	//	*ServerClientMessage_BatchAck
+	//	*ServerClientMessage_FileEofAck
 	//	*ServerClientMessage_SyncAck
 	//	*ServerClientMessage_Results
 	//	*ServerClientMessage_FinishAck
@@ -306,7 +351,7 @@ type ServerClientMessage struct {
 
 func (x *ServerClientMessage) Reset() {
 	*x = ServerClientMessage{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[5]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -318,7 +363,7 @@ func (x *ServerClientMessage) String() string {
 func (*ServerClientMessage) ProtoMessage() {}
 
 func (x *ServerClientMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[5]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +376,7 @@ func (x *ServerClientMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerClientMessage.ProtoReflect.Descriptor instead.
 func (*ServerClientMessage) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{5}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ServerClientMessage) GetMessage() isServerClientMessage_Message {
@@ -345,6 +390,15 @@ func (x *ServerClientMessage) GetBatchAck() *BatchAck {
 	if x != nil {
 		if x, ok := x.Message.(*ServerClientMessage_BatchAck); ok {
 			return x.BatchAck
+		}
+	}
+	return nil
+}
+
+func (x *ServerClientMessage) GetFileEofAck() *FileEOFAck {
+	if x != nil {
+		if x, ok := x.Message.(*ServerClientMessage_FileEofAck); ok {
+			return x.FileEofAck
 		}
 	}
 	return nil
@@ -394,23 +448,29 @@ type ServerClientMessage_BatchAck struct {
 	BatchAck *BatchAck `protobuf:"bytes,1,opt,name=batch_ack,json=batchAck,proto3,oneof"`
 }
 
+type ServerClientMessage_FileEofAck struct {
+	FileEofAck *FileEOFAck `protobuf:"bytes,2,opt,name=file_eof_ack,json=fileEofAck,proto3,oneof"`
+}
+
 type ServerClientMessage_SyncAck struct {
-	SyncAck *SyncAck `protobuf:"bytes,2,opt,name=sync_ack,json=syncAck,proto3,oneof"`
+	SyncAck *SyncAck `protobuf:"bytes,3,opt,name=sync_ack,json=syncAck,proto3,oneof"`
 }
 
 type ServerClientMessage_Results struct {
-	Results *ResultsResponse `protobuf:"bytes,3,opt,name=results,proto3,oneof"`
+	Results *ResultsResponse `protobuf:"bytes,4,opt,name=results,proto3,oneof"`
 }
 
 type ServerClientMessage_FinishAck struct {
-	FinishAck *FinishAck `protobuf:"bytes,4,opt,name=finish_ack,json=finishAck,proto3,oneof"`
+	FinishAck *FinishAck `protobuf:"bytes,5,opt,name=finish_ack,json=finishAck,proto3,oneof"`
 }
 
 type ServerClientMessage_DisconnectAck struct {
-	DisconnectAck *DisconnectAck `protobuf:"bytes,5,opt,name=disconnect_ack,json=disconnectAck,proto3,oneof"`
+	DisconnectAck *DisconnectAck `protobuf:"bytes,6,opt,name=disconnect_ack,json=disconnectAck,proto3,oneof"`
 }
 
 func (*ServerClientMessage_BatchAck) isServerClientMessage_Message() {}
+
+func (*ServerClientMessage_FileEofAck) isServerClientMessage_Message() {}
 
 func (*ServerClientMessage_SyncAck) isServerClientMessage_Message() {}
 
@@ -430,14 +490,15 @@ type ResultsResponse_Result struct {
 	//	*ResultsResponse_Result_Result4
 	//	*ResultsResponse_Result_Result5
 	//	*ResultsResponse_Result_OmegaEOF
-	Message       isResultsResponse_Result_Message `protobuf_oneof:"Message"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Message        isResultsResponse_Result_Message `protobuf_oneof:"Message"`
+	TaskIdentifier *TaskIdentifier                  `protobuf:"bytes,7,opt,name=task_identifier,json=taskIdentifier,proto3" json:"task_identifier,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ResultsResponse_Result) Reset() {
 	*x = ResultsResponse_Result{}
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[6]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +510,7 @@ func (x *ResultsResponse_Result) String() string {
 func (*ResultsResponse_Result) ProtoMessage() {}
 
 func (x *ResultsResponse_Result) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[6]
+	mi := &file_proto_client_server_messages_server_to_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +523,7 @@ func (x *ResultsResponse_Result) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultsResponse_Result.ProtoReflect.Descriptor instead.
 func (*ResultsResponse_Result) Descriptor() ([]byte, []int) {
-	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{4, 0}
+	return file_proto_client_server_messages_server_to_client_proto_rawDescGZIP(), []int{5, 0}
 }
 
 func (x *ResultsResponse_Result) GetMessage() isResultsResponse_Result_Message {
@@ -526,6 +587,13 @@ func (x *ResultsResponse_Result) GetOmegaEOF() *OmegaEOF {
 	return nil
 }
 
+func (x *ResultsResponse_Result) GetTaskIdentifier() *TaskIdentifier {
+	if x != nil {
+		return x.TaskIdentifier
+	}
+	return nil
+}
+
 type isResultsResponse_Result_Message interface {
 	isResultsResponse_Result_Message()
 }
@@ -551,7 +619,7 @@ type ResultsResponse_Result_Result5 struct {
 }
 
 type ResultsResponse_Result_OmegaEOF struct {
-	OmegaEOF *OmegaEOF `protobuf:"bytes,27,opt,name=omegaEOF,proto3,oneof"`
+	OmegaEOF *OmegaEOF `protobuf:"bytes,6,opt,name=omegaEOF,proto3,oneof"`
 }
 
 func (*ResultsResponse_Result_Result1) isResultsResponse_Result_Message() {}
@@ -570,33 +638,39 @@ var File_proto_client_server_messages_server_to_client_proto protoreflect.FileDe
 
 const file_proto_client_server_messages_server_to_client_proto_rawDesc = "" +
 	"\n" +
-	"3proto/client-server-messages/server-to-client.proto\x1a\x1aproto/stages/result1.proto\x1a\x1aproto/stages/result2.proto\x1a\x1aproto/stages/result3.proto\x1a\x1aproto/stages/result4.proto\x1a\x1aproto/stages/result5.proto\x1a\x1bproto/stages/omegaEOF.proto\"M\n" +
+	"3proto/client-server-messages/server-to-client.proto\x1a\x1bproto/results/result1.proto\x1a\x1bproto/results/result2.proto\x1a\x1bproto/results/result3.proto\x1a\x1bproto/results/result4.proto\x1a\x1bproto/results/result5.proto\x1a\x18proto/eof/omegaEOF.proto\x1a\x10proto/task.proto\"M\n" +
 	"\bBatchAck\x12\x19\n" +
 	"\bbatch_id\x18\x01 \x01(\tR\abatchId\x12&\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x0e.MessageStatusR\x06status\"&\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x0e.MessageStatusR\x06status\"4\n" +
+	"\n" +
+	"FileEOFAck\x12&\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x0e.MessageStatusR\x06status\"&\n" +
 	"\aSyncAck\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\"\v\n" +
 	"\tFinishAck\"\x0f\n" +
-	"\rDisconnectAck\"\xe9\x02\n" +
+	"\rDisconnectAck\"\xa3\x03\n" +
 	"\x0fResultsResponse\x12&\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x0e.MessageStatusR\x06status\x121\n" +
-	"\aresults\x18\x02 \x03(\v2\x17.ResultsResponse.ResultR\aresults\x1a\xfa\x01\n" +
+	"\aresults\x18\x02 \x03(\v2\x17.ResultsResponse.ResultR\aresults\x1a\xb4\x02\n" +
 	"\x06Result\x12$\n" +
 	"\aresult1\x18\x01 \x01(\v2\b.Result1H\x00R\aresult1\x12$\n" +
 	"\aresult2\x18\x02 \x01(\v2\b.Result2H\x00R\aresult2\x12$\n" +
 	"\aresult3\x18\x03 \x01(\v2\b.Result3H\x00R\aresult3\x12$\n" +
 	"\aresult4\x18\x04 \x01(\v2\b.Result4H\x00R\aresult4\x12$\n" +
 	"\aresult5\x18\x05 \x01(\v2\b.Result5H\x00R\aresult5\x12'\n" +
-	"\bomegaEOF\x18\x1b \x01(\v2\t.OmegaEOFH\x00R\bomegaEOFB\t\n" +
-	"\aMessage\"\x85\x02\n" +
+	"\bomegaEOF\x18\x06 \x01(\v2\t.OmegaEOFH\x00R\bomegaEOF\x128\n" +
+	"\x0ftask_identifier\x18\a \x01(\v2\x0f.TaskIdentifierR\x0etaskIdentifierB\t\n" +
+	"\aMessage\"\xb6\x02\n" +
 	"\x13ServerClientMessage\x12(\n" +
-	"\tbatch_ack\x18\x01 \x01(\v2\t.BatchAckH\x00R\bbatchAck\x12%\n" +
-	"\bsync_ack\x18\x02 \x01(\v2\b.SyncAckH\x00R\asyncAck\x12,\n" +
-	"\aresults\x18\x03 \x01(\v2\x10.ResultsResponseH\x00R\aresults\x12+\n" +
+	"\tbatch_ack\x18\x01 \x01(\v2\t.BatchAckH\x00R\bbatchAck\x12/\n" +
+	"\ffile_eof_ack\x18\x02 \x01(\v2\v.FileEOFAckH\x00R\n" +
+	"fileEofAck\x12%\n" +
+	"\bsync_ack\x18\x03 \x01(\v2\b.SyncAckH\x00R\asyncAck\x12,\n" +
+	"\aresults\x18\x04 \x01(\v2\x10.ResultsResponseH\x00R\aresults\x12+\n" +
 	"\n" +
-	"finish_ack\x18\x04 \x01(\v2\n" +
+	"finish_ack\x18\x05 \x01(\v2\n" +
 	".FinishAckH\x00R\tfinishAck\x127\n" +
-	"\x0edisconnect_ack\x18\x05 \x01(\v2\x0e.DisconnectAckH\x00R\rdisconnectAckB\t\n" +
+	"\x0edisconnect_ack\x18\x06 \x01(\v2\x0e.DisconnectAckH\x00R\rdisconnectAckB\t\n" +
 	"\amessage*3\n" +
 	"\rMessageStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\b\n" +
@@ -616,43 +690,48 @@ func file_proto_client_server_messages_server_to_client_proto_rawDescGZIP() []by
 }
 
 var file_proto_client_server_messages_server_to_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_client_server_messages_server_to_client_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_client_server_messages_server_to_client_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_client_server_messages_server_to_client_proto_goTypes = []any{
 	(MessageStatus)(0),             // 0: MessageStatus
 	(*BatchAck)(nil),               // 1: BatchAck
-	(*SyncAck)(nil),                // 2: SyncAck
-	(*FinishAck)(nil),              // 3: FinishAck
-	(*DisconnectAck)(nil),          // 4: DisconnectAck
-	(*ResultsResponse)(nil),        // 5: ResultsResponse
-	(*ServerClientMessage)(nil),    // 6: ServerClientMessage
-	(*ResultsResponse_Result)(nil), // 7: ResultsResponse.Result
-	(*Result1)(nil),                // 8: Result1
-	(*Result2)(nil),                // 9: Result2
-	(*Result3)(nil),                // 10: Result3
-	(*Result4)(nil),                // 11: Result4
-	(*Result5)(nil),                // 12: Result5
-	(*OmegaEOF)(nil),               // 13: OmegaEOF
+	(*FileEOFAck)(nil),             // 2: FileEOFAck
+	(*SyncAck)(nil),                // 3: SyncAck
+	(*FinishAck)(nil),              // 4: FinishAck
+	(*DisconnectAck)(nil),          // 5: DisconnectAck
+	(*ResultsResponse)(nil),        // 6: ResultsResponse
+	(*ServerClientMessage)(nil),    // 7: ServerClientMessage
+	(*ResultsResponse_Result)(nil), // 8: ResultsResponse.Result
+	(*Result1)(nil),                // 9: Result1
+	(*Result2)(nil),                // 10: Result2
+	(*Result3)(nil),                // 11: Result3
+	(*Result4)(nil),                // 12: Result4
+	(*Result5)(nil),                // 13: Result5
+	(*OmegaEOF)(nil),               // 14: OmegaEOF
+	(*TaskIdentifier)(nil),         // 15: TaskIdentifier
 }
 var file_proto_client_server_messages_server_to_client_proto_depIdxs = []int32{
 	0,  // 0: BatchAck.status:type_name -> MessageStatus
-	0,  // 1: ResultsResponse.status:type_name -> MessageStatus
-	7,  // 2: ResultsResponse.results:type_name -> ResultsResponse.Result
-	1,  // 3: ServerClientMessage.batch_ack:type_name -> BatchAck
-	2,  // 4: ServerClientMessage.sync_ack:type_name -> SyncAck
-	5,  // 5: ServerClientMessage.results:type_name -> ResultsResponse
-	3,  // 6: ServerClientMessage.finish_ack:type_name -> FinishAck
-	4,  // 7: ServerClientMessage.disconnect_ack:type_name -> DisconnectAck
-	8,  // 8: ResultsResponse.Result.result1:type_name -> Result1
-	9,  // 9: ResultsResponse.Result.result2:type_name -> Result2
-	10, // 10: ResultsResponse.Result.result3:type_name -> Result3
-	11, // 11: ResultsResponse.Result.result4:type_name -> Result4
-	12, // 12: ResultsResponse.Result.result5:type_name -> Result5
-	13, // 13: ResultsResponse.Result.omegaEOF:type_name -> OmegaEOF
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	0,  // 1: FileEOFAck.status:type_name -> MessageStatus
+	0,  // 2: ResultsResponse.status:type_name -> MessageStatus
+	8,  // 3: ResultsResponse.results:type_name -> ResultsResponse.Result
+	1,  // 4: ServerClientMessage.batch_ack:type_name -> BatchAck
+	2,  // 5: ServerClientMessage.file_eof_ack:type_name -> FileEOFAck
+	3,  // 6: ServerClientMessage.sync_ack:type_name -> SyncAck
+	6,  // 7: ServerClientMessage.results:type_name -> ResultsResponse
+	4,  // 8: ServerClientMessage.finish_ack:type_name -> FinishAck
+	5,  // 9: ServerClientMessage.disconnect_ack:type_name -> DisconnectAck
+	9,  // 10: ResultsResponse.Result.result1:type_name -> Result1
+	10, // 11: ResultsResponse.Result.result2:type_name -> Result2
+	11, // 12: ResultsResponse.Result.result3:type_name -> Result3
+	12, // 13: ResultsResponse.Result.result4:type_name -> Result4
+	13, // 14: ResultsResponse.Result.result5:type_name -> Result5
+	14, // 15: ResultsResponse.Result.omegaEOF:type_name -> OmegaEOF
+	15, // 16: ResultsResponse.Result.task_identifier:type_name -> TaskIdentifier
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_proto_client_server_messages_server_to_client_proto_init() }
@@ -660,20 +739,22 @@ func file_proto_client_server_messages_server_to_client_proto_init() {
 	if File_proto_client_server_messages_server_to_client_proto != nil {
 		return
 	}
-	file_proto_stages_result1_proto_init()
-	file_proto_stages_result2_proto_init()
-	file_proto_stages_result3_proto_init()
-	file_proto_stages_result4_proto_init()
-	file_proto_stages_result5_proto_init()
-	file_proto_stages_omegaEOF_proto_init()
-	file_proto_client_server_messages_server_to_client_proto_msgTypes[5].OneofWrappers = []any{
+	file_proto_results_result1_proto_init()
+	file_proto_results_result2_proto_init()
+	file_proto_results_result3_proto_init()
+	file_proto_results_result4_proto_init()
+	file_proto_results_result5_proto_init()
+	file_proto_eof_omegaEOF_proto_init()
+	file_proto_task_proto_init()
+	file_proto_client_server_messages_server_to_client_proto_msgTypes[6].OneofWrappers = []any{
 		(*ServerClientMessage_BatchAck)(nil),
+		(*ServerClientMessage_FileEofAck)(nil),
 		(*ServerClientMessage_SyncAck)(nil),
 		(*ServerClientMessage_Results)(nil),
 		(*ServerClientMessage_FinishAck)(nil),
 		(*ServerClientMessage_DisconnectAck)(nil),
 	}
-	file_proto_client_server_messages_server_to_client_proto_msgTypes[6].OneofWrappers = []any{
+	file_proto_client_server_messages_server_to_client_proto_msgTypes[7].OneofWrappers = []any{
 		(*ResultsResponse_Result_Result1)(nil),
 		(*ResultsResponse_Result_Result2)(nil),
 		(*ResultsResponse_Result_Result3)(nil),
@@ -687,7 +768,7 @@ func file_proto_client_server_messages_server_to_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_client_server_messages_server_to_client_proto_rawDesc), len(file_proto_client_server_messages_server_to_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

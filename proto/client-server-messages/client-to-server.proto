@@ -32,15 +32,22 @@ message Batch {
     FileType type = 1;
     repeated Row data = 2;
     string client_id = 3;
-    bool EOF = 4;
+    uint32 batch_number = 4;
+}
+
+message FileEOF {
+    FileType type = 1;
+    uint32 batch_count = 2;
+    string client_id = 3;
 }
 
 message ClientServerMessage{
     oneof message {
         Batch batch = 1;
-        Sync sync = 2;
-        Finish finish = 3;
-        Result result = 4;
-        Disconnect disconnect = 5;
+        FileEOF file_eof = 2;
+        Sync sync = 3;
+        Finish finish = 4;
+        Result result = 5;
+        Disconnect disconnect = 6;
     }
 }

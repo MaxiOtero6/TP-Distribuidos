@@ -74,6 +74,9 @@ func (c *ClientHandler) handleMessage(message *protocol.Message) error {
 	case *protocol.ClientServerMessage_Batch:
 		c.handleBatchMessage(msg.Batch)
 
+	case *protocol.ClientServerMessage_FileEof:
+		c.handleFileEOFMessage(msg.FileEof)
+
 	case *protocol.ClientServerMessage_Finish:
 		c.handleFinishMessage(msg.Finish)
 
@@ -135,19 +138,19 @@ func (c *ClientHandler) handleConnectionMessage(syncMessage *protocol.Sync) {
 }
 
 func (c *ClientHandler) handleBatchMessage(batchMessage *protocol.Batch) error {
-
 	clientId := batchMessage.GetClientId()
+	taskNumber := batchMessage.GetBatchNumber()
 
-	switch batchMessage.Type {
+	switch batchMessage.GetType() {
 	case protocol.FileType_MOVIES:
 		movies := processMoviesBatch(batchMessage)
-		c.rabbitHandler.SendMoviesRabbit(movies, clientId, batchMessage.GetEOF())
+		c.rabbitHandler.SendMoviesRabbit(movies, clientId, taskNumber)
 	case protocol.FileType_CREDITS:
 		actors := processCreditsBatch(batchMessage)
-		c.rabbitHandler.SendActorsRabbit(actors, clientId, batchMessage.GetEOF())
+		c.rabbitHandler.SendActorsRabbit(actors, clientId, taskNumber)
 	case protocol.FileType_RATINGS:
 		ratings := processRatingsBatch(batchMessage)
-		c.rabbitHandler.SendRatingsRabbit(ratings, clientId, batchMessage.GetEOF())
+		c.rabbitHandler.SendRatingsRabbit(ratings, clientId, taskNumber)
 	default:
 		log.Errorf("Invalid batch type: %v", batchMessage.Type)
 
@@ -187,6 +190,62 @@ func (c *ClientHandler) handleBatchMessage(batchMessage *protocol.Batch) error {
 
 	if err := c.socket.Write(ackMessage); err != nil {
 		log.Errorf("Error sending batch acknowledgment: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *ClientHandler) handleFileEOFMessage(fileEOFMessage *protocol.FileEOF) error {
+	log.Infof("Received file EOF message from user: %v ", fileEOFMessage.ClientId)
+
+	clientId := fileEOFMessage.GetClientId()
+	taskCount := fileEOFMessage.GetBatchCount()
+
+	switch fileEOFMessage.GetType() {
+	case protocol.FileType_MOVIES:
+		c.rabbitHandler.SendMoviesEOFRabbit(clientId, taskCount)
+	case protocol.FileType_CREDITS:
+		c.rabbitHandler.SendActorsEOFRabbit(fileEOFMessage.ClientId, taskCount)
+	case protocol.FileType_RATINGS:
+		c.rabbitHandler.SendRatingsEOFRabbit(fileEOFMessage.ClientId, taskCount)
+	default:
+		log.Errorf("Invalid file type in EOF message: %v", fileEOFMessage.GetType())
+
+		ackMessage := &protocol.Message{
+			Message: &protocol.Message_ServerClientMessage{
+				ServerClientMessage: &protocol.ServerClientMessage{
+					Message: &protocol.ServerClientMessage_FileEofAck{
+						FileEofAck: &protocol.FileEOFAck{
+							Status: protocol.MessageStatus_FAIL,
+						},
+					},
+				},
+			},
+		}
+
+		if err := c.socket.Write(ackMessage); err != nil {
+			log.Errorf("Error sending file EOF acknowledgment: %v", err)
+			return err
+		}
+
+		return fmt.Errorf("invalid file type in EOF message: %v", fileEOFMessage.GetType())
+	}
+
+	ackMessage := &protocol.Message{
+		Message: &protocol.Message_ServerClientMessage{
+			ServerClientMessage: &protocol.ServerClientMessage{
+				Message: &protocol.ServerClientMessage_FileEofAck{
+					FileEofAck: &protocol.FileEOFAck{
+						Status: protocol.MessageStatus_SUCCESS,
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.socket.Write(ackMessage); err != nil {
+		log.Errorf("Error sending file EOF acknowledgment: %v", err)
 		return err
 	}
 
