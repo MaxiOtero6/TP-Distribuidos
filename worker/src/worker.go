@@ -20,6 +20,7 @@ var log = logging.MustGetLogger("log")
 // Worker is a struct that represents a worker that consumes tasks from a message queue and executes them
 type Worker struct {
 	WorkerId    string
+	baseDir     string
 	rabbitMQ    *mom.RabbitMQ
 	action      actions.Action
 	done        chan os.Signal
@@ -40,6 +41,7 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 
 	return &Worker{
 		WorkerId:    infraConfig.GetNodeId(),
+		baseDir:     infraConfig.GetDirectory(),
 		rabbitMQ:    rabbitMQ,
 		action:      action,
 		done:        signalChan,
@@ -144,7 +146,17 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 	}
 
 	w.sendSubTasks(subTasks)
+
+	//w.action.DownloadData()
+	//TODO Handle sourceType
+	//storage.CommitPartialDataToFinal(w.baseDir, task.GetStage(), "", task.GetClientId())
 	message.Ack(false)
+
+	//delete info from the storage
+
+	//w.action.LoadData()
+	//storage.DeletePartialResults(w.baseDir, task.GetStage(), "", task.GetClientId())
+
 }
 
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key
