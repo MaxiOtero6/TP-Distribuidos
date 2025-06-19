@@ -627,7 +627,7 @@ func saveDataToFile(tempFilePath string, data interface{}) error {
 	}
 	//return processTypedStruct(data, tempFilePath, marshaler)
 
-	switch v := any(data).(type) {
+	switch v := data.(type) {
 	case map[string]*protocol.Epsilon_Data:
 		return processTypedMap(v, tempFilePath, marshaler)
 
