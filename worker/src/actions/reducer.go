@@ -57,7 +57,7 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 
 	reducer := &Reducer{
 		infraConfig:    infraConfig,
-		partialResults: make(map[string]*common.ReducerPartialResults),
+		partialResults: make(map[string]*ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		eofHandler:     eofHandler,
 	}
