@@ -222,7 +222,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -232,6 +232,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -268,7 +269,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -278,6 +279,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -313,7 +315,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -323,6 +325,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -358,7 +361,7 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -368,6 +371,7 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -535,7 +539,7 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 	taskCount := r.participatesInResults(clientId, data.GetStage())
 	ready := r.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready && taskCount > 0 {
+	if ready {
 		err = r.AddResultsToNextStage(tasks, data.GetStage(), clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)

@@ -6,7 +6,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("log")
 
 type StatefulEofHandler struct {
 	workerType    model.ActionType
@@ -135,9 +138,9 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 	}
 
 	// TODO: @MaxiOtero6 como harías esto ?
-	if ringEOF.RoundNumber > 2000 {
-		return false // If the round number is greater than 20, we stop the RingEOF cycle to avoid infinite loops
-	}
+	// if ringEOF.RoundNumber > 2000 {
+	// 	return false // If the round number is greater than 20, we stop the RingEOF cycle to avoid infinite loops
+	// }
 
 	h.updateNextStageTaskCount(ringEOF, resultsTaskCount)
 
@@ -154,7 +157,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 		} else {
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
-				h.nextWorkerRing(tasks, ringEOF, clientId, true)
+				h.nextWorkerRing(tasks, ringEOF, clientId, false)
 				return false
 
 			} else {
@@ -178,9 +181,9 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 }
 
 func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
-	if len(taskFragments) == 0 {
-		return
-	}
+	// if len(taskFragments) == 0 {
+	// 	return
+	// }
 
 	stageFragments := ringEOF.GetStageFragmentes()
 
@@ -201,6 +204,15 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 
 	// Sort stage fragments by TaskNumber and TaskFragmentNumber
 	sort.Slice(stageFragments, func(i, j int) bool {
+		// if stageFragments[i].GetCreatorId() != stageFragments[j].GetCreatorId() {
+		// 	return stageFragments[i].GetCreatorId() < stageFragments[j].GetCreatorId()
+		// }
+
+		// if stageFragments[i].Start.GetTaskNumber() == stageFragments[j].Start.GetTaskNumber() {
+		// 	if stageFragments[i].Start.GetTaskFragmentNumber() == stageFragments[j].Start.GetTaskFragmentNumber() {
+		// 		return stageFragments[i].End.GetTaskFragmentNumber() > stageFragments[j].End.GetTaskFragmentNumber()
+		// 	}
+
 		if stageFragments[i].GetCreatorId() != stageFragments[j].GetCreatorId() {
 			return stageFragments[i].GetCreatorId() < stageFragments[j].GetCreatorId()
 		}
@@ -224,35 +236,75 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 				break // Different creators, cannot merge
 			}
 
-			if currentFragment.End.GetTaskNumber() == nextFragment.Start.GetTaskNumber() {
+			merge := false
+
+			if currentFragment.End.GetTaskNumber() > nextFragment.Start.GetTaskNumber() {
+				// If the current fragment's end task number is greater than or equal to the next fragment's start task number,
+				// we can merge them if they are consecutive or overlapping
+				if currentFragment.End.GetTaskNumber() > nextFragment.End.GetTaskNumber() {
+					// If the current fragment's end task number is greater than the next fragment's end task number,
+					// we ignore it cause it is already included in the current fragment
+					merge = false
+				} else if currentFragment.End.GetTaskNumber() == nextFragment.Start.GetTaskNumber() {
+					if currentFragment.End.GetTaskFragmentNumber() >= nextFragment.End.GetTaskFragmentNumber() {
+						// If the current fragment's end task fragment number is greater than or equal to the next fragment's end task fragment number,
+						// we ignore it cause it is already included in the current fragment
+						merge = false
+					} else {
+						// If the current fragment's end task fragment number is less than the next fragment's end task fragment number,
+						// we can merge them
+						merge = true
+					}
+				} else {
+					merge = true
+				}
+			} else if currentFragment.End.GetTaskNumber() == nextFragment.Start.GetTaskNumber() {
 				if currentFragment.End.GetTaskFragmentNumber() >= nextFragment.Start.GetTaskFragmentNumber() {
-					if currentFragment.End.GetTaskFragmentNumber() < nextFragment.End.GetTaskFragmentNumber() {
-						currentFragment.End = nextFragment.End
-						currentFragment.LastFragment = nextFragment.LastFragment
+					if currentFragment.End.GetTaskFragmentNumber() >= nextFragment.End.GetTaskFragmentNumber() {
+						// If the current fragment's end task fragment number is greater than the next fragment's start task fragment number,
+						// we ignore it cause it is already included in the current fragment
+						merge = false
+					} else {
+						// If the current fragment's end task fragment number is equal to the next fragment's start task fragment number,
+						// we can merge them
+						merge = true
 					}
 				} else if currentFragment.End.GetTaskFragmentNumber()+1 == nextFragment.Start.GetTaskFragmentNumber() {
-					currentFragment.End = nextFragment.End
-					currentFragment.LastFragment = nextFragment.LastFragment
+					// If the current fragment's end task fragment number is one less than the next fragment's start task fragment number,
+					// we can merge them
+					merge = true
 				} else {
-					break // No more consecutive fragments to merge
+					// If the current fragment's end task fragment number is less than the next fragment's start task fragment number,
+					// we cannot merge them
+					break
 				}
+			} else if currentFragment.End.GetTaskNumber()+1 == nextFragment.Start.GetTaskNumber() {
+				// If the next fragment is consecutive to the current fragment,
+				if currentFragment.LastFragment && nextFragment.Start.GetTaskFragmentNumber() == 0 {
+					// If the current fragment's end task number is one less than the next fragment's start task number,
+					// and the next fragment starts with task fragment number 0, we can merge them
+					merge = true
+				} else {
+					// If the current fragment's end task number is one less than the next fragment's start task number,
+					// but the next fragment does not start with task fragment number 0, we cannot merge them
+					break
+				}
+			}
 
-				i++
-				continue // Continue to the next fragment
-
-			} else if currentFragment.LastFragment && currentFragment.End.GetTaskNumber()+1 == nextFragment.Start.GetTaskNumber() && nextFragment.Start.GetTaskFragmentNumber() == 0 {
-				// If the current fragment is the last and the next fragment starts with 0, we can merge them
+			if merge {
 				currentFragment.End = nextFragment.End
 				currentFragment.LastFragment = nextFragment.LastFragment
-				i++
-			} else {
-				break // No more consecutive fragments to merge
 			}
+			i++ // Move to the next fragment
 		}
 		mergedFragments = append(mergedFragments, currentFragment)
 	}
 
 	ringEOF.StageFragmentes = mergedFragments
+}
+
+func (h *StatefulEofHandler) MergeStageFragmentsPublic(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
+	h.mergeStageFragments(ringEOF, taskFragments)
 }
 
 func (h *StatefulEofHandler) updateNextStageTaskCount(ringEof *protocol.RingEOF, taskCount int) {
@@ -288,6 +340,15 @@ func isStageReady(ringEOF *protocol.RingEOF) bool {
 		endTask := frag.End.GetTaskNumber()
 
 		totalTasks += int(endTask - startTask + 1)
+	}
+
+	if totalTasks < int(taskCount) {
+		log.Debugf("Stage %s is not ready: expected %d tasks, but got %d", ringEOF.GetStage(), taskCount, totalTasks)
+	} else if totalTasks > int(taskCount) {
+		log.Debugf("Stage %s has more tasks than expected: expected %d tasks, but got %d", ringEOF.GetStage(), taskCount, totalTasks)
+		log.Debugf("Task fragments: %v", ringEOF.GetStageFragmentes())
+	} else {
+		log.Debugf("Stage %s is ready with %d tasks", ringEOF.GetStage(), totalTasks)
 	}
 
 	return totalTasks == int(taskCount)

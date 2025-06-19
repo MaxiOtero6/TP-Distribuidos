@@ -180,10 +180,6 @@ func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 		}
 	})
 
-	identifierFunc := func(data *protocol.Result2_Data) string {
-		return data.GetCountry()
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Result2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -197,13 +193,10 @@ func (t *Topper) epsilonResultStage(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := t.getNextStageData(common.EPSILON_STAGE, clientId)
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
 
 	creatorId := t.infraConfig.GetNodeId()
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStageData[0], clientId, creatorId, 0, taskDataCreator)
 }
 
 func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
@@ -237,10 +230,6 @@ func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 	results = append(results, maxResults...)
 	results = append(results, minResults...)
 
-	identifierFunc := func(data *protocol.Result3_Data) string {
-		return data.GetId()
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Result3_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -254,13 +243,10 @@ func (t *Topper) thetaResultStage(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := t.getNextStageData(common.THETA_STAGE, clientId)
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
 
 	creatorId := t.infraConfig.GetNodeId()
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStageData[0], clientId, creatorId, 0, taskDataCreator)
 }
 
 func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
@@ -276,10 +262,6 @@ func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
 		}
 	})
 
-	identifierFunc := func(data *protocol.Result4_Data) string {
-		return data.GetActorId()
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Result4_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -293,13 +275,10 @@ func (t *Topper) lambdaResultStage(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := t.getNextStageData(common.LAMBDA_STAGE, clientId)
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
 
 	creatorId := t.infraConfig.GetNodeId()
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, 0, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStageData[0], clientId, creatorId, 0, taskDataCreator)
 }
 
 func (t *Topper) addResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
@@ -412,7 +391,7 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 	taskCount := t.participatesInResults(clientId, data.GetStage())
 	ready := t.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready && taskCount > 0 {
+	if ready {
 		err = t.addResultsToNextStage(tasks, data.GetStage(), clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)

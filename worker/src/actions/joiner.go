@@ -12,7 +12,7 @@ import (
 )
 
 type SmallTableData[S any] map[string]S
-type BigTableData[B any] map[uint32]map[string][]B
+type BigTableData[B any] map[int]map[string][]B
 
 type JoinerTableData[T any] struct {
 	data           T
@@ -98,8 +98,8 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return joiner
 }
 
-func (j *Joiner) joinZetaData(ratingsData BigTableData[*protocol.Zeta_Data_Rating], clientId string) map[uint32][]*protocol.Eta_1_Data {
-	joinedDataByTask := make(map[uint32][]*protocol.Eta_1_Data)
+func (j *Joiner) joinZetaData(ratingsData BigTableData[*protocol.Zeta_Data_Rating], clientId string) map[int][]*protocol.Eta_1_Data {
+	joinedDataByTask := make(map[int][]*protocol.Eta_1_Data)
 
 	for taskNumber, ratingsByTask := range ratingsData {
 		joinedData := make([]*protocol.Eta_1_Data, 0)
@@ -127,8 +127,8 @@ func (j *Joiner) joinZetaData(ratingsData BigTableData[*protocol.Zeta_Data_Ratin
 	return joinedDataByTask
 }
 
-func (j *Joiner) joinIotaData(actorsData BigTableData[*protocol.Iota_Data_Actor], clientId string) map[uint32][]*protocol.Kappa_1_Data {
-	joinedDataByTask := make(map[uint32][]*protocol.Kappa_1_Data)
+func (j *Joiner) joinIotaData(actorsData BigTableData[*protocol.Iota_Data_Actor], clientId string) map[int][]*protocol.Kappa_1_Data {
+	joinedDataByTask := make(map[int][]*protocol.Kappa_1_Data)
 
 	for taskNumber, actorsByTask := range actorsData {
 		joinedData := make([]*protocol.Kappa_1_Data, 0)
@@ -558,7 +558,7 @@ func (j *Joiner) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[uint32][]*protocol.Eta_1_Data, clientId string) {
+func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[int][]*protocol.Eta_1_Data, clientId string) {
 	dataStage := common.ZETA_STAGE
 	zetaData := j.partialResults[clientId].zetaData
 
@@ -579,13 +579,13 @@ func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[uin
 	creatorId := j.infraConfig.GetNodeId()
 
 	for taskNumber, partialResults := range partialResultsByTask {
-		joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
+		AddResultsToStateless(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
 		zetaData.sendedTaskCount++
 	}
 
 }
 
-func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[uint32][]*protocol.Kappa_1_Data, clientId string) {
+func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[int][]*protocol.Kappa_1_Data, clientId string) {
 	dataStage := common.IOTA_STAGE
 	iotaData := j.partialResults[clientId].iotaData
 
@@ -606,7 +606,7 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[u
 	creatorId := j.infraConfig.GetNodeId()
 
 	for taskNumber, partialResults := range partialResultsByTask {
-		joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
+		AddResultsToStateless(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
 		iotaData.sendedTaskCount++
 	}
 }
@@ -661,7 +661,7 @@ func processBigTableJoinerStage[G any, B any](
 
 	partialData.taskFragments[taskID] = struct{}{}
 
-	taskNumber := taskID.TaskNumber
+	taskNumber := int(taskID.TaskNumber)
 
 	if _, exists := partialData.data[taskNumber]; !exists {
 		partialData.data[taskNumber] = make(map[string][]B)
@@ -676,43 +676,6 @@ func processBigTableJoinerStage[G any, B any](
 
 		partialData.data[taskNumber][id] = append(partialData.data[taskNumber][id], mappingFunc(item))
 	}
-}
-
-func joinerAddResults[T any](
-	tasks common.Tasks,
-	results []T,
-	nextStageData common.NextStageData,
-	clientId string,
-	creatorId string,
-	taskNumber uint32,
-	taskDataCreator func(stage string, results []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
-) {
-	exchange := nextStageData.Exchange
-	routingKey := nextStageData.RoutingKey
-
-	if _, ok := tasks[exchange]; !ok {
-		tasks[exchange] = make(map[string][]*protocol.Task)
-	}
-
-	taskIdentifier := &protocol.TaskIdentifier{
-		CreatorId:          creatorId,
-		TaskNumber:         taskNumber,
-		TaskFragmentNumber: 0,
-		LastFragment:       true,
-	}
-
-	task := taskDataCreator(
-		nextStageData.Stage,
-		results,
-		clientId,
-		taskIdentifier,
-	)
-
-	if _, ok := tasks[exchange][routingKey]; !ok {
-		tasks[exchange][routingKey] = []*protocol.Task{}
-	}
-
-	tasks[exchange][routingKey] = append(tasks[exchange][routingKey], task)
 }
 
 // // Delete partialResult by clientId

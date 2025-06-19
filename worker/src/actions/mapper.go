@@ -73,7 +73,7 @@ func (m *Mapper) delta1Stage(data []*protocol.Delta_1_Data, clientId, creatorId 
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator, true)
 
 	return tasks
 }
@@ -115,7 +115,7 @@ func (m *Mapper) eta1Stage(data []*protocol.Eta_1_Data, clientId, creatorId stri
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator, true)
 
 	return tasks
 }
@@ -172,7 +172,7 @@ func (m *Mapper) kappa1Stage(data []*protocol.Kappa_1_Data, clientId, creatorId 
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator, true)
 
 	return tasks
 }
@@ -230,7 +230,7 @@ func (m *Mapper) nu1Stage(data []*protocol.Nu_1_Data, clientId, creatorId string
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, m.itemHashFunc, identifierFunc, taskDataCreator, true)
 
 	return tasks
 }

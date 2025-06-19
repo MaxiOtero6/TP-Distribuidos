@@ -60,60 +60,163 @@ func NewAction(workerType string, infraConfig *model.InfraConfig) Action {
 	}
 }
 
-func AddResults[T any](
+func AddResultsToStateless[T any](
 	tasks common.Tasks,
 	results []T,
 	nextStageData common.NextStageData,
 	clientId string,
 	creatorId string,
 	taskNumber int,
-	itemHashFunc func(workersCount int, item string) string,
-	identifierFunc func(input T) string,
 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
 ) {
-	if _, ok := tasks[nextStageData.Exchange]; !ok {
-		tasks[nextStageData.Exchange] = make(map[string][]*protocol.Task)
+	exchange := nextStageData.Exchange
+	routingKey := nextStageData.RoutingKey
+	stage := nextStageData.Stage
+
+	if _, ok := tasks[exchange]; !ok {
+		tasks[exchange] = make(map[string][]*protocol.Task)
 	}
 
-	dataByNode := make(map[string][]T)
-
-	for _, data := range results {
-		nodeId := itemHashFunc(nextStageData.WorkerCount, identifierFunc(data))
-		dataByNode[nodeId] = append(dataByNode[nodeId], data)
+	taskIdentifier := &protocol.TaskIdentifier{
+		CreatorId:          creatorId,
+		TaskNumber:         uint32(taskNumber),
+		TaskFragmentNumber: 0,
+		LastFragment:       true,
 	}
 
-	destinationNodes := utils.MapKeys(dataByNode)
+	task := taskDataCreator(
+		stage,
+		results,
+		clientId,
+		taskIdentifier,
+	)
 
-	// Esto sirve para el filter
-	if len(destinationNodes) == 0 && creatorId == clientId {
-		destinationNodes = append(destinationNodes, nextStageData.RoutingKey)
+	if _, ok := tasks[exchange][routingKey]; !ok {
+		tasks[exchange][routingKey] = []*protocol.Task{}
 	}
+
+	tasks[exchange][routingKey] = append(tasks[exchange][routingKey], task)
+}
+
+func AddResultsToStateful[T any](
+	tasks common.Tasks,
+	results []T,
+	nextStageData common.NextStageData,
+	clientId string,
+	creatorId string,
+	taskNumber int,
+	hashFunc func(workersCount int, input string) string,
+	identifierFunc func(input T) string,
+	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
+	alwaysAddTasks bool,
+) {
+	exchange := nextStageData.Exchange
+	workerCount := nextStageData.WorkerCount
+	stage := nextStageData.Stage
+
+	if _, ok := tasks[exchange]; !ok {
+		tasks[exchange] = make(map[string][]*protocol.Task)
+	}
+
+	dataByRK := make(map[string][]T)
+
+	for _, item := range results {
+		routingKey := hashFunc(workerCount, identifierFunc(item))
+		dataByRK[routingKey] = append(dataByRK[routingKey], item)
+	}
+
+	destinationNodes := utils.MapKeys(dataByRK)
 
 	slices.Sort(destinationNodes)
 
-	createTaskIdentifier := func(_ string, index int) *protocol.TaskIdentifier {
-		return &protocol.TaskIdentifier{
+	if len(destinationNodes) == 0 && alwaysAddTasks {
+		routingKey := hashFunc(workerCount, creatorId+stage)
+		destinationNodes = append(destinationNodes, routingKey)
+	}
+
+	for index, routingKey := range destinationNodes {
+		taskIdentifier := &protocol.TaskIdentifier{
 			CreatorId:          creatorId,
 			TaskNumber:         uint32(taskNumber),
 			TaskFragmentNumber: uint32(index),
 			LastFragment:       index == len(destinationNodes)-1,
 		}
-	}
 
-	for index, nodeId := range destinationNodes {
-		taskIdentifier := createTaskIdentifier(nodeId, index)
+		data := []T{}
+
+		if _, ok := dataByRK[routingKey]; ok {
+			data = dataByRK[routingKey]
+		}
+
 		task := taskDataCreator(
-			nextStageData.Stage,
-			dataByNode[nodeId],
+			stage,
+			data,
 			clientId,
 			taskIdentifier,
 		)
-		if _, ok := tasks[nextStageData.Exchange][nodeId]; !ok {
-			tasks[nextStageData.Exchange][nodeId] = []*protocol.Task{}
+
+		if _, ok := tasks[exchange][routingKey]; !ok {
+			tasks[exchange][routingKey] = []*protocol.Task{}
 		}
-		tasks[nextStageData.Exchange][nodeId] = append(tasks[nextStageData.Exchange][nodeId], task)
+
+		tasks[exchange][routingKey] = append(tasks[exchange][routingKey], task)
 	}
 }
+
+// func AddResults[T any](
+// 	tasks common.Tasks,
+// 	results []T,
+// 	nextStageData common.NextStageData,
+// 	clientId string,
+// 	creatorId string,
+// 	taskNumber int,
+// 	itemHashFunc func(workersCount int, item string) string,
+// 	identifierFunc func(input T) string,
+// 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
+// ) {
+// 	if _, ok := tasks[nextStageData.Exchange]; !ok {
+// 		tasks[nextStageData.Exchange] = make(map[string][]*protocol.Task)
+// 	}
+
+// 	dataByNode := make(map[string][]T)
+
+// 	for _, data := range results {
+// 		nodeId := itemHashFunc(nextStageData.WorkerCount, identifierFunc(data))
+// 		dataByNode[nodeId] = append(dataByNode[nodeId], data)
+// 	}
+
+// 	destinationNodes := utils.MapKeys(dataByNode)
+
+// 	// Esto sirve para el filter
+// 	if len(destinationNodes) == 0 && creatorId == clientId {
+// 		destinationNodes = append(destinationNodes, nextStageData.RoutingKey)
+// 	}
+
+// 	slices.Sort(destinationNodes)
+
+// 	createTaskIdentifier := func(_ string, index int) *protocol.TaskIdentifier {
+// 		return &protocol.TaskIdentifier{
+// 			CreatorId:          creatorId,
+// 			TaskNumber:         uint32(taskNumber),
+// 			TaskFragmentNumber: uint32(index),
+// 			LastFragment:       index == len(destinationNodes)-1,
+// 		}
+// 	}
+
+// 	for index, nodeId := range destinationNodes {
+// 		taskIdentifier := createTaskIdentifier(nodeId, index)
+// 		task := taskDataCreator(
+// 			nextStageData.Stage,
+// 			dataByNode[nodeId],
+// 			clientId,
+// 			taskIdentifier,
+// 		)
+// 		if _, ok := tasks[nextStageData.Exchange][nodeId]; !ok {
+// 			tasks[nextStageData.Exchange][nodeId] = []*protocol.Task{}
+// 		}
+// 		tasks[nextStageData.Exchange][nodeId] = append(tasks[nextStageData.Exchange][nodeId], task)
+// 	}
+// }
 
 func ProcessStage[T any](
 	partial *PartialData[*T],
@@ -133,6 +236,7 @@ func ProcessStage[T any](
 
 	if _, processed := partial.taskFragments[taskID]; processed {
 		// Task already handled
+		log.Debugf("Task %s already processed, skipping", taskID)
 		return
 	}
 
