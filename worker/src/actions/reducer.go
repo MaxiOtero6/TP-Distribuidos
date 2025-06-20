@@ -114,8 +114,6 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 }
 
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
-	log.Debugf("Processing Nu_2 stage for client %s with task identifier %s, already processed: %d", clientId, taskIdentifier, len(r.partialResults[clientId].nu2.taskFragments))
-
 	partialData := r.partialResults[clientId].nu2
 
 	aggregationFunc := func(existing *protocol.Nu_2_Data, input *protocol.Nu_2_Data) {

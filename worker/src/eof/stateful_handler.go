@@ -181,15 +181,9 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 }
 
 func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
-	// if len(taskFragments) > 0 {
-	// 	for _, taskFragment := range taskFragments {
-	// 		log.Debugf("Adding Task Fragment for stage %s: %s", ringEOF.GetStage(), taskFragment)
-	// 	}
-
-	// 	log.Debugf("Merging Task Fragments for stage %s, initial fragments len %d and ranges %d", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
-	// } else {
-	// 	log.Debugf("No Task Fragments to merge for stage %s, initial fragments len %d and ranges %d", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
-	// }
+	if len(taskFragments) > 0 {
+		return // If there are no task fragments, we do not need to merge anything
+	}
 
 	stageFragments := ringEOF.GetStageFragmentes()
 
