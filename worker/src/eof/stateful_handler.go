@@ -289,6 +289,8 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 					// but the next fragment does not start with task fragment number 0, we cannot merge them
 					break
 				}
+			} else {
+				break // No overlap or consecutive fragments, stop merging
 			}
 
 			// if overlap {

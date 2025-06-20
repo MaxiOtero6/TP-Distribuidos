@@ -219,12 +219,12 @@ func AddResultsToStateful[T any](
 // }
 
 func ProcessStage[T any](
-	partial *PartialData[*T],
-	newItems []*T,
+	partial *PartialData[T],
+	newItems []T,
 	clientID string,
 	taskIdentifier *protocol.TaskIdentifier,
-	merge func(*T, *T),
-	keySelector func(*T) string,
+	merge func(T, T),
+	keySelector func(T) string,
 ) {
 
 	taskID := model.TaskFragmentIdentifier{

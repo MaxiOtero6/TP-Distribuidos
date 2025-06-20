@@ -153,10 +153,10 @@ func GroupByKey[T any](items []*T,
 }
 
 func MergeIntoMap[T any](
-	target map[string]*T,
-	items []*T,
-	keySelector func(*T) string,
-	merge func(*T, *T),
+	target map[string]T,
+	items []T,
+	keySelector func(T) string,
+	merge func(T, T),
 ) {
 	for _, item := range items {
 		key := keySelector(item)

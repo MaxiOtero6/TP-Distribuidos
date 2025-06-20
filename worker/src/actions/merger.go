@@ -374,7 +374,7 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 	taskCount := m.participatesInResults(clientId, stage)
 	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
-	if ready {
+	if ready && taskCount > 0 {
 		err = m.addResultsToNextStage(tasks, stage, clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", stage, err)

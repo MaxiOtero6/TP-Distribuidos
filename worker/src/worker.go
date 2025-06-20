@@ -131,6 +131,9 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 		return
 	}
 
+	log.Debugf("Task %T recived with a TID of %s",
+		task.GetStage(), task.GetTaskIdentifier())
+
 	subTasks, err := w.action.Execute(task)
 
 	if err != nil {
@@ -158,17 +161,13 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		}
 
 		w.rabbitMQ.Publish(exchange, routingKey, taskRaw)
-		log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
+		log.Debugf("Task %T sent to exchange '%s' with routing key '%s' with a TID of %s",
+			task.GetStage(), exchange, routingKey, task.GetTaskIdentifier())
 	}
 
 	for exchange, routingKeys := range subTasks {
 		for routingKey, tasks := range routingKeys {
 			for _, task := range tasks {
-				if task.GetRingEOF() != nil || task.GetOmegaEOF() != nil {
-					defer sendTask(exchange, routingKey, task)
-					continue
-				}
-
 				sendTask(exchange, routingKey, task)
 			}
 		}
