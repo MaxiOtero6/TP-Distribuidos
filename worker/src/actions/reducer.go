@@ -114,6 +114,8 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 }
 
 func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+	log.Debugf("Processing Nu_2 stage for client %s with task identifier %s, already processed: %d", clientId, taskIdentifier, len(r.partialResults[clientId].nu2.taskFragments))
+
 	partialData := r.partialResults[clientId].nu2
 
 	aggregationFunc := func(existing *protocol.Nu_2_Data, input *protocol.Nu_2_Data) {
@@ -139,6 +141,8 @@ func (r *Reducer) nextStageData(stage string, clientId string) ([]common.NextSta
 }
 
 func reducerNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
+	routingKey := itemHashFunc(infraConfig.GetReduceCount(), clientId+stage)
+
 	switch stage {
 	case common.DELTA_STAGE_2:
 		return []common.NextStageData{
@@ -146,7 +150,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.DELTA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.DELTA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.ETA_STAGE_2:
@@ -155,7 +159,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.ETA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.ETA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.KAPPA_STAGE_2:
@@ -164,7 +168,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.KAPPA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.KAPPA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.NU_STAGE_2:
@@ -173,7 +177,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.NU_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.NU_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.RING_STAGE:

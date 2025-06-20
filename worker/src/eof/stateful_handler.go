@@ -181,8 +181,14 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 }
 
 func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
-	// if len(taskFragments) == 0 {
-	// 	return
+	// if len(taskFragments) > 0 {
+	// 	for _, taskFragment := range taskFragments {
+	// 		log.Debugf("Adding Task Fragment for stage %s: %s", ringEOF.GetStage(), taskFragment)
+	// 	}
+
+	// 	log.Debugf("Merging Task Fragments for stage %s, initial fragments len %d and ranges %d", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
+	// } else {
+	// 	log.Debugf("No Task Fragments to merge for stage %s, initial fragments len %d and ranges %d", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
 	// }
 
 	stageFragments := ringEOF.GetStageFragmentes()
@@ -204,15 +210,6 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 
 	// Sort stage fragments by TaskNumber and TaskFragmentNumber
 	sort.Slice(stageFragments, func(i, j int) bool {
-		// if stageFragments[i].GetCreatorId() != stageFragments[j].GetCreatorId() {
-		// 	return stageFragments[i].GetCreatorId() < stageFragments[j].GetCreatorId()
-		// }
-
-		// if stageFragments[i].Start.GetTaskNumber() == stageFragments[j].Start.GetTaskNumber() {
-		// 	if stageFragments[i].Start.GetTaskFragmentNumber() == stageFragments[j].Start.GetTaskFragmentNumber() {
-		// 		return stageFragments[i].End.GetTaskFragmentNumber() > stageFragments[j].End.GetTaskFragmentNumber()
-		// 	}
-
 		if stageFragments[i].GetCreatorId() != stageFragments[j].GetCreatorId() {
 			return stageFragments[i].GetCreatorId() < stageFragments[j].GetCreatorId()
 		}
@@ -237,8 +234,10 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 			}
 
 			merge := false
+			// overlap := false
 
 			if currentFragment.End.GetTaskNumber() > nextFragment.Start.GetTaskNumber() {
+				// overlap = true
 				// If the current fragment's end task number is greater than or equal to the next fragment's start task number,
 				// we can merge them if they are consecutive or overlapping
 				if currentFragment.End.GetTaskNumber() > nextFragment.End.GetTaskNumber() {
@@ -260,6 +259,7 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 				}
 			} else if currentFragment.End.GetTaskNumber() == nextFragment.Start.GetTaskNumber() {
 				if currentFragment.End.GetTaskFragmentNumber() >= nextFragment.Start.GetTaskFragmentNumber() {
+					// overlap = true
 					if currentFragment.End.GetTaskFragmentNumber() >= nextFragment.End.GetTaskFragmentNumber() {
 						// If the current fragment's end task fragment number is greater than the next fragment's start task fragment number,
 						// we ignore it cause it is already included in the current fragment
@@ -291,16 +291,28 @@ func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, task
 				}
 			}
 
+			// if overlap {
+			// 	log.Debugf("There is an overlap between fragments: %s and %s", currentFragment, nextFragment)
+			// }
+
 			if merge {
 				currentFragment.End = nextFragment.End
 				currentFragment.LastFragment = nextFragment.LastFragment
 			}
+
 			i++ // Move to the next fragment
 		}
 		mergedFragments = append(mergedFragments, currentFragment)
 	}
 
 	ringEOF.StageFragmentes = mergedFragments
+
+	if len(taskFragments) > 0 {
+		// log.Debugf("Merged fragments for stage %s: %d fragments after merging: %v", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
+	} else {
+		// log.Debugf("No task fragments to merge for stage %s, final fragments count: %d and ranges %v", ringEOF.GetStage(), len(ringEOF.GetStageFragmentes()), ringEOF.GetStageFragmentes())
+	}
+
 }
 
 func (h *StatefulEofHandler) MergeStageFragmentsPublic(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
