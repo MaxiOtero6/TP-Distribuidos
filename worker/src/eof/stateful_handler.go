@@ -136,11 +136,6 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 		ringEOF.RoundNumber++
 	}
 
-	// TODO: @MaxiOtero6 como harías esto ?
-	// if ringEOF.RoundNumber > 2000 {
-	// 	return false // If the round number is greater than 20, we stop the RingEOF cycle to avoid infinite loops
-	// }
-
 	h.updateNextStageTaskCount(ringEOF, resultsTaskCount)
 
 	if ringEOF.GetReadyId() == "" {
@@ -154,16 +149,10 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 			h.nextWorkerRing(tasks, ringEOF, clientId, false)
 			return true
 		} else {
-			if ringEOF.GetCreatorId() == h.nodeId {
-				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
-				h.nextWorkerRing(tasks, ringEOF, clientId, true)
-				return false
-
-			} else {
-				// If the EOF does not do a full cycle, we continue the RingEOF cycle until it is ready
-				h.nextWorkerRing(tasks, ringEOF, clientId, false)
-				return false
-			}
+			// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
+			// If the EOF does not do a full cycle, we continue the RingEOF cycle until it is ready
+			h.nextWorkerRing(tasks, ringEOF, clientId, ringEOF.GetCreatorId() == h.nodeId)
+			return false
 		}
 	} else {
 		// IF the EOF is Ready, we can return the tasks immediatel or the next stage EOF
@@ -182,6 +171,11 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 func (h *StatefulEofHandler) mergeStageFragments(ringEOF *protocol.RingEOF, taskFragments []model.TaskFragmentIdentifier) {
 	if len(taskFragments) == 0 {
 		return // If there are no task fragments, we do not need to merge anything
+	}
+
+	// Do not order ready stage fragments, they are already ordered by the worker
+	if isStageReady(ringEOF) {
+		return
 	}
 
 	stageFragments := ringEOF.GetStageFragmentes()
