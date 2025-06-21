@@ -82,29 +82,6 @@ func (w *Worker) Run() {
 
 outer:
 	for {
-		// First check for termination signal
-		select {
-		case <-w.done:
-			log.Infof("Worker %s received SIGTERM", w.WorkerId)
-			break outer
-		default:
-			// Continue processing if no termination signal
-		}
-
-		// Then prioritize EOF messages
-		select {
-		case message, ok := <-w.eofChan:
-			if !ok {
-				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
-				break outer
-			}
-			w.handleMessage(&message)
-			continue // Go back to the beginning of the loop to check for more EOF messages first
-		default:
-			// No EOF messages, continue to check regular messages
-		}
-
-		// Finally check regular messages, but also be responsive to EOF messages and termination
 		select {
 		case <-w.done:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
@@ -178,8 +155,6 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		log.Debugf("Task %T sent to exchange '%s' with routing key '%s' with a TID of %s",
 			task.GetStage(), exchange, routingKey, task.GetTaskIdentifier())
 	}
-
-	log.Warningf("Worker %s sending subtasks: %v", w.WorkerId, subTasks)
 
 	for exchange, routingKeys := range subTasks {
 		for routingKey, tasks := range routingKeys {

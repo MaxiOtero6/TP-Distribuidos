@@ -134,10 +134,14 @@ func appendExtraInfra(
 	if needParking {
 		nextWorkerId := utils.GetNextNodeId(workerId, workerCount)
 
+		if workerType == string(model.TopperAction) {
+			nextWorkerId = workerId
+		}
+
 		queues = append(queues, map[string]string{
 			"name":           parkingQName,
 			"dlx_routingKey": workerType + "_" + nextWorkerId,
-			"ttl":            "500", // 500 ms
+			"ttl":            "100", // 100 ms
 			"dlx_exchange":   eofExchangeName,
 		})
 
