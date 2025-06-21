@@ -51,11 +51,10 @@ func (h *StatefulEofHandler) nextWorkerRing(tasks common.Tasks, previousRingEOF 
 		}
 
 		exchange := nextStageData.Exchange
-		routingKey := nextStageData.RoutingKey
+		routingKey := string(h.workerType) + "_" + nextStageData.RoutingKey
 
 		if parking {
 			exchange = h.infraConfig.GetParkingEOFExchange()
-			routingKey = string(h.workerType) + "_" + nextStageData.RoutingKey
 		}
 
 		if _, exists := tasks[exchange]; !exists {
@@ -67,7 +66,6 @@ func (h *StatefulEofHandler) nextWorkerRing(tasks common.Tasks, previousRingEOF 
 		}
 
 		tasks[exchange][routingKey] = append(tasks[exchange][routingKey], nextStageRing)
-
 	}
 }
 

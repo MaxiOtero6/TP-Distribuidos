@@ -69,14 +69,7 @@ func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]s
 }
 
 // Run starts the worker and listens for messages on the consume channel
-// It unmarshals the task from the message body and executes it using the action struct
-// It also sends the subTasks to the RabbitMQ for each exchange and routing key
-// If the task fails to unmarshal or execute, it logs the error and continues to the next message
-// It also acknowledges the message after processing it
-// The worker will run until it receives a signal on the done channel
-// After that, it will close the RabbitMQ connection
-// and exit
-// It panics if the consume channel is nil
+// EOF messages are processed with priority over regular task messages
 func (w *Worker) Run() {
 	if w.consumeChan == nil || w.eofChan == nil {
 		log.Panicf("Consume channel is nil, did you call InitConfig?")
@@ -89,18 +82,39 @@ func (w *Worker) Run() {
 
 outer:
 	for {
+		// First check for termination signal
 		select {
 		case <-w.done:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
+		default:
+			// Continue processing if no termination signal
+		}
 
+		// Then prioritize EOF messages
+		select {
 		case message, ok := <-w.eofChan:
 			if !ok {
 				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
 				break outer
 			}
 			w.handleMessage(&message)
+			continue // Go back to the beginning of the loop to check for more EOF messages first
+		default:
+			// No EOF messages, continue to check regular messages
+		}
 
+		// Finally check regular messages, but also be responsive to EOF messages and termination
+		select {
+		case <-w.done:
+			log.Infof("Worker %s received SIGTERM", w.WorkerId)
+			break outer
+		case message, ok := <-w.eofChan:
+			if !ok {
+				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
+				break outer
+			}
+			w.handleMessage(&message)
 		case message, ok := <-w.consumeChan:
 			if !ok {
 				log.Warningf("Worker %s consume channel closed", w.WorkerId)
@@ -164,6 +178,8 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		log.Debugf("Task %T sent to exchange '%s' with routing key '%s' with a TID of %s",
 			task.GetStage(), exchange, routingKey, task.GetTaskIdentifier())
 	}
+
+	log.Warningf("Worker %s sending subtasks: %v", w.WorkerId, subTasks)
 
 	for exchange, routingKeys := range subTasks {
 		for routingKey, tasks := range routingKeys {

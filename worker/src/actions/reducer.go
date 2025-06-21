@@ -182,7 +182,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetReduceExchange(),
+				Exchange:    infraConfig.GetEofExchange(),
 				WorkerCount: infraConfig.GetReduceCount(),
 				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetReduceCount()),
 			},

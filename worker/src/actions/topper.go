@@ -337,7 +337,7 @@ func topperNextStageData(stage string, clientId string, infraConfig *model.Infra
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetTopExchange(),
+				Exchange:    infraConfig.GetEofExchange(),
 				WorkerCount: infraConfig.GetTopCount(),
 				RoutingKey:  infraConfig.GetNodeId(),
 			},
