@@ -55,6 +55,7 @@ func (h *StatefulEofHandler) nextWorkerRing(tasks common.Tasks, previousRingEOF 
 
 		if parking {
 			exchange = h.infraConfig.GetParkingEOFExchange()
+			routingKey = string(h.workerType) + "_" + h.nodeId
 		}
 
 		if _, exists := tasks[exchange]; !exists {
@@ -155,7 +156,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 		} else {
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
-				h.nextWorkerRing(tasks, ringEOF, clientId, false)
+				h.nextWorkerRing(tasks, ringEOF, clientId, true)
 				return false
 
 			} else {

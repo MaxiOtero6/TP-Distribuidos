@@ -137,7 +137,7 @@ func appendExtraInfra(
 		queues = append(queues, map[string]string{
 			"name":           parkingQName,
 			"dlx_routingKey": workerType + "_" + nextWorkerId,
-			"ttl":            "5000", // 5 seconds
+			"ttl":            "500", // 500 ms
 			"dlx_exchange":   eofExchangeName,
 		})
 
