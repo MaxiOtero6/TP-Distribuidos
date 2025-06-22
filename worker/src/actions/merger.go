@@ -439,33 +439,33 @@ func (m *Merger) LoadData(task *protocol.Task) error {
 
 	m.makePartialResults(clientId)
 
-	switch v := stage.(type) {
+	switch s := stage.(type) {
 	case *protocol.Task_Delta_3:
 
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Delta3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3)
 
 	case *protocol.Task_Eta_3:
 
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Eta3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Eta3)
 
 	case *protocol.Task_Kappa_3:
 
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Kappa3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Kappa3)
 
 	case *protocol.Task_Nu_3:
 
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Nu3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3)
 
 	case *protocol.Task_OmegaEOF:
-		data := v.OmegaEOF.GetData()
+		data := s.OmegaEOF.GetData()
 		return m.loadMetaData(data.GetStage(), clientId)
 
 	case *protocol.Task_RingEOF:
-		stage := v.RingEOF.GetStage()
+		stage := s.RingEOF.GetStage()
 		return m.loadMetaData(stage, clientId)
 
 	default:
-		return fmt.Errorf("invalid query stage: %v", v)
+		return fmt.Errorf("invalid query stage: %v", s)
 	}
 
 }

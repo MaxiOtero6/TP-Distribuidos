@@ -22,91 +22,6 @@ const EPSILON_TOP_K = 5
 const LAMBDA_TOP_K = 10
 const THETA_TOP_K = 1
 
-// func assertSerializationWithCustomComparison[T proto.Message](
-// 	t *testing.T,
-// 	testCases []struct {
-// 		name       string
-// 		data       *common.PartialData[T]
-// 		dir        string
-// 		clientID   string
-// 		stage      interface{}
-// 		source     string
-// 		comparator func(expected, actual any) bool
-// 	},
-// ) {
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			// Crear un directorio temporal para la prueba
-// 			tempDir, err := os.MkdirTemp("", "test_serialization")
-// 			if err != nil {
-// 				t.Fatalf("Failed to create temp directory: %v", err)
-// 			}
-// 			defer os.RemoveAll(tempDir) // Limpiar el directorio temporal después de la prueba
-
-// 			stringStage, err := getStageNameFromInterface(tc.stage)
-
-// 			// Guardar los datos en un archivo
-// 			err = SaveDataToFile(tempDir, tc.clientID, stringStage, tc.source, tc.data)
-// 			assert.NoError(t, err, "Failed to save data to file")
-// 			err = CommitPartialDataToFinal(tempDir, tc.stage, tc.source, tc.clientID)
-// 			assert.NoError(t, err, "Failed to commit partial data to final")
-
-// 			//Leer los datos del archivo
-// 			loadedData, err := LoadStageClientInfoFromDisk[any](tempDir, stringStage, tc.source, tc.clientID)
-// 			log.Info("fail with error : ", err)
-// 			assert.NoError(t, err, "Failed to load data from file")
-// 			log.Infof("Loaded data: %v", loadedData)
-// 			// Usar la función de comparación personalizada
-// 			assert.True(t, tc.comparator(tc.data, loadedData), "Loaded data does not match original data")
-// 		})
-// 	}
-// }
-
-/*
-func assertDeserializationOfWorkerInfo[T proto.Message](
-	t *testing.T,
-	testCases []struct {
-		name        string
-		partialData *common.MergerPartialResults
-		dir         string
-		clientID    string
-		source      string
-		stage       interface{}
-		comparator  func(expected, actual map[string]*common.MergerPartialResults) bool
-		setter      func(result *common.MergerPartialResults, data *common.PartialData[T])
-	},
-) {
-
-	// Crear un directorio temporal para todas las pruebas
-	tempDir, err := os.MkdirTemp("", "test_deserialization")
-	log.Infof("Temporary directory created: %s", tempDir)
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir) // Limpiar el directorio temporal después de la prueba
-
-	// Guardar y commitear todos los datos
-	for _, tc := range testCases {
-		stringStage, err := getStageNameFromInterface(tc.stage)
-		assert.NoError(t, err, "Failed to get stage name")
-		err = SaveDataToFile(tempDir, tc.clientID, stringStage, tc.source, tc.data)
-		assert.NoError(t, err, "Failed to save data to file")
-		err = CommitPartialDataToFinal(tempDir, tc.stage, tc.source, tc.clientID)
-		assert.NoError(t, err, "Failed to commit partial data to final")
-	}
-
-	// Validar todos los datos al final
-	expected := createExpectedResult(testCases)
-
-	actualResult, err := LoadMergerPartialResultsFromDisk(tempDir)
-	assert.NoError(t, err, "Failed to load data from file")
-	log.Infof("Loaded data: %v", actualResult[CLIENT_ID].Delta3)
-
-	assert.True(t, CompareMergerPartialResultsMap(expected, actualResult), "Loaded merger partial results do not match expected")
-
-}
-*/
-
 func LoadDataToFile[T proto.Message](t *testing.T, tc struct {
 	name     string
 	data     *common.PartialData[T]
@@ -116,7 +31,7 @@ func LoadDataToFile[T proto.Message](t *testing.T, tc struct {
 	stage    interface{}
 }) {
 
-	err := SaveGeneralDataToFile(tc.dir, tc.clientID, tc.stage, tc.data)
+	err := SaveDataToFile(tc.dir, tc.clientID, tc.stage, common.FolderType(tc.source), tc.data)
 	assert.NoError(t, err, "Failed to save data to file")
 	assert.NoError(t, err, "Failed to commit partial data to final")
 
@@ -1008,5 +923,5 @@ func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
 	}
 
 	// Assert the loaded data matches the expected data
-	assert.True(t, EqualTopperPartialResults(&expected, loaded[CLIENT_ID]), "Loaded TopperPartialResults do not match expected")
+	assert.True(t, compareTopperPartialResults(&expected, loaded[CLIENT_ID]), "Loaded TopperPartialResults do not match expected")
 }

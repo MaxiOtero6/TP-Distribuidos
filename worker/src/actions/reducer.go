@@ -593,29 +593,29 @@ func (r *Meducer) LoadData(task *protocol.Task) error {
 
 	r.makePartialResults(clientId)
 
-	switch v := stage.(type) {
+	switch s := stage.(type) {
 	case *protocol.Task_Delta_2:
-		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Delta2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Delta2)
 
 	case *protocol.Task_Eta_2:
-		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Eta2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Eta2)
 
 	case *protocol.Task_Kappa_2:
-		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Kappa2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Kappa2)
 
 	case *protocol.Task_Nu_2:
-		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Nu2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Nu2)
 
 	case *protocol.Task_OmegaEOF:
-		data := v.OmegaEOF.GetData()
+		data := s.OmegaEOF.GetData()
 		return r.loadMetaData(data.GetStage(), clientId)
 
 	case *protocol.Task_RingEOF:
-		stage := v.RingEOF.GetStage()
+		stage := s.RingEOF.GetStage()
 		return r.loadMetaData(stage, clientId)
 
 	default:
-		return fmt.Errorf("invalid query stage: %v", v)
+		return fmt.Errorf("invalid query stage: %v", s)
 	}
 
 }

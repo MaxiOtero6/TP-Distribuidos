@@ -373,12 +373,12 @@ func commitPartialMetadataToFinal(dirPath string) error {
 	return renameFile(dirPath, tempMetadataFileName, finalMetadataFileName)
 }
 
-func commitPartialDataToFinal(dir string, stage string, FolderType common.FolderType, clientId string) error {
+func commitPartialDataToFinal(dir string, stage string, folderType common.FolderType, clientId string) error {
 
 	if dir != "" {
-		log.Infof("Committing data for stage %s, table type %s, client ID %s", stage, FolderType, clientId)
+		log.Infof("Committing data for stage %s, table type %s, client ID %s", stage, folderType, clientId)
 
-		dirPath := filepath.Join(dir, stage, string(FolderType), clientId)
+		dirPath := filepath.Join(dir, stage, string(folderType), clientId)
 
 		tempDataFileName := TEMPORARY_DATA_FILE_NAME + JSON_FILE_EXTENSION
 		finalDataFileName := FINAL_DATA_FILE_NAME + JSON_FILE_EXTENSION
@@ -416,10 +416,9 @@ func SaveTopperThetaDataToFile[K topkheap.Ordered, T proto.Message](dir string, 
 		RingRound:      data[0].RingRound,
 	}
 
-	return saveGeneralDataToFile(dir, clientId, stringStage, topperPartialData)
+	return saveGeneralDataToFile(dir, clientId, stringStage, common.GENERAL_FOLDER_TYPE, topperPartialData)
 
 }
-
 func SaveTopperDataToFile[K topkheap.Ordered, T proto.Message](dir string, stage interface{}, clientId string, data *common.TopperPartialData[K, T], keyFunc func(T) K) error {
 
 	stringStage, err := getStageNameFromInterface(stage)
@@ -435,54 +434,13 @@ func SaveTopperDataToFile[K topkheap.Ordered, T proto.Message](dir string, stage
 		RingRound:      data.RingRound,
 	}
 
-	err = saveGeneralDataToFile(dir, clientId, stringStage, topperPartialData)
+	err = saveGeneralDataToFile(dir, clientId, stringStage, common.GENERAL_FOLDER_TYPE, topperPartialData)
 	if err != nil {
 		return fmt.Errorf("error saving general data to file: %w", err)
 	}
 
 	return commitPartialDataToFinal(dir, stringStage, common.GENERAL_FOLDER_TYPE, clientId)
 }
-
-func SaveGeneralDataToFile[T proto.Message](dir string, clientId string, stage interface{}, data *common.PartialData[T]) error {
-	stringStage, err := getStageNameFromInterface(stage)
-	if err != nil {
-		return fmt.Errorf("error getting stage name: %w", err)
-	}
-	err = saveGeneralDataToFile(dir, clientId, stringStage, data)
-	if err != nil {
-		return fmt.Errorf("error saving general data to file: %w", err)
-	}
-
-	return commitPartialDataToFinal(dir, stringStage, common.GENERAL_FOLDER_TYPE, clientId)
-}
-
-func SaveMetadataToFile[T proto.Message](dir string, clientId string, stage string, folderType common.FolderType, data *common.PartialData[T]) error {
-
-	dirPath := filepath.Join(dir, stage, string(folderType), clientId)
-	err := os.MkdirAll(dirPath, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
-
-	metadata := MetaData{
-		OmegaProcessed: data.OmegaProcessed,
-		RingRound:      data.RingRound,
-	}
-
-	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
-	if err != nil {
-		return fmt.Errorf("failed to save data to temporary file: %w", err)
-	}
-
-	err = commitPartialMetadataToFinal(dirPath)
-	if err != nil {
-		return fmt.Errorf("failed to commit metadata to final file: %w", err)
-	}
-	return nil
-}
-
 func SaveTopperMetadataToFile[K topkheap.Ordered, T proto.Message](dir string, clientId string, stage string, data *common.TopperPartialData[K, T]) error {
 
 	dirPath := filepath.Join(dir, stage, clientId)
@@ -510,9 +468,47 @@ func SaveTopperMetadataToFile[K topkheap.Ordered, T proto.Message](dir string, c
 	return nil
 }
 
-func saveGeneralDataToFile[T proto.Message](dir string, clientId string, stage string, data *common.PartialData[T]) error {
+func SaveDataToFile[T proto.Message](dir string, clientId string, stage interface{}, tableType common.FolderType, data *common.PartialData[T]) error {
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+	err = saveGeneralDataToFile(dir, clientId, stringStage, tableType, data)
+	if err != nil {
+		return fmt.Errorf("error saving general data to file: %w", err)
+	}
 
-	dirPath := filepath.Join(dir, stage, clientId)
+	return commitPartialDataToFinal(dir, stringStage, tableType, clientId)
+}
+func SaveMetadataToFile[T proto.Message](dir string, clientId string, stage string, tableType common.FolderType, data *common.PartialData[T]) error {
+
+	dirPath := filepath.Join(dir, stage, string(tableType), clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	metadata := MetaData{
+		OmegaProcessed: data.OmegaProcessed,
+		RingRound:      data.RingRound,
+	}
+
+	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	err = commitPartialMetadataToFinal(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to commit metadata to final file: %w", err)
+	}
+	return nil
+}
+func saveGeneralDataToFile[T proto.Message](dir string, clientId string, stage string, tableType common.FolderType, data *common.PartialData[T]) error {
+
+	dirPath := filepath.Join(dir, stage, string(tableType), clientId)
 	err := os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
@@ -621,82 +617,6 @@ func StartCleanupRoutine(dir string) {
 
 		}
 	}
-}
-
-func CompareMergerPartialResultsMap(
-	expected, actual map[string]*common.MergerPartialResults,
-) bool {
-	if len(expected) != len(actual) {
-		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
-		return false
-	}
-	for clientID, expectedResult := range expected {
-		actualResult, ok := actual[clientID]
-		if !ok {
-			log.Errorf("Client %s not found in actual results", clientID)
-			return false
-		}
-		// Comparar Delta3
-		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
-			log.Errorf("Delta3 mismatch for client %s", clientID)
-			return false
-		}
-
-		// Comparar Eta3
-		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
-			log.Errorf("Eta3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Kappa3
-		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
-			log.Errorf("Kappa3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Nu3
-		if !compareStruct(expectedResult.Nu3, actualResult.Nu3) {
-			log.Errorf("Nu3 mismatch for client %s", clientID)
-			return false
-		}
-	}
-	return true
-}
-
-func CompareReducerPartialResultsMap(
-	expected, actual map[string]*common.ReducerPartialResults,
-) bool {
-	if len(expected) != len(actual) {
-		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
-		return false
-	}
-	for clientID, expectedResult := range expected {
-		actualResult, ok := actual[clientID]
-		if !ok {
-			log.Errorf("Client %s not found in actual results", clientID)
-			return false
-		}
-		// Comparar Delta2
-		if !compareStruct(expectedResult.Delta2, actualResult.Delta2) {
-			log.Errorf("Delta2 mismatch for client %s", clientID)
-			return false
-		}
-
-		// Comparar Eta2
-		if !compareStruct(expectedResult.Eta2, actualResult.Eta2) {
-			log.Errorf("Eta2 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Kappa2
-		if !compareStruct(expectedResult.Kappa2, actualResult.Kappa2) {
-			log.Errorf("Kappa2 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Nu2
-		if !compareStruct(expectedResult.Nu2, actualResult.Nu2) {
-			log.Errorf("Nu2 mismatch for client %s", clientID)
-			return false
-		}
-	}
-	return true
 }
 
 func cleanUpOldFiles(dir string) error {
@@ -985,155 +905,8 @@ func getStageNameFromInterface(stage interface{}) (string, error) {
 	}
 }
 
-func compareProtobufMaps(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are equal using proto.Equal
-		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
-			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
-			return false
-		}
-	}
-
-	return true
-}
-
-func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are slices
-		expectedSlice := reflect.ValueOf(expectedValue)
-		actualSlice := reflect.ValueOf(actualValue.Interface())
-
-		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
-			log.Errorf("Values for key %v are not slices", key)
-			return false
-		}
-
-		// Verify that the slices have the same length
-		if expectedSlice.Len() != actualSlice.Len() {
-			log.Errorf("Slices for key %v have different lengths", key)
-			return false
-		}
-
-		// Compare the elements of the slices
-		for i := 0; i < expectedSlice.Len(); i++ {
-			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
-				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
-				return false
-			}
-		}
-	}
-
-	return true
-
-}
-
-func compareStruct(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Si son punteros, obtener el valor al que apuntan
-	if expectedVal.Kind() == reflect.Ptr {
-		if expectedVal.IsNil() && actualVal.IsNil() {
-			return true
-		}
-		if expectedVal.IsNil() || actualVal.IsNil() {
-			return false
-		}
-		expectedVal = expectedVal.Elem()
-	}
-	if actualVal.Kind() == reflect.Ptr {
-		actualVal = actualVal.Elem()
-	}
-
-	// Ambos deben ser structs
-	if expectedVal.Kind() != reflect.Struct || actualVal.Kind() != reflect.Struct {
-		log.Error("Both values must be structs")
-		return false
-	}
-
-	t := expectedVal.Type()
-	for i := 0; i < expectedVal.NumField(); i++ {
-		fieldName := t.Field(i).Name
-		expectedField := expectedVal.Field(i).Interface()
-		actualField := actualVal.Field(i).Interface()
-
-		// Si el campo es un mapa, usar compareProtobufMaps
-		if expectedVal.Field(i).Kind() == reflect.Map {
-			if !compareProtobufMaps(expectedField, actualField) {
-				log.Errorf("Map field %s does not match", fieldName)
-				return false
-			}
-			// Si el campo es un struct, comparar recursivamente
-		} else if expectedVal.Field(i).Kind() == reflect.Struct {
-			if !compareStruct(expectedField, actualField) {
-				log.Errorf("Struct field %s does not match", fieldName)
-				return false
-			}
-			// Para el resto, usar DeepEqual
-		} else {
-			log.Infof("Comparing field %s", fieldName)
-			log.Infof("Expected: %v, Actual: %v", expectedField, actualField)
-			if !reflect.DeepEqual(expectedField, actualField) {
-				log.Errorf("Field %s does not match: expected %v, got %v", fieldName, expectedField, actualField)
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// Compara dos TopperPartialResults profundamente, incluyendo los heaps, pero compara los heaps manualmente.
-func EqualTopperPartialResults(a, b *common.TopperPartialResults) bool {
+// Compare functions
+func compareTopperPartialResults(a, b *common.TopperPartialResults) bool {
 	if a == nil && b == nil {
 		log.Info("Both TopperPartialResults are nil")
 		return true
@@ -1271,5 +1044,223 @@ func EqualTopperPartialResults(a, b *common.TopperPartialResults) bool {
 	}
 
 	log.Info("TopperPartialResults are equal")
+	return true
+}
+func compareProtobufMaps(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Verify that both are maps
+	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
+		log.Error("The provided values are not maps")
+		return false
+	}
+
+	// Verify that they have the same size
+	if expectedVal.Len() != actualVal.Len() {
+		log.Error("The maps have different lengths")
+		return false
+	}
+
+	// Iterate over the keys of the expected map
+	for _, key := range expectedVal.MapKeys() {
+		expectedValue := expectedVal.MapIndex(key).Interface()
+		actualValue := actualVal.MapIndex(key)
+
+		// Verify that the key exists in the actual map
+		if !actualValue.IsValid() {
+			log.Errorf("Key %v not found in actual map", key)
+			return false
+		}
+
+		// Verify that the values are equal using proto.Equal
+		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
+			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
+			return false
+		}
+	}
+
+	return true
+}
+func CompareMergerPartialResultsMap(
+	expected, actual map[string]*common.MergerPartialResults,
+) bool {
+	if len(expected) != len(actual) {
+		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
+		return false
+	}
+	for clientID, expectedResult := range expected {
+		actualResult, ok := actual[clientID]
+		if !ok {
+			log.Errorf("Client %s not found in actual results", clientID)
+			return false
+		}
+		// Comparar Delta3
+		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
+			log.Errorf("Delta3 mismatch for client %s", clientID)
+			return false
+		}
+
+		// Comparar Eta3
+		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
+			log.Errorf("Eta3 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Kappa3
+		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
+			log.Errorf("Kappa3 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Nu3
+		if !compareStruct(expectedResult.Nu3, actualResult.Nu3) {
+			log.Errorf("Nu3 mismatch for client %s", clientID)
+			return false
+		}
+	}
+	return true
+}
+func CompareReducerPartialResultsMap(
+	expected, actual map[string]*common.ReducerPartialResults,
+) bool {
+	if len(expected) != len(actual) {
+		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
+		return false
+	}
+	for clientID, expectedResult := range expected {
+		actualResult, ok := actual[clientID]
+		if !ok {
+			log.Errorf("Client %s not found in actual results", clientID)
+			return false
+		}
+		// Comparar Delta2
+		if !compareStruct(expectedResult.Delta2, actualResult.Delta2) {
+			log.Errorf("Delta2 mismatch for client %s", clientID)
+			return false
+		}
+
+		// Comparar Eta2
+		if !compareStruct(expectedResult.Eta2, actualResult.Eta2) {
+			log.Errorf("Eta2 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Kappa2
+		if !compareStruct(expectedResult.Kappa2, actualResult.Kappa2) {
+			log.Errorf("Kappa2 mismatch for client %s", clientID)
+			return false
+		}
+		// Comparar Nu2
+		if !compareStruct(expectedResult.Nu2, actualResult.Nu2) {
+			log.Errorf("Nu2 mismatch for client %s", clientID)
+			return false
+		}
+	}
+	return true
+}
+func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Verify that both are maps
+	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
+		log.Error("The provided values are not maps")
+		return false
+	}
+
+	// Verify that they have the same size
+	if expectedVal.Len() != actualVal.Len() {
+		log.Error("The maps have different lengths")
+		return false
+	}
+
+	// Iterate over the keys of the expected map
+	for _, key := range expectedVal.MapKeys() {
+		expectedValue := expectedVal.MapIndex(key).Interface()
+		actualValue := actualVal.MapIndex(key)
+
+		// Verify that the key exists in the actual map
+		if !actualValue.IsValid() {
+			log.Errorf("Key %v not found in actual map", key)
+			return false
+		}
+
+		// Verify that the values are slices
+		expectedSlice := reflect.ValueOf(expectedValue)
+		actualSlice := reflect.ValueOf(actualValue.Interface())
+
+		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
+			log.Errorf("Values for key %v are not slices", key)
+			return false
+		}
+
+		// Verify that the slices have the same length
+		if expectedSlice.Len() != actualSlice.Len() {
+			log.Errorf("Slices for key %v have different lengths", key)
+			return false
+		}
+
+		// Compare the elements of the slices
+		for i := 0; i < expectedSlice.Len(); i++ {
+			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
+				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
+				return false
+			}
+		}
+	}
+
+	return true
+
+}
+func compareStruct(expected, actual interface{}) bool {
+	expectedVal := reflect.ValueOf(expected)
+	actualVal := reflect.ValueOf(actual)
+
+	// Si son punteros, obtener el valor al que apuntan
+	if expectedVal.Kind() == reflect.Ptr {
+		if expectedVal.IsNil() && actualVal.IsNil() {
+			return true
+		}
+		if expectedVal.IsNil() || actualVal.IsNil() {
+			return false
+		}
+		expectedVal = expectedVal.Elem()
+	}
+	if actualVal.Kind() == reflect.Ptr {
+		actualVal = actualVal.Elem()
+	}
+
+	// Ambos deben ser structs
+	if expectedVal.Kind() != reflect.Struct || actualVal.Kind() != reflect.Struct {
+		log.Error("Both values must be structs")
+		return false
+	}
+
+	t := expectedVal.Type()
+	for i := 0; i < expectedVal.NumField(); i++ {
+		fieldName := t.Field(i).Name
+		expectedField := expectedVal.Field(i).Interface()
+		actualField := actualVal.Field(i).Interface()
+
+		// Si el campo es un mapa, usar compareProtobufMaps
+		if expectedVal.Field(i).Kind() == reflect.Map {
+			if !compareProtobufMaps(expectedField, actualField) {
+				log.Errorf("Map field %s does not match", fieldName)
+				return false
+			}
+			// Si el campo es un struct, comparar recursivamente
+		} else if expectedVal.Field(i).Kind() == reflect.Struct {
+			if !compareStruct(expectedField, actualField) {
+				log.Errorf("Struct field %s does not match", fieldName)
+				return false
+			}
+			// Para el resto, usar DeepEqual
+		} else {
+			log.Infof("Comparing field %s", fieldName)
+			log.Infof("Expected: %v, Actual: %v", expectedField, actualField)
+			if !reflect.DeepEqual(expectedField, actualField) {
+				log.Errorf("Field %s does not match: expected %v, got %v", fieldName, expectedField, actualField)
+				return false
+			}
+		}
+	}
 	return true
 }
