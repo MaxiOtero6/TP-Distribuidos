@@ -19,7 +19,7 @@ consts:
 
   leaderRK: "leader"
 
-  clientQueueTTL: "1800000"
+  clientQueueTTL: "3600000"
 
 rabbitmq:
   SERVER:
