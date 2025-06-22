@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/topkheap"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -21,33 +21,52 @@ const CLEANUP_INTERVAL = 10 * time.Minute
 const VALID_STATUS = "valid"
 const INVALID_STATUS = "invalid"
 
-const FINAL_FILE_NAME = "data.json"
-const TEMPORARY_FILE_NAME = "data_temp.json"
+const FINAL_DATA_FILE_NAME = "data"
+const FINAL_METADATA_FILE_NAME = "metadata"
+const TEMPORARY_DATA_FILE_NAME = "data_temp"
+const TEMPORARY_METADATA_FILE_NAME = "metadata_temp"
+const JSON_FILE_EXTENSION = ".json"
+
+const MIN = "min"
+const MAX = "max"
 
 var log = logging.MustGetLogger("log")
 
 type OutputFile struct {
-	Data           interface{} `json:"data"`
-	Timestamps     string      `json:"timestamps"`
-	Status         string      `json:"status"`
-	OmegaProcessed bool        `json:"omega_processed"`
-	RingRound      uint32      `json:"ring_round"`
+	Data       interface{} `json:"data"`
+	Timestamps string      `json:"timestamps"`
+	Status     string      `json:"status"`
+}
+
+type MetadataFile struct {
+	Timestamps     string `json:"timestamps"`
+	Status         string `json:"status"`
+	OmegaProcessed bool   `json:"omega_processed"`
+	RingRound      uint32 `json:"ring_round"`
+}
+
+type MetaData struct {
+	OmegaProcessed bool   `json:"omega_processed"`
+	RingRound      uint32 `json:"ring_round"`
+}
+
+type FileStructure struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 // Generic loader for PartialData[T] using protojson
-func loadPartialDataProto[T proto.Message](jsonBytes []byte, newT func() T) (*common.PartialData[T], error) {
+func decodeJsonToProtoData[T proto.Message](jsonBytes []byte, newT func() T) (*common.PartialData[T], error) {
 	var temp struct {
-		Data           map[string]json.RawMessage `json:"data"`
-		OmegaProcessed bool                       `json:"omega_processed"`
-		RingRound      uint32                     `json:"ring_round"`
+		Data      map[string]json.RawMessage `json:"data"`
+		Timestamp string                     `json:"timestamp"`
+		Status    string                     `json:"status"`
 	}
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
 		return nil, err
 	}
 	result := &common.PartialData[T]{
-		Data:           make(map[string]T),
-		OmegaProcessed: temp.OmegaProcessed,
-		RingRound:      temp.RingRound,
+		Data: make(map[string]T),
 	}
 	for k, raw := range temp.Data {
 		msg := newT()
@@ -56,34 +75,77 @@ func loadPartialDataProto[T proto.Message](jsonBytes []byte, newT func() T) (*co
 		}
 		result.Data[k] = msg
 	}
+
 	return result, nil
 }
 
+func decodeFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
+	var temp struct {
+		OmegaProcessed bool   `json:"omega_processed"`
+		RingRound      uint32 `json:"ring_round"`
+		Timestamps     string `json:"timestamps"`
+		Status         string `json:"status"`
+	}
+	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
+		return MetadataFile{}, err
+	}
+	return MetadataFile{
+		Timestamps:     temp.Timestamps,
+		Status:         temp.Status,
+		OmegaProcessed: temp.OmegaProcessed,
+		RingRound:      temp.RingRound,
+	}, nil
+}
+
 // Generic disk loader for any PartialData[T]
-func LoadStageClientInfoFromDisk[T proto.Message](
-	dir string, stage string, sourceType string, clientId string, newT func() T,
+func loadStageClientData[T proto.Message](
+	dir string, stage string, fileType common.FolderType, clientId string, newT func() T,
 ) (*common.PartialData[T], error) {
 	var zero *common.PartialData[T]
 
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
+	dirPath := filepath.Join(dir, stage, string(fileType), clientId)
 
-	finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
+	finalDataFilePath := filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+	finalMetadataFilePath := filepath.Join(dirPath, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
 
-	err := handleLeftOverFiles(finalFilePath, filepath.Join(dirPath, TEMPORARY_FILE_NAME))
+	tempDataFilePath := filepath.Join(dirPath, TEMPORARY_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	err := handleLeftOverFiles(finalDataFilePath, tempDataFilePath)
 	if err != nil {
-
 		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
 	}
 
-	jsonBytes, err := os.ReadFile(finalFilePath)
+	err = handleLeftOverFiles(finalMetadataFilePath, tempMetadataFilePath)
 	if err != nil {
-		return zero, fmt.Errorf("error reading file %s: %w", finalFilePath, err)
+		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
 	}
 
-	partial, err := loadPartialDataProto(jsonBytes, newT)
+	//Read data file
+	jsonDataBytes, err := os.ReadFile(finalDataFilePath)
+	if err != nil {
+		return zero, fmt.Errorf("error reading file %s: %w", finalDataFilePath, err)
+	}
+
+	//TODO usar la metada para validar que es valido el archivo de logs
+	partial, err := decodeJsonToProtoData(jsonDataBytes, newT)
 	if err != nil {
 		return zero, err
 	}
+
+	// Read metadata file
+	jsonMetadataBytes, err := os.ReadFile(finalMetadataFilePath)
+	if err != nil {
+		return zero, fmt.Errorf("error reading file %s: %w", finalMetadataFilePath, err)
+	}
+	metadata, err := decodeFromJsonMetadata(jsonMetadataBytes)
+	if err != nil {
+		return zero, err
+	}
+
+	// Set metadata fields in the partial data
+	partial.OmegaProcessed = metadata.OmegaProcessed
+	partial.RingRound = metadata.RingRound
 
 	return partial, nil
 }
@@ -92,12 +154,15 @@ func LoadStageClientInfoFromDisk[T proto.Message](
 func loadStageData[T proto.Message, R any](
 	dir string,
 	stage string,
-	sourceType string,
-	setter func(result *R, data *common.PartialData[T]),
+	fileType common.FolderType,
 	partialResults map[string]*R,
+	setter func(result *R, data *common.PartialData[T]),
 	newT func() T,
 ) {
-	stageDir := filepath.Join(dir, stage, sourceType)
+
+	log.Infof("Loading stage data from disk for stage: %s, fileType: %s", stage, fileType)
+
+	stageDir := filepath.Join(dir, stage, string(fileType))
 	clientDirs, err := os.ReadDir(stageDir)
 	if err != nil {
 		log.Errorf("Error reading directory %s: %v", stageDir, err)
@@ -109,7 +174,7 @@ func loadStageData[T proto.Message, R any](
 			continue
 		}
 		clientId := clientEntry.Name()
-		data, err := LoadStageClientInfoFromDisk(dir, stage, sourceType, clientId, newT)
+		data, err := loadStageClientData(dir, stage, fileType, clientId, newT)
 		if err != nil {
 			log.Errorf("Error loading data for stage %s, client %s: %v", stage, clientId, err)
 			continue
@@ -121,73 +186,168 @@ func loadStageData[T proto.Message, R any](
 	}
 }
 
-// Example usage for MergerPartialResults
 func LoadMergerPartialResultsFromDisk(dir string) (map[string]*common.MergerPartialResults, error) {
 	partialResults := make(map[string]*common.MergerPartialResults)
-	const sourceType = common.ANY_SOURCE
+	folderType := common.GENERAL_FOLDER_TYPE
 
-	loadStageData(dir, common.DELTA_STAGE_3, sourceType, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Delta_3_Data]) {
+	loadStageData(dir, common.DELTA_STAGE_3, folderType, partialResults, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Delta_3_Data]) {
 		result.Delta3 = data
-	}, partialResults, func() *protocol.Delta_3_Data { return &protocol.Delta_3_Data{} })
+	}, func() *protocol.Delta_3_Data { return &protocol.Delta_3_Data{} })
 
-	loadStageData(dir, common.ETA_STAGE_3, sourceType, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Eta_3_Data]) {
+	loadStageData(dir, common.ETA_STAGE_3, folderType, partialResults, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Eta_3_Data]) {
 		result.Eta3 = data
-	}, partialResults, func() *protocol.Eta_3_Data { return &protocol.Eta_3_Data{} })
+	}, func() *protocol.Eta_3_Data { return &protocol.Eta_3_Data{} })
 
-	loadStageData(dir, common.KAPPA_STAGE_3, sourceType, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Kappa_3_Data]) {
+	loadStageData(dir, common.KAPPA_STAGE_3, folderType, partialResults, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Kappa_3_Data]) {
 		result.Kappa3 = data
-	}, partialResults, func() *protocol.Kappa_3_Data { return &protocol.Kappa_3_Data{} })
+	}, func() *protocol.Kappa_3_Data { return &protocol.Kappa_3_Data{} })
 
-	loadStageData(dir, common.NU_STAGE_3, sourceType, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Nu_3_Data]) {
+	loadStageData(dir, common.NU_STAGE_3, folderType, partialResults, func(result *common.MergerPartialResults, data *common.PartialData[*protocol.Nu_3_Data]) {
 		result.Nu3 = data
-	}, partialResults, func() *protocol.Nu_3_Data { return &protocol.Nu_3_Data{} })
+	}, func() *protocol.Nu_3_Data { return &protocol.Nu_3_Data{} })
 
 	return partialResults, nil
 }
 
 func LoadReducerPartialResultsFromDisk(dir string) (map[string]*common.ReducerPartialResults, error) {
 	partialResults := make(map[string]*common.ReducerPartialResults)
-	const sourceType = common.ANY_SOURCE
+	fileType := common.GENERAL_FOLDER_TYPE
 
-	loadStageData(dir, common.DELTA_STAGE_2, sourceType, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Delta_2_Data]) {
+	loadStageData(dir, common.DELTA_STAGE_2, fileType, partialResults, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Delta_2_Data]) {
 		result.Delta2 = data
-	}, partialResults, func() *protocol.Delta_2_Data { return &protocol.Delta_2_Data{} })
+	}, func() *protocol.Delta_2_Data { return &protocol.Delta_2_Data{} })
 
-	loadStageData(dir, common.ETA_STAGE_2, sourceType, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Eta_2_Data]) {
+	loadStageData(dir, common.ETA_STAGE_2, fileType, partialResults, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Eta_2_Data]) {
 		result.Eta2 = data
-	}, partialResults, func() *protocol.Eta_2_Data { return &protocol.Eta_2_Data{} })
+	}, func() *protocol.Eta_2_Data { return &protocol.Eta_2_Data{} })
 
-	loadStageData(dir, common.KAPPA_STAGE_2, sourceType, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Kappa_2_Data]) {
+	loadStageData(dir, common.KAPPA_STAGE_2, fileType, partialResults, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Kappa_2_Data]) {
 		result.Kappa2 = data
-	}, partialResults, func() *protocol.Kappa_2_Data { return &protocol.Kappa_2_Data{} })
+	}, func() *protocol.Kappa_2_Data { return &protocol.Kappa_2_Data{} })
 
-	loadStageData(dir, common.NU_STAGE_2, sourceType, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Nu_2_Data]) {
+	loadStageData(dir, common.NU_STAGE_2, fileType, partialResults, func(result *common.ReducerPartialResults, data *common.PartialData[*protocol.Nu_2_Data]) {
 		result.Nu2 = data
-	}, partialResults, func() *protocol.Nu_2_Data { return &protocol.Nu_2_Data{} })
+	}, func() *protocol.Nu_2_Data { return &protocol.Nu_2_Data{} })
 
 	return partialResults, nil
 }
 
-func CommitPartialDataToFinal(dir string, stage interface{}, sourceType string, clientId string) error {
+func LoadTopperPartialResultsFromDisk(dir string) (map[string]*common.TopperPartialResults, error) {
+	partialResults := make(map[string]*common.TopperPartialResults)
+	folderType := common.GENERAL_FOLDER_TYPE
 
-	if dir != "" {
-		stringStage, err := getStageNameFromInterface(stage)
-		if err != nil {
-			return fmt.Errorf("error getting stage name: %w", err)
-		}
+	loadStageData(dir, common.EPSILON_STAGE, folderType, partialResults,
+		func(result *common.TopperPartialResults, data *common.PartialData[*protocol.Epsilon_Data]) {
 
-		dirPath := filepath.Join(dir, stringStage, sourceType, clientId)
-		tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
-		finalFilePath := filepath.Join(dirPath, FINAL_FILE_NAME)
+			if result.EpsilonData == nil {
+				result.EpsilonData = &common.TopperPartialData[uint64, *protocol.Epsilon_Data]{}
+			}
+			result.EpsilonData.OmegaProcessed = data.OmegaProcessed
+			result.EpsilonData.RingRound = data.RingRound
+			result.EpsilonData.Heap = partialDatatoHeap(common.TYPE_MAX, data.Data,
+				func(item *protocol.Epsilon_Data) uint64 {
+					return item.GetTotalInvestment()
+				})
 
-		log.Infof("Committing data from %s to %s", tempFilePath, finalFilePath)
+		},
+		func() *protocol.Epsilon_Data { return &protocol.Epsilon_Data{} })
 
-		if err := os.Rename(tempFilePath, finalFilePath); err != nil {
-			return fmt.Errorf("error renaming temp file: %w", err)
-		}
+	loadStageData(dir, common.LAMBDA_STAGE, folderType, partialResults,
+		func(result *common.TopperPartialResults, data *common.PartialData[*protocol.Lambda_Data]) {
+			if result.LamdaData == nil {
+				result.LamdaData = &common.TopperPartialData[uint64, *protocol.Lambda_Data]{}
+			}
+
+			result.LamdaData.RingRound = data.RingRound
+			result.LamdaData.OmegaProcessed = data.OmegaProcessed
+			result.LamdaData.Heap = partialDatatoHeap(common.TYPE_MAX, data.Data,
+				func(item *protocol.Lambda_Data) uint64 {
+					return item.GetParticipations()
+				})
+
+		},
+		func() *protocol.Lambda_Data { return &protocol.Lambda_Data{} })
+
+	loadStageData(dir, common.THETA_STAGE, folderType, partialResults,
+		func(result *common.TopperPartialResults, data *common.PartialData[*protocol.Theta_Data]) {
+			if result.ThetaData == nil {
+				result.ThetaData = &common.ThetaPartialData{
+					MinPartialData: &common.TopperPartialData[float32, *protocol.Theta_Data]{},
+					MaxPartialData: &common.TopperPartialData[float32, *protocol.Theta_Data]{},
+				}
+			}
+
+			result.ThetaData.MinPartialData.OmegaProcessed = data.OmegaProcessed
+			result.ThetaData.MinPartialData.RingRound = data.RingRound
+
+			result.ThetaData.MaxPartialData.OmegaProcessed = data.OmegaProcessed
+			result.ThetaData.MaxPartialData.RingRound = data.RingRound
+
+			result.ThetaData.MaxPartialData.Heap = maxToHeap(data.Data[MAX],
+				func(item *protocol.Theta_Data) float32 {
+					return item.GetAvgRating()
+				})
+
+			result.ThetaData.MinPartialData.Heap = minToHeap(data.Data[MIN],
+				func(item *protocol.Theta_Data) float32 {
+					return item.GetAvgRating()
+				})
+
+		},
+		func() *protocol.Theta_Data { return &protocol.Theta_Data{} })
+
+	return partialResults, nil
+}
+
+func heapToPartialData[K topkheap.Ordered, V proto.Message](
+	heap topkheap.TopKHeap[K, V],
+	data map[string]V,
+	keyFunc func(V) K,
+) {
+
+	for _, item := range heap.GetTopK() {
+		key := keyFunc(item)
+		data[fmt.Sprintf("%v", key)] = item
+	}
+}
+func partialDatatoHeap[K topkheap.Ordered, V proto.Message](
+	heapType string,
+	data map[string]V,
+	valueFunc func(V) K,
+) topkheap.TopKHeap[K, V] {
+
+	var heap topkheap.TopKHeap[K, V]
+
+	if heapType == common.TYPE_MAX {
+		heap = topkheap.NewTopKMaxHeap[K, V](len(data))
+	} else {
+		heap = topkheap.NewTopKMinHeap[K, V](len(data))
 	}
 
-	return nil
+	for _, item := range data {
+
+		log.Infof("Adding item to heap: %v", item)
+		heap.Insert(valueFunc(item), item)
+
+	}
+
+	return heap
+}
+func minToHeap[K topkheap.Ordered, V proto.Message](
+	data V,
+	keyFunc func(V) K,
+) topkheap.TopKHeap[K, V] {
+	heap := topkheap.NewTopKMinHeap[K, V](1)
+	heap.Insert(keyFunc(data), data)
+	return heap
+}
+func maxToHeap[K topkheap.Ordered, V proto.Message](
+	data V,
+	keyFunc func(V) K,
+) topkheap.TopKHeap[K, V] {
+	heap := topkheap.NewTopKMaxHeap[K, V](1)
+	heap.Insert(keyFunc(data), data)
+	return heap
 }
 
 func DeletePartialResults(dir string, stage interface{}, sourceType string, clientId string) error {
@@ -203,17 +363,164 @@ func DeletePartialResults(dir string, stage interface{}, sourceType string, clie
 	return nil
 }
 
-func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, sourceType string, data *common.PartialData[T]) error {
+func commitPartialMetadataToFinal(dirPath string) error {
 
-	dirPath := filepath.Join(dir, stage, sourceType, clientId)
+	log.Infof("Committing metadata for path %s", dirPath)
+
+	tempMetadataFileName := TEMPORARY_METADATA_FILE_NAME + JSON_FILE_EXTENSION
+	finalMetadataFileName := FINAL_METADATA_FILE_NAME + JSON_FILE_EXTENSION
+
+	return renameFile(dirPath, tempMetadataFileName, finalMetadataFileName)
+}
+
+func commitPartialDataToFinal(dir string, stage string, FolderType common.FolderType, clientId string) error {
+
+	if dir != "" {
+		log.Infof("Committing data for stage %s, table type %s, client ID %s", stage, FolderType, clientId)
+
+		dirPath := filepath.Join(dir, stage, string(FolderType), clientId)
+
+		tempDataFileName := TEMPORARY_DATA_FILE_NAME + JSON_FILE_EXTENSION
+		finalDataFileName := FINAL_DATA_FILE_NAME + JSON_FILE_EXTENSION
+
+		return renameFile(dirPath, tempDataFileName, finalDataFileName)
+
+	}
+	return nil
+}
+
+func renameFile(dirPath, tempFileName, finalFileName string) error {
+	tempDataFilePath := filepath.Join(dirPath, tempFileName)
+	finalDataFilePath := filepath.Join(dirPath, finalFileName)
+
+	log.Infof("Committing data from %s to %s", tempDataFilePath, finalDataFilePath)
+
+	if err := os.Rename(tempDataFilePath, finalDataFilePath); err != nil {
+		return fmt.Errorf("error renaming temp file: %w", err)
+	}
+	return nil
+}
+
+func SaveTopperThetaDataToFile[K topkheap.Ordered, T proto.Message](dir string, stage interface{}, clientId string, data []*common.TopperPartialData[K, T], keyFunc func(T) K) error {
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+	mapData := make(map[string]T)
+	mapData[MAX] = data[0].Heap.GetTopK()[0]
+	mapData[MIN] = data[1].Heap.GetTopK()[0]
+
+	topperPartialData := &common.PartialData[T]{
+		Data:           mapData,
+		OmegaProcessed: data[0].OmegaProcessed,
+		RingRound:      data[0].RingRound,
+	}
+
+	return saveGeneralDataToFile(dir, clientId, stringStage, topperPartialData)
+
+}
+
+func SaveTopperDataToFile[K topkheap.Ordered, T proto.Message](dir string, stage interface{}, clientId string, data *common.TopperPartialData[K, T], keyFunc func(T) K) error {
+
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+	mapData := make(map[string]T)
+	heapToPartialData(data.Heap, mapData, keyFunc)
+
+	topperPartialData := &common.PartialData[T]{
+		Data:           mapData,
+		OmegaProcessed: data.OmegaProcessed,
+		RingRound:      data.RingRound,
+	}
+
+	err = saveGeneralDataToFile(dir, clientId, stringStage, topperPartialData)
+	if err != nil {
+		return fmt.Errorf("error saving general data to file: %w", err)
+	}
+
+	return commitPartialDataToFinal(dir, stringStage, common.GENERAL_FOLDER_TYPE, clientId)
+}
+
+func SaveGeneralDataToFile[T proto.Message](dir string, clientId string, stage interface{}, data *common.PartialData[T]) error {
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+	err = saveGeneralDataToFile(dir, clientId, stringStage, data)
+	if err != nil {
+		return fmt.Errorf("error saving general data to file: %w", err)
+	}
+
+	return commitPartialDataToFinal(dir, stringStage, common.GENERAL_FOLDER_TYPE, clientId)
+}
+
+func SaveMetadataToFile[T proto.Message](dir string, clientId string, stage string, folderType common.FolderType, data *common.PartialData[T]) error {
+
+	dirPath := filepath.Join(dir, stage, string(folderType), clientId)
 	err := os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	tempFilePath := filepath.Join(dirPath, TEMPORARY_FILE_NAME)
+	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
 
-	err = saveDataToFile(tempFilePath, data)
+	metadata := MetaData{
+		OmegaProcessed: data.OmegaProcessed,
+		RingRound:      data.RingRound,
+	}
+
+	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	err = commitPartialMetadataToFinal(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to commit metadata to final file: %w", err)
+	}
+	return nil
+}
+
+func SaveTopperMetadataToFile[K topkheap.Ordered, T proto.Message](dir string, clientId string, stage string, data *common.TopperPartialData[K, T]) error {
+
+	dirPath := filepath.Join(dir, stage, clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	metadata := MetaData{
+		OmegaProcessed: data.OmegaProcessed,
+		RingRound:      data.RingRound,
+	}
+
+	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	err = commitPartialMetadataToFinal(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to commit metadata to final file: %w", err)
+	}
+	return nil
+}
+
+func saveGeneralDataToFile[T proto.Message](dir string, clientId string, stage string, data *common.PartialData[T]) error {
+
+	dirPath := filepath.Join(dir, stage, clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempDataFilePath := filepath.Join(dirPath, TEMPORARY_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	err = marshallGeneralPartialData(tempDataFilePath, data)
 
 	if err != nil {
 		return fmt.Errorf("failed to save data to temporary file: %w", err)
@@ -221,41 +528,84 @@ func SaveDataToFile[T proto.Message](dir string, clientId string, stage string, 
 
 	return nil
 }
+func marshallGeneralPartialData[T proto.Message](tempDataFilePath string, data *common.PartialData[T]) error {
 
-// func loadStageData[T proto.Message](
-// 	dir string,
-// 	stage string,
-// 	sourceType string,
-// 	setter func(result *common.MergerPartialResults, data *common.PartialData[T]),
-// 	partialResults map[string]*common.MergerPartialResults,
-// ) {
-// 	stageDir := filepath.Join(dir, stage, sourceType)
-// 	clientDirs, err := os.ReadDir(stageDir)
-// 	if err != nil {
-// 		log.Errorf("Error reading directory %s: %v", stageDir, err)
-// 		return
-// 	}
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ", // Pretty print
+		EmitUnpopulated: true, // Include unpopulated fields
+	}
+	return processGeneralDataTypedStruct(data, tempDataFilePath, marshaler)
+}
+func processGeneralDataTypedStruct[T proto.Message](typedStruct *common.PartialData[T], tempDataFilePath string, marshaler protojson.MarshalOptions) error {
 
-// 	for _, clientEntry := range clientDirs {
-// 		if !clientEntry.IsDir() {
-// 			continue
-// 		}
-// 		clientId := clientEntry.Name()
-// 		data, err := LoadStageClientInfoFromDisk[common.PartialData[T]](dir, stage, sourceType, clientId)
-// 		if err != nil {
-// 			log.Errorf("Error loading data for stage %s, client %s: %v", stage, clientId, err)
-// 			continue
-// 		}
-// 		if _, ok := partialResults[clientId]; !ok {
-// 			partialResults[clientId] = &common.MergerPartialResults{}
-// 		}
-// 		setter(partialResults[clientId], &common.PartialData[T]{
-// 			Data:           data.Data,
-// 			RingRound:      data.RingRound,
-// 			OmegaProcessed: data.OmegaProcessed,
-// 		})
-// 	}
-// }
+	log.Infof("Processing data to download to file: %s", tempDataFilePath)
+
+	jsonMap := make(map[string]json.RawMessage)
+	for key, msg := range typedStruct.Data {
+		marshaledData, err := marshaler.Marshal(msg)
+		if err != nil {
+			return fmt.Errorf("error marshaling data to JSON: %w", err)
+		}
+		jsonMap[key] = marshaledData
+	}
+
+	outputData := OutputFile{
+		Data:       jsonMap,
+		Timestamps: time.Now().UTC().Format(time.RFC3339),
+		Status:     VALID_STATUS,
+	}
+
+	//TODO add fragments to log
+
+	if err := writeToTempFile(tempDataFilePath, outputData); err != nil {
+		return fmt.Errorf("error writing to temp file: %w", err)
+	}
+
+	return nil
+}
+
+func writeMetadataToTempFile(tempMetadataFilePath string, metadata MetaData) error {
+	outputMetadata := MetadataFile{
+		Timestamps:     time.Now().UTC().Format(time.RFC3339),
+		Status:         VALID_STATUS,
+		OmegaProcessed: metadata.OmegaProcessed,
+		RingRound:      metadata.RingRound,
+	}
+
+	err := writeToTempFile(tempMetadataFilePath, outputMetadata)
+	if err != nil {
+		return fmt.Errorf("error writing metadata to temp file: %w", err)
+	}
+	return nil
+
+}
+
+func writeToTempFile[T any](tempFilePath string, output T) error {
+
+	jsonBytes, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON array: %w", err)
+	}
+
+	tmpFile, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("error creating temp file: %w", err)
+	}
+
+	if _, err := tmpFile.Write(jsonBytes); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("error writing to temp file: %w", err)
+	}
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("error syncing temp file: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("error closing temp file: %w", err)
+	}
+
+	return nil
+}
 
 func StartCleanupRoutine(dir string) {
 	ticker := time.NewTicker(CLEANUP_INTERVAL)
@@ -347,41 +697,6 @@ func CompareReducerPartialResultsMap(
 		}
 	}
 	return true
-}
-
-// func cleanUpOldFiles(dir string) error {
-// 	files, err := os.ReadDir(dir)
-// 	if err != nil {
-// 		return fmt.Errorf("error reading directory %s: %w", dir, err)
-// 	}
-// 	for _, file := range files {
-// 		if !file.IsDir() {
-// 			continue
-// 		}
-// 		filePath := filepath.Join(dir, file.Name())
-// 		info, err := os.Stat(filePath)
-// 		if err != nil {
-// 			log.Errorf("Failed to stat file %s: %s", file.Name(), err)
-// 			continue
-// 		}
-// 		// Delete files older than CLEANUP_INTERVAL
-// 		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
-// 			log.Debugf("Deleting old file: %s", filePath)
-// 			if err := os.Remove(filePath); err != nil {
-// 				log.Errorf("Failed to delete file %s: %s", filePath, err)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-
-func saveDataToFile[T proto.Message](tempFilePath string, data *common.PartialData[T]) error {
-
-	marshaler := protojson.MarshalOptions{
-		Indent:          "  ", // Pretty print
-		EmitUnpopulated: true, // Include unpopulated fields
-	}
-	return processTypedStruct(data, tempFilePath, marshaler)
 }
 
 func cleanUpOldFiles(dir string) error {
@@ -539,221 +854,83 @@ func handleLeftOverFiles(finalFile, tempFile string) error {
 	return nil
 }
 
-func decodeZetaDataMovie(decoder *json.Decoder) (map[string]*protocol.Zeta_Data_Movie, error) {
-	var tempArray ZetaMovieArrayJSON
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
+// func decodeZetaDataMovie(decoder *json.Decoder) (map[string]*protocol.Zeta_Data_Movie, error) {
+// 	//var tempArray ZetaMovieArrayJSON
+// 	// if err := decoder.Decode(&tempArray); err != nil {
+// 	// 	return nil, fmt.Errorf("error decoding JSON array: %w", err)
+// 	// }
 
-	result := make(map[string]*protocol.Zeta_Data_Movie)
-	for _, item := range tempArray.Data {
-		result[item.MovieId] = &protocol.Zeta_Data_Movie{
-			MovieId: item.MovieId,
-			Title:   item.Title,
-		}
-	}
-	return result, nil
-}
+// 	// result := make(map[string]*protocol.Zeta_Data_Movie)
+// 	// for _, item := range tempArray.Data {
+// 	// 	result[item.MovieId] = &protocol.Zeta_Data_Movie{
+// 	// 		MovieId: item.MovieId,
+// 	// 		Title:   item.Title,
+// 	// 	}
+// 	// }
+// 	// return result, nil
+// }
 
-func decodeZetaDataRating(decoder *json.Decoder) (map[string][]*protocol.Zeta_Data_Rating, error) {
-	var tempMap ZetaRatingMapJSON
+// func decodeZetaDataRating(decoder *json.Decoder) (map[string][]*protocol.Zeta_Data_Rating, error) {
+// 	// var tempMap ZetaRatingMapJSON
 
-	if err := decoder.Decode(&tempMap); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
+// 	// if err := decoder.Decode(&tempMap); err != nil {
+// 	// 	return nil, fmt.Errorf("error decoding JSON array: %w", err)
+// 	// }
 
-	result := make(map[string][]*protocol.Zeta_Data_Rating)
-	for _, item := range tempMap.Data {
-		for _, item := range item {
-			result[item.MovieId] = append(result[item.MovieId], &protocol.Zeta_Data_Rating{
-				MovieId: item.MovieId,
-				Rating:  item.Rating,
-			})
+// 	// result := make(map[string][]*protocol.Zeta_Data_Rating)
+// 	// for _, item := range tempMap.Data {
+// 	// 	for _, item := range item {
+// 	// 		result[item.MovieId] = append(result[item.MovieId], &protocol.Zeta_Data_Rating{
+// 	// 			MovieId: item.MovieId,
+// 	// 			Rating:  item.Rating,
+// 	// 		})
 
-		}
-	}
-	return result, nil
-}
+// 	// 	}
+// 	// }
+// 	// return result, nil
+//}
 
-func decodeEpsilonData(decoder *json.Decoder) (map[string]*protocol.Epsilon_Data, error) {
-	var tempArray EpsilonArrayJSON
+// func decodeIotaDataMovie(decoder *json.Decoder) (map[string]*protocol.Iota_Data_Movie, error) {
+// 	var tempMap struct {
+// 		Data []struct {
+// 			MovieId string `json:"movieId"`
+// 		} `json:"data"`
+// 	}
+// 	if err := decoder.Decode(&tempMap); err != nil {
+// 		return nil, fmt.Errorf("error decoding JSON array: %w", err)
+// 	}
+// 	result := make(map[string]*protocol.Iota_Data_Movie)
+// 	for _, item := range tempMap.Data {
+// 		result[item.MovieId] = &protocol.Iota_Data_Movie{
+// 			MovieId: item.MovieId,
+// 		}
+// 	}
+// 	return result, nil
+// }
 
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
-	result := make(map[string]*protocol.Epsilon_Data)
-	for _, item := range tempArray.Data {
-		totalInvestment, err := strconv.ParseUint(item.TotalInvestment, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing totalInvestment: %w", err)
-		}
-		result[item.ProdCountry] = &protocol.Epsilon_Data{
-			ProdCountry:     item.ProdCountry,
-			TotalInvestment: totalInvestment,
-		}
-	}
-	return result, nil
-}
-
-func decodeLambdaData(decoder *json.Decoder) (map[string]*protocol.Lambda_Data, error) {
-	var tempArray LambdaArrayJSON
-
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
-
-	result := make(map[string]*protocol.Lambda_Data)
-	for _, item := range tempArray.Data {
-		participations, err := strconv.ParseUint(item.Participations, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing participations: %w", err)
-		}
-		result[item.ActorId] = &protocol.Lambda_Data{
-			ActorId:        item.ActorId,
-			ActorName:      item.ActorName,
-			Participations: participations,
-		}
-	}
-	return result, nil
-
-}
-
-func decodeThetaData(decoder *json.Decoder) (map[string]*protocol.Theta_Data, error) {
-	var tempArray ThetaArrayJSON
-
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
-
-	result := make(map[string]*protocol.Theta_Data)
-	for _, item := range tempArray.Data {
-		result[item.Id] = &protocol.Theta_Data{
-			Id:        item.Id,
-			Title:     item.Title,
-			AvgRating: item.AvgRating,
-		}
-	}
-	return result, nil
-}
-
-func decodeNu2Data(decoder *json.Decoder) (map[string]*protocol.Nu_2_Data, error) {
-	var tempArray Nu2ArrayJSON
-	if err := decoder.Decode(&tempArray); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
-	result := make(map[string]*protocol.Nu_2_Data)
-	for _, item := range tempArray.Data {
-		result[strconv.FormatBool(item.Sentiment)] = &protocol.Nu_2_Data{
-			Sentiment: item.Sentiment,
-			Ratio:     item.Ratio,
-			Count:     item.Count,
-		}
-	}
-	return result, nil
-}
-
-func decodeIotaDataMovie(decoder *json.Decoder) (map[string]*protocol.Iota_Data_Movie, error) {
-	var tempMap struct {
-		Data []struct {
-			MovieId string `json:"movieId"`
-		} `json:"data"`
-	}
-	if err := decoder.Decode(&tempMap); err != nil {
-		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-	}
-	result := make(map[string]*protocol.Iota_Data_Movie)
-	for _, item := range tempMap.Data {
-		result[item.MovieId] = &protocol.Iota_Data_Movie{
-			MovieId: item.MovieId,
-		}
-	}
-	return result, nil
-}
-
-func decodeIotaDataActor(decoder *json.Decoder) (map[string][]*protocol.Iota_Data_Actor, error) {
-	var tempMap struct {
-		Data map[string][]struct {
-			MovieId   string `json:"movieId"`
-			ActorId   string `json:"actorId"`
-			ActorName string `json:"actorName"`
-		} `json:"data"`
-	}
-	if err := decoder.Decode(&tempMap); err != nil {
-		return nil, fmt.Errorf("error decoding JSON map: %w", err)
-	}
-	result := make(map[string][]*protocol.Iota_Data_Actor)
-	for movieId, items := range tempMap.Data {
-		for _, item := range items {
-			result[movieId] = append(result[movieId], &protocol.Iota_Data_Actor{
-				MovieId:   item.MovieId,
-				ActorId:   item.ActorId,
-				ActorName: item.ActorName,
-			})
-		}
-	}
-	return result, nil
-}
-
-func writeToTempFile(tempFilePath string, output OutputFile) error {
-
-	jsonBytes, err := json.MarshalIndent(output, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error marshaling JSON array: %w", err)
-	}
-
-	tmpFile, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("error creating temp file: %w", err)
-	}
-
-	if _, err := tmpFile.Write(jsonBytes); err != nil {
-		tmpFile.Close()
-		return fmt.Errorf("error writing to temp file: %w", err)
-	}
-	if err := tmpFile.Sync(); err != nil {
-		tmpFile.Close()
-		return fmt.Errorf("error syncing temp file: %w", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("error closing temp file: %w", err)
-	}
-
-	return nil
-}
-
-func processTypedStruct[T proto.Message](typedStruct *common.PartialData[T], tempFilePath string, marshaler protojson.MarshalOptions) error {
-
-	log.Infof("Processing data to download to file: %s", tempFilePath)
-
-	jsonMap := make(map[string]json.RawMessage)
-	for key, msg := range typedStruct.Data {
-		marshaledData, err := marshaler.Marshal(msg)
-		if err != nil {
-			return fmt.Errorf("error marshaling data to JSON: %w", err)
-		}
-		jsonMap[key] = marshaledData
-	}
-
-	output := OutputFile{
-		Data:           jsonMap,
-		OmegaProcessed: typedStruct.OmegaProcessed,
-		RingRound:      typedStruct.RingRound,
-		Timestamps:     time.Now().UTC().Format(time.RFC3339),
-		Status:         VALID_STATUS,
-	}
-
-	//TODO add fragments to log
-
-	if err := writeToTempFile(tempFilePath, output); err != nil {
-		return fmt.Errorf("error writing to temp file: %w", err)
-	}
-
-	return nil
-}
-
-func addFragmentsToLog(fragments []string) {
-
-}
+// func decodeIotaDataActor(decoder *json.Decoder) (map[string][]*protocol.Iota_Data_Actor, error) {
+// 	var tempMap struct {
+// 		Data map[string][]struct {
+// 			MovieId   string `json:"movieId"`
+// 			ActorId   string `json:"actorId"`
+// 			ActorName string `json:"actorName"`
+// 		} `json:"data"`
+// 	}
+// 	if err := decoder.Decode(&tempMap); err != nil {
+// 		return nil, fmt.Errorf("error decoding JSON map: %w", err)
+// 	}
+// 	result := make(map[string][]*protocol.Iota_Data_Actor)
+// 	for movieId, items := range tempMap.Data {
+// 		for _, item := range items {
+// 			result[movieId] = append(result[movieId], &protocol.Iota_Data_Actor{
+// 				MovieId:   item.MovieId,
+// 				ActorId:   item.ActorId,
+// 				ActorName: item.ActorName,
+// 			})
+// 		}
+// 	}
+// 	return result, nil
+// }
 
 func getStageNameFromInterface(stage interface{}) (string, error) {
 	switch stage.(type) {
@@ -799,16 +976,6 @@ func getStageNameFromInterface(stage interface{}) (string, error) {
 		return common.NU_STAGE_2, nil
 	case *protocol.Task_Nu_3:
 		return common.NU_STAGE_3, nil
-	// case *protocol.Task_Result1:
-	// 	return common.RESULT_STAGE, nil
-	// case *protocol.Task_Result2:
-	// 	return common.RESULT_STAGE, nil
-	// case *protocol.Task_Result3:
-	// 	return common.RESULT_STAGE, nil
-	// case *protocol.Task_Result4:
-	// 	return common.RESULT_STAGE, nil
-	// case *protocol.Task_Result5:
-	// 	return common.RESULT_STAGE, nil
 	case *protocol.Task_RingEOF:
 		return common.RING_STAGE, nil
 	case *protocol.Task_OmegaEOF:
@@ -962,5 +1129,147 @@ func compareStruct(expected, actual interface{}) bool {
 			}
 		}
 	}
+	return true
+}
+
+// Compara dos TopperPartialResults profundamente, incluyendo los heaps, pero compara los heaps manualmente.
+func EqualTopperPartialResults(a, b *common.TopperPartialResults) bool {
+	if a == nil && b == nil {
+		log.Info("Both TopperPartialResults are nil")
+		return true
+	}
+	if a == nil || b == nil {
+		log.Error("One of the TopperPartialResults is nil")
+		return false
+	}
+
+	// EpsilonData
+	if (a.EpsilonData == nil) != (b.EpsilonData == nil) {
+		log.Error("EpsilonData nil mismatch")
+		return false
+	}
+	if a.EpsilonData != nil {
+		if a.EpsilonData.OmegaProcessed != b.EpsilonData.OmegaProcessed {
+			log.Errorf("EpsilonData.OmegaProcessed mismatch: %v vs %v", a.EpsilonData.OmegaProcessed, b.EpsilonData.OmegaProcessed)
+			return false
+		}
+		if a.EpsilonData.RingRound != b.EpsilonData.RingRound {
+			log.Errorf("EpsilonData.RingRound mismatch: %v vs %v", a.EpsilonData.RingRound, b.EpsilonData.RingRound)
+			return false
+		}
+		// Comparación manual de heaps
+		aItems := a.EpsilonData.Heap.GetTopK()
+		bItems := b.EpsilonData.Heap.GetTopK()
+		if len(aItems) != len(bItems) {
+			log.Errorf("Epsilon Heap lengths: %d vs %d", len(aItems), len(bItems))
+			return false
+		}
+		for i := range aItems {
+			if !proto.Equal(aItems[i], bItems[i]) {
+				log.Errorf("Epsilon Heap mismatch at index %d", i)
+				log.Infof("a.EpsilonData.Heap[%d]: %+v", i, aItems[i])
+				log.Infof("b.EpsilonData.Heap[%d]: %+v", i, bItems[i])
+				return false
+			}
+		}
+	}
+
+	// LamdaData
+	if (a.LamdaData == nil) != (b.LamdaData == nil) {
+		log.Error("LamdaData nil mismatch")
+		return false
+	}
+	if a.LamdaData != nil {
+		if a.LamdaData.OmegaProcessed != b.LamdaData.OmegaProcessed {
+			log.Errorf("LamdaData.OmegaProcessed mismatch: %v vs %v", a.LamdaData.OmegaProcessed, b.LamdaData.OmegaProcessed)
+			return false
+		}
+		if a.LamdaData.RingRound != b.LamdaData.RingRound {
+			log.Errorf("LamdaData.RingRound mismatch: %v vs %v", a.LamdaData.RingRound, b.LamdaData.RingRound)
+			return false
+		}
+		aItems := a.LamdaData.Heap.GetTopK()
+		bItems := b.LamdaData.Heap.GetTopK()
+		if len(aItems) != len(bItems) {
+			log.Errorf("Lambda Heap lengths: %d vs %d", len(aItems), len(bItems))
+			return false
+		}
+		for i := range aItems {
+			if !proto.Equal(aItems[i], bItems[i]) {
+				log.Errorf("Lambda Heap mismatch at index %d", i)
+				log.Infof("a.LamdaData.Heap[%d]: %+v", i, aItems[i])
+				log.Infof("b.LamdaData.Heap[%d]: %+v", i, bItems[i])
+				return false
+			}
+		}
+	}
+
+	// ThetaData
+	if (a.ThetaData == nil) != (b.ThetaData == nil) {
+		log.Error("ThetaData nil mismatch")
+		return false
+	}
+	if a.ThetaData != nil {
+		// MinPartialData
+		if (a.ThetaData.MinPartialData == nil) != (b.ThetaData.MinPartialData == nil) {
+			log.Error("ThetaData.MinPartialData nil mismatch")
+			return false
+		}
+		if a.ThetaData.MinPartialData != nil {
+			if a.ThetaData.MinPartialData.OmegaProcessed != b.ThetaData.MinPartialData.OmegaProcessed {
+				log.Errorf("ThetaData.MinPartialData.OmegaProcessed mismatch: %v vs %v", a.ThetaData.MinPartialData.OmegaProcessed, b.ThetaData.MinPartialData.OmegaProcessed)
+				return false
+			}
+			if a.ThetaData.MinPartialData.RingRound != b.ThetaData.MinPartialData.RingRound {
+				log.Errorf("ThetaData.MinPartialData.RingRound mismatch: %v vs %v", a.ThetaData.MinPartialData.RingRound, b.ThetaData.MinPartialData.RingRound)
+				return false
+			}
+			aItems := a.ThetaData.MinPartialData.Heap.GetTopK()
+			bItems := b.ThetaData.MinPartialData.Heap.GetTopK()
+			if len(aItems) != len(bItems) {
+				log.Errorf("Theta Min Heap lengths: %d vs %d", len(aItems), len(bItems))
+				return false
+			}
+			for i := range aItems {
+				if !proto.Equal(aItems[i], bItems[i]) {
+					log.Errorf("Theta Min Heap mismatch at index %d", i)
+					log.Infof("a.ThetaData.MinPartialData.Heap[%d]: %+v", i, aItems[i])
+					log.Infof("b.ThetaData.MinPartialData.Heap[%d]: %+v", i, bItems[i])
+					return false
+				}
+			}
+		}
+		// MaxPartialData
+		if (a.ThetaData.MaxPartialData == nil) != (b.ThetaData.MaxPartialData == nil) {
+			log.Error("ThetaData.MaxPartialData nil mismatch")
+			return false
+		}
+		if a.ThetaData.MaxPartialData != nil {
+			if a.ThetaData.MaxPartialData.OmegaProcessed != b.ThetaData.MaxPartialData.OmegaProcessed {
+				log.Errorf("ThetaData.MaxPartialData.OmegaProcessed mismatch: %v vs %v", a.ThetaData.MaxPartialData.OmegaProcessed, b.ThetaData.MaxPartialData.OmegaProcessed)
+				return false
+			}
+			if a.ThetaData.MaxPartialData.RingRound != b.ThetaData.MaxPartialData.RingRound {
+				log.Errorf("ThetaData.MaxPartialData.RingRound mismatch: %v vs %v", a.ThetaData.MaxPartialData.RingRound, b.ThetaData.MaxPartialData.RingRound)
+				return false
+			}
+			aItems := a.ThetaData.MaxPartialData.Heap.GetTopK()
+			bItems := b.ThetaData.MaxPartialData.Heap.GetTopK()
+			if len(aItems) != len(bItems) {
+				log.Errorf("Theta Max Heap lengths: %d vs %d", len(aItems), len(bItems))
+				return false
+			}
+			for i := range aItems {
+				if !proto.Equal(aItems[i], bItems[i]) {
+					log.Errorf("Theta Max Heap mismatch at index %d", i)
+					log.Infof("a.ThetaData.MaxPartialData.Heap[%d]: %+v", i, aItems[i])
+					log.Infof("b.ThetaData.MaxPartialData.Heap[%d]: %+v", i, bItems[i])
+					return false
+				}
+			}
+		}
+	}
+
+	log.Info("TopperPartialResults are equal")
 	return true
 }

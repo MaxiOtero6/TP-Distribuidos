@@ -5,7 +5,12 @@ import (
 	"testing"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
+
+	// "github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
+
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/topkheap"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )
@@ -13,6 +18,9 @@ import (
 const CLIENT_ID = "test_client"
 const ANOTHER_CLIENT_ID = "another_test_client"
 const DIR = "prueba"
+const EPSILON_TOP_K = 5
+const LAMBDA_TOP_K = 10
+const THETA_TOP_K = 1
 
 // func assertSerializationWithCustomComparison[T proto.Message](
 // 	t *testing.T,
@@ -99,7 +107,7 @@ func assertDeserializationOfWorkerInfo[T proto.Message](
 }
 */
 
-func loadDataToFile[T proto.Message](t *testing.T, tc struct {
+func LoadDataToFile[T proto.Message](t *testing.T, tc struct {
 	name     string
 	data     *common.PartialData[T]
 	dir      string
@@ -107,11 +115,24 @@ func loadDataToFile[T proto.Message](t *testing.T, tc struct {
 	source   string
 	stage    interface{}
 }) {
-	stringStage, err := getStageNameFromInterface(tc.stage)
-	assert.NoError(t, err, "Failed to get stage name")
-	err = SaveDataToFile(tc.dir, tc.clientID, stringStage, tc.source, tc.data)
+
+	err := SaveGeneralDataToFile(tc.dir, tc.clientID, tc.stage, tc.data)
 	assert.NoError(t, err, "Failed to save data to file")
-	err = CommitPartialDataToFinal(tc.dir, tc.stage, tc.source, tc.clientID)
+	assert.NoError(t, err, "Failed to commit partial data to final")
+
+}
+
+func LoadMetadataToFile[T proto.Message](t *testing.T, tc struct {
+	name     string
+	data     *common.PartialData[T]
+	dir      string
+	clientID string
+	source   common.FolderType
+	stage    string
+}) {
+
+	err := SaveMetadataToFile(tc.dir, tc.clientID, tc.stage, tc.source, tc.data)
+	assert.NoError(t, err, "Failed to save data to file")
 	assert.NoError(t, err, "Failed to commit partial data to final")
 
 }
@@ -130,7 +151,7 @@ func loadMergerPartialResultsFromDisk(t *testing.T, tempDir string) map[string]*
 // 		dir        string
 // 		clientID   string
 // 		stage      interface{}
-// 		source     string
+// 	.source     string
 // 		comparator func(expected, actual map[string]*common.MergerPartialResults) bool
 // 	}) map[string]*common.MergerPartialResults {
 
@@ -168,27 +189,27 @@ func loadMergerPartialResultsFromDisk(t *testing.T, tempDir string) map[string]*
 // 	return expected
 // }
 
-func createExpectedResult[T proto.Message](
-	testCases []struct {
-		name       string
-		data       *common.PartialData[T]
-		dir        string
-		clientID   string
-		source     string
-		stage      interface{}
-		comparator func(expected, actual map[string]*common.MergerPartialResults) bool
-		setter     func(result *common.MergerPartialResults, data *common.PartialData[T])
-	}) map[string]*common.MergerPartialResults {
+// func createExpectedResult[T proto.Message](
+// 	testCases []struct {
+// 		name       string
+// 		data       *common.PartialData[T]
+// 		dir        string
+// 		clientID   string
+// 		source     string
+// 		stage      interface{}
+// 		comparator func(expected, actual map[string]*common.MergerPartialResults) bool
+// 		setter     func(result *common.MergerPartialResults, data *common.PartialData[T])
+// 	}) map[string]*common.MergerPartialResults {
 
-	expected := make(map[string]*common.MergerPartialResults)
-	for _, tc := range testCases {
-		if _, ok := expected[tc.clientID]; !ok {
-			expected[tc.clientID] = &common.MergerPartialResults{}
-		}
-		tc.setter(expected[tc.clientID], tc.data)
-	}
-	return expected
-}
+// 	expected := make(map[string]*common.MergerPartialResults)
+// 	for _, tc := range testCases {
+// 		if _, ok := expected[tc.clientID]; !ok {
+// 			expected[tc.clientID] = &common.MergerPartialResults{}
+// 		}
+// 		tc.setter(expected[tc.clientID], tc.data)
+// 	}
+// 	return expected
+// }
 
 // func TestSerializationAndDeserializationForDeltaStage(t *testing.T) {
 // 	testCases := []struct {
@@ -448,9 +469,6 @@ func createExpectedResult[T proto.Message](
 // 		},
 // 	}
 
-// 	assertSerializationWithCustomComparison(t, testCases)
-// }
-
 // func TestSerializationAndDeserializationForBigTableSource(t *testing.T) {
 // 	testCases := []struct {
 // 		name       string
@@ -504,15 +522,13 @@ func createExpectedResult[T proto.Message](
 // 		},
 // 	}
 
-// 	assertSerializationWithCustomComparison(t, testCases)
-// }
-
 func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "test_serialization")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
+
 	defer os.RemoveAll(tempDir)
 
 	mergerPartialResults := &common.MergerPartialResults{
@@ -554,7 +570,8 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 		},
 	}
 
-	loadDataToFile(t, struct {
+	// Delta3
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Delta_3_Data]
 		dir      string
@@ -569,8 +586,24 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 		source:   "",
 		stage:    &protocol.Task_Delta_3{},
 	})
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Delta_3_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "MergerPartialResults_Delta3_Metadata",
+		data:     mergerPartialResults.Delta3,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.DELTA_STAGE_3,
+	})
 
-	loadDataToFile(t, struct {
+	// Eta3
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Eta_3_Data]
 		dir      string
@@ -585,7 +618,24 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 		source:   "",
 		stage:    &protocol.Task_Eta_3{},
 	})
-	loadDataToFile(t, struct {
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Eta_3_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "MergerPartialResults_Eta3_Metadata",
+		data:     mergerPartialResults.Eta3,
+		dir:      tempDir,
+		clientID: ANOTHER_CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.ETA_STAGE_3,
+	})
+
+	// Kappa3
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Kappa_3_Data]
 		dir      string
@@ -600,7 +650,24 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 		source:   "",
 		stage:    &protocol.Task_Kappa_3{},
 	})
-	loadDataToFile(t, struct {
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Kappa_3_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "MergerPartialResults_Kappa3_Metadata",
+		data:     mergerPartialResults.Kappa3,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.KAPPA_STAGE_3,
+	})
+
+	// Nu3
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Nu_3_Data]
 		dir      string
@@ -615,6 +682,22 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 		source:   "",
 		stage:    &protocol.Task_Nu_3{},
 	})
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Nu_3_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "MergerPartialResults_Nu3_Metadata",
+		data:     mergerPartialResults.Nu3,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.NU_STAGE_3,
+	})
+
 	actualResult := loadMergerPartialResultsFromDisk(t, tempDir)
 
 	expected := make(map[string]*common.MergerPartialResults)
@@ -656,8 +739,8 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 				"MovieId2": {MovieId: "MovieId2", Title: "Title2", Rating: 2.5, Count: 200},
 				"MovieId3": {MovieId: "MovieId3", Title: "Title3", Rating: 5.0, Count: 300},
 			},
-			OmegaProcessed: false,
-			RingRound:      0,
+			OmegaProcessed: true,
+			RingRound:      2,
 		},
 		Kappa2: &common.PartialData[*protocol.Kappa_2_Data]{
 			Data: map[string]*protocol.Kappa_2_Data{
@@ -677,7 +760,8 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 		},
 	}
 
-	loadDataToFile(t, struct {
+	// Delta2
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Delta_2_Data]
 		dir      string
@@ -685,15 +769,31 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 		source   string
 		stage    interface{}
 	}{
-		name:     "MergerPartialResults_Delta2",
+		name:     "ReducerPartialResults_Delta2",
 		data:     mergerPartialResults.Delta2,
 		dir:      tempDir,
 		clientID: CLIENT_ID,
 		source:   "",
 		stage:    &protocol.Task_Delta_2{},
 	})
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Delta_2_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "ReducerPartialResults_Delta2_Metadata",
+		data:     mergerPartialResults.Delta2,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.DELTA_STAGE_2,
+	})
 
-	loadDataToFile(t, struct {
+	// Eta2
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Eta_2_Data]
 		dir      string
@@ -701,14 +801,31 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 		source   string
 		stage    interface{}
 	}{
-		name:     "MergerPartialResults_Eta2",
+		name:     "ReducerPartialResults_Eta2",
 		data:     mergerPartialResults.Eta2,
 		dir:      tempDir,
 		clientID: ANOTHER_CLIENT_ID,
 		source:   "",
 		stage:    &protocol.Task_Eta_2{},
 	})
-	loadDataToFile(t, struct {
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Eta_2_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "ReducerPartialResults_Eta2_Metadata",
+		data:     mergerPartialResults.Eta2,
+		dir:      tempDir,
+		clientID: ANOTHER_CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.ETA_STAGE_2,
+	})
+
+	// Kappa2
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Kappa_2_Data]
 		dir      string
@@ -716,14 +833,31 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 		source   string
 		stage    interface{}
 	}{
-		name:     "MergerPartialResults_Kappa2",
+		name:     "ReducerPartialResults_Kappa2",
 		data:     mergerPartialResults.Kappa2,
 		dir:      tempDir,
 		clientID: CLIENT_ID,
 		source:   "",
 		stage:    &protocol.Task_Kappa_2{},
 	})
-	loadDataToFile(t, struct {
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Kappa_2_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "ReducerPartialResults_Kappa2_Metadata",
+		data:     mergerPartialResults.Kappa2,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.KAPPA_STAGE_2,
+	})
+
+	// Nu2
+	LoadDataToFile(t, struct {
 		name     string
 		data     *common.PartialData[*protocol.Nu_2_Data]
 		dir      string
@@ -731,13 +865,29 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 		source   string
 		stage    interface{}
 	}{
-		name:     "MergerPartialResults_Nu2",
+		name:     "ReducerPartialResults_Nu2",
 		data:     mergerPartialResults.Nu2,
 		dir:      tempDir,
 		clientID: CLIENT_ID,
 		source:   "",
 		stage:    &protocol.Task_Nu_2{},
 	})
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Nu_2_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "ReducerPartialResults_Nu2_Metadata",
+		data:     mergerPartialResults.Nu2,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.NU_STAGE_2,
+	})
+
 	actualResult, err := LoadReducerPartialResultsFromDisk(tempDir)
 	if err != nil {
 		t.Fatalf("Failed to load reducer partial results: %v", err)
@@ -754,4 +904,109 @@ func TestSerializationAndDeserializationOfReducer(t *testing.T) {
 	}
 	assert.True(t, CompareReducerPartialResultsMap(expected, actualResult), "Loaded reducer partial results do not match expected")
 
+}
+
+func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
+
+	maxHeap := topkheap.NewTopKMaxHeap[float32, *protocol.Theta_Data](1)
+	maxHeap.Insert(1200, &protocol.Theta_Data{Id: "id3", Title: "Title 3", AvgRating: 1200})
+
+	partialMax := &common.TopperPartialData[float32, *protocol.Theta_Data]{
+		Heap:           maxHeap,
+		OmegaProcessed: true,
+		RingRound:      2,
+	}
+
+	minHeap := topkheap.NewTopKMinHeap[float32, *protocol.Theta_Data](1)
+	minHeap.Insert(800, &protocol.Theta_Data{Id: "id2", Title: "Title 2", AvgRating: 800})
+
+	partialMin := &common.TopperPartialData[float32, *protocol.Theta_Data]{
+		Heap:           minHeap,
+		OmegaProcessed: true,
+		RingRound:      2,
+	}
+
+	partials := []*common.TopperPartialData[float32, *protocol.Theta_Data]{
+		partialMax,
+		partialMin,
+	}
+
+	thetaPartial := &common.ThetaPartialData{
+		MinPartialData: partialMin,
+		MaxPartialData: partialMax,
+	}
+
+	tempDir, err := os.MkdirTemp("", "test_serialization")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	maxValueFunc := func(input *protocol.Theta_Data) float32 {
+		return input.GetAvgRating()
+	}
+
+	err = SaveTopperThetaDataToFile(tempDir, &protocol.Task_Theta{}, CLIENT_ID, partials, maxValueFunc)
+	assert.NoError(t, err, "Failed to save TopperPartialData to file")
+
+	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.THETA_STAGE, partials[0])
+	assert.NoError(t, err, "Failed to save TopperMetadata to file")
+
+	// ----------- Epsilon stage (heap de máxima) -----------
+	epsilonMaxHeap := topkheap.NewTopKMaxHeap[uint64, *protocol.Epsilon_Data](5)
+	epsilonMaxHeap.Insert(500, &protocol.Epsilon_Data{ProdCountry: "country1", TotalInvestment: 500})
+	epsilonMaxHeap.Insert(400, &protocol.Epsilon_Data{ProdCountry: "country2", TotalInvestment: 400})
+	epsilonPartial := &common.TopperPartialData[uint64, *protocol.Epsilon_Data]{
+		Heap:           epsilonMaxHeap,
+		OmegaProcessed: true,
+		RingRound:      1,
+	}
+	epsilonMaxValueFunc := func(input *protocol.Epsilon_Data) uint64 {
+		return input.GetTotalInvestment()
+	}
+	err = SaveTopperDataToFile(tempDir, &protocol.Task_Epsilon{}, CLIENT_ID, epsilonPartial, epsilonMaxValueFunc)
+	assert.NoError(t, err, "Failed to save TopperPartialData (Epsilon) to file")
+	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.EPSILON_STAGE, epsilonPartial)
+	assert.NoError(t, err, "Failed to save TopperMetadata (Epsilon) to file")
+
+	// ----------- Lambda stage (heap de máxima) -----------
+	lambdaMaxHeap := topkheap.NewTopKMaxHeap[uint64, *protocol.Lambda_Data](10)
+	lambdaMaxHeap.Insert(20, &protocol.Lambda_Data{ActorId: "actor1", ActorName: "Actor One", Participations: 20})
+	lambdaMaxHeap.Insert(30, &protocol.Lambda_Data{ActorId: "actor2", ActorName: "Actor Two", Participations: 30})
+	lambdaPartial := &common.TopperPartialData[uint64, *protocol.Lambda_Data]{
+		Heap:           lambdaMaxHeap,
+		OmegaProcessed: false,
+		RingRound:      0,
+	}
+	lambdaMaxValueFunc := func(input *protocol.Lambda_Data) uint64 {
+		return input.GetParticipations()
+	}
+	err = SaveTopperDataToFile(tempDir, &protocol.Task_Lambda{}, CLIENT_ID, lambdaPartial, lambdaMaxValueFunc)
+	assert.NoError(t, err, "Failed to save TopperPartialData (Lambda) to file")
+	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.LAMBDA_STAGE, lambdaPartial)
+	assert.NoError(t, err, "Failed to save TopperMetadata (Lambda) to file")
+
+	// Load the saved TopperPartialResults from disk
+	loaded, err := LoadTopperPartialResultsFromDisk(tempDir)
+	assert.NoError(t, err, "Failed to load TopperPartialData (Lambda) from file")
+
+	expected := common.TopperPartialResults{
+		ThetaData:   thetaPartial,
+		EpsilonData: epsilonPartial,
+		LamdaData:   lambdaPartial,
+	}
+
+	log.Infof("Loaded Epsilon Heap: %+v", loaded[CLIENT_ID].EpsilonData.Heap.GetTopK())
+	log.Infof("Expected Epsilon Heap: %+v", expected.EpsilonData.Heap.GetTopK())
+
+	log.Infof("Loaded Lambda Heap: %+v", loaded[CLIENT_ID].LamdaData.Heap.GetTopK())
+	log.Infof("Expected Lambda Heap: %+v", expected.LamdaData.Heap.GetTopK())
+
+	if loaded[CLIENT_ID].ThetaData != nil {
+		log.Infof("Loaded Theta Max Heap: %+v", loaded[CLIENT_ID].ThetaData.MaxPartialData.Heap.GetTopK())
+		log.Infof("Loaded Theta Min Heap: %+v", loaded[CLIENT_ID].ThetaData.MinPartialData.Heap.GetTopK())
+	}
+
+	// Assert the loaded data matches the expected data
+	assert.True(t, EqualTopperPartialResults(&expected, loaded[CLIENT_ID]), "Loaded TopperPartialResults do not match expected")
 }
