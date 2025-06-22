@@ -10,6 +10,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
+	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 	"github.com/op/go-logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/protobuf/proto"
@@ -39,6 +40,12 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 
 	action := actions.NewAction(workerType, infraConfig)
 
+	err := action.DownloadData(infraConfig.GetDirectory())
+	if err != nil {
+		log.Panicf("Failed to download data: %s", err)
+		return nil
+	}
+
 	return &Worker{
 		WorkerId:    infraConfig.GetNodeId(),
 		baseDir:     infraConfig.GetDirectory(),
@@ -49,6 +56,7 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 		healthCheck: health_check.NewHealthCheck(containerName, infraConfig),
 		wg:          &sync.WaitGroup{},
 	}
+
 }
 
 // InitConfig initializes the worker with the given exchanges, queues, and binds
@@ -143,15 +151,14 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 
 	w.sendSubTasks(subTasks)
 
-	//w.action.DownloadData()
-	//TODO Handle sourceType
-	//storage.CommitPartialDataToFinal(w.baseDir, task.GetStage(), "", task.GetClientId())
+	w.action.LoadData(task)
+
 	message.Ack(false)
 
 	//delete info from the storage
 
 	//w.action.LoadData()
-	//storage.DeletePartialResults(w.baseDir, task.GetStage(), "", task.GetClientId())
+	storage.DeletePartialResults(w.baseDir, task.GetStage(), task.GetTableType(), task.GetClientId())
 
 }
 

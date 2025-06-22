@@ -331,3 +331,10 @@ func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }
+
+func (m *Filter) DownloadData(dirBase string) error {
+	return nil
+}
+func (m *Filter) LoadData(task *protocol.Task) error {
+	return nil
+}

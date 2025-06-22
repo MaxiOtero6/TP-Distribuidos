@@ -10,6 +10,7 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+	"google.golang.org/protobuf/proto"
 )
 
 const REDUCER_STAGES_COUNT uint = 4
@@ -70,7 +71,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, ta
 		return input.GetCountry()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.DELTA_STAGE_2, REDUCER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.DELTA_STAGE_2)
 
 	return nil
 }
@@ -87,7 +88,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskId
 		return input.GetMovieId()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.ETA_STAGE_2, REDUCER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.ETA_STAGE_2)
 	return nil
 }
 
@@ -102,7 +103,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 		return input.GetActorId()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.KAPPA_STAGE_2, REDUCER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.KAPPA_STAGE_2)
 	return nil
 }
 
@@ -118,7 +119,7 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIden
 		return strconv.FormatBool(input.GetSentiment())
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.NU_STAGE_2, REDUCER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, r.infraConfig, common.NU_STAGE_2)
 	return nil
 }
 
@@ -573,6 +574,76 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (m *Reducer) DownloadData(dirBase string) error {
+	var err error
+	m.partialResults, err = storage.LoadReducerPartialResultsFromDisk(dirBase)
+	if err != nil {
+		log.Errorf("Failed to load partial results from disk: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (m *Reducer) LoadData(task *protocol.Task) error {
+	stage := task.GetStage()
+	clientId := task.GetClientId()
+	//taskIdentifier := task.GetTaskIdentifier()
+
+	m.makePartialResults(clientId)
+
+	switch v := stage.(type) {
+	case *protocol.Task_Delta_2:
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Delta2)
+
+	case *protocol.Task_Eta_2:
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Eta2)
+
+	case *protocol.Task_Kappa_2:
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Kappa2)
+
+	case *protocol.Task_Nu_2:
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Nu2)
+
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+
+		partialData, err := m.getPartialData(data, clientId)
+		if err != nil {
+			log.Errorf("Failed to create new method for OmegaEOF: %s", err)
+			return err
+		}
+
+		return storage.SaveMetadataToFile(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.GENERAL_FOLDER_TYPE, common.GENERAL, partialData)
+
+	case *protocol.Task_RingEOF:
+		return nil
+
+	default:
+		return fmt.Errorf("invalid query stage: %v", v)
+	}
+
+}
+
+func (m *Reducer) getPartialData(data *protocol.OmegaEOF_Data, clientId string) (*common.PartialData[proto.Message], error) {
+	stage := data.GetStage()
+	var partialData *common.PartialData[proto.Message]
+
+	switch stage {
+	case common.DELTA_STAGE_2:
+		partialData = any(m.partialResults[clientId].Delta2).(*common.PartialData[proto.Message])
+	case common.ETA_STAGE_2:
+		partialData = any(m.partialResults[clientId].Eta2).(*common.PartialData[proto.Message])
+	case common.KAPPA_STAGE_2:
+		partialData = any(m.partialResults[clientId].Kappa2).(*common.PartialData[proto.Message])
+	case common.NU_STAGE_2:
+		partialData = any(m.partialResults[clientId].Nu2).(*common.PartialData[proto.Message])
+	default:
+		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+	return partialData, nil
 }
 
 // func (r *Reducer) deleteStage(clientId string, stage string) error {

@@ -10,10 +10,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+	"google.golang.org/protobuf/proto"
 )
 
 const MERGER_STAGES_COUNT uint = 4
-const MERGER_FILE_TYPE string = ""
 
 // Merger is a struct that implements the Action interface.
 type Merger struct {
@@ -67,7 +67,7 @@ func (m *Merger) delta3Stage(data []*protocol.Delta_3_Data, clientId string, tas
 		return input.GetCountry()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.DELTA_STAGE_3, MERGER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.DELTA_STAGE_3)
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (m *Merger) eta3Stage(data []*protocol.Eta_3_Data, clientId string, taskIde
 		return input.GetMovieId()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.ETA_STAGE_3, MERGER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.ETA_STAGE_3)
 	return nil
 }
 
@@ -98,7 +98,7 @@ func (m *Merger) kappa3Stage(data []*protocol.Kappa_3_Data, clientId string, tas
 		return input.GetActorId()
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.KAPPA_STAGE_3, MERGER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.KAPPA_STAGE_3)
 	return nil
 }
 
@@ -114,7 +114,7 @@ func (m *Merger) nu3Stage(data []*protocol.Nu_3_Data, clientId string, taskIdent
 		return strconv.FormatBool(input.GetSentiment())
 	}
 
-	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.NU_STAGE_3, MERGER_FILE_TYPE)
+	ProcessStage(partialData, data, clientId, taskIdentifier, aggregationFunc, identifierFunc, m.infraConfig, common.NU_STAGE_3)
 	return nil
 }
 
@@ -420,6 +420,80 @@ func (m *Merger) Execute(task *protocol.Task) (common.Tasks, error) {
 	default:
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
+}
+
+func (m *Merger) DownloadData(dirBase string) error {
+	var err error
+	m.partialResults, err = storage.LoadMergerPartialResultsFromDisk(dirBase)
+	if err != nil {
+		log.Errorf("Failed to load partial results from disk: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (m *Merger) LoadData(task *protocol.Task) error {
+	stage := task.GetStage()
+	clientId := task.GetClientId()
+	//taskIdentifier := task.GetTaskIdentifier()
+
+	m.makePartialResults(clientId)
+
+	switch v := stage.(type) {
+	case *protocol.Task_Delta_3:
+
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Delta3)
+
+	case *protocol.Task_Eta_3:
+
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Eta3)
+
+	case *protocol.Task_Kappa_3:
+
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Kappa3)
+
+	case *protocol.Task_Nu_3:
+
+		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Nu3)
+
+	case *protocol.Task_OmegaEOF:
+		data := v.OmegaEOF.GetData()
+
+		partialData, err := m.getPartialData(data, clientId)
+		if err != nil {
+			log.Errorf("Failed to create new method for OmegaEOF: %s", err)
+			return err
+		}
+
+		return storage.SaveMetadataToFile(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.GENERAL_FOLDER_TYPE, common.GENERAL, partialData)
+
+	case *protocol.Task_RingEOF:
+		return nil
+
+	default:
+		return fmt.Errorf("invalid query stage: %v", v)
+	}
+
+}
+
+func (m *Merger) getPartialData(data *protocol.OmegaEOF_Data, clientId string) (*common.PartialData[proto.Message], error) {
+	stage := data.GetStage()
+	var partialData *common.PartialData[proto.Message]
+
+	switch stage {
+	case common.DELTA_STAGE_3:
+		partialData = any(m.partialResults[clientId].Delta3).(*common.PartialData[proto.Message])
+	case common.ETA_STAGE_3:
+		partialData = any(m.partialResults[clientId].Eta3).(*common.PartialData[proto.Message])
+	case common.KAPPA_STAGE_3:
+		partialData = any(m.partialResults[clientId].Kappa3).(*common.PartialData[proto.Message])
+	case common.NU_STAGE_3:
+		partialData = any(m.partialResults[clientId].Nu3).(*common.PartialData[proto.Message])
+	default:
+		return nil, fmt.Errorf("invalid stage: %s", stage)
+	}
+	return partialData, nil
 }
 
 // func (m *Merger) deleteStage(clientId string, stage string) error {

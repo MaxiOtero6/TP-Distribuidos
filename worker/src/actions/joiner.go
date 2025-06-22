@@ -187,6 +187,13 @@ func (j *Joiner) moviesZetaStage(data []*protocol.Zeta_Data, clientId string, ta
 		j.addEta1Results(tasks, partialResults, clientId)
 
 		bigTable.data = make(BigTableData[*protocol.Zeta_Data_Rating])
+
+		if bigTable.ready {
+			// TODO delete all
+		} else {
+			//TODO delete big table
+		}
+
 	}
 
 	return tasks
@@ -227,6 +234,12 @@ func (j *Joiner) moviesIotaStage(data []*protocol.Iota_Data, clientId string, ta
 		j.addKappa1Results(tasks, partialResults, clientId)
 
 		bigTable.data = make(BigTableData[*protocol.Iota_Data_Actor])
+
+		if bigTable.ready {
+			// TODO delete all
+		} else {
+			//TODO delete big table
+		}
 	}
 
 	return tasks
@@ -263,6 +276,8 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, t
 		partialData.data = make(BigTableData[*protocol.Zeta_Data_Rating])
 	}
 
+	// TODO - not ready -- save data
+
 	return tasks
 }
 
@@ -292,6 +307,8 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string, ta
 
 		partialData.data = make(BigTableData[*protocol.Iota_Data_Actor])
 	}
+
+	// TODO - not ready -- save data
 
 	return tasks
 }
@@ -389,6 +406,12 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 			j.addEta1Results(tasks, partialResults, clientId)
 
 			zetaData.bigTable.data = make(BigTableData[*protocol.Zeta_Data_Rating])
+
+			if zetaData.bigTable.ready {
+				// TODO delete all
+			} else {
+				//TODO delete big table
+			}
 		}
 
 		// bigTableReady = zetaData.bigTable.ready
@@ -412,6 +435,12 @@ func (j *Joiner) smallTableOmegaEOFStage(data *protocol.OmegaEOF_Data, clientId 
 			j.addKappa1Results(tasks, partialResults, clientId)
 
 			iotaData.bigTable.data = make(BigTableData[*protocol.Iota_Data_Actor])
+
+			if iotaData.bigTable.ready {
+				// TODO delete all
+			} else {
+				//TODO delete big table
+			}
 		}
 
 		// bigTableReady = iotaData.bigTable.ready
@@ -469,6 +498,9 @@ func (j *Joiner) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) (t
 func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks common.Tasks) {
 	tasks = make(common.Tasks)
 
+	var smallTableReady bool
+	var bigTableReady bool
+
 	switch data.GetStage() {
 	case common.ZETA_STAGE:
 		zetaData := j.partialResults[clientId].zetaData
@@ -484,12 +516,13 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 		resultsTaskCount := zetaData.sendedTaskCount
 		taskFragments := []model.TaskFragmentIdentifier{}
 
-		if zetaData.smallTable.ready {
+		smallTableReady = zetaData.smallTable.ready
+		if smallTableReady {
 			taskFragments = utils.MapKeys(zetaData.bigTable.taskFragments)
 		}
 
-		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
-		zetaData.bigTable.ready = ready
+		bigTableReady = j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
+		zetaData.bigTable.ready = bigTableReady
 	case common.IOTA_STAGE:
 		iotaData := j.partialResults[clientId].iotaData
 		ringRound := data.GetRoundNumber()
@@ -504,14 +537,19 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 		resultsTaskCount := iotaData.sendedTaskCount
 		taskFragments := []model.TaskFragmentIdentifier{}
 
-		if iotaData.smallTable.ready {
+		smallTableReady = iotaData.smallTable.ready
+		if smallTableReady {
 			taskFragments = utils.MapKeys(iotaData.bigTable.taskFragments)
 		}
 
-		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
-		iotaData.bigTable.ready = ready
+		bigTableReady = j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
+		iotaData.bigTable.ready = bigTableReady
 	}
 
+	// TODO -- if ready -- delete partial results
+	if smallTableReady && bigTableReady {
+		//TOOD delete all
+	}
 	return tasks
 	// if ready {
 	// 	if err := storage.DeletePartialResults(j.infraConfig.GetDirectory(), clientId, data.GetStage(), common.ANY_SOURCE); err != nil {
@@ -713,6 +751,14 @@ func joinerAddResults[T any](
 	}
 
 	tasks[exchange][routingKey] = append(tasks[exchange][routingKey], task)
+}
+
+func (m *Joiner) DownloadData(dirBase string) error {
+	return nil
+}
+
+func (m *Joiner) LoadData(task *protocol.Task) error {
+	return nil
 }
 
 // // Delete partialResult by clientId

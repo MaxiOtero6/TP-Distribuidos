@@ -163,3 +163,11 @@ func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }
+
+func (m *Overviewer) DownloadData(dirBase string) error {
+	return nil
+}
+
+func (m *Overviewer) LoadData(task *protocol.Task) error {
+	return nil
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 	"github.com/op/go-logging"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,7 +26,9 @@ type Action interface {
 	// Execute executes the action.
 	// It returns a map of tasks for the next stages.
 	// It returns an error if the action fails.
-	Execute(task *protocol.Task) (common.Tasks, error)
+	Execute(task *protocol.Task) (common.Tasks, common.TableType, error)
+	LoadData(task *protocol.Task) error
+	DownloadData(dirBase string) error
 }
 
 // NewAction creates a new action based on the worker type.
@@ -119,7 +120,6 @@ func ProcessStage[T proto.Message](
 	keySelector func(T) string,
 	infraConfig *model.InfraConfig,
 	stage string,
-	fileType string,
 
 ) {
 
@@ -140,5 +140,4 @@ func ProcessStage[T proto.Message](
 
 	// Aggregate data
 	utils.MergeIntoMap(partial.Data, newItems, keySelector, merge)
-	storage.SaveDataToFile(infraConfig.GetDirectory(), clientID, stage, fileType, partial)
 }
