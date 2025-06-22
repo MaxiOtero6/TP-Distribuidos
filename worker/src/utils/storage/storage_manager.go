@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
@@ -39,20 +38,21 @@ type OutputFile struct {
 }
 
 type MetadataFile struct {
-	Timestamps     string `json:"timestamps"`
-	Status         string `json:"status"`
-	OmegaProcessed bool   `json:"omega_processed"`
-	RingRound      uint32 `json:"ring_round"`
+	Timestamps          string `json:"timestamps"`
+	Status              string `json:"status"`
+	OmegaProcessed      bool   `json:"omega_processed"`
+	RingRound           uint32 `json:"ring_round"`
+	SendedTaskCount     int    `json:"sended_task_count"`
+	SmallTableTaskCount int    `json:"small_table_task_count"`
+	Ready               bool   `json:"ready"`
 }
 
 type MetaData struct {
-	OmegaProcessed bool   `json:"omega_processed"`
-	RingRound      uint32 `json:"ring_round"`
-}
-
-type FileStructure struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	OmegaProcessed      bool   `json:"omega_processed"`
+	RingRound           uint32 `json:"ring_round"`
+	SendedTaskCount     int    `json:"sended_task_count"`
+	SmallTableTaskCount int    `json:"small_table_task_count"`
+	Ready               bool   `json:"ready"`
 }
 
 // Generic loader for PartialData[T] using protojson
@@ -79,7 +79,7 @@ func decodeJsonToProtoData[T proto.Message](jsonBytes []byte, newT func() T) (*c
 	return result, nil
 }
 
-func decodeFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
+func decodeGeneralFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
 	var temp struct {
 		OmegaProcessed bool   `json:"omega_processed"`
 		RingRound      uint32 `json:"ring_round"`
@@ -95,6 +95,69 @@ func decodeFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
 		OmegaProcessed: temp.OmegaProcessed,
 		RingRound:      temp.RingRound,
 	}, nil
+}
+
+func decodeJoinerMetadataFromJson(jsonBytes []byte) (MetadataFile, error) {
+	var temp MetadataFile
+	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
+		return MetadataFile{}, err
+	}
+	return temp, nil
+}
+
+func decodeJsonToJoinerBigTableData[B proto.Message](
+	jsonBytes []byte,
+	newB func() B,
+) (*common.JoinerTableData[common.BigTableData[B]], error) {
+	var temp struct {
+		Data      map[uint32]map[string][]json.RawMessage `json:"data"`
+		Timestamp string                                  `json:"timestamp"`
+		Status    string                                  `json:"status"`
+	}
+	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
+		return nil, err
+	}
+	result := &common.JoinerTableData[common.BigTableData[B]]{
+		Data: make(common.BigTableData[B]),
+	}
+	for outerKey, innerMap := range temp.Data {
+		result.Data[outerKey] = make(map[string][]B)
+		for innerKey, rawSlice := range innerMap {
+			for _, raw := range rawSlice {
+				msg := newB()
+				if err := protojson.Unmarshal(raw, msg); err != nil {
+					return nil, err
+				}
+				result.Data[outerKey][innerKey] = append(result.Data[outerKey][innerKey], msg)
+			}
+		}
+	}
+	return result, nil
+}
+
+func decodeJsonToJoinerSmallTableData[S proto.Message](
+	jsonBytes []byte,
+	newS func() S,
+) (*common.JoinerTableData[common.SmallTableData[S]], error) {
+	var temp struct {
+		Data      map[string]json.RawMessage `json:"data"`
+		Timestamp string                     `json:"timestamp"`
+		Status    string                     `json:"status"`
+	}
+	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
+		return nil, err
+	}
+	result := &common.JoinerTableData[common.SmallTableData[S]]{
+		Data: make(common.SmallTableData[S]),
+	}
+	for k, raw := range temp.Data {
+		msg := newS()
+		if err := protojson.Unmarshal(raw, msg); err != nil {
+			return nil, err
+		}
+		result.Data[k] = msg
+	}
+	return result, nil
 }
 
 // Generic disk loader for any PartialData[T]
@@ -138,7 +201,7 @@ func loadStageClientData[T proto.Message](
 	if err != nil {
 		return zero, fmt.Errorf("error reading file %s: %w", finalMetadataFilePath, err)
 	}
-	metadata, err := decodeFromJsonMetadata(jsonMetadataBytes)
+	metadata, err := decodeGeneralFromJsonMetadata(jsonMetadataBytes)
 	if err != nil {
 		return zero, err
 	}
@@ -297,6 +360,154 @@ func LoadTopperPartialResultsFromDisk(dir string) (map[string]*common.TopperPart
 		func() *protocol.Theta_Data { return &protocol.Theta_Data{} })
 
 	return partialResults, nil
+}
+
+func LoadJoinerPartialResultsFromDisk(
+	dir string,
+) (map[string]*common.JoinerPartialResults, error) {
+	partialResults := make(map[string]*common.JoinerPartialResults)
+
+	// IOTA
+	err := loadJoinerStageToPartialResults(
+		dir,
+		common.IOTA_STAGE,
+		func() *protocol.Iota_Data_Movie { return &protocol.Iota_Data_Movie{} },
+		func() *protocol.Iota_Data_Actor { return &protocol.Iota_Data_Actor{} },
+		func(jpr *common.JoinerPartialResults) *common.JoinerStageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor] {
+			if jpr.IotaData == nil {
+				jpr.IotaData = &common.JoinerStageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]{}
+			}
+			return jpr.IotaData
+		},
+		partialResults,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error loading IOTA joiner stage: %w", err)
+	}
+
+	// ZETA
+	err = loadJoinerStageToPartialResults(
+		dir,
+		common.ZETA_STAGE,
+		func() *protocol.Zeta_Data_Movie { return &protocol.Zeta_Data_Movie{} },
+		func() *protocol.Zeta_Data_Rating { return &protocol.Zeta_Data_Rating{} },
+		func(jpr *common.JoinerPartialResults) *common.JoinerStageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating] {
+			if jpr.ZetaData == nil {
+				jpr.ZetaData = &common.JoinerStageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]{}
+			}
+			return jpr.ZetaData
+		},
+		partialResults,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error loading ZETA joiner stage: %w", err)
+	}
+
+	return partialResults, nil
+
+}
+
+// Esta función carga los datos de un stage y los setea en el campo correspondiente de JoinerPartialResults
+func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
+	dir string,
+	stage string,
+	newS func() S,
+	newB func() B,
+	getStageData func(*common.JoinerPartialResults) *common.JoinerStageData[S, B],
+	partialResults map[string]*common.JoinerPartialResults,
+) error {
+	// SmallTable
+	smallTableDir := filepath.Join(dir, stage, string(common.JOINER_SMALL_FOLDER_TYPE))
+	smallClients, err := os.ReadDir(smallTableDir)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("error reading small table dir: %w", err)
+	}
+	for _, entry := range smallClients {
+		if !entry.IsDir() {
+			continue
+		}
+		clientId := entry.Name()
+		dataPath := filepath.Join(smallTableDir, clientId, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+		metadataPath := filepath.Join(smallTableDir, clientId, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+		jsonBytes, err := os.ReadFile(dataPath)
+		if err != nil {
+			log.Errorf("Error reading small table data for client %s: %v", clientId, err)
+			continue
+		}
+		smallTable, err := decodeJsonToJoinerSmallTableData(jsonBytes, newS)
+		if err != nil {
+			log.Errorf("Error decoding small table for client %s: %v", clientId, err)
+			continue
+		}
+		if _, ok := partialResults[clientId]; !ok {
+			partialResults[clientId] = &common.JoinerPartialResults{}
+		}
+		getStageData(partialResults[clientId]).SmallTable = smallTable
+
+		// Leer y aplicar metadata
+		jsonMeta, err := os.ReadFile(metadataPath)
+		if err == nil {
+			metadata, err := decodeJoinerMetadataFromJson(jsonMeta)
+			if err != nil {
+				log.Errorf("Error decoding metadata for client %s: %v", clientId, err)
+				continue
+			}
+
+			smallTable.OmegaProcessed = metadata.OmegaProcessed
+			smallTable.Ready = metadata.Ready
+			stageData := getStageData(partialResults[clientId])
+			stageData.SendedTaskCount = metadata.SendedTaskCount
+			stageData.SmallTableTaskCount = metadata.SmallTableTaskCount
+
+		}
+	}
+
+	// BigTable
+	bigTableDir := filepath.Join(dir, stage, string(common.JOINER_BIG_FOLDER_TYPE))
+	bigClients, err := os.ReadDir(bigTableDir)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("error reading big table dir: %w", err)
+	}
+	for _, entry := range bigClients {
+		if !entry.IsDir() {
+			continue
+		}
+		clientId := entry.Name()
+		dataPath := filepath.Join(bigTableDir, clientId, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+		metadataPath := filepath.Join(bigTableDir, clientId, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+		jsonBytes, err := os.ReadFile(dataPath)
+		if err != nil {
+			log.Errorf("Error reading big table data for client %s: %v", clientId, err)
+			continue
+		}
+		bigTable, err := decodeJsonToJoinerBigTableData(jsonBytes, newB)
+		if err != nil {
+			log.Errorf("Error decoding big table for client %s: %v", clientId, err)
+			continue
+		}
+		if _, ok := partialResults[clientId]; !ok {
+			partialResults[clientId] = &common.JoinerPartialResults{}
+		}
+		getStageData(partialResults[clientId]).BigTable = bigTable
+
+		// Leer y aplicar metadata
+		jsonMeta, err := os.ReadFile(metadataPath)
+		if err == nil {
+			metadata, err := decodeJoinerMetadataFromJson(jsonMeta)
+			if err != nil {
+				log.Errorf("Error decoding metadata for client %s: %v", clientId, err)
+				continue
+			}
+
+			bigTable.OmegaProcessed = metadata.OmegaProcessed
+			bigTable.Ready = metadata.Ready
+			stageData := getStageData(partialResults[clientId])
+			stageData.SendedTaskCount = metadata.SendedTaskCount
+			stageData.RingRound = metadata.RingRound
+		}
+	}
+
+	return nil
 }
 
 func heapToPartialData[K topkheap.Ordered, V proto.Message](
@@ -473,6 +684,7 @@ func SaveDataToFile[T proto.Message](dir string, clientId string, stage interfac
 	if err != nil {
 		return fmt.Errorf("error getting stage name: %w", err)
 	}
+
 	err = saveGeneralDataToFile(dir, clientId, stringStage, tableType, data)
 	if err != nil {
 		return fmt.Errorf("error saving general data to file: %w", err)
@@ -531,6 +743,7 @@ func marshallGeneralPartialData[T proto.Message](tempDataFilePath string, data *
 		EmitUnpopulated: true, // Include unpopulated fields
 	}
 	return processGeneralDataTypedStruct(data, tempDataFilePath, marshaler)
+
 }
 func processGeneralDataTypedStruct[T proto.Message](typedStruct *common.PartialData[T], tempDataFilePath string, marshaler protojson.MarshalOptions) error {
 
@@ -560,12 +773,186 @@ func processGeneralDataTypedStruct[T proto.Message](typedStruct *common.PartialD
 	return nil
 }
 
+func SaveJoinerMetadataToFile[T proto.Message, B proto.Message](dir string, clientId string, stage string, tableType common.FolderType, data *common.JoinerStageData[T, B]) error {
+	dirPath := filepath.Join(dir, stage, string(tableType), clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	var metadata MetaData
+
+	switch tableType {
+	case common.JOINER_SMALL_FOLDER_TYPE:
+		if data.SmallTable == nil {
+			return fmt.Errorf("small table data is nil for client %s in stage %s", clientId, stage)
+		}
+		metadata = MetaData{
+			OmegaProcessed:      data.SmallTable.OmegaProcessed,
+			Ready:               data.SmallTable.Ready,
+			SendedTaskCount:     data.SendedTaskCount,
+			SmallTableTaskCount: data.SmallTableTaskCount,
+		}
+	case common.JOINER_BIG_FOLDER_TYPE:
+		if data.BigTable == nil {
+			return fmt.Errorf("big table data is nil for client %s in stage %s", clientId, stage)
+		}
+		metadata = MetaData{
+			OmegaProcessed:  data.BigTable.OmegaProcessed,
+			Ready:           data.BigTable.Ready,
+			SendedTaskCount: data.SendedTaskCount,
+			RingRound:       data.RingRound,
+		}
+	}
+
+	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	err = commitPartialMetadataToFinal(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to commit metadata to final file: %w", err)
+	}
+	return nil
+}
+func SaveJoinerTableToFile(
+	dir string,
+	clientId string,
+	stage interface{},
+	tableType common.FolderType,
+	data any,
+) error {
+
+	stringStage, err := getStageNameFromInterface(stage)
+	log.Infof(stringStage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
+	}
+
+	err = saveJoinerDataToFile(dir, clientId, stringStage, string(tableType), data)
+	if err != nil {
+		return fmt.Errorf("error saving joiner small table data to file: %w", err)
+	}
+	return commitPartialDataToFinal(dir, stringStage, tableType, clientId)
+}
+func saveJoinerDataToFile(
+	dir string,
+	clientId string,
+	stage string,
+	tableType string,
+	data any,
+) error {
+	dirPath := filepath.Join(dir, stage, string(tableType), clientId)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	tempDataFilePath := filepath.Join(dirPath, TEMPORARY_DATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+	err = marshallJoinerAnyTableData(tempDataFilePath, data)
+	if err != nil {
+		return fmt.Errorf("failed to save data to temporary file: %w", err)
+	}
+
+	return nil
+}
+func marshallJoinerAnyTableData(
+	tempDataFilePath string,
+	data any,
+) error {
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ",
+		EmitUnpopulated: true,
+	}
+
+	switch d := data.(type) {
+	case *common.JoinerTableData[common.SmallTableData[*protocol.Zeta_Data_Movie]]:
+		return processJoinerTableData(d, tempDataFilePath, marshaler)
+	case *common.JoinerTableData[common.SmallTableData[*protocol.Iota_Data_Movie]]:
+		return processJoinerTableData(d, tempDataFilePath, marshaler)
+	case *common.JoinerTableData[common.BigTableData[*protocol.Zeta_Data_Rating]]:
+		return processJoinerBigTableData(d, tempDataFilePath, marshaler)
+	case *common.JoinerTableData[common.BigTableData[*protocol.Iota_Data_Actor]]:
+		return processJoinerBigTableData(d, tempDataFilePath, marshaler)
+
+	default:
+		return fmt.Errorf("unsupported joiner table data type: %T", data)
+	}
+}
+
+func processJoinerTableData[S proto.Message](
+	typedStruct *common.JoinerTableData[common.SmallTableData[S]],
+	tempDataFilePath string,
+	marshaler protojson.MarshalOptions,
+) error {
+	log.Infof("Processing joiner small table data to file: %s", tempDataFilePath)
+
+	jsonMap := make(map[string]json.RawMessage)
+	for key, msg := range typedStruct.Data {
+		marshaledData, err := marshaler.Marshal(msg)
+		if err != nil {
+			return fmt.Errorf("error marshaling data to JSON: %w", err)
+		}
+		jsonMap[key] = marshaledData
+	}
+
+	outputData := OutputFile{
+		Data:       jsonMap,
+		Timestamps: time.Now().UTC().Format(time.RFC3339),
+		Status:     VALID_STATUS,
+	}
+
+	if err := writeToTempFile(tempDataFilePath, outputData); err != nil {
+		return fmt.Errorf("error writing to temp file: %w", err)
+	}
+	return nil
+}
+func processJoinerBigTableData[B proto.Message](
+	typedStruct *common.JoinerTableData[common.BigTableData[B]],
+	tempDataFilePath string,
+	marshaler protojson.MarshalOptions,
+) error {
+	log.Infof("Processing joiner big table data to file: %s", tempDataFilePath)
+
+	jsonMap := make(map[uint32]map[string][]json.RawMessage)
+	for outerKey, innerMap := range typedStruct.Data {
+		jsonMap[outerKey] = make(map[string][]json.RawMessage)
+		for innerKey, slice := range innerMap {
+			for _, msg := range slice {
+				marshaledData, err := marshaler.Marshal(msg)
+				if err != nil {
+					return fmt.Errorf("error marshaling data to JSON: %w", err)
+				}
+				jsonMap[outerKey][innerKey] = append(jsonMap[outerKey][innerKey], marshaledData)
+			}
+		}
+	}
+
+	outputData := OutputFile{
+		Data:       jsonMap,
+		Timestamps: time.Now().UTC().Format(time.RFC3339),
+		Status:     VALID_STATUS,
+	}
+
+	if err := writeToTempFile(tempDataFilePath, outputData); err != nil {
+		return fmt.Errorf("error writing to temp file: %w", err)
+	}
+	return nil
+}
+
 func writeMetadataToTempFile(tempMetadataFilePath string, metadata MetaData) error {
 	outputMetadata := MetadataFile{
-		Timestamps:     time.Now().UTC().Format(time.RFC3339),
-		Status:         VALID_STATUS,
-		OmegaProcessed: metadata.OmegaProcessed,
-		RingRound:      metadata.RingRound,
+		Timestamps:          time.Now().UTC().Format(time.RFC3339),
+		Status:              VALID_STATUS,
+		OmegaProcessed:      metadata.OmegaProcessed,
+		RingRound:           metadata.RingRound,
+		Ready:               metadata.Ready,
+		SendedTaskCount:     metadata.SendedTaskCount,
+		SmallTableTaskCount: metadata.SmallTableTaskCount,
 	}
 
 	err := writeToTempFile(tempMetadataFilePath, outputMetadata)
@@ -774,84 +1161,6 @@ func handleLeftOverFiles(finalFile, tempFile string) error {
 	return nil
 }
 
-// func decodeZetaDataMovie(decoder *json.Decoder) (map[string]*protocol.Zeta_Data_Movie, error) {
-// 	//var tempArray ZetaMovieArrayJSON
-// 	// if err := decoder.Decode(&tempArray); err != nil {
-// 	// 	return nil, fmt.Errorf("error decoding JSON array: %w", err)
-// 	// }
-
-// 	// result := make(map[string]*protocol.Zeta_Data_Movie)
-// 	// for _, item := range tempArray.Data {
-// 	// 	result[item.MovieId] = &protocol.Zeta_Data_Movie{
-// 	// 		MovieId: item.MovieId,
-// 	// 		Title:   item.Title,
-// 	// 	}
-// 	// }
-// 	// return result, nil
-// }
-
-// func decodeZetaDataRating(decoder *json.Decoder) (map[string][]*protocol.Zeta_Data_Rating, error) {
-// 	// var tempMap ZetaRatingMapJSON
-
-// 	// if err := decoder.Decode(&tempMap); err != nil {
-// 	// 	return nil, fmt.Errorf("error decoding JSON array: %w", err)
-// 	// }
-
-// 	// result := make(map[string][]*protocol.Zeta_Data_Rating)
-// 	// for _, item := range tempMap.Data {
-// 	// 	for _, item := range item {
-// 	// 		result[item.MovieId] = append(result[item.MovieId], &protocol.Zeta_Data_Rating{
-// 	// 			MovieId: item.MovieId,
-// 	// 			Rating:  item.Rating,
-// 	// 		})
-
-// 	// 	}
-// 	// }
-// 	// return result, nil
-//}
-
-// func decodeIotaDataMovie(decoder *json.Decoder) (map[string]*protocol.Iota_Data_Movie, error) {
-// 	var tempMap struct {
-// 		Data []struct {
-// 			MovieId string `json:"movieId"`
-// 		} `json:"data"`
-// 	}
-// 	if err := decoder.Decode(&tempMap); err != nil {
-// 		return nil, fmt.Errorf("error decoding JSON array: %w", err)
-// 	}
-// 	result := make(map[string]*protocol.Iota_Data_Movie)
-// 	for _, item := range tempMap.Data {
-// 		result[item.MovieId] = &protocol.Iota_Data_Movie{
-// 			MovieId: item.MovieId,
-// 		}
-// 	}
-// 	return result, nil
-// }
-
-// func decodeIotaDataActor(decoder *json.Decoder) (map[string][]*protocol.Iota_Data_Actor, error) {
-// 	var tempMap struct {
-// 		Data map[string][]struct {
-// 			MovieId   string `json:"movieId"`
-// 			ActorId   string `json:"actorId"`
-// 			ActorName string `json:"actorName"`
-// 		} `json:"data"`
-// 	}
-// 	if err := decoder.Decode(&tempMap); err != nil {
-// 		return nil, fmt.Errorf("error decoding JSON map: %w", err)
-// 	}
-// 	result := make(map[string][]*protocol.Iota_Data_Actor)
-// 	for movieId, items := range tempMap.Data {
-// 		for _, item := range items {
-// 			result[movieId] = append(result[movieId], &protocol.Iota_Data_Actor{
-// 				MovieId:   item.MovieId,
-// 				ActorId:   item.ActorId,
-// 				ActorName: item.ActorName,
-// 			})
-// 		}
-// 	}
-// 	return result, nil
-// }
-
 func getStageNameFromInterface(stage interface{}) (string, error) {
 	switch stage.(type) {
 	case *protocol.Task_Alpha:
@@ -903,364 +1212,4 @@ func getStageNameFromInterface(stage interface{}) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown stage type")
 	}
-}
-
-// Compare functions
-func compareTopperPartialResults(a, b *common.TopperPartialResults) bool {
-	if a == nil && b == nil {
-		log.Info("Both TopperPartialResults are nil")
-		return true
-	}
-	if a == nil || b == nil {
-		log.Error("One of the TopperPartialResults is nil")
-		return false
-	}
-
-	// EpsilonData
-	if (a.EpsilonData == nil) != (b.EpsilonData == nil) {
-		log.Error("EpsilonData nil mismatch")
-		return false
-	}
-	if a.EpsilonData != nil {
-		if a.EpsilonData.OmegaProcessed != b.EpsilonData.OmegaProcessed {
-			log.Errorf("EpsilonData.OmegaProcessed mismatch: %v vs %v", a.EpsilonData.OmegaProcessed, b.EpsilonData.OmegaProcessed)
-			return false
-		}
-		if a.EpsilonData.RingRound != b.EpsilonData.RingRound {
-			log.Errorf("EpsilonData.RingRound mismatch: %v vs %v", a.EpsilonData.RingRound, b.EpsilonData.RingRound)
-			return false
-		}
-		// Comparación manual de heaps
-		aItems := a.EpsilonData.Heap.GetTopK()
-		bItems := b.EpsilonData.Heap.GetTopK()
-		if len(aItems) != len(bItems) {
-			log.Errorf("Epsilon Heap lengths: %d vs %d", len(aItems), len(bItems))
-			return false
-		}
-		for i := range aItems {
-			if !proto.Equal(aItems[i], bItems[i]) {
-				log.Errorf("Epsilon Heap mismatch at index %d", i)
-				log.Infof("a.EpsilonData.Heap[%d]: %+v", i, aItems[i])
-				log.Infof("b.EpsilonData.Heap[%d]: %+v", i, bItems[i])
-				return false
-			}
-		}
-	}
-
-	// LamdaData
-	if (a.LamdaData == nil) != (b.LamdaData == nil) {
-		log.Error("LamdaData nil mismatch")
-		return false
-	}
-	if a.LamdaData != nil {
-		if a.LamdaData.OmegaProcessed != b.LamdaData.OmegaProcessed {
-			log.Errorf("LamdaData.OmegaProcessed mismatch: %v vs %v", a.LamdaData.OmegaProcessed, b.LamdaData.OmegaProcessed)
-			return false
-		}
-		if a.LamdaData.RingRound != b.LamdaData.RingRound {
-			log.Errorf("LamdaData.RingRound mismatch: %v vs %v", a.LamdaData.RingRound, b.LamdaData.RingRound)
-			return false
-		}
-		aItems := a.LamdaData.Heap.GetTopK()
-		bItems := b.LamdaData.Heap.GetTopK()
-		if len(aItems) != len(bItems) {
-			log.Errorf("Lambda Heap lengths: %d vs %d", len(aItems), len(bItems))
-			return false
-		}
-		for i := range aItems {
-			if !proto.Equal(aItems[i], bItems[i]) {
-				log.Errorf("Lambda Heap mismatch at index %d", i)
-				log.Infof("a.LamdaData.Heap[%d]: %+v", i, aItems[i])
-				log.Infof("b.LamdaData.Heap[%d]: %+v", i, bItems[i])
-				return false
-			}
-		}
-	}
-
-	// ThetaData
-	if (a.ThetaData == nil) != (b.ThetaData == nil) {
-		log.Error("ThetaData nil mismatch")
-		return false
-	}
-	if a.ThetaData != nil {
-		// MinPartialData
-		if (a.ThetaData.MinPartialData == nil) != (b.ThetaData.MinPartialData == nil) {
-			log.Error("ThetaData.MinPartialData nil mismatch")
-			return false
-		}
-		if a.ThetaData.MinPartialData != nil {
-			if a.ThetaData.MinPartialData.OmegaProcessed != b.ThetaData.MinPartialData.OmegaProcessed {
-				log.Errorf("ThetaData.MinPartialData.OmegaProcessed mismatch: %v vs %v", a.ThetaData.MinPartialData.OmegaProcessed, b.ThetaData.MinPartialData.OmegaProcessed)
-				return false
-			}
-			if a.ThetaData.MinPartialData.RingRound != b.ThetaData.MinPartialData.RingRound {
-				log.Errorf("ThetaData.MinPartialData.RingRound mismatch: %v vs %v", a.ThetaData.MinPartialData.RingRound, b.ThetaData.MinPartialData.RingRound)
-				return false
-			}
-			aItems := a.ThetaData.MinPartialData.Heap.GetTopK()
-			bItems := b.ThetaData.MinPartialData.Heap.GetTopK()
-			if len(aItems) != len(bItems) {
-				log.Errorf("Theta Min Heap lengths: %d vs %d", len(aItems), len(bItems))
-				return false
-			}
-			for i := range aItems {
-				if !proto.Equal(aItems[i], bItems[i]) {
-					log.Errorf("Theta Min Heap mismatch at index %d", i)
-					log.Infof("a.ThetaData.MinPartialData.Heap[%d]: %+v", i, aItems[i])
-					log.Infof("b.ThetaData.MinPartialData.Heap[%d]: %+v", i, bItems[i])
-					return false
-				}
-			}
-		}
-		// MaxPartialData
-		if (a.ThetaData.MaxPartialData == nil) != (b.ThetaData.MaxPartialData == nil) {
-			log.Error("ThetaData.MaxPartialData nil mismatch")
-			return false
-		}
-		if a.ThetaData.MaxPartialData != nil {
-			if a.ThetaData.MaxPartialData.OmegaProcessed != b.ThetaData.MaxPartialData.OmegaProcessed {
-				log.Errorf("ThetaData.MaxPartialData.OmegaProcessed mismatch: %v vs %v", a.ThetaData.MaxPartialData.OmegaProcessed, b.ThetaData.MaxPartialData.OmegaProcessed)
-				return false
-			}
-			if a.ThetaData.MaxPartialData.RingRound != b.ThetaData.MaxPartialData.RingRound {
-				log.Errorf("ThetaData.MaxPartialData.RingRound mismatch: %v vs %v", a.ThetaData.MaxPartialData.RingRound, b.ThetaData.MaxPartialData.RingRound)
-				return false
-			}
-			aItems := a.ThetaData.MaxPartialData.Heap.GetTopK()
-			bItems := b.ThetaData.MaxPartialData.Heap.GetTopK()
-			if len(aItems) != len(bItems) {
-				log.Errorf("Theta Max Heap lengths: %d vs %d", len(aItems), len(bItems))
-				return false
-			}
-			for i := range aItems {
-				if !proto.Equal(aItems[i], bItems[i]) {
-					log.Errorf("Theta Max Heap mismatch at index %d", i)
-					log.Infof("a.ThetaData.MaxPartialData.Heap[%d]: %+v", i, aItems[i])
-					log.Infof("b.ThetaData.MaxPartialData.Heap[%d]: %+v", i, bItems[i])
-					return false
-				}
-			}
-		}
-	}
-
-	log.Info("TopperPartialResults are equal")
-	return true
-}
-func compareProtobufMaps(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are equal using proto.Equal
-		if !proto.Equal(expectedValue.(proto.Message), actualValue.Interface().(proto.Message)) {
-			log.Errorf("Values for key %v do not match: expected %v, got %v", key, expectedValue, actualValue.Interface())
-			return false
-		}
-	}
-
-	return true
-}
-func CompareMergerPartialResultsMap(
-	expected, actual map[string]*common.MergerPartialResults,
-) bool {
-	if len(expected) != len(actual) {
-		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
-		return false
-	}
-	for clientID, expectedResult := range expected {
-		actualResult, ok := actual[clientID]
-		if !ok {
-			log.Errorf("Client %s not found in actual results", clientID)
-			return false
-		}
-		// Comparar Delta3
-		if !compareStruct(expectedResult.Delta3, actualResult.Delta3) {
-			log.Errorf("Delta3 mismatch for client %s", clientID)
-			return false
-		}
-
-		// Comparar Eta3
-		if !compareStruct(expectedResult.Eta3, actualResult.Eta3) {
-			log.Errorf("Eta3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Kappa3
-		if !compareStruct(expectedResult.Kappa3, actualResult.Kappa3) {
-			log.Errorf("Kappa3 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Nu3
-		if !compareStruct(expectedResult.Nu3, actualResult.Nu3) {
-			log.Errorf("Nu3 mismatch for client %s", clientID)
-			return false
-		}
-	}
-	return true
-}
-func CompareReducerPartialResultsMap(
-	expected, actual map[string]*common.ReducerPartialResults,
-) bool {
-	if len(expected) != len(actual) {
-		log.Errorf("Different number of clients: expected %d, got %d", len(expected), len(actual))
-		return false
-	}
-	for clientID, expectedResult := range expected {
-		actualResult, ok := actual[clientID]
-		if !ok {
-			log.Errorf("Client %s not found in actual results", clientID)
-			return false
-		}
-		// Comparar Delta2
-		if !compareStruct(expectedResult.Delta2, actualResult.Delta2) {
-			log.Errorf("Delta2 mismatch for client %s", clientID)
-			return false
-		}
-
-		// Comparar Eta2
-		if !compareStruct(expectedResult.Eta2, actualResult.Eta2) {
-			log.Errorf("Eta2 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Kappa2
-		if !compareStruct(expectedResult.Kappa2, actualResult.Kappa2) {
-			log.Errorf("Kappa2 mismatch for client %s", clientID)
-			return false
-		}
-		// Comparar Nu2
-		if !compareStruct(expectedResult.Nu2, actualResult.Nu2) {
-			log.Errorf("Nu2 mismatch for client %s", clientID)
-			return false
-		}
-	}
-	return true
-}
-func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Verify that both are maps
-	if expectedVal.Kind() != reflect.Map || actualVal.Kind() != reflect.Map {
-		log.Error("The provided values are not maps")
-		return false
-	}
-
-	// Verify that they have the same size
-	if expectedVal.Len() != actualVal.Len() {
-		log.Error("The maps have different lengths")
-		return false
-	}
-
-	// Iterate over the keys of the expected map
-	for _, key := range expectedVal.MapKeys() {
-		expectedValue := expectedVal.MapIndex(key).Interface()
-		actualValue := actualVal.MapIndex(key)
-
-		// Verify that the key exists in the actual map
-		if !actualValue.IsValid() {
-			log.Errorf("Key %v not found in actual map", key)
-			return false
-		}
-
-		// Verify that the values are slices
-		expectedSlice := reflect.ValueOf(expectedValue)
-		actualSlice := reflect.ValueOf(actualValue.Interface())
-
-		if expectedSlice.Kind() != reflect.Slice || actualSlice.Kind() != reflect.Slice {
-			log.Errorf("Values for key %v are not slices", key)
-			return false
-		}
-
-		// Verify that the slices have the same length
-		if expectedSlice.Len() != actualSlice.Len() {
-			log.Errorf("Slices for key %v have different lengths", key)
-			return false
-		}
-
-		// Compare the elements of the slices
-		for i := 0; i < expectedSlice.Len(); i++ {
-			if !proto.Equal(expectedSlice.Index(i).Interface().(proto.Message), actualSlice.Index(i).Interface().(proto.Message)) {
-				log.Errorf("Elements at index %d for key %v do not match: expected %v, got %v", i, key, expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
-				return false
-			}
-		}
-	}
-
-	return true
-
-}
-func compareStruct(expected, actual interface{}) bool {
-	expectedVal := reflect.ValueOf(expected)
-	actualVal := reflect.ValueOf(actual)
-
-	// Si son punteros, obtener el valor al que apuntan
-	if expectedVal.Kind() == reflect.Ptr {
-		if expectedVal.IsNil() && actualVal.IsNil() {
-			return true
-		}
-		if expectedVal.IsNil() || actualVal.IsNil() {
-			return false
-		}
-		expectedVal = expectedVal.Elem()
-	}
-	if actualVal.Kind() == reflect.Ptr {
-		actualVal = actualVal.Elem()
-	}
-
-	// Ambos deben ser structs
-	if expectedVal.Kind() != reflect.Struct || actualVal.Kind() != reflect.Struct {
-		log.Error("Both values must be structs")
-		return false
-	}
-
-	t := expectedVal.Type()
-	for i := 0; i < expectedVal.NumField(); i++ {
-		fieldName := t.Field(i).Name
-		expectedField := expectedVal.Field(i).Interface()
-		actualField := actualVal.Field(i).Interface()
-
-		// Si el campo es un mapa, usar compareProtobufMaps
-		if expectedVal.Field(i).Kind() == reflect.Map {
-			if !compareProtobufMaps(expectedField, actualField) {
-				log.Errorf("Map field %s does not match", fieldName)
-				return false
-			}
-			// Si el campo es un struct, comparar recursivamente
-		} else if expectedVal.Field(i).Kind() == reflect.Struct {
-			if !compareStruct(expectedField, actualField) {
-				log.Errorf("Struct field %s does not match", fieldName)
-				return false
-			}
-			// Para el resto, usar DeepEqual
-		} else {
-			log.Infof("Comparing field %s", fieldName)
-			log.Infof("Expected: %v, Actual: %v", expectedField, actualField)
-			if !reflect.DeepEqual(expectedField, actualField) {
-				log.Errorf("Field %s does not match: expected %v, got %v", fieldName, expectedField, actualField)
-				return false
-			}
-		}
-	}
-	return true
 }

@@ -57,3 +57,26 @@ type ThetaPartialData struct {
 	MinPartialData *TopperPartialData[float32, *protocol.Theta_Data]
 	MaxPartialData *TopperPartialData[float32, *protocol.Theta_Data]
 }
+
+type SmallTableData[S any] map[string]S
+type BigTableData[B any] map[uint32]map[string][]B
+
+type JoinerTableData[T any] struct {
+	Data           T
+	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
+	Ready          bool
+	OmegaProcessed bool
+}
+
+type JoinerStageData[S any, B any] struct {
+	SmallTable          *JoinerTableData[SmallTableData[S]]
+	BigTable            *JoinerTableData[BigTableData[B]]
+	SendedTaskCount     int
+	SmallTableTaskCount int
+	RingRound           uint32
+}
+
+type JoinerPartialResults struct {
+	ZetaData *JoinerStageData[*protocol.Zeta_Data_Movie, *protocol.Zeta_Data_Rating]
+	IotaData *JoinerStageData[*protocol.Iota_Data_Movie, *protocol.Iota_Data_Actor]
+}
