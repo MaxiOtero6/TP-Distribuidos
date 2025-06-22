@@ -26,7 +26,7 @@ type Action interface {
 	// Execute executes the action.
 	// It returns a map of tasks for the next stages.
 	// It returns an error if the action fails.
-	Execute(task *protocol.Task) (common.Tasks, common.TableType, error)
+	Execute(task *protocol.Task) (common.Tasks, error)
 	LoadData(task *protocol.Task) error
 	DownloadData(dirBase string) error
 }
