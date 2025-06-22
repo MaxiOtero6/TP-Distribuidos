@@ -10,7 +10,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
-	"google.golang.org/protobuf/proto"
 )
 
 const MERGER_STAGES_COUNT uint = 4
@@ -459,17 +458,11 @@ func (m *Merger) LoadData(task *protocol.Task) error {
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-
-		partialData, err := m.getPartialData(data, clientId)
-		if err != nil {
-			log.Errorf("Failed to create new method for OmegaEOF: %s", err)
-			return err
-		}
-
-		return storage.SaveMetadataToFile(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.GENERAL_FOLDER_TYPE, common.GENERAL, partialData)
+		return m.loadMetaData(data.GetStage(), clientId)
 
 	case *protocol.Task_RingEOF:
-		return nil
+		stage := v.RingEOF.GetStage()
+		return m.loadMetaData(stage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", v)
@@ -477,23 +470,47 @@ func (m *Merger) LoadData(task *protocol.Task) error {
 
 }
 
-func (m *Merger) getPartialData(data *protocol.OmegaEOF_Data, clientId string) (*common.PartialData[proto.Message], error) {
-	stage := data.GetStage()
-	var partialData *common.PartialData[proto.Message]
-
+func (m *Merger) loadMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_3:
-		partialData = any(m.partialResults[clientId].Delta3).(*common.PartialData[proto.Message])
+		partialData := m.partialResults[clientId].Delta3
+		return storage.SaveMetadataToFile(
+			m.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.ETA_STAGE_3:
-		partialData = any(m.partialResults[clientId].Eta3).(*common.PartialData[proto.Message])
+		partialData := m.partialResults[clientId].Eta3
+		return storage.SaveMetadataToFile(
+			m.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.KAPPA_STAGE_3:
-		partialData = any(m.partialResults[clientId].Kappa3).(*common.PartialData[proto.Message])
+		partialData := m.partialResults[clientId].Kappa3
+		return storage.SaveMetadataToFile(
+			m.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.NU_STAGE_3:
-		partialData = any(m.partialResults[clientId].Nu3).(*common.PartialData[proto.Message])
+		partialData := m.partialResults[clientId].Nu3
+		return storage.SaveMetadataToFile(
+			m.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	default:
-		return nil, fmt.Errorf("invalid stage: %s", stage)
+		return fmt.Errorf("invalid stage for OmegaEOF: %s", stage)
 	}
-	return partialData, nil
 }
 
 // func (m *Merger) deleteStage(clientId string, stage string) error {

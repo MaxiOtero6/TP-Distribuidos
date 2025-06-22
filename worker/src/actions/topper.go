@@ -551,9 +551,6 @@ func processTopperStage[K topkheap.Ordered, V proto.Message](
 		partialData.Heap.Insert(valueFunc(item), item)
 	}
 
-	storage.SaveTopperDataToFile(dir, clientId, stage, heapType, partialData, func(value V) K {
-		return valueFunc(value)
-	})
 }
 
 // Actualizar funciones para usar las constantes de etapas del paquete common
@@ -592,25 +589,25 @@ func (m *Topper) DownloadData(dirBase string) error {
 	return nil
 }
 
-func (m *Topper) LoadData(task *protocol.Task) error {
+func (t *Topper) LoadData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	//taskIdentifier := task.GetTaskIdentifier()
 
-	m.makePartialResults(clientId)
+	t.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:
 		keyFunc := func(input *protocol.Epsilon_Data) uint64 {
 			return input.GetTotalInvestment()
 		}
-		return storage.SaveTopperDataToFile(m.infraConfig.GetDirectory(), stage, clientId, common.TYPE_MAX, m.partialResults[clientId].EpsilonData, keyFunc)
+		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].EpsilonData, keyFunc)
 
 	case *protocol.Task_Lambda:
 		keyFunc := func(input *protocol.Lambda_Data) uint64 {
 			return input.GetParticipations()
 		}
-		return storage.SaveTopperDataToFile(m.infraConfig.GetDirectory(), stage, clientId, common.TYPE_MAX, m.partialResults[clientId].LamdaData, keyFunc)
+		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].LamdaData, keyFunc)
 
 	case *protocol.Task_Theta:
 		keyFunc := func(input *protocol.Theta_Data) float32 {
@@ -618,57 +615,51 @@ func (m *Topper) LoadData(task *protocol.Task) error {
 		}
 
 		partials := []*common.TopperPartialData[float32, *protocol.Theta_Data]{
-			m.partialResults[clientId].ThetaData.MaxPartialData,
-			m.partialResults[clientId].ThetaData.MinPartialData,
+			t.partialResults[clientId].ThetaData.MaxPartialData,
+			t.partialResults[clientId].ThetaData.MinPartialData,
 		}
 
-		return storage.SaveTopperThetaDataToFile(m.infraConfig.GetDirectory(), stage, clientId, common.TYPE_MAX, partials, keyFunc)
+		return storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, keyFunc)
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
 		stage := data.GetStage()
 
-		err := loadMetaData(stage, m, clientId)
-		if err != nil {
-			return fmt.Errorf("failed to load metadata for stage %s: %w", stage, err)
-		}
+		return t.loadMetaData(stage, clientId)
+
 	case *protocol.Task_RingEOF:
 		stage := v.RingEOF.GetStage()
-
-		err := loadMetaData(stage, m, clientId)
-		if err != nil {
-			return fmt.Errorf("failed to load metadata for stage %s: %w", stage, err)
-		}
+		return t.loadMetaData(stage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", v)
 	}
-	return nil
+
 }
 
-func loadMetaData(stage string, m *Topper, clientId string) error {
+func (t *Topper) loadMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.EPSILON_STAGE:
-		partialData := m.partialResults[clientId].EpsilonData
+		partialData := t.partialResults[clientId].EpsilonData
 		return storage.SaveTopperMetadataToFile(
-			m.infraConfig.GetDirectory(),
+			t.infraConfig.GetDirectory(),
 			clientId,
 			stage,
 			partialData,
 		)
 	case common.LAMBDA_STAGE:
-		partialData := m.partialResults[clientId].LamdaData
+		partialData := t.partialResults[clientId].LamdaData
 		return storage.SaveTopperMetadataToFile(
-			m.infraConfig.GetDirectory(),
+			t.infraConfig.GetDirectory(),
 			clientId,
 			stage,
 			partialData,
 		)
 	case common.THETA_STAGE:
-		thetaData := m.partialResults[clientId].ThetaData.MaxPartialData
+		thetaData := t.partialResults[clientId].ThetaData.MaxPartialData
 
 		return storage.SaveTopperMetadataToFile(
-			m.infraConfig.GetDirectory(),
+			t.infraConfig.GetDirectory(),
 			clientId,
 			stage,
 			thetaData,

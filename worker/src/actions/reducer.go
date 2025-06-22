@@ -10,21 +10,20 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
-	"google.golang.org/protobuf/proto"
 )
 
 const REDUCER_STAGES_COUNT uint = 4
 const REDUCER_FILE_TYPE string = ""
 
-// Reducer is a struct that implements the Action interface.
-type Reducer struct {
+// Meducer is a struct that implements the Action interface.
+type Meducer struct {
 	infraConfig    *model.InfraConfig
 	partialResults map[string]*common.ReducerPartialResults
 	itemHashFunc   func(workersCount int, item string) string
 	eofHandler     *eof.StatefulEofHandler
 }
 
-func (r *Reducer) makePartialResults(clientId string) {
+func (r *Meducer) makePartialResults(clientId string) {
 	if _, ok := r.partialResults[clientId]; ok {
 		return
 	}
@@ -40,7 +39,7 @@ func (r *Reducer) makePartialResults(clientId string) {
 
 // NewReduce creates a new Reduce instance.
 // It initializes the worker count and returns a pointer to the Reduce struct.
-func NewReducer(infraConfig *model.InfraConfig) *Reducer {
+func NewReducer(infraConfig *model.InfraConfig) *Meducer {
 	eofHandler := eof.NewStatefulEofHandler(
 		model.ReducerAction,
 		infraConfig,
@@ -48,7 +47,7 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 		utils.GetWorkerIdFromHash,
 	)
 
-	reducer := &Reducer{
+	reducer := &Meducer{
 		infraConfig:    infraConfig,
 		partialResults: make(map[string]*common.ReducerPartialResults),
 		itemHashFunc:   utils.GetWorkerIdFromHash,
@@ -60,7 +59,7 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 	return reducer
 }
 
-func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+func (r *Meducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].Delta2
 
 	aggregationFunc := func(existing *protocol.Delta_2_Data, input *protocol.Delta_2_Data) {
@@ -76,7 +75,7 @@ func (r *Reducer) delta2Stage(data []*protocol.Delta_2_Data, clientId string, ta
 	return nil
 }
 
-func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+func (r *Meducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].Eta2
 
 	aggregationFunc := func(existing *protocol.Eta_2_Data, input *protocol.Eta_2_Data) {
@@ -92,7 +91,7 @@ func (r *Reducer) eta2Stage(data []*protocol.Eta_2_Data, clientId string, taskId
 	return nil
 }
 
-func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+func (r *Meducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].Kappa2
 
 	aggregationFunc := func(existing *protocol.Kappa_2_Data, input *protocol.Kappa_2_Data) {
@@ -107,7 +106,7 @@ func (r *Reducer) kappa2Stage(data []*protocol.Kappa_2_Data, clientId string, ta
 	return nil
 }
 
-func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
+func (r *Meducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) (tasks common.Tasks) {
 	partialData := r.partialResults[clientId].Nu2
 
 	aggregationFunc := func(existing *protocol.Nu_2_Data, input *protocol.Nu_2_Data) {
@@ -123,7 +122,7 @@ func (r *Reducer) nu2Stage(data []*protocol.Nu_2_Data, clientId string, taskIden
 	return nil
 }
 
-func (r *Reducer) nextStageData(stage string, clientId string) ([]common.NextStageData, error) {
+func (r *Meducer) nextStageData(stage string, clientId string) ([]common.NextStageData, error) {
 	return reducerNextStageData(
 		stage,
 		clientId,
@@ -185,7 +184,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 	}
 }
 
-func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
+func (r *Meducer) delta2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].Delta2.Data
 	partialData := utils.MapValues(partialDataMap)
 	results := utils.MapSlice(partialData, func(_ int, data *protocol.Delta_2_Data) *protocol.Delta_3_Data {
@@ -229,7 +228,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 	)
 }
 
-func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
+func (r *Meducer) eta2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].Eta2.Data
 	partialData := utils.MapValues(partialDataMap)
 	results := utils.MapSlice(partialData, func(_ int, data *protocol.Eta_2_Data) *protocol.Eta_3_Data {
@@ -275,7 +274,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 	)
 }
 
-func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
+func (r *Meducer) kappa2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].Kappa2.Data
 	partialData := utils.MapValues(partialDataMap)
 	results := utils.MapSlice(partialData, func(_ int, data *protocol.Kappa_2_Data) *protocol.Kappa_3_Data {
@@ -320,7 +319,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 	)
 }
 
-func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
+func (r *Meducer) nu2Results(tasks common.Tasks, clientId string) {
 	partialDataMap := r.partialResults[clientId].Nu2.Data
 	partialData := utils.MapValues(partialDataMap)
 	results := utils.MapSlice(partialData, func(_ int, data *protocol.Nu_2_Data) *protocol.Nu_3_Data {
@@ -365,7 +364,7 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 	)
 }
 
-func (r *Reducer) AddResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
+func (r *Meducer) AddResultsToNextStage(tasks common.Tasks, stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		r.delta2Results(tasks, clientId)
@@ -382,7 +381,7 @@ func (r *Reducer) AddResultsToNextStage(tasks common.Tasks, stage string, client
 	return nil
 }
 
-func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {
+func (r *Meducer) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {
 	partialResults := r.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_2:
@@ -398,7 +397,7 @@ func (r *Reducer) getTaskIdentifiers(clientId string, stage string) ([]model.Tas
 	}
 }
 
-func (r *Reducer) participatesInResults(clientId string, stage string) int {
+func (r *Meducer) participatesInResults(clientId string, stage string) int {
 	partialResults, ok := r.partialResults[clientId]
 	if !ok {
 		return 0
@@ -426,7 +425,7 @@ func (r *Reducer) participatesInResults(clientId string, stage string) int {
 	return 0
 }
 
-func (r *Reducer) getOmegaProcessed(clientId string, stage string) (bool, error) {
+func (r *Meducer) getOmegaProcessed(clientId string, stage string) (bool, error) {
 	partialResults := r.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_2:
@@ -442,7 +441,7 @@ func (r *Reducer) getOmegaProcessed(clientId string, stage string) (bool, error)
 	}
 }
 
-func (r *Reducer) getRingRound(clientId string, stage string) (uint32, error) {
+func (r *Meducer) getRingRound(clientId string, stage string) (uint32, error) {
 	partialResults := r.partialResults[clientId]
 	switch stage {
 	case common.DELTA_STAGE_2:
@@ -459,7 +458,7 @@ func (r *Reducer) getRingRound(clientId string, stage string) (uint32, error) {
 }
 
 // Actualizar funciones para usar las constantes de etapas del paquete common
-func (r *Reducer) updateOmegaProcessed(clientId string, stage string) {
+func (r *Meducer) updateOmegaProcessed(clientId string, stage string) {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		r.partialResults[clientId].Delta2.OmegaProcessed = true
@@ -472,7 +471,7 @@ func (r *Reducer) updateOmegaProcessed(clientId string, stage string) {
 	}
 }
 
-func (r *Reducer) updateRingRound(clientId string, stage string, round uint32) {
+func (r *Meducer) updateRingRound(clientId string, stage string, round uint32) {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		r.partialResults[clientId].Delta2.RingRound = round
@@ -485,7 +484,7 @@ func (r *Reducer) updateRingRound(clientId string, stage string, round uint32) {
 	}
 }
 
-func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
+func (r *Meducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) common.Tasks {
 	tasks := make(common.Tasks)
 
 	omegaReady, err := r.getOmegaProcessed(clientId, data.GetStage())
@@ -505,7 +504,7 @@ func (r *Reducer) omegaEOFStage(data *protocol.OmegaEOF_Data, clientId string) c
 	return tasks
 }
 
-func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
+func (r *Meducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.Tasks {
 	tasks := make(common.Tasks)
 
 	taskIdentifiers, err := r.getTaskIdentifiers(clientId, data.GetStage())
@@ -540,7 +539,7 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 	return tasks
 }
 
-func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
+func (r *Meducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	taskIdentifier := task.GetTaskIdentifier()
@@ -576,9 +575,9 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Reducer) DownloadData(dirBase string) error {
+func (r *Meducer) DownloadData(dirBase string) error {
 	var err error
-	m.partialResults, err = storage.LoadReducerPartialResultsFromDisk(dirBase)
+	r.partialResults, err = storage.LoadReducerPartialResultsFromDisk(dirBase)
 	if err != nil {
 		log.Errorf("Failed to load partial results from disk: %s", err)
 		return err
@@ -587,39 +586,33 @@ func (m *Reducer) DownloadData(dirBase string) error {
 	return nil
 }
 
-func (m *Reducer) LoadData(task *protocol.Task) error {
+func (r *Meducer) LoadData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	//taskIdentifier := task.GetTaskIdentifier()
 
-	m.makePartialResults(clientId)
+	r.makePartialResults(clientId)
 
 	switch v := stage.(type) {
 	case *protocol.Task_Delta_2:
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Delta2)
+		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Delta2)
 
 	case *protocol.Task_Eta_2:
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Eta2)
+		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Eta2)
 
 	case *protocol.Task_Kappa_2:
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Kappa2)
+		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Kappa2)
 
 	case *protocol.Task_Nu_2:
-		return storage.SaveGeneralDataToFile(m.infraConfig.GetDirectory(), clientId, v, m.partialResults[clientId].Nu2)
+		return storage.SaveGeneralDataToFile(r.infraConfig.GetDirectory(), clientId, v, r.partialResults[clientId].Nu2)
 
 	case *protocol.Task_OmegaEOF:
 		data := v.OmegaEOF.GetData()
-
-		partialData, err := m.getPartialData(data, clientId)
-		if err != nil {
-			log.Errorf("Failed to create new method for OmegaEOF: %s", err)
-			return err
-		}
-
-		return storage.SaveMetadataToFile(m.infraConfig.GetDirectory(), clientId, data.GetStage(), common.GENERAL_FOLDER_TYPE, common.GENERAL, partialData)
+		return r.loadMetaData(data.GetStage(), clientId)
 
 	case *protocol.Task_RingEOF:
-		return nil
+		stage := v.RingEOF.GetStage()
+		return r.loadMetaData(stage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", v)
@@ -627,23 +620,47 @@ func (m *Reducer) LoadData(task *protocol.Task) error {
 
 }
 
-func (m *Reducer) getPartialData(data *protocol.OmegaEOF_Data, clientId string) (*common.PartialData[proto.Message], error) {
-	stage := data.GetStage()
-	var partialData *common.PartialData[proto.Message]
-
+func (r *Meducer) loadMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_2:
-		partialData = any(m.partialResults[clientId].Delta2).(*common.PartialData[proto.Message])
+		partialData := r.partialResults[clientId].Delta2
+		return storage.SaveMetadataToFile(
+			r.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.ETA_STAGE_2:
-		partialData = any(m.partialResults[clientId].Eta2).(*common.PartialData[proto.Message])
+		partialData := r.partialResults[clientId].Eta2
+		return storage.SaveMetadataToFile(
+			r.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.KAPPA_STAGE_2:
-		partialData = any(m.partialResults[clientId].Kappa2).(*common.PartialData[proto.Message])
+		partialData := r.partialResults[clientId].Kappa2
+		return storage.SaveMetadataToFile(
+			r.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	case common.NU_STAGE_2:
-		partialData = any(m.partialResults[clientId].Nu2).(*common.PartialData[proto.Message])
+		partialData := r.partialResults[clientId].Nu2
+		return storage.SaveMetadataToFile(
+			r.infraConfig.GetDirectory(),
+			clientId,
+			stage,
+			common.GENERAL_FOLDER_TYPE,
+			partialData,
+		)
 	default:
-		return nil, fmt.Errorf("invalid stage: %s", stage)
+		return fmt.Errorf("invalid stage for OmegaEOF: %s", stage)
 	}
-	return partialData, nil
 }
 
 // func (r *Reducer) deleteStage(clientId string, stage string) error {
