@@ -254,6 +254,13 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, t
 		j.addEta1Results(tasks, partialResults, clientId)
 
 		partialData.Data = make(common.BigTableData[*protocol.Zeta_Data_Rating])
+
+		if zetaData.BigTable.Ready {
+			zetaData.SmallTable.IsReadyToDelete = true
+			zetaData.BigTable.IsReadyToDelete = true
+		} else {
+			zetaData.BigTable.IsReadyToDelete = true
+		}
 	}
 
 	// TODO - not ready -- save data
@@ -286,6 +293,13 @@ func (j *Joiner) actorsIotaStage(data []*protocol.Iota_Data, clientId string, ta
 		j.addKappa1Results(tasks, partialResults, clientId)
 
 		partialData.Data = make(common.BigTableData[*protocol.Iota_Data_Actor])
+
+		if iotaData.BigTable.Ready {
+			iotaData.SmallTable.IsReadyToDelete = true
+			iotaData.BigTable.IsReadyToDelete = true
+		} else {
+			iotaData.BigTable.IsReadyToDelete = true
+		}
 	}
 
 	// TODO - not ready -- save data
