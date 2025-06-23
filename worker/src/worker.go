@@ -159,13 +159,6 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 
 	message.Ack(false)
 
-	err = w.action.LoadData(w.baseDir)
-	if err != nil {
-		log.Errorf("Failed to load data: %s", err)
-		message.Reject(false)
-		return
-	}
-
 	err = w.action.DeleteData(task)
 	if err != nil {
 		log.Errorf("Failed to delete data: %s", err)
