@@ -45,6 +45,7 @@ type MetadataFile struct {
 	SendedTaskCount     int    `json:"sended_task_count"`
 	SmallTableTaskCount int    `json:"small_table_task_count"`
 	Ready               bool   `json:"ready"`
+	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
 }
 
 type MetaData struct {
@@ -53,6 +54,12 @@ type MetaData struct {
 	SendedTaskCount     int    `json:"sended_task_count"`
 	SmallTableTaskCount int    `json:"small_table_task_count"`
 	Ready               bool   `json:"ready"`
+	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
+}
+
+type JoinerMetaTemp struct {
+	SendedTaskCount int
+	Timestamp       string
 }
 
 // Generic loader for PartialData[T] using protojson
@@ -81,19 +88,21 @@ func decodeJsonToProtoData[T proto.Message](jsonBytes []byte, newT func() T) (*c
 
 func decodeGeneralFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
 	var temp struct {
-		OmegaProcessed bool   `json:"omega_processed"`
-		RingRound      uint32 `json:"ring_round"`
-		Timestamps     string `json:"timestamps"`
-		Status         string `json:"status"`
+		OmegaProcessed  bool   `json:"omega_processed"`
+		RingRound       uint32 `json:"ring_round"`
+		Timestamps      string `json:"timestamps"`
+		Status          string `json:"status"`
+		IsReadyToDelete bool   `json:"is_ready_to_delete"`
 	}
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
 		return MetadataFile{}, err
 	}
 	return MetadataFile{
-		Timestamps:     temp.Timestamps,
-		Status:         temp.Status,
-		OmegaProcessed: temp.OmegaProcessed,
-		RingRound:      temp.RingRound,
+		Timestamps:      temp.Timestamps,
+		Status:          temp.Status,
+		OmegaProcessed:  temp.OmegaProcessed,
+		RingRound:       temp.RingRound,
+		IsReadyToDelete: temp.IsReadyToDelete,
 	}, nil
 }
 
@@ -209,6 +218,7 @@ func loadStageClientData[T proto.Message](
 	// Set metadata fields in the partial data
 	partial.OmegaProcessed = metadata.OmegaProcessed
 	partial.RingRound = metadata.RingRound
+	partial.IsReady = metadata.IsReadyToDelete
 
 	return partial, nil
 }
@@ -416,6 +426,12 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 	getStageData func(*common.JoinerPartialResults) *common.JoinerStageData[S, B],
 	partialResults map[string]*common.JoinerPartialResults,
 ) error {
+
+	metaTemp := make(map[string]struct {
+		Small JoinerMetaTemp
+		Big   JoinerMetaTemp
+	})
+
 	// SmallTable
 	smallTableDir := filepath.Join(dir, stage, string(common.JOINER_SMALL_FOLDER_TYPE))
 	smallClients, err := os.ReadDir(smallTableDir)
@@ -453,10 +469,21 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 				continue
 			}
 
+			metaTemp[clientId] = struct {
+				Small JoinerMetaTemp
+				Big   JoinerMetaTemp
+			}{
+				Small: JoinerMetaTemp{
+					SendedTaskCount: metadata.SendedTaskCount,
+					Timestamp:       metadata.Timestamps,
+				},
+				Big: metaTemp[clientId].Big,
+			}
+
 			smallTable.OmegaProcessed = metadata.OmegaProcessed
 			smallTable.Ready = metadata.Ready
+			smallTable.IsReadyToDelete = metadata.IsReadyToDelete
 			stageData := getStageData(partialResults[clientId])
-			stageData.SendedTaskCount = metadata.SendedTaskCount
 			stageData.SmallTableTaskCount = metadata.SmallTableTaskCount
 
 		}
@@ -499,14 +526,36 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 				continue
 			}
 
+			metaTemp[clientId] = struct {
+				Small JoinerMetaTemp
+				Big   JoinerMetaTemp
+			}{
+				Small: metaTemp[clientId].Small, // conserva el valor anterior si ya estaba
+				Big: JoinerMetaTemp{
+					SendedTaskCount: metadata.SendedTaskCount,
+					Timestamp:       metadata.Timestamps,
+				},
+			}
+
 			bigTable.OmegaProcessed = metadata.OmegaProcessed
 			bigTable.Ready = metadata.Ready
+			bigTable.IsReadyToDelete = metadata.IsReadyToDelete
 			stageData := getStageData(partialResults[clientId])
-			stageData.SendedTaskCount = metadata.SendedTaskCount
 			stageData.RingRound = metadata.RingRound
 		}
 	}
 
+	// Compear metadata
+	for clientId, metas := range metaTemp {
+		tSmall, _ := time.Parse(time.RFC3339, metas.Small.Timestamp)
+		tBig, _ := time.Parse(time.RFC3339, metas.Big.Timestamp)
+		stageData := getStageData(partialResults[clientId])
+		if tBig.After(tSmall) {
+			stageData.SendedTaskCount = metas.Big.SendedTaskCount
+		} else {
+			stageData.SendedTaskCount = metas.Small.SendedTaskCount
+		}
+	}
 	return nil
 }
 
