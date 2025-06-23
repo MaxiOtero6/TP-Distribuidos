@@ -126,9 +126,9 @@ func decodeJsonToJoinerBigTableData[B proto.Message](
 	newB func() B,
 ) (*common.JoinerTableData[common.BigTableData[B]], string, error) {
 	var temp struct {
-		Data      map[uint32]map[string][]json.RawMessage `json:"data"`
-		Timestamp string                                  `json:"timestamp"`
-		Status    string                                  `json:"status"`
+		Data      map[int]map[string][]json.RawMessage `json:"data"`
+		Timestamp string                               `json:"timestamp"`
+		Status    string                               `json:"status"`
 	}
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
 		return nil, "", err
@@ -1076,7 +1076,7 @@ func processJoinerBigTableData[B proto.Message](
 	log.Infof("Processing joiner big table data to file: %s", tempDataFilePath)
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
-	jsonMap := make(map[uint32]map[string][]json.RawMessage)
+	jsonMap := make(map[int]map[string][]json.RawMessage)
 	for outerKey, innerMap := range typedStruct.Data {
 		jsonMap[outerKey] = make(map[string][]json.RawMessage)
 		for innerKey, slice := range innerMap {

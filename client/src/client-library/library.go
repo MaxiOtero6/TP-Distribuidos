@@ -16,8 +16,7 @@ import (
 
 const SLEEP_TIME time.Duration = 5 * time.Second
 const DELAY_MULTIPLIER int = 2
-const MAX_RETRIES int = 7
-const QUERIES_AMOUNT int = 5
+const MAX_RETRIES int = 8
 
 var log = logging.MustGetLogger("log")
 
@@ -354,9 +353,10 @@ func (l *Library) waitForResultServerResponse() (bool, *protocol.ResultsResponse
 
 	switch resp := response.GetMessage().(type) {
 	case *protocol.ServerClientMessage_Results:
-		if resp.Results.Status == protocol.MessageStatus_SUCCESS {
+		switch resp.Results.Status {
+		case protocol.MessageStatus_SUCCESS:
 			return true, response.GetResults(), nil
-		} else if resp.Results.Status == protocol.MessageStatus_PENDING {
+		case protocol.MessageStatus_PENDING:
 			return false, nil, nil
 		}
 	}

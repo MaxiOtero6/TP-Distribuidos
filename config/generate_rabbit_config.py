@@ -1,7 +1,7 @@
 import sys
 
-PACKET_TTL = 120000  # 2 minutes
-CLIENT_QUEUE_TTL = 1800000  # 30 minutes
+PACKET_TTL = 1000 * 60 * 2  # 2 minutes
+CLIENT_QUEUE_TTL = 1000 * 60 * 60  # 1 hour
 
 FILTER_EXCHANGE = {"name": "filterExchange", "kind": "fanout"}
 

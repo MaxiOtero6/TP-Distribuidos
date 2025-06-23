@@ -88,28 +88,20 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId str
 	nextStageDataZeta := nextStagesData[1]
 	nextStageDataIota := nextStagesData[2]
 
-	hashFuncBeta := func(workersCount int, item string) string {
-		return f.infraConfig.GetBroadcastID()
+	identifierFuncZeta := func(item *protocol.Zeta_Data) string {
+		return item.GetMovie().GetMovieId()
 	}
 
-	hashFuncZeta := func(workersCount int, item string) string {
-		return f.infraConfig.GetBroadcastID()
+	identifierFuncIota := func(item *protocol.Iota_Data) string {
+		return item.GetMovie().GetMovieId()
 	}
 
 	hashFuncIota := func(workersCount int, item string) string {
 		return f.infraConfig.GetBroadcastID()
 	}
 
-	identifierFuncBeta := func(input *protocol.Beta_Data) string {
-		return input.Id
-	}
-
-	identifierFuncZeta := func(input *protocol.Zeta_Data) string {
-		return input.GetMovie().GetMovieId()
-	}
-
-	identifierFuncIota := func(input *protocol.Iota_Data) string {
-		return input.GetMovie().GetMovieId()
+	hashFuncZeta := func(workersCount int, item string) string {
+		return f.infraConfig.GetBroadcastID()
 	}
 
 	taskDataCreatorBeta := func(stage string, data []*protocol.Beta_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
@@ -150,9 +142,12 @@ func (f *Filter) alphaStage(data []*protocol.Alpha_Data, clientId, creatorId str
 		}
 	}
 
-	AddResults(tasks, resultsBeta, nextStageDataBeta, clientId, creatorId, taskNumber, hashFuncBeta, identifierFuncBeta, taskDataCreatorBeta)
-	AddResults(tasks, resultsZeta, nextStageDataZeta, clientId, creatorId, taskNumber, hashFuncZeta, identifierFuncZeta, taskDataCreatorZeta)
-	AddResults(tasks, resultsIota, nextStageDataIota, clientId, creatorId, taskNumber, hashFuncIota, identifierFuncIota, taskDataCreatorIota)
+	AddResultsToStateless(tasks, resultsBeta, nextStageDataBeta, clientId, creatorId, taskNumber, taskDataCreatorBeta)
+	// Creo que son intercambiables, pero no estoy seguro
+	// AddResultsToStateless(tasks, resultsZeta, nextStageDataZeta, clientId, creatorId, taskNumber, taskDataCreatorZeta)
+	// AddResultsToStateless(tasks, resultsIota, nextStageDataIota, clientId, creatorId, taskNumber, taskDataCreatorIota)
+	AddResultsToStateful(tasks, resultsZeta, nextStageDataZeta, clientId, creatorId, taskNumber, hashFuncIota, identifierFuncZeta, taskDataCreatorZeta, true)
+	AddResultsToStateful(tasks, resultsIota, nextStageDataIota, clientId, creatorId, taskNumber, hashFuncZeta, identifierFuncIota, taskDataCreatorIota, true)
 
 	return tasks
 }
@@ -174,14 +169,6 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId, creatorId strin
 
 	nextStagesData, _ := f.nextStageData(common.BETA_STAGE, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
-	identifierFunc := func(input *protocol.Result1_Data) string {
-		return input.Id
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Result1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -194,7 +181,7 @@ func (f *Filter) betaStage(data []*protocol.Beta_Data, clientId, creatorId strin
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, taskDataCreator)
 
 	return tasks
 }
@@ -215,14 +202,6 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId, creatorId str
 
 	nextStagesData, _ := f.nextStageData(common.GAMMA_STAGE, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
-	identifierFunc := func(input *protocol.Delta_1_Data) string {
-		return input.Country
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Delta_1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -235,7 +214,7 @@ func (f *Filter) gammaStage(data []*protocol.Gamma_Data, clientId, creatorId str
 		}
 	}
 
-	AddResults(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStagesData[0], clientId, creatorId, taskNumber, taskDataCreator)
 
 	return tasks
 }

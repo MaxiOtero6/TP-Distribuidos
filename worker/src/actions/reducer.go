@@ -132,6 +132,8 @@ func (r *Reducer) nextStageData(stage string, clientId string) ([]common.NextSta
 }
 
 func reducerNextStageData(stage string, clientId string, infraConfig *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
+	routingKey := itemHashFunc(infraConfig.GetReduceCount(), clientId+stage)
+
 	switch stage {
 	case common.DELTA_STAGE_2:
 		return []common.NextStageData{
@@ -139,7 +141,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.DELTA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.DELTA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.ETA_STAGE_2:
@@ -148,7 +150,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.ETA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.ETA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.KAPPA_STAGE_2:
@@ -157,7 +159,7 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.KAPPA_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.KAPPA_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.NU_STAGE_2:
@@ -166,14 +168,14 @@ func reducerNextStageData(stage string, clientId string, infraConfig *model.Infr
 				Stage:       common.NU_STAGE_3,
 				Exchange:    infraConfig.GetMergeExchange(),
 				WorkerCount: infraConfig.GetMergeCount(),
-				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), clientId+common.NU_STAGE_3),
+				RoutingKey:  itemHashFunc(infraConfig.GetMergeCount(), routingKey),
 			},
 		}, nil
 	case common.RING_STAGE:
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetReduceExchange(),
+				Exchange:    infraConfig.GetEofExchange(),
 				WorkerCount: infraConfig.GetReduceCount(),
 				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetReduceCount()),
 			},
@@ -215,7 +217,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -225,6 +227,7 @@ func (r *Reducer) delta2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -261,7 +264,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -271,6 +274,7 @@ func (r *Reducer) eta2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -306,7 +310,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -316,6 +320,7 @@ func (r *Reducer) kappa2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 
@@ -351,7 +356,7 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 	creatorId := r.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(
+	AddResultsToStateful(
 		tasks,
 		results,
 		nextStageData[0],
@@ -361,6 +366,7 @@ func (r *Reducer) nu2Results(tasks common.Tasks, clientId string) {
 		r.itemHashFunc,
 		identifierFunc,
 		taskDataCreator,
+		false,
 	)
 }
 

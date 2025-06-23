@@ -91,14 +91,6 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId, creatorId strin
 
 	nextStagesData, _ := o.nextStageData(common.MU_STAGE, clientId)
 
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
-
-	identifierFunc := func(input *protocol.Nu_1_Data) string {
-		return input.Id
-	}
-
 	taskDataCreator := func(stage string, data []*protocol.Nu_1_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
 			ClientId: clientId,
@@ -111,7 +103,7 @@ func (o *Overviewer) muStage(data []*protocol.Mu_Data, clientId, creatorId strin
 		}
 	}
 
-	AddResults(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, groupedData, nextStagesData[0], clientId, creatorId, taskNumber, taskDataCreator)
 
 	return tasks
 }

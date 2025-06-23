@@ -103,24 +103,6 @@ func appendExtraInfra(
 		queues[0]["name"] = qName
 	}
 
-	// TODO: Cuando se mergee a main tocar esto
-	if needParking {
-		nextWorkerId := utils.GetNextNodeId(workerId, workerCount)
-
-		queues = append(queues, map[string]string{
-			"name":           parkingQName,
-			"dlx_routingKey": workerType + "_" + nextWorkerId,
-			"ttl":            "5000", // 5 seconds
-			"dlx_exchange":   eofExchangeName,
-		})
-
-		binds = append(binds, map[string]string{
-			"queue":    parkingQName,
-			"exchange": parkingEofExchange,
-			"extraRK":  workerType + "_" + workerId,
-		})
-	}
-
 	queues = append(queues, map[string]string{
 		"name": eofQName,
 	})
@@ -147,6 +129,28 @@ func appendExtraInfra(
 		"exchange": controlExchangeName,
 		"extraRK":  controlBroadcastRK,
 	})
+
+	// Parking EOF
+	if needParking {
+		nextWorkerId := utils.GetNextNodeId(workerId, workerCount)
+
+		if workerType == string(model.TopperAction) {
+			nextWorkerId = workerId
+		}
+
+		queues = append(queues, map[string]string{
+			"name":           parkingQName,
+			"dlx_routingKey": workerType + "_" + nextWorkerId,
+			"ttl":            "100", // 100 ms
+			"dlx_exchange":   eofExchangeName,
+		})
+
+		binds = append(binds, map[string]string{
+			"queue":    parkingQName,
+			"exchange": parkingEofExchange,
+			"extraRK":  workerType + "_" + workerId,
+		})
+	}
 
 	return queues, binds
 }

@@ -76,9 +76,8 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	return joiner
 }
 
-func (j *Joiner) joinZetaData(ratingsData common.BigTableData[*protocol.Zeta_Data_Rating], clientId string) map[uint32][]*protocol.Eta_1_Data {
-	joinedDataByTask := make(map[uint32][]*protocol.Eta_1_Data)
-
+func (j *Joiner) joinZetaData(ratingsData common.BigTableData[*protocol.Zeta_Data_Rating], clientId string) map[int][]*protocol.Eta_1_Data {
+	joinedDataByTask := make(map[int][]*protocol.Eta_1_Data)
 	for taskNumber, ratingsByTask := range ratingsData {
 		joinedData := make([]*protocol.Eta_1_Data, 0)
 
@@ -105,8 +104,8 @@ func (j *Joiner) joinZetaData(ratingsData common.BigTableData[*protocol.Zeta_Dat
 	return joinedDataByTask
 }
 
-func (j *Joiner) joinIotaData(actorsData common.BigTableData[*protocol.Iota_Data_Actor], clientId string) map[uint32][]*protocol.Kappa_1_Data {
-	joinedDataByTask := make(map[uint32][]*protocol.Kappa_1_Data)
+func (j *Joiner) joinIotaData(actorsData common.BigTableData[*protocol.Iota_Data_Actor], clientId string) map[int][]*protocol.Kappa_1_Data {
+	joinedDataByTask := make(map[int][]*protocol.Kappa_1_Data)
 
 	for taskNumber, actorsByTask := range actorsData {
 		joinedData := make([]*protocol.Kappa_1_Data, 0)
@@ -361,7 +360,7 @@ func joinerNextStageData(stage string, clientId string, infraConfig *model.Infra
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetJoinExchange(),
+				Exchange:    infraConfig.GetEofExchange(),
 				WorkerCount: infraConfig.GetJoinCount(),
 				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetJoinCount()),
 			},
@@ -602,7 +601,7 @@ func (j *Joiner) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[uint32][]*protocol.Eta_1_Data, clientId string) {
+func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[int][]*protocol.Eta_1_Data, clientId string) {
 	dataStage := common.ZETA_STAGE
 	zetaData := j.partialResults[clientId].ZetaData
 
@@ -623,13 +622,13 @@ func (j *Joiner) addEta1Results(tasks common.Tasks, partialResultsByTask map[uin
 	creatorId := j.infraConfig.GetNodeId()
 
 	for taskNumber, partialResults := range partialResultsByTask {
-		joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
+		AddResultsToStateless(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
 		zetaData.SendedTaskCount++
 	}
 
 }
 
-func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[uint32][]*protocol.Kappa_1_Data, clientId string) {
+func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[int][]*protocol.Kappa_1_Data, clientId string) {
 	dataStage := common.IOTA_STAGE
 	iotaData := j.partialResults[clientId].IotaData
 
@@ -650,7 +649,7 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[u
 	creatorId := j.infraConfig.GetNodeId()
 
 	for taskNumber, partialResults := range partialResultsByTask {
-		joinerAddResults(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
+		AddResultsToStateless(tasks, partialResults, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
 		iotaData.SendedTaskCount++
 	}
 }
@@ -709,7 +708,7 @@ func processBigTableJoinerStage[G any, B any](
 		Logged: false,
 	}
 
-	taskNumber := taskID.TaskNumber
+	taskNumber := int(taskID.TaskNumber)
 
 	if _, exists := partialData.Data[taskNumber]; !exists {
 		partialData.Data[taskNumber] = make(map[string][]B)
@@ -771,6 +770,12 @@ func (j *Joiner) LoadData(dirBase string) error {
 	}
 	return nil
 }
+
+// // Delete partialResult by clientId
+// func (j *Joiner) deletePartialResult(clientId string) {
+// 	delete(j.partialResults, clientId)
+// 	log.Infof("Deleted partial result for clientId: %s", clientId)
+// }
 
 func (j *Joiner) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()

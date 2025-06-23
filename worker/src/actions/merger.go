@@ -159,7 +159,7 @@ func mergerNextStageData(stage string, clientId string, infraConfig *model.Infra
 		return []common.NextStageData{
 			{
 				Stage:       common.RING_STAGE,
-				Exchange:    infraConfig.GetMergeExchange(),
+				Exchange:    infraConfig.GetEofExchange(),
 				WorkerCount: infraConfig.GetReduceCount(),
 				RoutingKey:  utils.GetNextNodeId(infraConfig.GetNodeId(), infraConfig.GetMergeCount()),
 			},
@@ -208,7 +208,7 @@ func (m *Merger) delta3Results(tasks common.Tasks, clientId string) {
 	creatorId := m.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator, false)
 }
 
 func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
@@ -247,7 +247,7 @@ func (m *Merger) eta3Results(tasks common.Tasks, clientId string) {
 	creatorId := m.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator, false)
 }
 
 func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
@@ -286,7 +286,7 @@ func (m *Merger) kappa3Results(tasks common.Tasks, clientId string) {
 	creatorId := m.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateful(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator, false)
 }
 
 func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
@@ -299,10 +299,6 @@ func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
 			Ratio:     data.GetRatio() / float32(data.GetCount()),
 		}
 	})
-
-	identifierFunc := func(data *protocol.Result5_Data) string {
-		return strconv.FormatBool(data.GetSentiment())
-	}
 
 	taskDataCreator := func(stage string, data []*protocol.Result5_Data, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task {
 		return &protocol.Task{
@@ -317,14 +313,11 @@ func (m *Merger) nu3Results(tasks common.Tasks, clientId string) {
 	}
 
 	nextStageData, _ := m.getNextStageData(common.NU_STAGE_3, clientId)
-	hashFunc := func(workersCount int, item string) string {
-		return clientId
-	}
 
 	creatorId := m.infraConfig.GetNodeId()
 	taskNumber, _ := strconv.Atoi(creatorId)
 
-	AddResults(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, hashFunc, identifierFunc, taskDataCreator)
+	AddResultsToStateless(tasks, results, nextStageData[0], clientId, creatorId, taskNumber, taskDataCreator)
 }
 
 // Adding EOF handler to Merger

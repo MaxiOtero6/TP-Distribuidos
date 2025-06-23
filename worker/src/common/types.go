@@ -65,7 +65,7 @@ type ThetaPartialData struct {
 }
 
 type SmallTableData[S any] map[string]S
-type BigTableData[B any] map[uint32]map[string][]B
+type BigTableData[B any] map[int]map[string][]B
 
 type JoinerTableData[T any] struct {
 	Data            T
