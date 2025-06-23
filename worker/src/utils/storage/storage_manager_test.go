@@ -2,13 +2,13 @@ package storage
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/common/communication/protocol"
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
-
-	// "github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/topkheap"
@@ -32,8 +32,9 @@ func LoadDataToFile[T proto.Message](t *testing.T, tc struct {
 	source   string
 	stage    interface{}
 }) {
+	taskFragment := model.TaskFragmentIdentifier{}
 
-	err := SaveDataToFile(tc.dir, tc.clientID, tc.stage, common.FolderType(tc.source), tc.data)
+	err := SaveDataToFile(tc.dir, tc.clientID, tc.stage, common.FolderType(tc.source), tc.data, taskFragment)
 	assert.NoError(t, err, "Failed to save data to file")
 	assert.NoError(t, err, "Failed to commit partial data to final")
 
@@ -366,6 +367,27 @@ func CompareProtobufMapsOfArrays(expected, actual interface{}) bool {
 	return true
 
 }
+
+func compareTaskFragmentsMap(
+	expected, actual map[model.TaskFragmentIdentifier]common.FragmentStatus,
+) bool {
+	if len(expected) != len(actual) {
+		log.Errorf("TaskFragments map length mismatch: expected %d, got %d", len(expected), len(actual))
+		return false
+	}
+	for k, v := range expected {
+		actualV, ok := actual[k]
+		if !ok {
+			log.Errorf("TaskFragments missing key: %+v", k)
+			return false
+		}
+		if !reflect.DeepEqual(v, actualV) {
+			log.Errorf("TaskFragments value mismatch for key %+v: expected %+v, got %+v", k, v, actualV)
+			return false
+		}
+	}
+	return true
+}
 func compareStruct(expected, actual interface{}) bool {
 	expectedVal := reflect.ValueOf(expected)
 	actualVal := reflect.ValueOf(actual)
@@ -395,6 +417,17 @@ func compareStruct(expected, actual interface{}) bool {
 		fieldName := t.Field(i).Name
 		expectedField := expectedVal.Field(i).Interface()
 		actualField := actualVal.Field(i).Interface()
+
+		// EXCEPCIÓN: TaskFragments se compara con DeepEqual
+		if fieldName == "TaskFragments" {
+			if !compareTaskFragmentsMap(
+				expectedField.(map[model.TaskFragmentIdentifier]common.FragmentStatus),
+				actualField.(map[model.TaskFragmentIdentifier]common.FragmentStatus),
+			) {
+				return false
+			}
+			continue
+		}
 
 		// Si el campo es un mapa, usar compareProtobufMaps
 		if expectedVal.Field(i).Kind() == reflect.Map {
@@ -521,7 +554,7 @@ func compareJoinerTableDataBig[B proto.Message](
 	return true
 }
 
-func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
+func TestSerializationAndDeserializationOfMerger(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "test_serialization")
 	if err != nil {
@@ -551,6 +584,7 @@ func TestSerializationAndDeserializationOfJoiner(t *testing.T) {
 			OmegaProcessed: false,
 			RingRound:      0,
 		},
+
 		Kappa3: &common.PartialData[*protocol.Kappa_3_Data]{
 			Data: map[string]*protocol.Kappa_3_Data{
 				"actor1": {ActorId: "actor1", ActorName: "Actor One", PartialParticipations: 8},
@@ -935,6 +969,13 @@ func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
 		MaxPartialData: partialMax,
 	}
 
+	taskFragment := model.TaskFragmentIdentifier{
+		CreatorId:          CLIENT_ID,
+		TaskNumber:         1,
+		TaskFragmentNumber: 1,
+		LastFragment:       true,
+	}
+
 	tempDir, err := os.MkdirTemp("", "test_serialization")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
@@ -945,7 +986,7 @@ func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
 		return input.GetAvgRating()
 	}
 
-	err = SaveTopperThetaDataToFile(tempDir, &protocol.Task_Theta{}, CLIENT_ID, partials, maxValueFunc)
+	err = SaveTopperThetaDataToFile(tempDir, &protocol.Task_Theta{}, CLIENT_ID, partials, taskFragment, maxValueFunc)
 	assert.NoError(t, err, "Failed to save TopperPartialData to file")
 
 	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.THETA_STAGE, partials[0])
@@ -963,7 +1004,7 @@ func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
 	epsilonMaxValueFunc := func(input *protocol.Epsilon_Data) uint64 {
 		return input.GetTotalInvestment()
 	}
-	err = SaveTopperDataToFile(tempDir, &protocol.Task_Epsilon{}, CLIENT_ID, epsilonPartial, epsilonMaxValueFunc)
+	err = SaveTopperDataToFile(tempDir, &protocol.Task_Epsilon{}, CLIENT_ID, epsilonPartial, taskFragment, epsilonMaxValueFunc)
 	assert.NoError(t, err, "Failed to save TopperPartialData (Epsilon) to file")
 	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.EPSILON_STAGE, epsilonPartial)
 	assert.NoError(t, err, "Failed to save TopperMetadata (Epsilon) to file")
@@ -980,7 +1021,7 @@ func TestSerializationAndDeserializationOfTopperPartialData(t *testing.T) {
 	lambdaMaxValueFunc := func(input *protocol.Lambda_Data) uint64 {
 		return input.GetParticipations()
 	}
-	err = SaveTopperDataToFile(tempDir, &protocol.Task_Lambda{}, CLIENT_ID, lambdaPartial, lambdaMaxValueFunc)
+	err = SaveTopperDataToFile(tempDir, &protocol.Task_Lambda{}, CLIENT_ID, lambdaPartial, taskFragment, lambdaMaxValueFunc)
 	assert.NoError(t, err, "Failed to save TopperPartialData (Lambda) to file")
 	err = SaveTopperMetadataToFile(tempDir, CLIENT_ID, common.LAMBDA_STAGE, lambdaPartial)
 	assert.NoError(t, err, "Failed to save TopperMetadata (Lambda) to file")
@@ -1010,7 +1051,7 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	//defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir)
 
 	// --- ZetaData ---
 	zetaSmall := &common.JoinerTableData[common.SmallTableData[*protocol.Zeta_Data_Movie]]{
@@ -1018,7 +1059,6 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 			"movie1": {MovieId: "movie1", Title: "Movie One"},
 			"movie2": {MovieId: "movie2", Title: "Movie Two"},
 		},
-		TaskFragments:  map[model.TaskFragmentIdentifier]struct{}{},
 		Ready:          true,
 		OmegaProcessed: true,
 	}
@@ -1031,7 +1071,7 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 				},
 			},
 		},
-		TaskFragments:  map[model.TaskFragmentIdentifier]struct{}{},
+		TaskFragments:  map[model.TaskFragmentIdentifier]common.FragmentStatus{},
 		Ready:          true,
 		OmegaProcessed: false,
 	}
@@ -1047,7 +1087,7 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 		Data: common.SmallTableData[*protocol.Iota_Data_Movie]{
 			"movieId1": {MovieId: "movieId1"},
 		},
-		TaskFragments:  map[model.TaskFragmentIdentifier]struct{}{},
+		TaskFragments:  map[model.TaskFragmentIdentifier]common.FragmentStatus{},
 		Ready:          false,
 		OmegaProcessed: false,
 	}
@@ -1064,7 +1104,7 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 				},
 			},
 		},
-		TaskFragments:  map[model.TaskFragmentIdentifier]struct{}{},
+		TaskFragments:  map[model.TaskFragmentIdentifier]common.FragmentStatus{},
 		Ready:          true,
 		OmegaProcessed: true,
 	}
@@ -1081,27 +1121,34 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 		IotaData: iotaStage,
 	}
 
+	taskFragment := model.TaskFragmentIdentifier{
+		CreatorId:          CLIENT_ID,
+		TaskNumber:         1,
+		TaskFragmentNumber: 1,
+		LastFragment:       true,
+	}
+
 	// Guardar Zeta
-	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Zeta{}, common.JOINER_SMALL_FOLDER_TYPE, zetaSmall)
+	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Zeta{}, common.JOINER_SMALL_FOLDER_TYPE, zetaSmall, taskFragment)
 	assert.NoError(t, err, "Failed to save Zeta small table")
 
 	err = SaveJoinerMetadataToFile(tempDir, CLIENT_ID, common.ZETA_STAGE, common.JOINER_SMALL_FOLDER_TYPE, zetaStage)
 	assert.NoError(t, err, "Failed to save Zeta metadata")
 
-	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Zeta{}, common.JOINER_BIG_FOLDER_TYPE, zetaBig)
+	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Zeta{}, common.JOINER_BIG_FOLDER_TYPE, zetaBig, taskFragment)
 	assert.NoError(t, err, "Failed to save Zeta big table")
 
 	err = SaveJoinerMetadataToFile(tempDir, CLIENT_ID, common.ZETA_STAGE, common.JOINER_BIG_FOLDER_TYPE, zetaStage)
 	assert.NoError(t, err, "Failed to save Zeta metadata")
 
 	// Guardar Iota
-	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Iota{}, common.JOINER_SMALL_FOLDER_TYPE, iotaSmall)
+	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Iota{}, common.JOINER_SMALL_FOLDER_TYPE, iotaSmall, taskFragment)
 	assert.NoError(t, err, "Failed to save Iota small table")
 
 	err = SaveJoinerMetadataToFile(tempDir, CLIENT_ID, common.IOTA_STAGE, common.JOINER_SMALL_FOLDER_TYPE, iotaStage)
 	assert.NoError(t, err, "Failed to save Iota metadata")
 
-	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Iota{}, common.JOINER_BIG_FOLDER_TYPE, iotaBig)
+	err = SaveJoinerTableToFile(tempDir, CLIENT_ID, &protocol.Task_Iota{}, common.JOINER_BIG_FOLDER_TYPE, iotaBig, taskFragment)
 	assert.NoError(t, err, "Failed to save Iota big table")
 
 	err = SaveJoinerMetadataToFile(tempDir, CLIENT_ID, common.IOTA_STAGE, common.JOINER_BIG_FOLDER_TYPE, iotaStage)
@@ -1111,7 +1158,124 @@ func TestSerializationAndDeserializationOfJoinerPartialResults(t *testing.T) {
 	loaded, err := LoadJoinerPartialResultsFromDisk(tempDir)
 	assert.NoError(t, err, "Failed to load joiner partial results from file")
 
+	// log.Debugf("Loaded task fragments: %v", loaded[CLIENT_ID].ZetaData.SmallTable.TaskFragments)
 	// Comparar
 	assert.NotNil(t, loaded[CLIENT_ID], "Loaded joiner partial results is nil")
 	assert.True(t, CompareJoinerPartialResults(joinerResults, loaded[CLIENT_ID]), "Loaded joiner partial results do not match expected")
+}
+
+func TestAppendAndReadTaskFragmentIdentifiersLogLiteral(t *testing.T) {
+	dir := t.TempDir()
+	clientId := "client1"
+	stage := "stage1"
+	tableType := "tableType1"
+
+	fragment1 := model.TaskFragmentIdentifier{CreatorId: "c1", TaskNumber: 1, TaskFragmentNumber: 1, LastFragment: false}
+	fragment2 := model.TaskFragmentIdentifier{CreatorId: "c2", TaskNumber: 2, TaskFragmentNumber: 2, LastFragment: true}
+	timestamp1 := time.Date(2025, 10, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	timestamp2 := time.Date(2025, 10, 1, 13, 0, 0, 0, time.UTC).Format(time.RFC3339)
+
+	err := appendTaskFragmentIdentifiersLogLiteral(dir, clientId, stage, common.FolderType(tableType), timestamp1, fragment1)
+	if err != nil {
+		t.Fatalf("appendTaskFragmentIdentifiersLogLiteral failed: %v", err)
+	}
+	err = appendTaskFragmentIdentifiersLogLiteral(dir, clientId, stage, common.FolderType(tableType), timestamp2, fragment2)
+	if err != nil {
+		t.Fatalf("appendTaskFragmentIdentifiersLogLiteral failed: %v", err)
+	}
+
+	dirPath := filepath.Join(dir, stage, tableType, clientId)
+
+	frags, err := readAndFilterTaskFragmentIdentifiersLogLiteral(dirPath, timestamp2)
+	assert.NoError(t, err, "readAndFilterTaskFragmentIdentifiersLogLiteral failed")
+	assert.Len(t, frags, 2, "expected 2 fragments, got %d", len(frags))
+	assert.Contains(t, frags, fragment1, "fragment1 not found in results")
+	assert.Contains(t, frags, fragment2, "fragment2 not found in results")
+
+	frags2, err := readAndFilterTaskFragmentIdentifiersLogLiteral(dirPath, timestamp1)
+	assert.NoError(t, err, "readAndFilterTaskFragmentIdentifiersLogLiteral failed")
+	assert.Len(t, frags2, 1, "expected 1 fragment, got %d", len(frags2))
+	assert.Contains(t, frags2, fragment1, "fragment1 not found in results")
+
+}
+
+func TestTaskFragmentsPersistenceAndLoad_SingleStageInMerger(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "test_taskfragments")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	fragment1 := model.TaskFragmentIdentifier{CreatorId: CLIENT_ID, TaskNumber: 1, TaskFragmentNumber: 1, LastFragment: true}
+	fragment2 := model.TaskFragmentIdentifier{CreatorId: ANOTHER_CLIENT_ID, TaskNumber: 2, TaskFragmentNumber: 2, LastFragment: true}
+
+	delta3ToLoad := &common.PartialData[*protocol.Delta_3_Data]{
+		Data:           map[string]*protocol.Delta_3_Data{"Country1": {Country: "Country1", PartialBudget: 10000}},
+		OmegaProcessed: false,
+		RingRound:      0,
+		TaskFragments: map[model.TaskFragmentIdentifier]common.FragmentStatus{
+			fragment1: {Logged: false},
+			fragment2: {Logged: false},
+		},
+	}
+
+	// Guardar fragment1
+	err = SaveDataToFile(tempDir, CLIENT_ID, &protocol.Task_Delta_3{}, common.GENERAL_FOLDER_TYPE, delta3ToLoad, fragment1)
+	assert.NoError(t, err, "Failed to save fragment1")
+	// Guardar fragment2
+	err = SaveDataToFile(tempDir, CLIENT_ID, &protocol.Task_Delta_3{}, common.GENERAL_FOLDER_TYPE, delta3ToLoad, fragment2)
+	assert.NoError(t, err, "Failed to save fragment2")
+
+	// Guardar metadata
+	LoadMetadataToFile(t, struct {
+		name     string
+		data     *common.PartialData[*protocol.Delta_3_Data]
+		dir      string
+		clientID string
+		source   common.FolderType
+		stage    string
+	}{
+		name:     "Delta3_TaskFragments_Metadata",
+		data:     delta3ToLoad,
+		dir:      tempDir,
+		clientID: CLIENT_ID,
+		source:   common.GENERAL_FOLDER_TYPE,
+		stage:    common.DELTA_STAGE_3,
+	})
+
+	delta3Expected := &common.PartialData[*protocol.Delta_3_Data]{
+		Data:           map[string]*protocol.Delta_3_Data{"Country1": {Country: "Country1", PartialBudget: 10000}},
+		OmegaProcessed: false,
+		RingRound:      0,
+		TaskFragments: map[model.TaskFragmentIdentifier]common.FragmentStatus{
+			fragment1: {Logged: true},
+			fragment2: {Logged: true},
+		},
+	}
+
+	mergerExpected := &common.MergerPartialResults{
+		Delta3: delta3Expected,
+		Eta3:   nil,
+		Kappa3: nil,
+		Nu3:    nil,
+	}
+
+	actual := loadMergerPartialResultsFromDisk(t, tempDir)
+	log.Infof("LOADED TASK IDENTIFIERS: %v", actual["test_client"].Delta3.TaskFragments)
+	assert.NotNil(t, actual[CLIENT_ID], "Loaded result is nil")
+	assert.NotNil(t, actual[CLIENT_ID].Delta3, "Loaded Delta3 is nil")
+	assert.Equal(t, delta3ToLoad.Data, actual[CLIENT_ID].Delta3.Data, "Delta3 data mismatch")
+
+	// Verificar que ambos fragmentos están presentes y marcados como Logged
+	frags := actual[CLIENT_ID].Delta3.TaskFragments
+	assert.Len(t, frags, 2, "Expected 2 task fragments")
+	assert.True(t, frags[fragment1].Logged, "fragment1 should be logged")
+	assert.True(t, frags[fragment2].Logged, "fragment2 should be logged")
+
+	// El resto debe ser nil
+	assert.Nil(t, actual[CLIENT_ID].Eta3, "Eta3 should be nil")
+	assert.Nil(t, actual[CLIENT_ID].Kappa3, "Kappa3 should be nil")
+	assert.Nil(t, actual[CLIENT_ID].Nu3, "Nu3 should be nil")
+
+	assert.True(t, CompareMergerPartialResultsMap(map[string]*common.MergerPartialResults{CLIENT_ID: mergerExpected}, actual), "Loaded merger partial results do not match expected")
 }

@@ -17,9 +17,13 @@ type NextStageData struct {
 	RoutingKey  string
 }
 
+type FragmentStatus struct {
+	Logged bool
+}
+
 type PartialData[T proto.Message] struct {
 	Data           map[string]T
-	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
+	TaskFragments  map[model.TaskFragmentIdentifier]FragmentStatus
 	OmegaProcessed bool
 	RingRound      uint32
 	IsReady        bool // Indicates if the data should be deleted in the next stage
@@ -49,7 +53,7 @@ type TopperPartialResults struct {
 
 type TopperPartialData[K topkheap.Ordered, V any] struct {
 	Heap           topkheap.TopKHeap[K, V]
-	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
+	TaskFragments  map[model.TaskFragmentIdentifier]FragmentStatus
 	OmegaProcessed bool
 	RingRound      uint32
 	IsReady        bool // Indicates if the data should be deleted in the next stage
@@ -65,7 +69,7 @@ type BigTableData[B any] map[uint32]map[string][]B
 
 type JoinerTableData[T any] struct {
 	Data            T
-	TaskFragments   map[model.TaskFragmentIdentifier]struct{}
+	TaskFragments   map[model.TaskFragmentIdentifier]FragmentStatus
 	Ready           bool // Indicates if the table is ready to be processed
 	IsReadyToDelete bool // Indicates if the table should be deleted in the next stage
 	OmegaProcessed  bool
