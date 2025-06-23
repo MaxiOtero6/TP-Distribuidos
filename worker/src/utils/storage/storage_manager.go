@@ -180,18 +180,12 @@ func loadStageClientData[T proto.Message](
 	finalDataFilePath := filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 	finalMetadataFilePath := filepath.Join(dirPath, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
 
-	tempDataFilePath := filepath.Join(dirPath, TEMPORARY_DATA_FILE_NAME+JSON_FILE_EXTENSION)
-	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+	err := cleanAllTempFiles(dirPath)
 
-	err := handleLeftOverFiles(finalDataFilePath, tempDataFilePath)
-	if err != nil {
-		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
-	}
-
-	err = handleLeftOverFiles(finalMetadataFilePath, tempMetadataFilePath)
-	if err != nil {
-		return zero, fmt.Errorf("failed to handle leftover files: %w", err)
-	}
+	// err := handleLeftOverFiles(finalMetadataFilePath, tempMetadataFilePath)
+	// if err != nil {
+	// 	return zero, fmt.Errorf("failed to handle leftover files: %w", err)
+	// }
 
 	//Read data file
 	jsonDataBytes, err := os.ReadFile(finalDataFilePath)
@@ -442,9 +436,18 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		if !entry.IsDir() {
 			continue
 		}
+
 		clientId := entry.Name()
 		dataPath := filepath.Join(smallTableDir, clientId, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 		metadataPath := filepath.Join(smallTableDir, clientId, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+		dirClientPath := filepath.Join(smallTableDir, clientId)
+		err := cleanAllTempFiles(dirClientPath)
+		if err != nil {
+			log.Errorf("Error cleaning temp files for client %s: %v", entry.Name(), err)
+			continue
+		}
+
 		jsonBytes, err := os.ReadFile(dataPath)
 		if err != nil {
 			log.Errorf("Error reading small table data for client %s: %v", clientId, err)
@@ -502,6 +505,10 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		clientId := entry.Name()
 		dataPath := filepath.Join(bigTableDir, clientId, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 		metadataPath := filepath.Join(bigTableDir, clientId, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
+
+		dirClientPath := filepath.Join(bigTableDir, clientId)
+		err := cleanAllTempFiles(dirClientPath)
+
 		jsonBytes, err := os.ReadFile(dataPath)
 		if err != nil {
 			log.Errorf("Error reading big table data for client %s: %v", clientId, err)
@@ -1091,140 +1098,23 @@ func cleanUpOldFiles(dir string) error {
 	})
 }
 
-func isTempFileValid(finalFile, tempFile string) (bool, bool, error) {
-	var isValid bool
-	var err error
-	var isTempFileExists bool
-
-	isTempFileExists, err = fileExists(tempFile)
-
-	if err != nil {
-		return false, false, fmt.Errorf("failed to check for temporary file: %w", err)
-	}
-
-	isFinalFileExist, err := fileExists(finalFile)
-	if err != nil {
-		return false, false, fmt.Errorf("failed to check for final file: %w", err)
-	}
-
-	if !isTempFileExists {
-		isValid = false
-		err = nil
-	} else if isTempFileExists {
-		if !isFinalFileExist {
-			isValid, err = isFileStatusValid(tempFile)
-		} else {
-			isValid, err = canReplaceFile(finalFile, tempFile)
-		}
-	}
-
-	return isValid, isTempFileExists, err
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		log.Infof("File exists: %s", path)
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err // otro error (permisos, etc.)
-}
-
-func isFileStatusValid(filePath string) (bool, error) {
-	state, timestamp, err := getStatusAndTimestampStream(filePath)
-	if err != nil {
-		return false, err
-	}
-	return state == VALID_STATUS && timestamp != "", nil
-}
-
-func canReplaceFile(finalFile, tempFile string) (bool, error) {
-	statusFinal, timestampFinal, err := getStatusAndTimestampStream(finalFile)
-	if err != nil {
-		return false, err
-	}
-	statusTemp, timestampTemp, err := getStatusAndTimestampStream(tempFile)
-	if err != nil {
-		return false, err
-	}
-
-	if statusFinal == VALID_STATUS && statusTemp == VALID_STATUS {
-		return timestampFinal < timestampTemp, nil
-	}
-	return false, nil
-}
-
-func getStatusAndTimestampStream(filePath string) (string, string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", "", err
-	}
-	defer f.Close()
-
-	dec := json.NewDecoder(f)
-	var status, timestamps string
-
-	// Esperamos el inicio del objeto
-	t, err := dec.Token()
-	if err != nil || t != json.Delim('{') {
-		return "", "", err
-	}
-
-	// Iteramos por los campos
-	for dec.More() {
-		t, err := dec.Token()
+func cleanAllTempFiles(rootDir string) error {
+	return filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return "", "", err
+			return err
 		}
-		key := t.(string)
-		switch key {
-		case "status":
-			if err := dec.Decode(&status); err != nil {
-				return "", "", err
-			}
-		case "timestamps":
-			if err := dec.Decode(&timestamps); err != nil {
-				return "", "", err
-			}
-		default:
-			// Saltar el valor (puede ser grande)
-			var discard interface{}
-			if err := dec.Decode(&discard); err != nil {
-				return "", "", err
+		if d.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) == ".json" && (filepath.Base(path) == TEMPORARY_DATA_FILE_NAME+JSON_FILE_EXTENSION ||
+			filepath.Base(path) == TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION) {
+			if err := os.Remove(path); err != nil {
+				log.Warningf("Error deleting temp file %s: %v", path, err)
 			}
 		}
-	}
-	return status, timestamps, nil
+		return nil
+	})
 }
-
-func handleLeftOverFiles(finalFile, tempFile string) error {
-	isTempValid, isTempExist, err := isTempFileValid(finalFile, tempFile)
-	if err != nil {
-		return fmt.Errorf("failed to check temporary file validity: %w", err)
-	}
-
-	if isTempValid {
-		//overwrite the final file with the temporary file
-		err = os.Rename(tempFile, finalFile) // Atomic rename operation
-		if err != nil {
-			return fmt.Errorf("failed to rename temporary file to final file: %w", err)
-		}
-	} else {
-		if isTempExist {
-			// Delete the temporary file
-			err = os.Remove(tempFile)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 func getStageNameFromInterface(stage interface{}) (string, error) {
 	switch stage.(type) {
 	case *protocol.Task_Alpha:
