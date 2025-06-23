@@ -561,16 +561,31 @@ func maxToHeap[K topkheap.Ordered, V proto.Message](
 	return heap
 }
 
-func DeletePartialResults(dir string, stage interface{}, sourceType string, clientId string) error {
+func DeletePartialResults(dir string, stage interface{}, tableType string, clientId string) error {
 	stringStage, err := getStageNameFromInterface(stage)
 	if err != nil {
 		return fmt.Errorf("error getting stage name: %w", err)
 	}
-	//TODO hablar bien este caso con Maxi, no se si me falta algun caso en particular
-	if stringStage == common.OMEGA_STAGE || stringStage == common.RING_STAGE {
-		dirPath := filepath.Join(dir, stringStage, sourceType, clientId)
-		return os.RemoveAll(dirPath)
+	dirPath := filepath.Join(dir, stringStage, tableType, clientId)
+	return os.RemoveAll(dirPath)
+}
+
+// TODO --> DELETE LOGS FILES TOO
+func TryDeletePartialData(dir string, stage interface{}, folderType string, clientId string, isReadyToDelete bool) error {
+	stringStage, err := getStageNameFromInterface(stage)
+	if err != nil {
+		return fmt.Errorf("error getting stage name: %w", err)
 	}
+	dirPath := filepath.Join(dir, stringStage, string(folderType), clientId)
+
+	// TODO delete logs file too
+	err = os.Remove(filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION))
+	if err != nil {
+		return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stringStage, folderType, clientId, err)
+	}
+
+	log.Debugf("Deleted partial data for stage %s, folder type %s, client ID %s", stringStage, folderType, clientId)
+
 	return nil
 }
 
