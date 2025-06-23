@@ -324,10 +324,14 @@ func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Mapper) DownloadData(dirBase string) error {
+func (m *Mapper) LoadData(dirBase string) error {
 	return nil
 }
 
-func (m *Mapper) LoadData(task *protocol.Task) error {
+func (m *Mapper) SaveData(task *protocol.Task) error {
+	return nil
+}
+
+func (m *Mapper) DeleteData(task *protocol.Task) error {
 	return nil
 }

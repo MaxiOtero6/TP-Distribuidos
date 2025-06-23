@@ -19,6 +19,7 @@ func NewPartialData[T proto.Message]() *common.PartialData[T] {
 		TaskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
 		OmegaProcessed: false,
 		RingRound:      0,
+		IsReady:        false,
 	}
 }
 
@@ -27,8 +28,9 @@ type Action interface {
 	// It returns a map of tasks for the next stages.
 	// It returns an error if the action fails.
 	Execute(task *protocol.Task) (common.Tasks, error)
-	LoadData(task *protocol.Task) error
-	DownloadData(dirBase string) error
+	SaveData(task *protocol.Task) error
+	LoadData(dirBase string) error
+	DeleteData(task *protocol.Task) error
 }
 
 // NewAction creates a new action based on the worker type.

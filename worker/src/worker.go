@@ -10,7 +10,6 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/model"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/actions"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
-	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
 	"github.com/op/go-logging"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/protobuf/proto"
@@ -40,7 +39,7 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 
 	action := actions.NewAction(workerType, infraConfig)
 
-	err := action.DownloadData(infraConfig.GetDirectory())
+	err := action.LoadData(infraConfig.GetDirectory())
 	if err != nil {
 		log.Panicf("Failed to download data: %s", err)
 		return nil
@@ -151,14 +150,28 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 
 	w.sendSubTasks(subTasks)
 
-	w.action.LoadData(task)
+	err = w.action.SaveData(task)
+	if err != nil {
+		log.Errorf("Failed to save data: %s", err)
+		message.Reject(false)
+		return
+	}
 
 	message.Ack(false)
 
-	//delete info from the storage
+	err = w.action.LoadData(w.baseDir)
+	if err != nil {
+		log.Errorf("Failed to load data: %s", err)
+		message.Reject(false)
+		return
+	}
 
-	//w.action.LoadData()
-	storage.DeletePartialResults(w.baseDir, task.GetStage(), task.GetTableType(), task.GetClientId())
+	err = w.action.DeleteData(task)
+	if err != nil {
+		log.Errorf("Failed to delete data: %s", err)
+		message.Reject(false)
+		return
+	}
 
 }
 

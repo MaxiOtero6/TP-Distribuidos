@@ -164,10 +164,14 @@ func (o *Overviewer) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Overviewer) DownloadData(dirBase string) error {
+func (m *Overviewer) LoadData(dirBase string) error {
 	return nil
 }
 
-func (m *Overviewer) LoadData(task *protocol.Task) error {
+func (m *Overviewer) SaveData(task *protocol.Task) error {
+	return nil
+}
+
+func (m *Overviewer) DeleteData(task *protocol.Task) error {
 	return nil
 }

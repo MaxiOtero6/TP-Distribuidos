@@ -22,6 +22,7 @@ type PartialData[T proto.Message] struct {
 	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
 	OmegaProcessed bool
 	RingRound      uint32
+	IsReady        bool // Indicates if the data should be deleted in the next stage
 }
 
 type MergerPartialResults struct {
@@ -51,6 +52,7 @@ type TopperPartialData[K topkheap.Ordered, V any] struct {
 	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
 	OmegaProcessed bool
 	RingRound      uint32
+	IsReady        bool // Indicates if the data should be deleted in the next stage
 }
 
 type ThetaPartialData struct {
@@ -62,10 +64,11 @@ type SmallTableData[S any] map[string]S
 type BigTableData[B any] map[uint32]map[string][]B
 
 type JoinerTableData[T any] struct {
-	Data           T
-	TaskFragments  map[model.TaskFragmentIdentifier]struct{}
-	Ready          bool
-	OmegaProcessed bool
+	Data            T
+	TaskFragments   map[model.TaskFragmentIdentifier]struct{}
+	Ready           bool // Indicates if the table is ready to be processed
+	IsReadyToDelete bool // Indicates if the table should be deleted in the next stage
+	OmegaProcessed  bool
 }
 
 type JoinerStageData[S any, B any] struct {

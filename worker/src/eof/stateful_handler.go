@@ -150,7 +150,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 			// If the stage is ready, we set the ReadyId to this worker and return the next stage EOF
 			ringEOF.ReadyId = h.nodeId
 			h.nextWorkerRing(tasks, ringEOF, clientId, false)
-			return true
+			return false
 		} else {
 			if ringEOF.GetCreatorId() == h.nodeId {
 				// If the EOF is not ready and it does a full cycle, we wait by sending to a delay exchange and with the dead letter exchange send it back to the workers
@@ -168,7 +168,7 @@ func (h *StatefulEofHandler) HandleRingEOF(tasks common.Tasks, ringEOF *protocol
 		if ringEOF.GetReadyId() == h.nodeId {
 			// If the EOF is ready and it is from this worker, we can send the next stage EOF cause the RingEOF do a full cycle
 			h.nextStagesOmegaEOF(tasks, ringEOF, clientId)
-			return false
+			return true
 		} else {
 			// If the EOF is ready but it is not from this worker, we continue the RingEOF cycle
 			h.nextWorkerRing(tasks, ringEOF, clientId, false)

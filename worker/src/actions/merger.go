@@ -379,6 +379,10 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 			log.Errorf("Failed to add results to next stage for stage %s: %s", stage, err)
 			return tasks
 		}
+		err := m.setToDelete(clientId, data.GetStage())
+		if err != nil {
+			log.Errorf("Failed to delete stage %s for client %s: %s", data.GetStage(), clientId, err)
+		}
 	}
 
 	return tasks
@@ -421,7 +425,7 @@ func (m *Merger) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Merger) DownloadData(dirBase string) error {
+func (m *Merger) LoadData(dirBase string) error {
 	var err error
 	m.partialResults, err = storage.LoadMergerPartialResultsFromDisk(dirBase)
 	if err != nil {
@@ -432,7 +436,7 @@ func (m *Merger) DownloadData(dirBase string) error {
 	return nil
 }
 
-func (m *Merger) LoadData(task *protocol.Task) error {
+func (m *Merger) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	//taskIdentifier := task.GetTaskIdentifier()
@@ -441,7 +445,7 @@ func (m *Merger) LoadData(task *protocol.Task) error {
 
 	switch s := stage.(type) {
 	case *protocol.Task_Delta_3:
-
+		// task identifier
 		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3)
 
 	case *protocol.Task_Eta_3:
@@ -457,12 +461,12 @@ func (m *Merger) LoadData(task *protocol.Task) error {
 		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3)
 
 	case *protocol.Task_OmegaEOF:
-		data := s.OmegaEOF.GetData()
-		return m.loadMetaData(data.GetStage(), clientId)
+		processedStage := task.GetOmegaEOF().GetData().GetStage()
+		return m.loadMetaData(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
-		stage := s.RingEOF.GetStage()
-		return m.loadMetaData(stage, clientId)
+		processedStage := task.GetRingEOF().GetStage()
+		return m.loadMetaData(processedStage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", s)
@@ -513,26 +517,63 @@ func (m *Merger) loadMetaData(stage string, clientId string) error {
 	}
 }
 
-// func (m *Merger) deleteStage(clientId string, stage string) error {
-// 	log.Debugf("Deleting stage %s for client %s", stage, clientId)
+func (m *Merger) DeleteData(task *protocol.Task) error {
+	stage := task.GetStage()
+	clientId := task.GetClientId()
+	tableType := task.GetTableType()
 
-// 	if anStage, ok := m.partialResults[clientId]; ok {
-// 		switch stage {
-// 		case common.DELTA_STAGE_3:
-// 			anStage.Delta3.Data = nil
-// 		case common.ETA_STAGE_3:
-// 			anStage.Eta3.Data = nil
-// 		case common.KAPPA_STAGE_3:
-// 			anStage.Kappa3.Data = nil
-// 		case common.NU_STAGE_3:
-// 			anStage.Nu3Data.Data = nil
-// 		default:
-// 			log.Errorf("Invalid stage: %s", stage)
-// 			return fmt.Errorf("invalid stage: %s", stage)
-// 		}
-// 	}
-// 	return nil
-// }
+	switch stage.(type) {
+	case *protocol.Task_RingEOF:
+		processedStage := task.GetRingEOF().GetStage()
+		return m.DeleteStage(processedStage, clientId, tableType)
+
+	default:
+		return nil
+	}
+}
+
+func (m *Merger) DeleteStage(stage interface{}, clientId string, tableType string) error {
+	switch stage.(type) {
+	case *protocol.Task_Delta_3:
+		toDelete := m.partialResults[clientId].Delta3.IsReady
+		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.DELTA_STAGE_3, tableType, clientId, toDelete)
+
+	case *protocol.Task_Eta_3:
+		toDelete := m.partialResults[clientId].Eta3.IsReady
+		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.ETA_STAGE_3, tableType, clientId, toDelete)
+
+	case *protocol.Task_Kappa_3:
+		toDelete := m.partialResults[clientId].Kappa3.IsReady
+		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.KAPPA_STAGE_3, tableType, clientId, toDelete)
+
+	case *protocol.Task_Nu_3:
+		toDelete := m.partialResults[clientId].Nu3.IsReady
+		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.NU_STAGE_3, tableType, clientId, toDelete)
+
+	default:
+		return fmt.Errorf("invalid stage for deletion: %v", stage)
+
+	}
+}
+
+func (m *Merger) setToDelete(clientId string, stage string) error {
+	if _, ok := m.partialResults[clientId]; !ok {
+		return fmt.Errorf("client %s not found", clientId)
+	}
+	switch stage {
+	case common.DELTA_STAGE_3:
+		m.partialResults[clientId].Delta3.IsReady = true
+	case common.ETA_STAGE_3:
+		m.partialResults[clientId].Eta3.IsReady = true
+	case common.KAPPA_STAGE_3:
+		m.partialResults[clientId].Kappa3.IsReady = true
+	case common.NU_STAGE_3:
+		m.partialResults[clientId].Nu3.IsReady = true
+	default:
+		return fmt.Errorf("invalid stage: %s", stage)
+	}
+	return nil
+}
 
 // Implementing getTaskIdentifiers for Merger
 func (m *Merger) getTaskIdentifiers(clientId string, stage string) ([]model.TaskFragmentIdentifier, error) {

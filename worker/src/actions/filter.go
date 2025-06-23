@@ -332,9 +332,12 @@ func (f *Filter) Execute(task *protocol.Task) (common.Tasks, error) {
 	}
 }
 
-func (m *Filter) DownloadData(dirBase string) error {
+func (m *Filter) LoadData(dirBase string) error {
 	return nil
 }
-func (m *Filter) LoadData(task *protocol.Task) error {
+func (m *Filter) SaveData(task *protocol.Task) error {
+	return nil
+}
+func (m *Filter) DeleteData(task *protocol.Task) error {
 	return nil
 }

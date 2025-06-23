@@ -416,6 +416,10 @@ func (t *Topper) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 			log.Errorf("Failed to add results to next stage for stage %s: %s", data.GetStage(), err)
 			return nil
 		}
+		err := t.setToDelete(clientId, data.GetStage())
+		if err != nil {
+			log.Errorf("Failed to delete stage %s for client %s: %s", data.GetStage(), clientId, err)
+		}
 	}
 
 	return tasks
@@ -578,7 +582,7 @@ func (t *Topper) updateRingRound(clientId string, stage string, round uint32) {
 	}
 }
 
-func (m *Topper) DownloadData(dirBase string) error {
+func (m *Topper) LoadData(dirBase string) error {
 	var err error
 	m.partialResults, err = storage.LoadTopperPartialResultsFromDisk(dirBase)
 	if err != nil {
@@ -589,7 +593,7 @@ func (m *Topper) DownloadData(dirBase string) error {
 	return nil
 }
 
-func (t *Topper) LoadData(task *protocol.Task) error {
+func (t *Topper) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
 	//taskIdentifier := task.GetTaskIdentifier()
@@ -622,14 +626,13 @@ func (t *Topper) LoadData(task *protocol.Task) error {
 		return storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, keyFunc)
 
 	case *protocol.Task_OmegaEOF:
-		data := v.OmegaEOF.GetData()
-		stage := data.GetStage()
+		processedStage := task.GetOmegaEOF().GetData().GetStage()
 
-		return t.loadMetaData(stage, clientId)
+		return t.loadMetaData(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
-		stage := v.RingEOF.GetStage()
-		return t.loadMetaData(stage, clientId)
+		processedStage := task.GetRingEOF().GetStage()
+		return t.loadMetaData(processedStage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", v)
@@ -667,4 +670,57 @@ func (t *Topper) loadMetaData(stage string, clientId string) error {
 	default:
 		return fmt.Errorf("invalid stage for OmegaEOF: %s", stage)
 	}
+}
+
+func (t *Topper) DeleteData(task *protocol.Task) error {
+	stage := task.GetStage()
+	clientId := task.GetClientId()
+
+	switch stage.(type) {
+	case *protocol.Task_RingEOF:
+		processedStage := task.GetRingEOF().GetStage()
+		return t.deleteStage(processedStage, clientId, string(common.GENERAL_FOLDER_TYPE))
+
+	default:
+		return nil
+	}
+}
+
+func (t *Topper) deleteStage(stage interface{}, clientId string, tableType string) error {
+	switch stage.(type) {
+	case *protocol.Task_Epsilon:
+		toDelete := t.partialResults[clientId].EpsilonData.IsReady
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.EPSILON_STAGE, tableType, clientId, toDelete)
+
+	case *protocol.Task_Lambda:
+		toDelete := t.partialResults[clientId].LamdaData.IsReady
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.LAMBDA_STAGE, tableType, clientId, toDelete)
+
+	case *protocol.Task_Theta:
+		toDelete := t.partialResults[clientId].ThetaData.MaxPartialData.IsReady || t.partialResults[clientId].ThetaData.MinPartialData.IsReady
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.THETA_STAGE, tableType, clientId, toDelete)
+
+	default:
+		return fmt.Errorf("invalid stage for deletion: %v", stage)
+
+	}
+}
+
+func (t *Topper) setToDelete(clientId string, stage string) error {
+	if _, ok := t.partialResults[clientId]; !ok {
+		return fmt.Errorf("client %s not found", clientId)
+	}
+	switch stage {
+	case common.LAMBDA_STAGE:
+		t.partialResults[clientId].EpsilonData.IsReady = true
+	case common.EPSILON_STAGE:
+		t.partialResults[clientId].EpsilonData.IsReady = true
+	case common.THETA_STAGE:
+		t.partialResults[clientId].ThetaData.MaxPartialData.IsReady = true
+		t.partialResults[clientId].ThetaData.MinPartialData.IsReady = true
+
+	default:
+		return fmt.Errorf("invalid stage: %s", stage)
+	}
+	return nil
 }
