@@ -12,9 +12,10 @@ import (
 )
 
 func newJoinerTableData[T any](data T) *common.JoinerTableData[T] {
+
 	return &common.JoinerTableData[T]{
 		Data:          data,
-		TaskFragments: make(map[model.TaskFragmentIdentifier]struct{}),
+		TaskFragments: make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
 		Ready:         false,
 	}
 }
@@ -674,7 +675,9 @@ func processSmallTableJoinerStage[G any, S any](
 		return
 	}
 
-	partialData.TaskFragments[taskID] = struct{}{}
+	partialData.TaskFragments[taskID] = common.FragmentStatus{
+		Logged: false,
+	}
 
 	for _, item := range data {
 		id := identifierFunc(item)
@@ -702,7 +705,9 @@ func processBigTableJoinerStage[G any, B any](
 		return
 	}
 
-	partialData.TaskFragments[taskID] = struct{}{}
+	partialData.TaskFragments[taskID] = common.FragmentStatus{
+		Logged: false,
+	}
 
 	taskNumber := taskID.TaskNumber
 
@@ -771,7 +776,14 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
 	tableType := task.GetTableType()
 	clientId := task.GetClientId()
-	//taskIdentifier := task.GetTaskIdentifier()
+	taskIdentifier := task.GetTaskIdentifier()
+
+	taskID := model.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
 
 	switch s := stage.(type) {
 	case *protocol.Task_Iota:
@@ -780,7 +792,7 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 		switch tableType {
 		case model.SMALL_TABLE:
 			data := s.Iota.GetData()
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), IotaPartialData.SmallTable)
+			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), IotaPartialData.SmallTable, taskID)
 			if err != nil {
 				return fmt.Errorf("failed to save Iota small table data: %w", err)
 			}
@@ -791,7 +803,7 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 			return nil
 		case model.BIG_TABLE:
 			data := s.Iota.GetData()
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), IotaPartialData.BigTable)
+			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), IotaPartialData.BigTable, taskID)
 			if err != nil {
 				return fmt.Errorf("failed to save Iota big table data: %w", err)
 			}
@@ -808,7 +820,7 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 		switch tableType {
 		case model.SMALL_TABLE:
 			data := s.Zeta.GetData()
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), j.partialResults[clientId].ZetaData.SmallTable)
+			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), j.partialResults[clientId].ZetaData.SmallTable, taskID)
 			if err != nil {
 				return fmt.Errorf("failed to save Zeta small table data: %w", err)
 			}
@@ -819,7 +831,7 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 			return nil
 		case model.BIG_TABLE:
 			data := s.Zeta.GetData()
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), j.partialResults[clientId].ZetaData.BigTable)
+			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, data, common.FolderType(tableType), j.partialResults[clientId].ZetaData.BigTable, taskID)
 			if err != nil {
 				return fmt.Errorf("failed to save Zeta big table data: %w", err)
 			}

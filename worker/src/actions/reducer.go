@@ -593,21 +593,28 @@ func (r *Reducer) LoadData(dirBase string) error {
 func (r *Reducer) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
-	//taskIdentifier := task.GetTaskIdentifier()
+	taskIdentifier := task.GetTaskIdentifier()
+
+	taskID := model.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
 
 	switch s := stage.(type) {
 	case *protocol.Task_Delta_2:
 		// task identifier
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Delta2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Delta2, taskID)
 
 	case *protocol.Task_Eta_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Eta2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Eta2, taskID)
 
 	case *protocol.Task_Kappa_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Kappa2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Kappa2, taskID)
 
 	case *protocol.Task_Nu_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Nu2)
+		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Nu2, taskID)
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()

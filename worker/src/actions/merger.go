@@ -437,28 +437,33 @@ func (m *Merger) LoadData(dirBase string) error {
 }
 
 func (m *Merger) SaveData(task *protocol.Task) error {
+
 	stage := task.GetStage()
 	clientId := task.GetClientId()
-	//taskIdentifier := task.GetTaskIdentifier()
+	taskIdentifier := task.GetTaskIdentifier()
 
-	m.makePartialResults(clientId)
+	taskID := model.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
 
 	switch s := stage.(type) {
 	case *protocol.Task_Delta_3:
-		// task identifier
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3, taskID)
 
 	case *protocol.Task_Eta_3:
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Eta3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Eta3, taskID)
 
 	case *protocol.Task_Kappa_3:
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Kappa3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Kappa3, taskID)
 
 	case *protocol.Task_Nu_3:
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3)
+		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3, taskID)
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()

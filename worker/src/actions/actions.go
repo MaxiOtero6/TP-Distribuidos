@@ -16,7 +16,7 @@ var log = logging.MustGetLogger("log")
 func NewPartialData[T proto.Message]() *common.PartialData[T] {
 	return &common.PartialData[T]{
 		Data:           make(map[string]T),
-		TaskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
+		TaskFragments:  make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
 		OmegaProcessed: false,
 		RingRound:      0,
 		IsReady:        false,
@@ -138,7 +138,7 @@ func ProcessStage[T proto.Message](
 	}
 
 	// Mark task as processed
-	partial.TaskFragments[taskID] = struct{}{}
+	partial.TaskFragments[taskID] = common.FragmentStatus{Logged: false}
 
 	// Aggregate data
 	utils.MergeIntoMap(partial.Data, newItems, keySelector, merge)

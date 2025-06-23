@@ -31,7 +31,7 @@ func newTopperPartialData[K topkheap.Ordered, V any](top_k int, max bool) *commo
 
 	return &common.TopperPartialData[K, V]{
 		Heap:           heapInstance,
-		TaskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
+		TaskFragments:  make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
 		OmegaProcessed: false,
 		RingRound:      0,
 	}
@@ -548,7 +548,9 @@ func processTopperStage[K topkheap.Ordered, V proto.Message](
 	}
 
 	// Mark task as processed
-	partialData.TaskFragments[taskID] = struct{}{}
+	partialData.TaskFragments[taskID] = common.FragmentStatus{
+		Logged: false,
+	}
 
 	// Aggregate data
 	for _, item := range data {
@@ -596,22 +598,27 @@ func (m *Topper) LoadData(dirBase string) error {
 func (t *Topper) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
 	clientId := task.GetClientId()
-	//taskIdentifier := task.GetTaskIdentifier()
+	taskIdentifier := task.GetTaskIdentifier()
 
-	t.makePartialResults(clientId)
+	taskID := model.TaskFragmentIdentifier{
+		CreatorId:          taskIdentifier.GetCreatorId(),
+		TaskNumber:         taskIdentifier.GetTaskNumber(),
+		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
+		LastFragment:       taskIdentifier.GetLastFragment(),
+	}
 
 	switch v := stage.(type) {
 	case *protocol.Task_Epsilon:
 		keyFunc := func(input *protocol.Epsilon_Data) uint64 {
 			return input.GetTotalInvestment()
 		}
-		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].EpsilonData, keyFunc)
+		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].EpsilonData, taskID, keyFunc)
 
 	case *protocol.Task_Lambda:
 		keyFunc := func(input *protocol.Lambda_Data) uint64 {
 			return input.GetParticipations()
 		}
-		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].LamdaData, keyFunc)
+		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].LamdaData, taskID, keyFunc)
 
 	case *protocol.Task_Theta:
 		keyFunc := func(input *protocol.Theta_Data) float32 {
@@ -623,7 +630,7 @@ func (t *Topper) SaveData(task *protocol.Task) error {
 			t.partialResults[clientId].ThetaData.MinPartialData,
 		}
 
-		return storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, keyFunc)
+		return storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, taskID, keyFunc)
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
