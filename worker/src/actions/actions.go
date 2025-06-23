@@ -186,6 +186,11 @@ func ProcessStage[T proto.Message](
 		return
 	}
 
+	if partial.IsReady {
+		log.Debugf("Partial data is ready, skipping task %s", taskID)
+		return
+	}
+
 	// Mark task as processed
 	partial.TaskFragments[taskID] = common.FragmentStatus{Logged: false}
 

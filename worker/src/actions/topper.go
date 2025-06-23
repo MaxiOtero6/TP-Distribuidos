@@ -526,6 +526,11 @@ func processTopperStage[K topkheap.Ordered, V proto.Message](
 		return
 	}
 
+	if partialData.IsReady {
+		log.Debugf("Partial data is ready, skipping task %s", taskID)
+		return
+	}
+
 	// Mark task as processed
 	partialData.TaskFragments[taskID] = common.FragmentStatus{
 		Logged: false,

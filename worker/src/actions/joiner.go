@@ -674,6 +674,11 @@ func processSmallTableJoinerStage[G any, S any](
 		return
 	}
 
+	if partialData.IsReadyToDelete {
+		log.Infof("Task fragment %v is ready to delete for clientId: %s", taskID, clientId)
+		return
+	}
+
 	partialData.TaskFragments[taskID] = common.FragmentStatus{
 		Logged: false,
 	}
@@ -701,6 +706,11 @@ func processBigTableJoinerStage[G any, B any](
 
 	if _, exists := partialData.TaskFragments[taskID]; exists {
 		log.Infof("Task fragment %v already processed for clientId: %s", taskID, clientId)
+		return
+	}
+
+	if partialData.IsReadyToDelete {
+		log.Infof("Task fragment %v is ready to delete for clientId: %s", taskID, clientId)
 		return
 	}
 
