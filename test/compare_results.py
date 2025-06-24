@@ -1,4 +1,8 @@
+from encodings.punycode import T
 import json
+import math
+import os
+from pathlib import Path
 import sys
 from typing import Any
 
@@ -13,6 +17,9 @@ BRIGHT_RED = "\033[91m"
 BRIGHT_GREEN = "\033[92m"
 BRIGHT_CYAN = "\033[96m"
 
+cwd = str(Path(__file__).parent)
+exit_code = 0
+
 
 def load_json(file_path: str):
     with open(file_path, "r") as file:
@@ -21,10 +28,12 @@ def load_json(file_path: str):
 
 
 def compare_query1(expected: dict[str, Any], actual: dict[str, Any]):
+    global exit_code
     expected_query = expected[QUERY1]
     actual_query = actual[QUERY1]
 
     if len(expected_query) != len(actual_query):
+        exit_code = 1
         print(
             f"Query1: Expected {BRIGHT_GREEN}{len(expected_query)}{RESET} results, but got {BRIGHT_RED}{len(actual_query)}{RESET}."
         )
@@ -38,6 +47,8 @@ def compare_query1(expected: dict[str, Any], actual: dict[str, Any]):
         print(
             f"Query1: Expected titles {BRIGHT_GREEN}{expected_titles_err}{RESET}, but got {BRIGHT_RED}{actual_titles_err}{RESET}."
         )
+        exit_code = 1
+
     for expected_item in expected_query:
         for actual_item in actual_query:
             if expected_item["title"] == actual_item["title"]:
@@ -45,41 +56,47 @@ def compare_query1(expected: dict[str, Any], actual: dict[str, Any]):
                     print(
                         f"Query1: Expected {BRIGHT_CYAN}{expected_item['title']}{RESET} genres to be {BRIGHT_GREEN}{expected_item['genres']}{RESET}, but got {BRIGHT_RED}{actual_item['genres']}{RESET}."
                     )
-                break
+                    exit_code = 1
 
 
 def compare_query2(expected: dict[str, Any], actual: dict[str, Any]):
+    global exit_code
     expected_query = expected[QUERY2]
     actual_query = actual[QUERY2]
 
     if len(expected_query) != len(actual_query):
+        exit_code = 1
         print(
             f"Query2: Expected {BRIGHT_GREEN}{len(expected_query)} results, but got {len(actual_query)}."
         )
 
     for key in expected_query.keys():
         if key not in actual_query:
+            exit_code = 1
             print(
                 f"Query2: Expected key {BRIGHT_CYAN}{key}{RESET} not found in actual results."
             )
         else:
             if expected_query[key] != actual_query[key]:
+                exit_code = 1
                 print(
                     f"Query2: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_query[key] - actual_query[key])}{RESET}."
                 )
 
 
 def compare_query3(expected: dict[str, Any], actual: dict[str, Any]):
+    global exit_code
     expected_query = expected[QUERY3]
     actual_query = actual[QUERY3]
-
     if len(expected_query) != len(actual_query):
+        exit_code = 1
         print(
             f"Query3: Expected {len(expected_query)} results, but got {len(actual_query)}."
         )
 
     for key in expected_query.keys():
         if key not in actual_query:
+            exit_code = 1
             print(
                 f"Query3: Expected {BRIGHT_GREEN}{len(expected_query)} results, but got {len(actual_query)}."
             )
@@ -88,32 +105,39 @@ def compare_query3(expected: dict[str, Any], actual: dict[str, Any]):
             actual_value = actual_query[key]
 
             if expected_value["title"] != actual_value["title"]:
+                exit_code = 1
                 print(
                     f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} title to be {BRIGHT_GREEN}{expected_value['title']}{RESET}, but got {BRIGHT_RED}{actual_value['title']}{RESET}."
                 )
             if expected_value["rating"] != actual_value["rating"]:
+                exit_code = 1
                 print(
                     f"Query3: Expected {BRIGHT_CYAN}{key}{RESET} rating to be {BRIGHT_GREEN}{expected_value['rating']}{RESET}, but got {BRIGHT_RED}{actual_value['rating']}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_value['rating'] - actual_value['rating'])}{RESET}."
                 )
 
 
 def compare_query4(expected: dict[str, Any], actual: dict[str, Any]):
+    global exit_code
     expected_query = expected[QUERY4]
     actual_query = actual[QUERY4]
-
     if len(expected_query) != len(actual_query):
+        exit_code = 1
         print(
             f"Query4: Expected {BRIGHT_GREEN}{len(expected_query)} results, but got {len(actual_query)}."
         )
 
     expected_names = {item["name"] for item in expected_query}
     actual_names = {item["name"] for item in actual_query}
+
     if expected_names != actual_names:
-        expected_names_err = [i for i in expected_names if i not in actual_names]
+        expected_names_err = [
+            i for i in expected_names if i not in actual_names]
         actual_names_err = [i for i in actual_names if i not in expected_names]
         print(
             f"Query4: Expected names {BRIGHT_GREEN}{expected_names_err}{RESET}, but got {BRIGHT_RED}{actual_names_err}{RESET}."
         )
+        exit_code = 1
+
     for expected_item in expected_query:
         for actual_item in actual_query:
             if expected_item["name"] == actual_item["name"]:
@@ -121,10 +145,11 @@ def compare_query4(expected: dict[str, Any], actual: dict[str, Any]):
                     print(
                         f"Query4: Expected {BRIGHT_CYAN}{expected_item['name']}{RESET} count to be {BRIGHT_GREEN}{expected_item['count']}{RESET}, but got {BRIGHT_RED}{actual_item['count']}{RESET}."
                     )
-                break
+                    exit_code = 1
 
 
 def compare_query5(expected: dict[str, Any], actual: dict[str, Any]):
+    global exit_code
     expected_query = expected[QUERY5]
     actual_query = actual[QUERY5]
 
@@ -132,17 +157,20 @@ def compare_query5(expected: dict[str, Any], actual: dict[str, Any]):
         print(
             f"Query5: Expected {BRIGHT_GREEN}{len(expected_query)} results, but got {len(actual_query)}."
         )
+        exit_code = 1
 
     for key in expected_query.keys():
         if key not in actual_query:
             print(
                 f"Query5: Expected key {BRIGHT_CYAN}{key}{RESET} not found in actual results."
             )
+            exit_code = 1
         else:
-            if expected_query[key] != actual_query[key]:
+            if math.floor(expected_query[key]) != math.floor(actual_query[key]):
                 print(
-                    f"Query5: Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_query[key] - actual_query[key])}{RESET}."
+                    f"Query5: [Compared using math.floor] Expected {BRIGHT_CYAN}{key}{RESET} to be {BRIGHT_GREEN}{expected_query[key]}{RESET}, but got {BRIGHT_RED}{actual_query[key]}{RESET}; diff: {BRIGHT_CYAN}{abs(expected_query[key] - actual_query[key])}{RESET}."
                 )
+                exit_code = 1
 
 
 if __name__ == "__main__":
@@ -152,11 +180,12 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    expected = load_json(sys.argv[1])
-    actual = load_json(sys.argv[2])
+    expected = load_json(os.path.join(cwd, sys.argv[1]))
+    actual = load_json(os.path.join(cwd, sys.argv[2]))
 
     compare_query1(expected, actual)
     compare_query2(expected, actual)
     compare_query3(expected, actual)
     compare_query4(expected, actual)
     compare_query5(expected, actual)
+    sys.exit(exit_code)

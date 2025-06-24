@@ -521,6 +521,9 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 			iotaData.SmallTable.IsReadyToDelete = true
 			iotaData.BigTable.IsReadyToDelete = true
 		}
+
+		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
+		iotaData.BigTable.Ready = ready
 	}
 
 	return tasks

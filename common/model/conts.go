@@ -7,7 +7,7 @@ const RESULT_3_STAGE string = "result_3"
 const RESULT_4_STAGE string = "result_4"
 const RESULT_5_STAGE string = "result_5"
 
-// Table Types
+// EOF Types
 const SMALL_TABLE string = "small"
 const BIG_TABLE string = "big"
 const GENERAL string = "general"

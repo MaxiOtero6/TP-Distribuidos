@@ -32,3 +32,4 @@ docker-compose*.yml
 docker-compose*.yaml
 
 .venv
+.log

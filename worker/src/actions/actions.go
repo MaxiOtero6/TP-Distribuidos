@@ -180,14 +180,14 @@ func ProcessStage[T proto.Message](
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
-	if _, processed := partial.TaskFragments[taskID]; processed {
-		// Task already handled
-		log.Debugf("Task %s already processed, skipping", taskID)
+	if partial.IsReady {
+		log.Debugf("Partial data is ready, skipping task %s", taskID)
 		return
 	}
 
-	if partial.IsReady {
-		log.Debugf("Partial data is ready, skipping task %s", taskID)
+	if _, processed := partial.TaskFragments[taskID]; processed {
+		// Task already handled
+		log.Debugf("Task %s already processed, skipping", taskID)
 		return
 	}
 
