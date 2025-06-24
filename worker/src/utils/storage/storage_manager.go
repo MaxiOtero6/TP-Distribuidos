@@ -45,17 +45,32 @@ type OutputFile struct {
 }
 
 type MetadataFile struct {
+	Timestamp      string `json:"timestamp"`
+	Status         string `json:"status"`
+	OmegaProcessed bool   `json:"omega_processed"`
+	RingRound      uint32 `json:"ring_round"`
+	IsReady        bool   `json:"is_ready"`
+}
+
+type JoinerMetadataFile struct {
 	Timestamp           string `json:"timestamp"`
 	Status              string `json:"status"`
 	OmegaProcessed      bool   `json:"omega_processed"`
 	RingRound           uint32 `json:"ring_round"`
+	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
 	SendedTaskCount     int    `json:"sended_task_count"`
 	SmallTableTaskCount int    `json:"small_table_task_count"`
 	Ready               bool   `json:"ready"`
-	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
 }
 
 type MetaData struct {
+	OmegaProcessed bool   `json:"omega_processed"`
+	RingRound      uint32 `json:"ring_round"`
+	Ready          bool   `json:"ready"`
+	IsReady        bool   `json:"is_ready"`
+}
+
+type JoinerMetaData struct {
 	OmegaProcessed      bool   `json:"omega_processed"`
 	RingRound           uint32 `json:"ring_round"`
 	SendedTaskCount     int    `json:"sended_task_count"`
@@ -105,18 +120,18 @@ func decodeGeneralFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
 		return MetadataFile{}, err
 	}
 	return MetadataFile{
-		Timestamp:       temp.Timestamps,
-		Status:          temp.Status,
-		OmegaProcessed:  temp.OmegaProcessed,
-		RingRound:       temp.RingRound,
-		IsReadyToDelete: temp.IsReadyToDelete,
+		Timestamp:      temp.Timestamps,
+		Status:         temp.Status,
+		OmegaProcessed: temp.OmegaProcessed,
+		RingRound:      temp.RingRound,
+		IsReady:        temp.IsReadyToDelete,
 	}, nil
 }
 
-func decodeJoinerMetadataFromJson(jsonBytes []byte) (MetadataFile, error) {
-	var temp MetadataFile
+func decodeJoinerMetadataFromJson(jsonBytes []byte) (JoinerMetadataFile, error) {
+	var temp JoinerMetadataFile
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
-		return MetadataFile{}, err
+		return JoinerMetadataFile{}, err
 	}
 	return temp, nil
 }
@@ -198,15 +213,16 @@ func loadStageClientData[T proto.Message](
 	// Read metadata file
 	jsonMetadataBytes, err := os.ReadFile(finalMetadataFilePath)
 	if err != nil {
-		return zero, fmt.Errorf("error reading file %s: %w", finalMetadataFilePath, err)
+		log.Warningf("error reading metadata file %s: %v", finalMetadataFilePath, err)
 	}
+
 	metadata, err := decodeGeneralFromJsonMetadata(jsonMetadataBytes)
 	if err != nil {
 		return zero, err
 	}
 
-	if metadata.IsReadyToDelete {
-		err := TryDeletePartialData(dirPath, stage, string(fileType), clientId, metadata.IsReadyToDelete)
+	if metadata.IsReady {
+		err := TryDeletePartialData(dirPath, stage, string(fileType), clientId, metadata.IsReady)
 		if err != nil {
 			log.Errorf("error deleting partial data for stage %s, client %s: %v", stage, clientId, err)
 		}
@@ -216,7 +232,7 @@ func loadStageClientData[T proto.Message](
 		jsonDataBytes, err := os.ReadFile(finalDataFilePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Errorf("error reading file %s: %v", finalDataFilePath, err)
+				log.Warningf("error reading file %s: %v", finalDataFilePath, err)
 			} else {
 				return zero, fmt.Errorf("error reading file %s: %w", finalDataFilePath, err)
 			}
@@ -229,7 +245,7 @@ func loadStageClientData[T proto.Message](
 
 		taskFragments, err = readAndFilterTaskFragmentIdentifiersLogLiteral(dirPath, dataTimestamp)
 		if err != nil {
-			log.Errorf("error reading task fragments from log file: %w", err)
+			log.Warningf("error reading task fragments from log file: %w", err)
 			taskFragments = make(map[model.TaskFragmentIdentifier]common.FragmentStatus) // Si falla, inicializa vacío
 		}
 	}
@@ -243,7 +259,7 @@ func loadStageClientData[T proto.Message](
 	partial.TaskFragments = taskFragments
 	partial.OmegaProcessed = metadata.OmegaProcessed
 	partial.RingRound = metadata.RingRound
-	partial.IsReady = metadata.IsReadyToDelete
+	partial.IsReady = metadata.IsReady
 
 	return partial, nil
 }
@@ -261,7 +277,7 @@ func loadStageData[T proto.Message, R any](
 	stageDir := filepath.Join(dir, stage, string(fileType))
 	clientDirs, err := os.ReadDir(stageDir)
 	if err != nil {
-		log.Errorf("Error reading directory %s: %v", stageDir, err)
+		log.Warningf("Error reading directory %s: %v", stageDir, err)
 		return
 	}
 
@@ -272,7 +288,7 @@ func loadStageData[T proto.Message, R any](
 		clientId := clientEntry.Name()
 		data, err := loadStageClientData(dir, stage, fileType, clientId, newT)
 		if err != nil {
-			log.Errorf("Error loading data for stage %s, client %s: %v", stage, clientId, err)
+			log.Warningf("Error loading data for stage %s, client %s: %v", stage, clientId, err)
 			continue
 		}
 		if _, ok := partialResults[clientId]; !ok {
@@ -434,11 +450,6 @@ func LoadJoinerPartialResultsFromDisk(
 		return nil, fmt.Errorf("error loading ZETA joiner stage: %w", err)
 	}
 
-	log.Debugf("Loaded task fragments: %v", partialResults["test_client"].IotaData.BigTable.TaskFragments)
-	log.Debugf("Loaded task fragments: %v", partialResults["test_client"].IotaData.SmallTable.TaskFragments)
-	log.Debugf("Loaded task fragments: %v", partialResults["test_client"].ZetaData.BigTable.TaskFragments)
-	log.Debugf("Loaded task fragments: %v", partialResults["test_client"].ZetaData.SmallTable.TaskFragments)
-
 	return partialResults, nil
 
 }
@@ -464,7 +475,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		tableType common.FolderType,
 		decodeFn func([]byte) (any, string, error),
 		setTableFn func(stageData *common.JoinerStageData[S, B], table any),
-		setMetaFn func(stageData *common.JoinerStageData[S, B], meta MetadataFile),
+		setMetaFn func(stageData *common.JoinerStageData[S, B], meta JoinerMetadataFile),
 	) error {
 		dirTable := filepath.Join(dir, stage, string(tableType))
 		clients, err := os.ReadDir(dirTable)
@@ -488,7 +499,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 
 			jsonMeta, err := os.ReadFile(metadataPath)
 			if err != nil {
-				log.Errorf("Error reading metadata for client %s: %v", clientId, err)
+				log.Warningf("Error reading metadata for client %s: %v", clientId, err)
 				continue
 			}
 			metadata, err := decodeJoinerMetadataFromJson(jsonMeta)
@@ -570,7 +581,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		func(stageData *common.JoinerStageData[S, B], table any) {
 			stageData.SmallTable = table.(*common.JoinerTableData[common.SmallTableData[S]])
 		},
-		func(stageData *common.JoinerStageData[S, B], meta MetadataFile) {
+		func(stageData *common.JoinerStageData[S, B], meta JoinerMetadataFile) {
 			if stageData.SmallTable != nil {
 				stageData.SmallTable.OmegaProcessed = meta.OmegaProcessed
 				stageData.SmallTable.Ready = meta.Ready
@@ -591,7 +602,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		func(stageData *common.JoinerStageData[S, B], table any) {
 			stageData.BigTable = table.(*common.JoinerTableData[common.BigTableData[B]])
 		},
-		func(stageData *common.JoinerStageData[S, B], meta MetadataFile) {
+		func(stageData *common.JoinerStageData[S, B], meta JoinerMetadataFile) {
 			if stageData.BigTable != nil {
 				stageData.BigTable.OmegaProcessed = meta.OmegaProcessed
 				stageData.BigTable.Ready = meta.Ready
@@ -678,27 +689,24 @@ func DeletePartialResults(dir string, stage interface{}, tableType string, clien
 	return os.RemoveAll(dirPath)
 }
 
-func TryDeletePartialData(dir string, stage interface{}, folderType string, clientId string, isReadyToDelete bool) error {
+func TryDeletePartialData(dir string, stage string, folderType string, clientId string, isReadyToDelete bool) error {
 
 	if !isReadyToDelete {
 		log.Debugf("Skipping deletion of partial data for stage %s, folder type %s, client ID %s because isReadyToDelete is false", stage, folderType, clientId)
 		return nil
 	}
-	stringStage, err := getStageNameFromInterface(stage)
-	if err != nil {
-		return fmt.Errorf("error getting stage name: %w", err)
-	}
-	dirPath := filepath.Join(dir, stringStage, string(folderType), clientId)
+
+	dirPath := filepath.Join(dir, stage, folderType, clientId)
 	dataFilePath := filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 	logsFilePath := filepath.Join(dirPath, FINAL_LOG_FILE_NAME+LOG_FILE_EXTENSION)
 
-	err = os.Remove(dataFilePath)
+	err := os.Remove(dataFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Debugf("Data file %s does not exist, skipping deletion", dataFilePath)
 			return nil
 		}
-		return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stringStage, folderType, clientId, err)
+		return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stage, folderType, clientId, err)
 	}
 	err = os.Remove(logsFilePath)
 	if err != nil {
@@ -706,10 +714,10 @@ func TryDeletePartialData(dir string, stage interface{}, folderType string, clie
 			log.Debugf("Logs file %s does not exist, skipping deletion", logsFilePath)
 			return nil
 		}
-		return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stringStage, folderType, clientId, err)
+		return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stage, folderType, clientId, err)
 	}
 
-	log.Debugf("Deleted partial data and logs for stage %s, folder type %s, client ID %s", stringStage, folderType, clientId)
+	log.Debugf("Deleted partial data and logs for stage %s, folder type %s, client ID %s", stage, folderType, clientId)
 
 	return nil
 }
@@ -795,6 +803,7 @@ func SaveTopperMetadataToFile[K topkheap.Ordered, T proto.Message](dir string, c
 	metadata := MetaData{
 		OmegaProcessed: data.OmegaProcessed,
 		RingRound:      data.RingRound,
+		IsReady:        data.IsReady,
 	}
 
 	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
@@ -848,6 +857,7 @@ func SaveMetadataToFile[T proto.Message](dir string, clientId string, stage stri
 	metadata := MetaData{
 		OmegaProcessed: data.OmegaProcessed,
 		RingRound:      data.RingRound,
+		IsReady:        data.IsReady,
 	}
 
 	err = writeMetadataToTempFile(tempMetadataFilePath, metadata)
@@ -922,28 +932,30 @@ func SaveJoinerMetadataToFile[T proto.Message, B proto.Message](dir string, clie
 
 	tempMetadataFilePath := filepath.Join(dirPath, TEMPORARY_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
 
-	var metadata MetaData
+	var metadata JoinerMetaData
 
 	switch tableType {
 	case common.JOINER_SMALL_FOLDER_TYPE:
 		if data.SmallTable == nil {
 			return fmt.Errorf("small table data is nil for client %s in stage %s", clientId, stage)
 		}
-		metadata = MetaData{
+		metadata = JoinerMetaData{
 			OmegaProcessed:      data.SmallTable.OmegaProcessed,
 			Ready:               data.SmallTable.Ready,
 			SendedTaskCount:     data.SendedTaskCount,
 			SmallTableTaskCount: data.SmallTableTaskCount,
+			IsReadyToDelete:     data.SmallTable.IsReadyToDelete,
 		}
 	case common.JOINER_BIG_FOLDER_TYPE:
 		if data.BigTable == nil {
 			return fmt.Errorf("big table data is nil for client %s in stage %s", clientId, stage)
 		}
-		metadata = MetaData{
+		metadata = JoinerMetaData{
 			OmegaProcessed:  data.BigTable.OmegaProcessed,
 			Ready:           data.BigTable.Ready,
 			SendedTaskCount: data.SendedTaskCount,
 			RingRound:       data.RingRound,
+			IsReadyToDelete: data.BigTable.IsReadyToDelete,
 		}
 	}
 
@@ -961,23 +973,17 @@ func SaveJoinerMetadataToFile[T proto.Message, B proto.Message](dir string, clie
 func SaveJoinerTableToFile(
 	dir string,
 	clientId string,
-	stage interface{},
+	stage string,
 	tableType common.FolderType,
 	data any,
 	taskFragment model.TaskFragmentIdentifier,
 ) error {
 
-	stringStage, err := getStageNameFromInterface(stage)
-	log.Infof(stringStage)
-	if err != nil {
-		return fmt.Errorf("error getting stage name: %w", err)
-	}
-
-	err = saveJoinerDataToFile(dir, clientId, stringStage, string(tableType), data, taskFragment)
+	err := saveJoinerDataToFile(dir, clientId, stage, string(tableType), data, taskFragment)
 	if err != nil {
 		return fmt.Errorf("error saving joiner small table data to file: %w", err)
 	}
-	return commitPartialDataToFinal(dir, stringStage, tableType, clientId)
+	return commitPartialDataToFinal(dir, stage, tableType, clientId)
 }
 func saveJoinerDataToFile(
 	dir string,
@@ -1109,15 +1115,29 @@ func processJoinerBigTableData[B proto.Message](
 	return nil
 }
 
-func writeMetadataToTempFile(tempMetadataFilePath string, metadata MetaData) error {
-	outputMetadata := MetadataFile{
-		Timestamp:           time.Now().UTC().Format(time.RFC3339),
-		Status:              VALID_STATUS,
-		OmegaProcessed:      metadata.OmegaProcessed,
-		RingRound:           metadata.RingRound,
-		Ready:               metadata.Ready,
-		SendedTaskCount:     metadata.SendedTaskCount,
-		SmallTableTaskCount: metadata.SmallTableTaskCount,
+func writeMetadataToTempFile(tempMetadataFilePath string, metadata any) error {
+	var outputMetadata any
+	switch m := metadata.(type) {
+	case MetaData:
+		outputMetadata = MetadataFile{
+			Timestamp:      time.Now().UTC().Format(time.RFC3339),
+			Status:         VALID_STATUS,
+			IsReady:        m.IsReady,
+			OmegaProcessed: m.OmegaProcessed,
+		}
+	case JoinerMetaData:
+		outputMetadata = JoinerMetadataFile{
+			Timestamp:           time.Now().UTC().Format(time.RFC3339),
+			Status:              VALID_STATUS,
+			IsReadyToDelete:     m.IsReadyToDelete,
+			OmegaProcessed:      m.OmegaProcessed,
+			RingRound:           m.RingRound,
+			Ready:               m.Ready,
+			SendedTaskCount:     m.SendedTaskCount,
+			SmallTableTaskCount: m.SmallTableTaskCount,
+		}
+	default:
+		return fmt.Errorf("unsupported metadata type: %T", metadata)
 	}
 
 	err := writeToTempFile(tempMetadataFilePath, outputMetadata)
@@ -1302,7 +1322,6 @@ func appendTaskFragmentIdentifiersLogLiteral(dir string, clientId string, stage 
 	if err != nil {
 		return fmt.Errorf("error preparing line to append to file: %w", err)
 	}
-	log.Infof("WRITE LOG LINE: '%s' (len=%d)", finalLine, len(finalLine))
 
 	if err := appendLineToFile(logFilePath, finalLine); err != nil {
 		return fmt.Errorf("error appending task fragment identifiers log literal: %w", err)
@@ -1339,8 +1358,6 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 	dataTimestamp string,
 ) (map[model.TaskFragmentIdentifier]common.FragmentStatus, error) {
 
-	log.Infof("TIMESTAMP IN DATA:%s", dataTimestamp)
-
 	if dataTimestamp == "" {
 		return nil, fmt.Errorf("data timestamp is empty")
 	}
@@ -1350,7 +1367,7 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 
 	file, err := os.Open(logFilePath)
 	if err != nil {
-		return make(map[model.TaskFragmentIdentifier]common.FragmentStatus), nil // Si no existe, retorna mapa vacío
+		return make(map[model.TaskFragmentIdentifier]common.FragmentStatus), nil
 	}
 	defer file.Close()
 
@@ -1365,7 +1382,7 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 		return nil, fmt.Errorf("invalid cutoff timestamp: %w", err)
 	}
 
-	fragments := make(map[model.TaskFragmentIdentifier]common.FragmentStatus) // Inicializar aquí
+	fragments := make(map[model.TaskFragmentIdentifier]common.FragmentStatus)
 	scanner := bufio.NewScanner(file)
 	stopProcessing := false
 
@@ -1374,7 +1391,7 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 		if stopProcessing {
 			continue
 		}
-		// Extraer largo y contenido
+		// Extract length and content
 		spaceIdx := strings.Index(line, " ")
 		if spaceIdx == -1 {
 			log.Warningf("Malformed log line: %s", line)
@@ -1391,7 +1408,7 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 			log.Warningf("Length mismatch: got %d, expected %d, line: %s", len(content), expectedLen, line)
 			continue
 		}
-		// Parse timestamp (hasta el primer espacio)
+		// Parse timestamp and content
 		spaceIdx2 := strings.Index(content, " ")
 		if spaceIdx2 == -1 {
 			continue
@@ -1401,12 +1418,12 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 		if err != nil {
 			continue
 		}
-		// Compare timestamp
+
 		if timestamp.After(cutoffTimestamp) {
 			stopProcessing = true
 			continue
 		}
-		// Parse fragments JSON
+
 		jsonStr := content[spaceIdx2+1:]
 		var frag model.TaskFragmentIdentifier
 		if err := json.Unmarshal([]byte(jsonStr), &frag); err != nil {
