@@ -57,7 +57,8 @@ type JoinerMetadataFile struct {
 	Status              string `json:"status"`
 	OmegaProcessed      bool   `json:"omega_processed"`
 	RingRound           uint32 `json:"ring_round"`
-	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
+	SmallReadyToDelete  bool   `json:"small_ready_to_delete"`
+	BigReadyToDelete    bool   `json:"big_ready_to_delete"`
 	SendedTaskCount     int    `json:"sended_task_count"`
 	SmallTableTaskCount int    `json:"small_table_task_count"`
 	Ready               bool   `json:"ready"`
@@ -76,12 +77,15 @@ type JoinerMetaData struct {
 	SendedTaskCount     int    `json:"sended_task_count"`
 	SmallTableTaskCount int    `json:"small_table_task_count"`
 	Ready               bool   `json:"ready"`
-	IsReadyToDelete     bool   `json:"is_ready_to_delete"`
+	SmallReadyToDelete  bool   `json:"small_ready_to_delete"`
+	BigReadyToDelete    bool   `json:"big_ready_to_delete"`
 }
 
 type JoinerMetaTemp struct {
-	SendedTaskCount int
-	Timestamp       string
+	Timestamp          string
+	SendedTaskCount    int
+	SmallReadyToDelete bool
+	BigReadyToDelete   bool
 }
 
 // Generic loader for PartialData[T] using protojson
@@ -511,14 +515,22 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 			// Actualiza metaTemp
 			m := metaTemp[clientId]
 			if tableType == common.JOINER_SMALL_FOLDER_TYPE {
-				m.Small = JoinerMetaTemp{SendedTaskCount: metadata.SendedTaskCount, Timestamp: metadata.Timestamp}
+				m.Small = JoinerMetaTemp{SendedTaskCount: metadata.SendedTaskCount, Timestamp: metadata.Timestamp, SmallReadyToDelete: metadata.SmallReadyToDelete, BigReadyToDelete: metadata.BigReadyToDelete}
 			} else {
-				m.Big = JoinerMetaTemp{SendedTaskCount: metadata.SendedTaskCount, Timestamp: metadata.Timestamp}
+				m.Big = JoinerMetaTemp{SendedTaskCount: metadata.SendedTaskCount, Timestamp: metadata.Timestamp, SmallReadyToDelete: metadata.SmallReadyToDelete, BigReadyToDelete: metadata.BigReadyToDelete}
 			}
 			metaTemp[clientId] = m
 
-			if metadata.IsReadyToDelete {
-				err := TryDeletePartialData(dir, stage, string(tableType), clientId, metadata.IsReadyToDelete)
+			if metadata.SmallReadyToDelete {
+				err := TryDeletePartialData(dir, stage, string(tableType), clientId, metadata.SmallReadyToDelete)
+				if err != nil {
+					log.Errorf("error deleting partial data for stage %s, client %s: %v", stage, clientId, err)
+				}
+				continue
+			}
+
+			if metadata.BigReadyToDelete {
+				err := TryDeletePartialData(dir, stage, string(tableType), clientId, metadata.BigReadyToDelete)
 				if err != nil {
 					log.Errorf("error deleting partial data for stage %s, client %s: %v", stage, clientId, err)
 				}
@@ -585,7 +597,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 			if stageData.SmallTable != nil {
 				stageData.SmallTable.OmegaProcessed = meta.OmegaProcessed
 				stageData.SmallTable.Ready = meta.Ready
-				stageData.SmallTable.IsReadyToDelete = meta.IsReadyToDelete
+				stageData.SmallTable.IsReadyToDelete = meta.SmallReadyToDelete
 				stageData.SmallTableTaskCount = meta.SmallTableTaskCount
 			}
 		},
@@ -606,7 +618,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 			if stageData.BigTable != nil {
 				stageData.BigTable.OmegaProcessed = meta.OmegaProcessed
 				stageData.BigTable.Ready = meta.Ready
-				stageData.BigTable.IsReadyToDelete = meta.IsReadyToDelete
+				stageData.BigTable.IsReadyToDelete = meta.BigReadyToDelete
 				stageData.RingRound = meta.RingRound
 
 			}
@@ -622,8 +634,12 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 		stageData := getStageData(partialResults[clientId])
 		if tBig.After(tSmall) {
 			stageData.SendedTaskCount = metas.Big.SendedTaskCount
+			stageData.BigTable.Ready = metas.Big.BigReadyToDelete
+			stageData.SmallTable.Ready = metas.Big.SmallReadyToDelete
 		} else {
 			stageData.SendedTaskCount = metas.Small.SendedTaskCount
+			stageData.BigTable.Ready = metas.Small.BigReadyToDelete
+			stageData.SmallTable.Ready = metas.Small.SmallReadyToDelete
 		}
 	}
 	return nil
@@ -944,18 +960,20 @@ func SaveJoinerMetadataToFile[T proto.Message, B proto.Message](dir string, clie
 			Ready:               data.SmallTable.Ready,
 			SendedTaskCount:     data.SendedTaskCount,
 			SmallTableTaskCount: data.SmallTableTaskCount,
-			IsReadyToDelete:     data.SmallTable.IsReadyToDelete,
+			SmallReadyToDelete:  data.SmallTable.IsReadyToDelete,
+			BigReadyToDelete:    data.BigTable.IsReadyToDelete,
 		}
 	case common.JOINER_BIG_FOLDER_TYPE:
 		if data.BigTable == nil {
 			return fmt.Errorf("big table data is nil for client %s in stage %s", clientId, stage)
 		}
 		metadata = JoinerMetaData{
-			OmegaProcessed:  data.BigTable.OmegaProcessed,
-			Ready:           data.BigTable.Ready,
-			SendedTaskCount: data.SendedTaskCount,
-			RingRound:       data.RingRound,
-			IsReadyToDelete: data.BigTable.IsReadyToDelete,
+			OmegaProcessed:     data.BigTable.OmegaProcessed,
+			Ready:              data.BigTable.Ready,
+			SendedTaskCount:    data.SendedTaskCount,
+			RingRound:          data.RingRound,
+			SmallReadyToDelete: data.SmallTable.IsReadyToDelete,
+			BigReadyToDelete:   data.BigTable.IsReadyToDelete,
 		}
 	}
 
@@ -1129,7 +1147,8 @@ func writeMetadataToTempFile(tempMetadataFilePath string, metadata any) error {
 		outputMetadata = JoinerMetadataFile{
 			Timestamp:           time.Now().UTC().Format(time.RFC3339),
 			Status:              VALID_STATUS,
-			IsReadyToDelete:     m.IsReadyToDelete,
+			BigReadyToDelete:    m.BigReadyToDelete,
+			SmallReadyToDelete:  m.SmallReadyToDelete,
 			OmegaProcessed:      m.OmegaProcessed,
 			RingRound:           m.RingRound,
 			Ready:               m.Ready,
