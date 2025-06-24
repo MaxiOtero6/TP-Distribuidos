@@ -98,10 +98,6 @@ func (t *Topper) epsilonStage(data []*protocol.Epsilon_Data, clientId string, ta
 		data,
 		taskIdentifier,
 		valueFunc,
-		t.infraConfig.GetDirectory(),
-		common.EPSILON_STAGE,
-		common.TYPE_MAX,
-		clientId,
 	)
 
 	return nil
@@ -125,10 +121,6 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string, taskId
 		data,
 		taskIdentifier,
 		minValueFunc,
-		t.infraConfig.GetDirectory(),
-		common.THETA_STAGE,
-		common.TYPE_MIN,
-		clientId,
 	)
 
 	processTopperStage(
@@ -136,10 +128,6 @@ func (t *Topper) thetaStage(data []*protocol.Theta_Data, clientId string, taskId
 		data,
 		taskIdentifier,
 		maxValueFunc,
-		t.infraConfig.GetDirectory(),
-		common.THETA_STAGE,
-		common.TYPE_MAX,
-		clientId,
 	)
 
 	return nil
@@ -157,10 +145,6 @@ func (t *Topper) lambdaStage(data []*protocol.Lambda_Data, clientId string, task
 		data,
 		taskIdentifier,
 		valueFunc,
-		t.infraConfig.GetDirectory(),
-		common.LAMBDA_STAGE,
-		common.TYPE_MAX,
-		clientId,
 	)
 
 	return nil
@@ -510,10 +494,6 @@ func processTopperStage[K topkheap.Ordered, V proto.Message](
 	data []V,
 	taskIdentifier *protocol.TaskIdentifier,
 	valueFunc func(input V) K,
-	dir string,
-	stage string,
-	heapType string,
-	clientId string,
 ) {
 	taskID := model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
@@ -677,19 +657,19 @@ func (t *Topper) DeleteData(task *protocol.Task) error {
 	}
 }
 
-func (t *Topper) deleteStage(stage interface{}, clientId string, tableType string) error {
-	switch stage.(type) {
-	case *protocol.Task_Epsilon:
+func (t *Topper) deleteStage(stage string, clientId string, tableType string) error {
+	switch stage {
+	case common.EPSILON_STAGE:
 		toDelete := t.partialResults[clientId].EpsilonData.IsReady
-		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.EPSILON_STAGE, tableType, clientId, toDelete)
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), stage, tableType, clientId, toDelete)
 
-	case *protocol.Task_Lambda:
+	case common.LAMBDA_STAGE:
 		toDelete := t.partialResults[clientId].LamdaData.IsReady
-		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.LAMBDA_STAGE, tableType, clientId, toDelete)
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), stage, tableType, clientId, toDelete)
 
-	case *protocol.Task_Theta:
+	case common.THETA_STAGE:
 		toDelete := t.partialResults[clientId].ThetaData.MaxPartialData.IsReady || t.partialResults[clientId].ThetaData.MinPartialData.IsReady
-		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), common.THETA_STAGE, tableType, clientId, toDelete)
+		return storage.TryDeletePartialData(t.infraConfig.GetDirectory(), stage, tableType, clientId, toDelete)
 
 	default:
 		return fmt.Errorf("invalid stage for deletion: %v", stage)

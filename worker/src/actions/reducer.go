@@ -684,9 +684,12 @@ func (r *Reducer) DeleteData(task *protocol.Task) error {
 	clientId := task.GetClientId()
 	tableType := task.GetTableType()
 
+	log.Debugf("Deleting data for clientId: %s, stage: %s, tableType: %s", clientId, stage, tableType)
+
 	switch stage.(type) {
 	case *protocol.Task_RingEOF:
 		processedStage := task.GetRingEOF().GetStage()
+		log.Debugf("DELETE OF RING for clientId: %s, stage: %s, tableType: %s", clientId, processedStage, tableType)
 		return r.deleteStage(processedStage, clientId, tableType)
 
 	default:
@@ -694,21 +697,22 @@ func (r *Reducer) DeleteData(task *protocol.Task) error {
 	}
 }
 
-func (r *Reducer) deleteStage(stage interface{}, clientId string, tableType string) error {
-	switch stage.(type) {
-	case *protocol.Task_Delta_2:
+func (r *Reducer) deleteStage(stage string, clientId string, tableType string) error {
+	switch stage {
+	case common.DELTA_STAGE_2:
 		toDelete := r.partialResults[clientId].Delta2.IsReady
+		log.Debugf("DELETE OF DELTA for clientId: %s, stage: %s, tableType: %s", clientId, stage, tableType)
 		return storage.TryDeletePartialData(r.infraConfig.GetDirectory(), common.DELTA_STAGE_2, tableType, clientId, toDelete)
 
-	case *protocol.Task_Eta_2:
+	case common.ETA_STAGE_2:
 		toDelete := r.partialResults[clientId].Eta2.IsReady
 		return storage.TryDeletePartialData(r.infraConfig.GetDirectory(), common.ETA_STAGE_2, tableType, clientId, toDelete)
 
-	case *protocol.Task_Kappa_2:
+	case common.KAPPA_STAGE_2:
 		toDelete := r.partialResults[clientId].Kappa2.IsReady
 		return storage.TryDeletePartialData(r.infraConfig.GetDirectory(), common.KAPPA_STAGE_2, tableType, clientId, toDelete)
 
-	case *protocol.Task_Nu_2:
+	case common.NU_STAGE_2:
 		toDelete := r.partialResults[clientId].Nu2.IsReady
 		return storage.TryDeletePartialData(r.infraConfig.GetDirectory(), common.NU_STAGE_2, tableType, clientId, toDelete)
 

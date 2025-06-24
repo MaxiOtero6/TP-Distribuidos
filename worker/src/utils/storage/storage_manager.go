@@ -67,7 +67,6 @@ type JoinerMetadataFile struct {
 type MetaData struct {
 	OmegaProcessed bool   `json:"omega_processed"`
 	RingRound      uint32 `json:"ring_round"`
-	Ready          bool   `json:"ready"`
 	IsReady        bool   `json:"is_ready"`
 }
 
@@ -1142,6 +1141,7 @@ func writeMetadataToTempFile(tempMetadataFilePath string, metadata any) error {
 			Status:         VALID_STATUS,
 			IsReady:        m.IsReady,
 			OmegaProcessed: m.OmegaProcessed,
+			RingRound:      m.RingRound,
 		}
 	case JoinerMetaData:
 		outputMetadata = JoinerMetadataFile{

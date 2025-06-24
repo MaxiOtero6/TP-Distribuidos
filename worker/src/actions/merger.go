@@ -367,6 +367,7 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 	ready := m.eofHandler.HandleRingEOF(tasks, data, clientId, taskIdentifiers, taskCount)
 
 	if ready && taskCount > 0 {
+		log.Warningf("ENTRE A READY EN STAGE %s for client %s", stage, clientId)
 		err = m.addResultsToNextStage(tasks, stage, clientId)
 		if err != nil {
 			log.Errorf("Failed to add results to next stage for stage %s: %s", stage, err)
@@ -374,7 +375,7 @@ func (m *Merger) ringEOFStage(data *protocol.RingEOF, clientId string) common.Ta
 		}
 		err := m.setToDelete(clientId, data.GetStage())
 		if err != nil {
-			log.Errorf("Failed to delete stage %s for client %s: %s", data.GetStage(), clientId, err)
+			log.Errorf("Failed to set delete for stage %s for client %s: %s", data.GetStage(), clientId, err)
 		}
 	}
 
@@ -460,11 +461,12 @@ func (m *Merger) SaveData(task *protocol.Task) error {
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
-		return m.loadMetaData(processedStage, clientId)
+		return m.saveMetaData(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
+		log.Debugf("PRUEBA DE ORDEN, GUARDO RING EOF PARA EL STAGE %s", task.GetRingEOF().GetStage())
 		processedStage := task.GetRingEOF().GetStage()
-		return m.loadMetaData(processedStage, clientId)
+		return m.saveMetaData(processedStage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", s)
@@ -472,10 +474,11 @@ func (m *Merger) SaveData(task *protocol.Task) error {
 
 }
 
-func (m *Merger) loadMetaData(stage string, clientId string) error {
+func (m *Merger) saveMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_3:
 		partialData := m.partialResults[clientId].Delta3
+		log.Debugf("PRUEBA DE ORDEN, GUARDO DELTA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -485,6 +488,7 @@ func (m *Merger) loadMetaData(stage string, clientId string) error {
 		)
 	case common.ETA_STAGE_3:
 		partialData := m.partialResults[clientId].Eta3
+		log.Debugf("PRUEBA DE ORDEN, GUARDO ETA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -494,6 +498,7 @@ func (m *Merger) loadMetaData(stage string, clientId string) error {
 		)
 	case common.KAPPA_STAGE_3:
 		partialData := m.partialResults[clientId].Kappa3
+		log.Debugf("PRUEBA DE ORDEN, GUARDO KAPPA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -503,6 +508,7 @@ func (m *Merger) loadMetaData(stage string, clientId string) error {
 		)
 	case common.NU_STAGE_3:
 		partialData := m.partialResults[clientId].Nu3
+		log.Debugf("PRUEBA DE ORDEN, GUARDO NU 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -530,21 +536,22 @@ func (m *Merger) DeleteData(task *protocol.Task) error {
 	}
 }
 
-func (m *Merger) DeleteStage(stage interface{}, clientId string, tableType string) error {
-	switch stage.(type) {
-	case *protocol.Task_Delta_3:
+func (m *Merger) DeleteStage(stage string, clientId string, tableType string) error {
+
+	switch stage {
+	case common.DELTA_STAGE_3:
 		toDelete := m.partialResults[clientId].Delta3.IsReady
 		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.DELTA_STAGE_3, tableType, clientId, toDelete)
 
-	case *protocol.Task_Eta_3:
+	case common.ETA_STAGE_3:
 		toDelete := m.partialResults[clientId].Eta3.IsReady
 		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.ETA_STAGE_3, tableType, clientId, toDelete)
 
-	case *protocol.Task_Kappa_3:
+	case common.KAPPA_STAGE_3:
 		toDelete := m.partialResults[clientId].Kappa3.IsReady
 		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.KAPPA_STAGE_3, tableType, clientId, toDelete)
 
-	case *protocol.Task_Nu_3:
+	case common.NU_STAGE_3:
 		toDelete := m.partialResults[clientId].Nu3.IsReady
 		return storage.TryDeletePartialData(m.infraConfig.GetDirectory(), common.NU_STAGE_3, tableType, clientId, toDelete)
 
