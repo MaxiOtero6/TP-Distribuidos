@@ -20,7 +20,7 @@ const CLEANUP_INTERVAL = 10 * time.Minute
 
 var log = logging.MustGetLogger("log")
 
-func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data interface{}) error {
+func SaveDataToFile(dir string, clientId string, stage string, sourceType string, data any) error {
 	err := os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)

@@ -8,6 +8,7 @@ consts:
   topExchange: "topExchange"
   resultExchange: "resultExchange"
   eofExchange: "eofExchange"
+  parkingEofExchange: "parkingEofExchange"
   controlExchange: "controlExchange"
   healthExchange: "healthExchange"
   broadcastId: ""
@@ -18,7 +19,7 @@ consts:
 
   leaderRK: "leader"
 
-  clientQueueTTL: "60000"
+  clientQueueTTL: "3600000"
 
 rabbitmq:
   SERVER:
@@ -121,7 +122,7 @@ rabbitmq:
 
       reduceExchange:
         name: "reduceExchange"
-        kind: "fanout"
+        kind: "direct"
 
       eofExchange:
         name: "eofExchange"
@@ -154,6 +155,10 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      parkingEofExchange:
+        name: "parkingEofExchange"
+        kind: "direct"
+
       controlExchange:
         name: "controlExchange"
         kind: "direct"
@@ -171,7 +176,7 @@ rabbitmq:
     exchanges:
       reduceExchange:
         name: "reduceExchange"
-        kind: "fanout"
+        kind: "direct"
 
       mergeExchange:
         name: "mergeExchange"
@@ -181,18 +186,22 @@ rabbitmq:
         name: "eofExchange"
         kind: "direct"
 
+      parkingEofExchange:
+        name: "parkingEofExchange"
+        kind: "direct"
+
       controlExchange:
         name: "controlExchange"
         kind: "direct"
 
     queues:
       reduceQueue:
-        name: "reduceQueue"
+        name: ""
 
     binds:
       reduceQueue:
         exchange: "reduceExchange"
-        queue: "reduceQueue"
+        queue: ""
 
   MERGER:
     exchanges:
@@ -210,6 +219,10 @@ rabbitmq:
 
       eofExchange:
         name: "eofExchange"
+        kind: "direct"
+
+      parkingEofExchange:
+        name: "parkingEofExchange"
         kind: "direct"
 
       controlExchange:
@@ -237,6 +250,10 @@ rabbitmq:
 
       eofExchange:
         name: "eofExchange"
+        kind: "direct"
+
+      parkingEofExchange:
+        name: "parkingEofExchange"
         kind: "direct"
 
       controlExchange:

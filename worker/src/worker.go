@@ -56,10 +56,6 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 // and sets the consume channel to the queue specified in the bind
 // The workerId is used as routingKey for the bind
 func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]string, binds []map[string]string) {
-	if len(binds) != 3 {
-		log.Panicf("For workers is expected to load one bind from the config file (workerQueue + eof + control), got %d", len(binds))
-	}
-
 	w.rabbitMQ.InitConfig(exchanges, queues, binds, w.WorkerId)
 	w.consumeChan = w.rabbitMQ.Consume(binds[0]["queue"])
 	w.eofChan = w.rabbitMQ.Consume(binds[1]["queue"])
@@ -73,14 +69,7 @@ func (w *Worker) InitConfig(exchanges []map[string]string, queues []map[string]s
 }
 
 // Run starts the worker and listens for messages on the consume channel
-// It unmarshals the task from the message body and executes it using the action struct
-// It also sends the subTasks to the RabbitMQ for each exchange and routing key
-// If the task fails to unmarshal or execute, it logs the error and continues to the next message
-// It also acknowledges the message after processing it
-// The worker will run until it receives a signal on the done channel
-// After that, it will close the RabbitMQ connection
-// and exit
-// It panics if the consume channel is nil
+// EOF messages are processed with priority over regular task messages
 func (w *Worker) Run() {
 	if w.consumeChan == nil || w.eofChan == nil {
 		log.Panicf("Consume channel is nil, did you call InitConfig?")
@@ -97,14 +86,12 @@ outer:
 		case <-w.done:
 			log.Infof("Worker %s received SIGTERM", w.WorkerId)
 			break outer
-
 		case message, ok := <-w.eofChan:
 			if !ok {
 				log.Warningf("Worker %s eof consume channel closed", w.WorkerId)
 				break outer
 			}
 			w.handleMessage(&message)
-
 		case message, ok := <-w.consumeChan:
 			if !ok {
 				log.Warningf("Worker %s consume channel closed", w.WorkerId)
@@ -135,6 +122,9 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 		return
 	}
 
+	log.Debugf("Task %T recived with a TID of %s",
+		task.GetStage(), task.GetTaskIdentifier())
+
 	subTasks, err := w.action.Execute(task)
 
 	if err != nil {
@@ -162,17 +152,13 @@ func (w *Worker) sendSubTasks(subTasks common.Tasks) {
 		}
 
 		w.rabbitMQ.Publish(exchange, routingKey, taskRaw)
-		log.Debugf("Task %T sent to exchange '%s' with routing key '%s'", task.GetStage(), exchange, routingKey)
+		log.Debugf("Task %T sent to exchange '%s' with routing key '%s' with a TID of %s",
+			task.GetStage(), exchange, routingKey, task.GetTaskIdentifier())
 	}
 
-	for exchange, stages := range subTasks {
-		for _, stage := range stages {
-			for routingKey, task := range stage {
-				if task.GetRingEOF() != nil || task.GetOmegaEOF() != nil {
-					defer sendTask(exchange, routingKey, task)
-					continue
-				}
-
+	for exchange, routingKeys := range subTasks {
+		for routingKey, tasks := range routingKeys {
+			for _, task := range tasks {
 				sendTask(exchange, routingKey, task)
 			}
 		}

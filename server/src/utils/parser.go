@@ -160,8 +160,15 @@ func ParseRating(fields []string) []*model.Rating {
 		return []*model.Rating{}
 	}
 
+	actorId := fields[0]
+
+	if len(actorId) == 0 {
+		return []*model.Rating{}
+	}
+
 	return []*model.Rating{
 		{
+			UserId:  actorId,
 			MovieId: movieId,
 			Rating:  float32(rating),
 		},

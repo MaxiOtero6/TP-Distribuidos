@@ -37,6 +37,7 @@ type RabbitConfig struct {
 	EofExchange        string
 	BroadcastID        string
 	EofBroadcastRK     string
+	ParkingEOFExchange string
 	ControlExchange    string
 	ControlBroadcastRK string
 	LeaderRK           string
@@ -193,6 +194,10 @@ func (i *InfraConfig) GetWorkerDirectory(workerType string, workerID string) str
 
 func (i *InfraConfig) GetDirectory() string {
 	return i.volumeBaseDir
+}
+
+func (i *InfraConfig) GetParkingEOFExchange() string {
+	return i.rabbit.ParkingEOFExchange
 }
 
 func (i *InfraConfig) GetClientQueueTTL() string {
