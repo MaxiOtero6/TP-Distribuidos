@@ -180,6 +180,11 @@ func ProcessStage[T proto.Message](
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
+	if partial == nil {
+		log.Debugf("Partial data is nil, creating new partial data for task %s",
+			taskID)
+		partial = NewPartialData[T]()
+	}
 	if partial.IsReady {
 		log.Debugf("Partial data is ready, skipping task %s", taskID)
 		return

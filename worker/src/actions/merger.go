@@ -445,26 +445,55 @@ func (m *Merger) SaveData(task *protocol.Task) error {
 
 	switch s := stage.(type) {
 	case *protocol.Task_Delta_3:
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3, taskID)
+		err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Delta3, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Delta 3 data: %w", err)
+		}
+
+		m.partialResults[clientId].Delta3.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Eta_3:
+		err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Eta3, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Eta 3 data: %w", err)
+		}
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Eta3, taskID)
+		m.partialResults[clientId].Eta3.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Kappa_3:
+		err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Kappa3, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Kappa 3 data: %w", err)
+		}
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Kappa3, taskID)
-
+		m.partialResults[clientId].Kappa3.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 	case *protocol.Task_Nu_3:
+		err := storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Nu 3 data: %w", err)
+		}
 
-		return storage.SaveDataToFile(m.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, m.partialResults[clientId].Nu3, taskID)
+		m.partialResults[clientId].Nu3.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
+		log.Debugf("SAVE OMEGA EOF FOR STAGE %s AND CLIENT %s", processedStage, clientId)
 		return m.saveMetaData(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
-		log.Debugf("PRUEBA DE ORDEN, GUARDO RING EOF PARA EL STAGE %s", task.GetRingEOF().GetStage())
+		log.Debugf("SAVE RING EOF FOR STAGE %s AND CLIENT %s", task.GetRingEOF().GetStage(), clientId)
 		processedStage := task.GetRingEOF().GetStage()
 		return m.saveMetaData(processedStage, clientId)
 
@@ -478,7 +507,8 @@ func (m *Merger) saveMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_3:
 		partialData := m.partialResults[clientId].Delta3
-		log.Debugf("PRUEBA DE ORDEN, GUARDO DELTA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
+		log.Debugf("SAVE DELTA 3 FOR STAGE %s AND READY IS %v", stage, partialData.IsReady)
+		log.Debugf("OMEGA PROCESSED IS %v", partialData.OmegaProcessed)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -488,7 +518,8 @@ func (m *Merger) saveMetaData(stage string, clientId string) error {
 		)
 	case common.ETA_STAGE_3:
 		partialData := m.partialResults[clientId].Eta3
-		log.Debugf("PRUEBA DE ORDEN, GUARDO ETA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
+		log.Debugf("SAVE ETA 3 FOR STAGE %s AND READY IS %v", stage, partialData.IsReady)
+		log.Debugf("OMEGA PROCESSED IS %v", partialData.OmegaProcessed)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -498,7 +529,8 @@ func (m *Merger) saveMetaData(stage string, clientId string) error {
 		)
 	case common.KAPPA_STAGE_3:
 		partialData := m.partialResults[clientId].Kappa3
-		log.Debugf("PRUEBA DE ORDEN, GUARDO KAPPA 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
+		log.Debugf("SAVE KAPPA 3 FOR STAGE %s AND READY IS %v", stage, partialData.IsReady)
+		log.Debugf("OMEGA PROCESSED IS %v", partialData.OmegaProcessed)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -508,7 +540,8 @@ func (m *Merger) saveMetaData(stage string, clientId string) error {
 		)
 	case common.NU_STAGE_3:
 		partialData := m.partialResults[clientId].Nu3
-		log.Debugf("PRUEBA DE ORDEN, GUARDO NU 3 PARA EL STAGE %s Y EL READY ESTA %v", stage, partialData.IsReady)
+		log.Debugf("SAVE NU 3 FOR STAGE %s AND READY IS %v", stage, partialData.IsReady)
+		log.Debugf("OMEGA PROCESSED IS %v", partialData.OmegaProcessed)
 		return storage.SaveMetadataToFile(
 			m.infraConfig.GetDirectory(),
 			clientId,
@@ -529,14 +562,14 @@ func (m *Merger) DeleteData(task *protocol.Task) error {
 	switch stage.(type) {
 	case *protocol.Task_RingEOF:
 		processedStage := task.GetRingEOF().GetStage()
-		return m.DeleteStage(processedStage, clientId, tableType)
+		return m.deleteStage(processedStage, clientId, tableType)
 
 	default:
 		return nil
 	}
 }
 
-func (m *Merger) DeleteStage(stage string, clientId string, tableType string) error {
+func (m *Merger) deleteStage(stage string, clientId string, tableType string) error {
 
 	switch stage {
 	case common.DELTA_STAGE_3:
@@ -565,6 +598,8 @@ func (m *Merger) setToDelete(clientId string, stage string) error {
 	if _, ok := m.partialResults[clientId]; !ok {
 		return fmt.Errorf("client %s not found", clientId)
 	}
+
+	log.Debugf("SETTING TO DELETE IN MERGER FOR STAGE %s AND CLIENT %s", stage, clientId)
 	switch stage {
 	case common.DELTA_STAGE_3:
 		m.partialResults[clientId].Delta3.IsReady = true
@@ -676,27 +711,29 @@ func (m *Merger) getRingRound(clientId string, stage string) (uint32, error) {
 
 // Actualizar funciones para usar las constantes de etapas del paquete common
 func (m *Merger) updateOmegaProcessed(clientId string, stage string) {
+	log.Debugf("UPDATING OMEGA PROCESSED IN MERGER FOR STAGE %s AND CLIENT %s", stage, clientId)
 	switch stage {
-	case common.DELTA_STAGE_2:
+	case common.DELTA_STAGE_3:
 		m.partialResults[clientId].Delta3.OmegaProcessed = true
-	case common.ETA_STAGE_2:
+	case common.ETA_STAGE_3:
 		m.partialResults[clientId].Eta3.OmegaProcessed = true
-	case common.KAPPA_STAGE_2:
+	case common.KAPPA_STAGE_3:
 		m.partialResults[clientId].Kappa3.OmegaProcessed = true
-	case common.NU_STAGE_2:
+	case common.NU_STAGE_3:
 		m.partialResults[clientId].Nu3.OmegaProcessed = true
 	}
 }
 
 func (m *Merger) updateRingRound(clientId string, stage string, round uint32) {
+	log.Debugf("UPDATING RING ROUND IN MERGER FOR STAGE %s AND CLIENT %s", stage, clientId)
 	switch stage {
-	case common.DELTA_STAGE_2:
+	case common.DELTA_STAGE_3:
 		m.partialResults[clientId].Delta3.RingRound = round
-	case common.ETA_STAGE_2:
+	case common.ETA_STAGE_3:
 		m.partialResults[clientId].Eta3.RingRound = round
-	case common.KAPPA_STAGE_2:
+	case common.KAPPA_STAGE_3:
 		m.partialResults[clientId].Kappa3.RingRound = round
-	case common.NU_STAGE_2:
+	case common.NU_STAGE_3:
 		m.partialResults[clientId].Nu3.RingRound = round
 	}
 }

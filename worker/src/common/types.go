@@ -64,8 +64,8 @@ type ThetaPartialData struct {
 	MaxPartialData *TopperPartialData[float32, *protocol.Theta_Data]
 }
 
-type SmallTableData[S any] map[string]S
-type BigTableData[B any] map[int]map[string][]B
+type SmallTableData[S proto.Message] map[string]S
+type BigTableData[B proto.Message] map[int]map[string][]B
 
 type JoinerTableData[T any] struct {
 	Data            T
@@ -75,7 +75,7 @@ type JoinerTableData[T any] struct {
 	OmegaProcessed  bool
 }
 
-type JoinerStageData[S any, B any] struct {
+type JoinerStageData[S, B proto.Message] struct {
 	SmallTable          *JoinerTableData[SmallTableData[S]]
 	BigTable            *JoinerTableData[BigTableData[B]]
 	SendedTaskCount     int

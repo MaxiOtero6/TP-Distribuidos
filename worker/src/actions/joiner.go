@@ -9,10 +9,10 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/eof"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/utils/storage"
+	"google.golang.org/protobuf/proto"
 )
 
 func newJoinerTableData[T any](data T) *common.JoinerTableData[T] {
-
 	return &common.JoinerTableData[T]{
 		Data:          data,
 		TaskFragments: make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
@@ -20,7 +20,7 @@ func newJoinerTableData[T any](data T) *common.JoinerTableData[T] {
 	}
 }
 
-func newJoinerStageData[S any, B any]() *common.JoinerStageData[S, B] {
+func newJoinerStageData[S, B proto.Message]() *common.JoinerStageData[S, B] {
 	return &common.JoinerStageData[S, B]{
 		SmallTable:          newJoinerTableData(make(common.SmallTableData[S])),
 		BigTable:            newJoinerTableData(make(common.BigTableData[B])),
@@ -48,10 +48,12 @@ type Joiner struct {
 
 func (j *Joiner) makePartialResults(clientId string) {
 	if _, ok := j.partialResults[clientId]; ok {
+		log.Debugf("[Joiner] makePartialResults: partialResults[%s] ya existe", clientId)
 		return
 	}
-
+	log.Debugf("[Joiner] makePartialResults: inicializando partialResults[%s]", clientId)
 	j.partialResults[clientId] = newJoinerPartialResults()
+	log.Debugf("[Joiner] makePartialResults: después de inicializar, partialResults[%s]=%#v", clientId, j.partialResults[clientId])
 }
 
 // NewJoiner creates a new Joiner instance.
@@ -71,6 +73,7 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 		eofHandler:     eofHandler,
 	}
 
+	log.Infof("[Joiner] NewJoiner: inicializado con infraConfig=%#v", infraConfig)
 	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
 
 	return joiner
@@ -243,7 +246,6 @@ func (j *Joiner) ratingsZetaStage(data []*protocol.Zeta_Data, clientId string, t
 		j.addEta1Results(tasks, partialResults, clientId)
 
 		partialData.Data = make(common.BigTableData[*protocol.Zeta_Data_Rating])
-
 	}
 
 	// TODO - not ready -- save data
@@ -491,6 +493,7 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 		zetaData.BigTable.Ready = bigTableReady
 
 		if bigTableReady && smallTableReady {
+			// log.Infof("RingEOF for Zeta stage is ready to delete for clientId: %s", clientId)
 			zetaData.SmallTable.IsReadyToDelete = true
 			zetaData.BigTable.IsReadyToDelete = true
 		}
@@ -518,12 +521,10 @@ func (j *Joiner) ringEOFStage(data *protocol.RingEOF, clientId string) (tasks co
 		iotaData.BigTable.Ready = bigTableReady
 
 		if bigTableReady && smallTableReady {
+			// log.Infof("RingEOF for Iota stage is ready to delete for clientId: %s", clientId)
 			iotaData.SmallTable.IsReadyToDelete = true
 			iotaData.BigTable.IsReadyToDelete = true
 		}
-
-		ready := j.eofHandler.HandleRingEOF(tasks, data, clientId, taskFragments, resultsTaskCount)
-		iotaData.BigTable.Ready = ready
 	}
 
 	return tasks
@@ -625,7 +626,7 @@ func (j *Joiner) addKappa1Results(tasks common.Tasks, partialResultsByTask map[i
 	}
 }
 
-func processSmallTableJoinerStage[G any, S any](
+func processSmallTableJoinerStage[S, G proto.Message](
 	partialData *common.JoinerTableData[common.SmallTableData[S]],
 	data []G,
 	clientId string,
@@ -660,7 +661,7 @@ func processSmallTableJoinerStage[G any, S any](
 	}
 }
 
-func processBigTableJoinerStage[G any, B any](
+func processBigTableJoinerStage[B, G proto.Message](
 	partialData *common.JoinerTableData[common.BigTableData[B]],
 	data []G,
 	clientId string,
@@ -707,19 +708,23 @@ func processBigTableJoinerStage[G any, B any](
 }
 
 func (j *Joiner) LoadData(dirBase string) error {
+	log.Infof("[Joiner] LoadData: cargando partialResults desde %s", dirBase)
 	var err error
 	j.partialResults, err = storage.LoadJoinerPartialResultsFromDisk(dirBase)
 	if err != nil {
-		return fmt.Errorf("failed to load joiner partial results from disk: %w", err)
+		log.Errorf("[Joiner] LoadData: error al cargar partialResults: %v", err)
+		return err
 	}
 	return nil
 }
 
-// // Delete partialResult by clientId
-// func (j *Joiner) deletePartialResult(clientId string) {
-// 	delete(j.partialResults, clientId)
-// 	log.Infof("Deleted partial result for clientId: %s", clientId)
-// }
+func keysOfJoinerPartialResults(m map[string]*common.JoinerPartialResults) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
 
 func (j *Joiner) SaveData(task *protocol.Task) error {
 	stage := task.GetStage()
@@ -727,7 +732,7 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 	clientId := task.GetClientId()
 	taskIdentifier := task.GetTaskIdentifier()
 
-	taskID := model.TaskFragmentIdentifier{
+	taskID := &model.TaskFragmentIdentifier{
 		CreatorId:          taskIdentifier.GetCreatorId(),
 		TaskNumber:         taskIdentifier.GetTaskNumber(),
 		TaskFragmentNumber: taskIdentifier.GetTaskFragmentNumber(),
@@ -738,139 +743,209 @@ func (j *Joiner) SaveData(task *protocol.Task) error {
 	case *protocol.Task_Iota:
 
 		IotaPartialData := j.partialResults[clientId].IotaData
-		switch tableType {
-		case model.SMALL_TABLE:
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.FolderType(tableType), IotaPartialData.SmallTable, taskID)
-			if err != nil {
-				return fmt.Errorf("failed to save Iota small table data: %w", err)
-			}
-			err = storage.SaveJoinerMetadataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.FolderType(tableType), IotaPartialData)
-			if err != nil {
-				return fmt.Errorf("failed to save Iota small table metadata: %w", err)
-			}
-			return nil
-		case model.BIG_TABLE:
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.FolderType(tableType), IotaPartialData.BigTable, taskID)
-			if err != nil {
-				return fmt.Errorf("failed to save Iota big table data: %w", err)
-			}
-			err = storage.SaveJoinerMetadataToFile(j.infraConfig.GetDirectory(), clientId, common.IOTA_STAGE, common.FolderType(tableType), IotaPartialData)
-			if err != nil {
-				return fmt.Errorf("failed to save Iota big table metadata: %w", err)
-			}
-			return nil
-		default:
-			return fmt.Errorf("invalid table type: %s", tableType)
+		err := saveData(
+			j.infraConfig.GetDirectory(),
+			clientId,
+			common.IOTA_STAGE,
+			common.FolderType(tableType),
+			IotaPartialData,
+			taskID,
+		)
+
+		if err != nil {
+			return fmt.Errorf("failed to save Iota data: %w", err)
 		}
 
 	case *protocol.Task_Zeta:
-		switch tableType {
-		case model.SMALL_TABLE:
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.FolderType(tableType), j.partialResults[clientId].ZetaData.SmallTable, taskID)
-			if err != nil {
-				return fmt.Errorf("failed to save Zeta small table data: %w", err)
-			}
-			err = storage.SaveJoinerMetadataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.FolderType(tableType), j.partialResults[clientId].ZetaData)
-			if err != nil {
-				return fmt.Errorf("failed to save Zeta small table metadata: %w", err)
-			}
-			return nil
-		case model.BIG_TABLE:
-			err := storage.SaveJoinerTableToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.FolderType(tableType), j.partialResults[clientId].ZetaData.BigTable, taskID)
-			if err != nil {
-				return fmt.Errorf("failed to save Zeta big table data: %w", err)
-			}
-			err = storage.SaveJoinerMetadataToFile(j.infraConfig.GetDirectory(), clientId, common.ZETA_STAGE, common.FolderType(tableType), j.partialResults[clientId].ZetaData)
-			if err != nil {
-				return fmt.Errorf("failed to save Zeta big table metadata: %w", err)
-			}
-			return nil
-		default:
-			return fmt.Errorf("invalid table type: %s", tableType)
+
+		ZetaPartialData := j.partialResults[clientId].ZetaData
+		err := saveData(
+			j.infraConfig.GetDirectory(),
+
+			clientId,
+			common.ZETA_STAGE,
+			common.FolderType(tableType),
+			ZetaPartialData,
+			taskID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to save Zeta data: %w", err)
 		}
 
 	case *protocol.Task_OmegaEOF:
 		processedTableType := task.GetOmegaEOF().GetData().GetEofType()
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
-		return j.saveMetaData(processedStage, clientId, processedTableType)
+
+		switch processedStage {
+		case common.IOTA_STAGE:
+			IotaPartialData := j.partialResults[clientId].IotaData
+			err := saveData(
+				j.infraConfig.GetDirectory(),
+				clientId,
+				processedStage,
+				common.FolderType(processedTableType),
+				IotaPartialData,
+				nil,
+			)
+
+			if err != nil {
+				return fmt.Errorf("failed to save OmegaEOF Iota data: %w", err)
+			}
+
+		case common.ZETA_STAGE:
+			ZetaPartialData := j.partialResults[clientId].ZetaData
+			err := saveData(
+				j.infraConfig.GetDirectory(),
+				clientId,
+				processedStage,
+				common.FolderType(processedTableType),
+				ZetaPartialData,
+				nil,
+			)
+
+			if err != nil {
+				return fmt.Errorf("failed to save OmegaEOF Zeta data: %w", err)
+			}
+		default:
+			return fmt.Errorf("invalid OmegaEOF stage: %s", processedStage)
+		}
 
 	case *protocol.Task_RingEOF:
 		processedTableType := task.GetRingEOF().GetEofType()
 		processedStage := task.GetRingEOF().GetStage()
-		return j.saveMetaData(processedStage, clientId, processedTableType)
+
+		switch processedStage {
+		case common.IOTA_STAGE:
+			IotaPartialData := j.partialResults[clientId].IotaData
+			err := saveData(
+				j.infraConfig.GetDirectory(),
+				clientId,
+				processedStage,
+				common.FolderType(processedTableType),
+				IotaPartialData,
+				nil,
+			)
+
+			if err != nil {
+				return fmt.Errorf("failed to save OmegaEOF Iota data: %w", err)
+			}
+
+		case common.ZETA_STAGE:
+			ZetaPartialData := j.partialResults[clientId].ZetaData
+			err := saveData(
+				j.infraConfig.GetDirectory(),
+				clientId,
+				processedStage,
+				common.FolderType(processedTableType),
+				ZetaPartialData,
+				nil,
+			)
+
+			if err != nil {
+				return fmt.Errorf("failed to save OmegaEOF Zeta data: %w", err)
+			}
+		default:
+			return fmt.Errorf("invalid OmegaEOF stage: %s", processedStage)
+		}
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", s)
 	}
 
+	return nil
 }
 
-func (j *Joiner) saveMetaData(stage string, clientId string, tableType string) error {
-	switch stage {
-	case common.ZETA_STAGE:
-		partialData := j.partialResults[clientId].ZetaData
-		return storage.SaveJoinerMetadataToFile(
-			j.infraConfig.GetDirectory(),
+func saveData[S, B proto.Message](dirBase string, clientId string, stage string, tableType common.FolderType, stageData *common.JoinerStageData[S, B], taskIdentifier *model.TaskFragmentIdentifier) error {
+
+	switch tableType {
+	case common.JOINER_SMALL_FOLDER_TYPE:
+		err := storage.SaveJoinerCompleteDataToFile(
+			dirBase,
 			clientId,
 			stage,
-			common.FolderType(tableType),
-			partialData,
-		)
+			tableType,
+			stageData,
+			taskIdentifier)
 
-	case common.IOTA_STAGE:
+		if err != nil {
+			return fmt.Errorf("failed to save Joiner small table data: %w", err)
+		}
+		if taskIdentifier != nil {
+			stageData.SmallTable.TaskFragments[*taskIdentifier] = common.FragmentStatus{
+				Logged: true,
+			}
+		}
 
-		partialData := j.partialResults[clientId].IotaData
-		return storage.SaveJoinerMetadataToFile(
-			j.infraConfig.GetDirectory(),
+	case common.JOINER_BIG_FOLDER_TYPE:
+		err := storage.SaveJoinerCompleteDataToFile(
+			dirBase,
 			clientId,
 			stage,
-			common.FolderType(tableType),
-			partialData,
+			tableType,
+			stageData,
+			taskIdentifier,
 		)
+
+		if err != nil {
+			return fmt.Errorf("failed to save Joiner big table data: %w", err)
+		}
+
+		if taskIdentifier != nil {
+			stageData.BigTable.TaskFragments[*taskIdentifier] = common.FragmentStatus{
+				Logged: true,
+			}
+
+		}
+
 	default:
-		return fmt.Errorf("invalid stage: %s", stage)
+		return fmt.Errorf("Invalid table type: %s", tableType)
 	}
+
+	return nil
 }
 
-func (j *Joiner) tryDeleteBothTables(clientId, stage string, smallTableIsReady bool, bigTableIsReady bool) error {
+func tryDeleteBothTables[S, B proto.Message](dir, clientId, stage string, stageData *common.JoinerStageData[S, B]) error {
 	log.Debugf("Deleting Iota data for clientId: %s, stage: %s", clientId, stage)
-	dir := j.infraConfig.GetDirectory()
-	err := storage.TryDeletePartialData(dir, stage, model.SMALL_TABLE, clientId, smallTableIsReady)
+
+	err := storage.TryDeleteSmallTable(dir, stage, clientId, stageData.SmallTable.IsReadyToDelete, stageData.SmallTable.Ready, stageData)
 	if err != nil {
 		return fmt.Errorf("failed to delete Iota data small table: %w", err)
 	}
-	err = storage.TryDeletePartialData(dir, stage, model.BIG_TABLE, clientId, bigTableIsReady)
+
+	err = storage.TryDeleteBigTable(dir, stage, clientId, stageData.BigTable.IsReadyToDelete, stageData.BigTable.Ready, stageData)
 	if err != nil {
 		return fmt.Errorf("failed to delete Iota data: %w", err)
 	}
+
 	return nil
 }
 
 func (j *Joiner) DeleteData(task *protocol.Task) error {
 	stage := task.GetStage()
-	tableType := task.GetTableType()
 	clientId := task.GetClientId()
 
-	log.Debugf("Deleting data for clientId: %s, stage: %s, tableType: %s", clientId, stage, tableType)
+	//log.Debugf("Deleting data for clientId: %s, stage: %s, tableType: %s", clientId, stage, tableType)
 
 	iota := j.partialResults[clientId].IotaData
 	zeta := j.partialResults[clientId].ZetaData
 
+	dir := j.infraConfig.GetDirectory()
+
 	switch s := stage.(type) {
 	case *protocol.Task_Iota:
-		return j.tryDeleteBothTables(clientId, common.IOTA_STAGE, iota.SmallTable.IsReadyToDelete, iota.BigTable.IsReadyToDelete)
+		return tryDeleteBothTables(dir, clientId, common.IOTA_STAGE, iota)
 
 	case *protocol.Task_Zeta:
-		return j.tryDeleteBothTables(clientId, common.ZETA_STAGE, zeta.SmallTable.IsReadyToDelete, zeta.BigTable.IsReadyToDelete)
+		return tryDeleteBothTables(dir, clientId, common.ZETA_STAGE, zeta)
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
 		switch processedStage {
 		case common.IOTA_STAGE:
-			return j.tryDeleteBothTables(clientId, common.IOTA_STAGE, iota.SmallTable.IsReadyToDelete, iota.BigTable.IsReadyToDelete)
+			return tryDeleteBothTables(dir, clientId, common.IOTA_STAGE, iota)
 
 		case common.ZETA_STAGE:
-			return j.tryDeleteBothTables(clientId, common.ZETA_STAGE, zeta.SmallTable.IsReadyToDelete, zeta.BigTable.IsReadyToDelete)
+			return tryDeleteBothTables(dir, clientId, common.ZETA_STAGE, zeta)
 
 		default:
 			return fmt.Errorf("invalid stage: %s", processedStage)
@@ -880,10 +955,10 @@ func (j *Joiner) DeleteData(task *protocol.Task) error {
 		processedStage := task.GetRingEOF().GetStage()
 		switch processedStage {
 		case common.IOTA_STAGE:
-			return j.tryDeleteBothTables(clientId, common.IOTA_STAGE, iota.SmallTable.IsReadyToDelete, iota.BigTable.IsReadyToDelete)
+			return tryDeleteBothTables(dir, clientId, common.IOTA_STAGE, iota)
 
 		case common.ZETA_STAGE:
-			return j.tryDeleteBothTables(clientId, common.ZETA_STAGE, zeta.SmallTable.IsReadyToDelete, zeta.BigTable.IsReadyToDelete)
+			return tryDeleteBothTables(dir, clientId, common.ZETA_STAGE, zeta)
 
 		default:
 			return fmt.Errorf("invalid stage: %s", processedStage)

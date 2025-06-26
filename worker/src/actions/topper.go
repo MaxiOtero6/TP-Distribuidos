@@ -502,12 +502,12 @@ func processTopperStage[K topkheap.Ordered, V proto.Message](
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
-	if _, processed := partialData.TaskFragments[taskID]; processed {
+	if partialData.IsReady {
+		log.Debugf("Partial data is ready, skipping task %s", taskID)
 		return
 	}
 
-	if partialData.IsReady {
-		log.Debugf("Partial data is ready, skipping task %s", taskID)
+	if _, processed := partialData.TaskFragments[taskID]; processed {
 		return
 	}
 
@@ -576,13 +576,28 @@ func (t *Topper) SaveData(task *protocol.Task) error {
 		keyFunc := func(input *protocol.Epsilon_Data) uint64 {
 			return input.GetTotalInvestment()
 		}
-		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].EpsilonData, taskID, keyFunc)
+		err := storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].EpsilonData, taskID, keyFunc)
+		if err != nil {
+			return fmt.Errorf("failed to save Epsilon data: %w", err)
+		}
+
+		t.partialResults[clientId].EpsilonData.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Lambda:
 		keyFunc := func(input *protocol.Lambda_Data) uint64 {
 			return input.GetParticipations()
 		}
-		return storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].LamdaData, taskID, keyFunc)
+		err := storage.SaveTopperDataToFile(t.infraConfig.GetDirectory(), stage, clientId, t.partialResults[clientId].LamdaData, taskID, keyFunc)
+		if err != nil {
+			return fmt.Errorf("failed to save Lambda data: %w", err)
+		}
+		t.partialResults[clientId].LamdaData.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Theta:
 		keyFunc := func(input *protocol.Theta_Data) float32 {
@@ -594,16 +609,26 @@ func (t *Topper) SaveData(task *protocol.Task) error {
 			t.partialResults[clientId].ThetaData.MinPartialData,
 		}
 
-		return storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, taskID, keyFunc)
+		err := storage.SaveTopperThetaDataToFile(t.infraConfig.GetDirectory(), stage, clientId, partials, taskID, keyFunc)
+		if err != nil {
+			return fmt.Errorf("failed to save Theta data: %w", err)
+		}
+		t.partialResults[clientId].ThetaData.MaxPartialData.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		t.partialResults[clientId].ThetaData.MinPartialData.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
 
-		return t.loadMetaData(processedStage, clientId)
+		return t.saveMetadata(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
 		processedStage := task.GetRingEOF().GetStage()
-		return t.loadMetaData(processedStage, clientId)
+		return t.saveMetadata(processedStage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", v)
@@ -611,7 +636,7 @@ func (t *Topper) SaveData(task *protocol.Task) error {
 
 }
 
-func (t *Topper) loadMetaData(stage string, clientId string) error {
+func (t *Topper) saveMetadata(stage string, clientId string) error {
 	switch stage {
 	case common.EPSILON_STAGE:
 		partialData := t.partialResults[clientId].EpsilonData
@@ -683,7 +708,7 @@ func (t *Topper) setToDelete(clientId string, stage string) error {
 	}
 	switch stage {
 	case common.LAMBDA_STAGE:
-		t.partialResults[clientId].EpsilonData.IsReady = true
+		t.partialResults[clientId].LamdaData.IsReady = true
 	case common.EPSILON_STAGE:
 		t.partialResults[clientId].EpsilonData.IsReady = true
 	case common.THETA_STAGE:

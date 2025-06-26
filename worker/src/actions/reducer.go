@@ -524,6 +524,7 @@ func (r *Reducer) ringEOFStage(data *protocol.RingEOF, clientId string) common.T
 		log.Errorf("Failed to get ring round for stage %s: %s", data.GetStage(), err)
 		return tasks
 	}
+
 	if ringRound >= data.GetRoundNumber() {
 		log.Debugf("Ring EOF for stage %s and client %s has already been processed for round %d", data.GetStage(), clientId, ringRound)
 		return tasks
@@ -610,25 +611,56 @@ func (r *Reducer) SaveData(task *protocol.Task) error {
 
 	switch s := stage.(type) {
 	case *protocol.Task_Delta_2:
-		// task identifier
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Delta2, taskID)
+		err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Delta2, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Delta 2 data: %w", err)
+		}
+
+		r.partialResults[clientId].Delta2.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Eta_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Eta2, taskID)
+		err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Eta2, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Eta 2 data: %w", err)
+		}
+
+		r.partialResults[clientId].Eta2.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Kappa_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Kappa2, taskID)
+		err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Kappa2, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Kappa 2 data: %w", err)
+		}
+
+		r.partialResults[clientId].Kappa2.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_Nu_2:
-		return storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Nu2, taskID)
+		err := storage.SaveDataToFile(r.infraConfig.GetDirectory(), clientId, s, common.GENERAL_FOLDER_TYPE, r.partialResults[clientId].Nu2, taskID)
+		if err != nil {
+			return fmt.Errorf("failed to save Nu 2 data: %w", err)
+		}
+
+		r.partialResults[clientId].Nu2.TaskFragments[taskID] = common.FragmentStatus{
+			Logged: true,
+		}
+		return nil
 
 	case *protocol.Task_OmegaEOF:
 		processedStage := task.GetOmegaEOF().GetData().GetStage()
-		return r.loadMetaData(processedStage, clientId)
+		return r.saveMetaData(processedStage, clientId)
 
 	case *protocol.Task_RingEOF:
 		processedStage := task.GetRingEOF().GetStage()
-		return r.loadMetaData(processedStage, clientId)
+		return r.saveMetaData(processedStage, clientId)
 
 	default:
 		return fmt.Errorf("invalid query stage: %v", s)
@@ -636,7 +668,7 @@ func (r *Reducer) SaveData(task *protocol.Task) error {
 
 }
 
-func (r *Reducer) loadMetaData(stage string, clientId string) error {
+func (r *Reducer) saveMetaData(stage string, clientId string) error {
 	switch stage {
 	case common.DELTA_STAGE_2:
 		partialData := r.partialResults[clientId].Delta2
