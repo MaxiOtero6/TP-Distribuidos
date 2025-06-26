@@ -1338,7 +1338,7 @@ func marshallLineToAppend(fragment model.TaskFragmentIdentifier, timestamp strin
 }
 
 func StartCleanupRoutine(dir string, cleanUpTime time.Duration) {
-	ticker := time.NewTicker(cleanUpTime)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for {
