@@ -56,7 +56,7 @@ func NewHealthChecker(
 	return &HealthChecker{
 		rabbitMQ:            mom.NewRabbitMQ(),
 		ID:                  id,
-		healthCheckInterval: time.Duration(healthCheckInterval) * time.Second,
+		healthCheckInterval: time.Duration(healthCheckInterval) * time.Millisecond,
 		infraConfig:         infraConfig,
 		leaderQueueName:     leaderQueueName,
 		status:              make(HealthStatus),
@@ -65,7 +65,7 @@ func NewHealthChecker(
 		leaderTimeoutC:      nil,
 		done:                signalChan,
 		wg:                  &sync.WaitGroup{},
-		electionTimeout:     time.Duration(electionTimeout)*time.Second + randomDuration,
+		electionTimeout:     time.Duration(electionTimeout)*time.Millisecond + randomDuration,
 		healthCheck:         health_check.NewHealthCheck(containerName, infraConfig),
 	}
 }

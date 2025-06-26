@@ -62,6 +62,7 @@ func (hc *HealthChecker) sendStatus() {
 		bytesMsg,
 	)
 
+	log.Debugf("Status message: %v", hc.status)
 	log.Debugf("Status message sent")
 }
 
