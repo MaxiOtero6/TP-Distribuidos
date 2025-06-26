@@ -589,6 +589,8 @@ func (r *Reducer) Execute(task *protocol.Task) (common.Tasks, error) {
 func (r *Reducer) LoadData(dirBase string) error {
 	var err error
 	r.partialResults, err = storage.LoadReducerPartialResultsFromDisk(dirBase)
+
+	log.Debugf("len of tasks: %d", len(r.partialResults))
 	if err != nil {
 		log.Errorf("Failed to load partial results from disk: %s", err)
 		return err

@@ -106,18 +106,12 @@ func decodeJsonToProtoData[T proto.Message](jsonBytes []byte, newT func() T) (*c
 }
 
 func decodeGeneralFromJsonMetadata(jsonBytes []byte) (MetadataFile, error) {
-	var temp struct {
-		OmegaProcessed bool   `json:"omega_processed"`
-		RingRound      uint32 `json:"ring_round"`
-		Timestamps     string `json:"timestamps"`
-		Status         string `json:"status"`
-		IsReady        bool   `json:"is_ready"`
-	}
+	var temp MetadataFile
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
 		return MetadataFile{}, err
 	}
 	return MetadataFile{
-		Timestamp:      temp.Timestamps,
+		Timestamp:      temp.Timestamp,
 		Status:         temp.Status,
 		OmegaProcessed: temp.OmegaProcessed,
 		RingRound:      temp.RingRound,
@@ -207,12 +201,14 @@ func loadStageClientData[T proto.Message](
 	dir string, stage string, fileType common.FolderType, clientId string, newT func() T,
 ) (*common.PartialData[T], error) {
 
+	log.Debugf("Loading data for stage %s, client %s", stage, clientId)
+
 	partial := &common.PartialData[T]{
 		Data:          make(map[string]T),
 		TaskFragments: make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
 	}
 
-	dirPath := filepath.Join(dir, stage, string(fileType), clientId)
+	dirPath := filepath.Join(dir, stage, clientId)
 	finalDataFilePath := filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 	finalMetadataFilePath := filepath.Join(dirPath, FINAL_METADATA_FILE_NAME+JSON_FILE_EXTENSION)
 
@@ -221,62 +217,69 @@ func loadStageClientData[T proto.Message](
 		log.Errorf("error cleaning temp files for stage %s, client %s: %v", stage, clientId, err)
 	}
 
+	log.Debugf("Temp files cleaned for stage %s, client %s", stage, clientId)
+
 	// Read metadata file
 	jsonMetadataBytes, err := os.ReadFile(finalMetadataFilePath)
 	if err != nil {
 		log.Warningf("error reading metadata file %s: %v", finalMetadataFilePath, err)
-	}
-
-	metadata, err := decodeGeneralFromJsonMetadata(jsonMetadataBytes)
-	if err != nil {
-		return partial, err
-	}
-
-	if metadata.IsReady {
-		err := TryDeletePartialData(dirPath, stage, string(fileType), clientId, metadata.IsReady)
-		if err != nil {
-			log.Errorf("error deleting partial data for stage %s, client %s: %v", stage, clientId, err)
-		}
-
 	} else {
-		//Read data file
-		jsonDataBytes, err := os.ReadFile(finalDataFilePath)
+		// tengo la metadata
+		metadata, err := decodeGeneralFromJsonMetadata(jsonMetadataBytes)
 		if err != nil {
-			if os.IsNotExist(err) {
-				log.Warningf("error reading file %s: %v", finalDataFilePath, err)
-			} else {
-				return partial, fmt.Errorf("error reading file %s: %w", finalDataFilePath, err)
-			}
-		} else {
-			var timestamp string
-			partialDecoded, partialTimestamp, err := decodeJsonToProtoData(jsonDataBytes, newT)
-			if err != nil {
-				log.Error("error decoding JSON data from file %s: %v", finalDataFilePath, err)
-			}
-			partial = partialDecoded
-			timestamp = partialTimestamp
-
-			taskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(dirPath, timestamp)
-			if err != nil {
-				log.Warningf("error reading task fragments from log file: %w", err)
-				taskFragments = make(map[model.TaskFragmentIdentifier]common.FragmentStatus) // Si falla, inicializa vacío
-			}
-			partial.TaskFragments = taskFragments
+			return partial, err
 		}
+		log.Debugf("Metadata loaded for stage %s, client %s: %+v", stage, clientId, metadata)
 
+		partial.OmegaProcessed = metadata.OmegaProcessed
+		partial.RingRound = metadata.RingRound
+		partial.IsReady = metadata.IsReady
+
+		if partial.IsReady {
+			err := TryDeletePartialData(dirPath, stage, string(fileType), clientId, partial.IsReady)
+			if err != nil {
+				log.Errorf("error deleting partial data for stage %s, client %s: %v", stage, clientId, err)
+			}
+
+			log.Debugf("Partial data deleted for stage %s, client %s", stage, clientId)
+			log.Infof("Stage %s for client %s is ready, skipping data loading", stage, clientId)
+
+			return partial, nil
+		}
 	}
 
-	// Aseguramos campos metadata
-	if partial.Data == nil {
-		partial.Data = make(map[string]T)
-	}
-	if partial.TaskFragments == nil {
-		partial.TaskFragments = make(map[model.TaskFragmentIdentifier]common.FragmentStatus)
-	}
+	//Read data file
 
-	partial.OmegaProcessed = metadata.OmegaProcessed
-	partial.RingRound = metadata.RingRound
-	partial.IsReady = metadata.IsReady
+	log.Debugf("Reading data file %s for stage %s, client %s", finalDataFilePath, stage, clientId)
+
+	jsonDataBytes, err := os.ReadFile(finalDataFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Warningf("error reading file %s: %v", finalDataFilePath, err)
+		} else {
+			log.Errorf("error reading file %s: %v", finalDataFilePath, err)
+			return partial, fmt.Errorf("error reading file %s: %w", finalDataFilePath, err)
+		}
+	} else {
+
+		log.Debugf("Data file %s read successfully for stage %s, client %s", finalDataFilePath, stage, clientId)
+
+		var timestamp string
+		partialDecoded, partialTimestamp, err := decodeJsonToProtoData(jsonDataBytes, newT)
+		if err != nil {
+			log.Error("error decoding JSON data from file %s: %v", finalDataFilePath, err)
+		}
+		partial = partialDecoded
+		timestamp = partialTimestamp
+
+		log.Debugf("Loaded data for stage %s, client %s, timestamp: %s", stage, clientId, timestamp)
+
+		taskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(dirPath, timestamp, stage)
+		if err != nil {
+			log.Warningf("error reading task fragments from log file: %w", err)
+		}
+		partial.TaskFragments = taskFragments
+	}
 
 	return partial, nil
 }
@@ -291,7 +294,7 @@ func loadStageData[T proto.Message, R any](
 	newT func() T,
 ) {
 
-	stageDir := filepath.Join(dir, stage, string(fileType))
+	stageDir := filepath.Join(dir, stage)
 	clientDirs, err := os.ReadDir(stageDir)
 	if err != nil {
 		log.Warningf("Error reading directory %s: %v", stageDir, err)
@@ -692,7 +695,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 	// 3. Leo los task fragments de cada tabla (small y big)
 
 	if smallTableTimestamp != "" && !stageData.SmallTable.Ready {
-		smallTableTaskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(smallTableDir, smallTableTimestamp)
+		smallTableTaskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(smallTableDir, smallTableTimestamp, stage)
 		if err != nil {
 			log.Errorf("error reading task fragments from log file: %w", err)
 			return err
@@ -702,7 +705,7 @@ func loadJoinerStageToPartialResults[S proto.Message, B proto.Message](
 	}
 
 	if bigTableTimestamp != "" && !stageData.BigTable.Ready {
-		bigTableTaskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(bigTableDir, bigTableTimestamp)
+		bigTableTaskFragments, err := readAndFilterTaskFragmentIdentifiersLogLiteral(bigTableDir, bigTableTimestamp, stage)
 		if err != nil {
 			log.Errorf("error reading task fragments from log file: %w", err)
 			return err
@@ -788,7 +791,7 @@ func DeletePartialResults(dir string, stage interface{}, tableType string, clien
 }
 
 func TryDeletePartialData(dir string, stage string, folderType string, clientId string, deleteData bool) error {
-	dirPath := filepath.Join(dir, stage, folderType, clientId)
+	dirPath := filepath.Join(dir, stage, clientId)
 	dataFilePath := filepath.Join(dirPath, FINAL_DATA_FILE_NAME+JSON_FILE_EXTENSION)
 	logsFilePath := filepath.Join(dirPath, FINAL_LOG_FILE_NAME+LOG_FILE_EXTENSION)
 
@@ -801,12 +804,7 @@ func TryDeletePartialData(dir string, stage string, folderType string, clientId 
 			}
 			return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stage, folderType, clientId, err)
 		}
-
-		log.Infof("Deleted data file %s", dataFilePath)
-	}
-
-	if deleteData {
-		err := os.Remove(logsFilePath)
+		err = os.Remove(logsFilePath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Debugf("Logs file %s does not exist, skipping deletion", logsFilePath)
@@ -815,7 +813,7 @@ func TryDeletePartialData(dir string, stage string, folderType string, clientId 
 			return fmt.Errorf("error deleting partial data for stage %s, folder type %s, client ID %s: %w", stage, folderType, clientId, err)
 		}
 
-		log.Infof("Deleted logs file %s", logsFilePath)
+		log.Infof("Deleted data AND logs file %s", dataFilePath)
 	}
 
 	return nil
@@ -1495,7 +1493,7 @@ func appendTaskFragmentIdentifiersLogLiteralByPath(
 
 func readAndFilterTaskFragmentIdentifiersLogLiteral(
 	dir string,
-	dataTimestamp string,
+	dataTimestamp string, stage string,
 ) (map[model.TaskFragmentIdentifier]common.FragmentStatus, error) {
 
 	log.Debugf("[Storage] readAndFilterTaskFragmentIdentifiersLogLiteral: dir=%s, dataTimestamp=%s", dir, dataTimestamp)
@@ -1568,10 +1566,15 @@ func readAndFilterTaskFragmentIdentifiersLogLiteral(
 		}
 
 		jsonStr := content[spaceIdx2+1:]
+		log.Debugf("[storage] Processing log line: %s", jsonStr)
 		var frag model.TaskFragmentIdentifier
 		if err := json.Unmarshal([]byte(jsonStr), &frag); err != nil {
-			continue
+			panic(fmt.Errorf("error unmarshaling task fragment identifier: %w", err))
+			// continue
 		}
+
+		log.Debugf("[storage] Found task fragment identifier: %v", frag)
+
 		fragments[frag] = common.FragmentStatus{Logged: true}
 
 		if _, err := tempFile.WriteString(line + "\n"); err != nil {
