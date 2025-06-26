@@ -14,6 +14,8 @@ type WorkerClusterConfig struct {
 	ReduceCount   int
 	MergeCount    int
 	TopCount      int
+	HealthCount   int
+	ServerCount   int // Added for server workers
 }
 
 func (w *WorkerClusterConfig) TotalWorkers() int {
@@ -215,4 +217,12 @@ func (i *InfraConfig) GetCleanUpTime() time.Duration {
 		return 60 * time.Second // Default to 60 seconds if not set
 	}
 	return time.Duration(i.cleanUpTime) * time.Second
+}
+
+func (i *InfraConfig) GetHealthCount() int {
+	return i.workers.HealthCount
+}
+
+func (i *InfraConfig) GetServerCount() int {
+	return i.workers.ServerCount
 }

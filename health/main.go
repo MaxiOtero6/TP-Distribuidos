@@ -96,6 +96,8 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 		ReduceCount:   v.GetInt("reduce.count"),
 		MergeCount:    v.GetInt("merge.count"),
 		TopCount:      v.GetInt("top.count"),
+		HealthCount:   v.GetInt("health.count"),
+		ServerCount:   v.GetInt("server.count"),
 	}
 
 	rabbitConfig := &model.RabbitConfig{

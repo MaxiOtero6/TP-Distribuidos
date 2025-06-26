@@ -143,6 +143,12 @@ class ServiceType(Enum):
                         "HEALTH_TOP_COUNT": str(
                             instances_per_service.get(ServiceType.TOP, 0)
                         ),
+                        "HEALTH_HEALTH_COUNT": str(
+                            instances_per_service.get(ServiceType.HEALTH, 0)
+                        ),
+                        "HEALTH_SERVER_COUNT": str(
+                            instances_per_service.get(ServiceType.SERVER, 0)
+                        ),
                     },
                     depends_on={"rabbitmq": {"condition": "service_healthy"}},
                     networks=[MOVIES_NETWORK_NAME],

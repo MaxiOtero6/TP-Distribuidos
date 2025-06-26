@@ -1,6 +1,7 @@
 package health_checker
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"sync"
@@ -41,6 +42,65 @@ type HealthChecker struct {
 	healthCheck *health_check.HealthCheck
 }
 
+// Hardcode expected nodes for health checker.
+// Otherwise if a new node that is not expected send a ping to the leader, it is
+// appended to the status map.
+// This function is in case when a node is down before it can answer a ping, so the leader
+// will not receive a status update from it.
+func initStatus(ic *model.InfraConfig) HealthStatus {
+	status := make(HealthStatus)
+
+	for i := range ic.GetFilterCount() {
+		key := fmt.Sprintf("filter_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetMapCount() {
+		key := fmt.Sprintf("mapper_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetOverviewCount() {
+		key := fmt.Sprintf("overviewer_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetJoinCount() {
+		key := fmt.Sprintf("joiner_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetReduceCount() {
+		key := fmt.Sprintf("reducer_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetMergeCount() {
+		key := fmt.Sprintf("merger_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetTopCount() {
+		key := fmt.Sprintf("topper_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetHealthCount() {
+		key := fmt.Sprintf("health_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	for i := range ic.GetServerCount() {
+		key := fmt.Sprintf("server_%v", i)
+		status[key] = 0 // Initialize all containers with status 0
+	}
+
+	log.Infof("Initialized health status: %v", status)
+
+	return status
+
+}
+
 func NewHealthChecker(
 	id string,
 	healthCheckInterval int,
@@ -59,7 +119,7 @@ func NewHealthChecker(
 		healthCheckInterval: time.Duration(healthCheckInterval) * time.Millisecond,
 		infraConfig:         infraConfig,
 		leaderQueueName:     leaderQueueName,
-		status:              make(HealthStatus),
+		status:              initStatus(infraConfig),
 		maxStatus:           maxStatus,
 		electionTimeoutC:    nil,
 		leaderTimeoutC:      nil,
