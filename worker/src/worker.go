@@ -20,6 +20,7 @@ var log = logging.MustGetLogger("log")
 // Worker is a struct that represents a worker that consumes tasks from a message queue and executes them
 type Worker struct {
 	WorkerId    string
+	baseDir     string
 	rabbitMQ    *mom.RabbitMQ
 	action      actions.Action
 	done        chan os.Signal
@@ -38,8 +39,17 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 
 	action := actions.NewAction(workerType, infraConfig)
 
+	log.Infof("[Worker] Llamando a action.LoadData para tipo %s en directorio %s", workerType, infraConfig.GetDirectory())
+	err := action.LoadData(infraConfig.GetDirectory())
+	if err != nil {
+		log.Panicf("Failed to load data: %s", err)
+		return nil
+	}
+	log.Infof("[Worker] action.LoadData terminó para tipo %s. Action: %T", workerType, action)
+
 	return &Worker{
 		WorkerId:    infraConfig.GetNodeId(),
+		baseDir:     infraConfig.GetDirectory(),
 		rabbitMQ:    rabbitMQ,
 		action:      action,
 		done:        signalChan,
@@ -47,6 +57,7 @@ func NewWorker(workerType string, infraConfig *model.InfraConfig, signalChan cha
 		healthCheck: health_check.NewHealthCheck(containerName, infraConfig),
 		wg:          &sync.WaitGroup{},
 	}
+
 }
 
 // InitConfig initializes the worker with the given exchanges, queues, and binds
@@ -124,7 +135,6 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 
 	log.Debugf("Task %T recived with a TID of %s",
 		task.GetStage(), task.GetTaskIdentifier())
-
 	subTasks, err := w.action.Execute(task)
 
 	if err != nil {
@@ -132,9 +142,36 @@ func (w *Worker) handleMessage(message *amqp.Delivery) {
 		message.Reject(false)
 		return
 	}
+	log.Debugf("Task %T executed with a TID of %s",
+		task.GetStage(), task.GetTaskIdentifier())
 
 	w.sendSubTasks(subTasks)
+	// w.sendSubTasks(subTasks)
+
+	err = w.action.SaveData(task)
+	if err != nil {
+		log.Errorf("Failed to save data: %s", err)
+		message.Reject(false)
+		return
+	}
+
+	log.Debugf("[worker] Task %T with TID %s saved successfully",
+		task.GetStage(), task.GetTaskIdentifier())
+
 	message.Ack(false)
+
+	log.Debugf("[worker] Task %T with TID %s acknowledged",
+		task.GetStage(), task.GetTaskIdentifier())
+
+	err = w.action.DeleteData(task)
+	if err != nil {
+		log.Errorf("Failed to delete data: %s", err)
+		message.Reject(false)
+		return
+	}
+	log.Debugf("[worker] Task %T with TID %s deleted successfully",
+		task.GetStage(), task.GetTaskIdentifier())
+
 }
 
 // sendSubTasks sends the subTasks to the RabbitMQ for each exchange and routing key

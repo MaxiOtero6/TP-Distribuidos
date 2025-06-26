@@ -72,6 +72,7 @@ func TestMergeRingEOFFragments(t *testing.T) {
 			BroadcastID:    "",
 		},
 		"",
+		0,
 	)
 
 	nextStageFunc := func(stage string, clientId string, _ *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
@@ -113,6 +114,7 @@ func TestFullTest(t *testing.T) {
 			BroadcastID:    "",
 		},
 		"",
+		0,
 	)
 
 	nextStageFunc := func(stage string, clientId string, _ *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {
@@ -194,6 +196,7 @@ func TestMergeStageFragmentsWithRealLogData(t *testing.T) {
 			BroadcastID:    "",
 		},
 		"",
+		0,
 	)
 
 	nextStageFunc := func(stage string, clientId string, _ *model.InfraConfig, itemHashFunc func(workersCount int, item string) string) ([]common.NextStageData, error) {

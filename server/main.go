@@ -139,7 +139,7 @@ func initClientHandler(v *viper.Viper) *client_handler.ClientHandler {
 		ClientQueueTTL:   v.GetString("consts.clientQueueTTL"),
 	}
 
-	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "", 0)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 
@@ -195,7 +195,7 @@ func initServer(v *viper.Viper) *listener.Listener {
 		LeaderRK:           v.GetString("consts.leaderRK"),
 	}
 
-	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "", 0)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 

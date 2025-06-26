@@ -35,6 +35,7 @@ func InitConfig() (*viper.Viper, error) {
 	// Add env variables supported
 	v.BindEnv("id")
 	v.BindEnv("log", "level")
+	v.BindEnv("cleanUpTime")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -161,6 +162,7 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 	nodeId := v.GetString("id")
 
 	volumeBaseDir := v.GetString("data.dir")
+	cleanUpTime := v.GetInt64("cleanUpTime")
 
 	clusterConfig := &model.WorkerClusterConfig{
 		FilterCount:   v.GetInt("filter.count"),
@@ -190,9 +192,9 @@ func initWorker(v *viper.Viper, signalChan chan os.Signal) *worker.Worker {
 		LeaderRK:           v.GetString("consts.leaderRK"),
 	}
 
-	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir)
+	infraConfig := model.NewInfraConfig(nodeId, clusterConfig, rabbitConfig, volumeBaseDir, cleanUpTime)
 
-	log.Infof("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v\n\tVolumeBaseDir: %s", infraConfig.GetWorkers(), infraConfig.GetRabbit(), volumeBaseDir)
+	log.Infof("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v\n\tVolumeBaseDir: %s\n\tCleanUpTime: %d", infraConfig.GetWorkers(), infraConfig.GetRabbit(), volumeBaseDir, cleanUpTime)
 
 	exchanges, queues, binds, err := utils.GetRabbitConfig(workerType, v)
 

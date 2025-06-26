@@ -323,3 +323,15 @@ func (m *Mapper) Execute(task *protocol.Task) (common.Tasks, error) {
 		return nil, fmt.Errorf("invalid query stage: %v", v)
 	}
 }
+
+func (m *Mapper) LoadData(dirBase string) error {
+	return nil
+}
+
+func (m *Mapper) SaveData(task *protocol.Task) error {
+	return nil
+}
+
+func (m *Mapper) DeleteData(task *protocol.Task) error {
+	return nil
+}

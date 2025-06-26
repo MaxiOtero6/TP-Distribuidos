@@ -42,10 +42,8 @@ def compare_query1(expected: dict[str, Any], actual: dict[str, Any]):
     actual_titles = {item["title"] for item in actual_query}
     if expected_titles != actual_titles:
         # set to list and sort
-        expected_titles_err = [
-            i for i in expected_titles if i not in actual_titles]
-        actual_titles_err = [
-            i for i in actual_titles if i not in expected_titles]
+        expected_titles_err = [i for i in expected_titles if i not in actual_titles]
+        actual_titles_err = [i for i in actual_titles if i not in expected_titles]
         print(
             f"Query1: Expected titles {BRIGHT_GREEN}{expected_titles_err}{RESET}, but got {BRIGHT_RED}{actual_titles_err}{RESET}."
         )

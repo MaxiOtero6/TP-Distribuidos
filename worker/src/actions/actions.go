@@ -8,23 +8,18 @@ import (
 	"github.com/MaxiOtero6/TP-Distribuidos/common/utils"
 	"github.com/MaxiOtero6/TP-Distribuidos/worker/src/common"
 	"github.com/op/go-logging"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.MustGetLogger("log")
 
-type PartialData[T any] struct {
-	data           map[string]T
-	taskFragments  map[model.TaskFragmentIdentifier]struct{}
-	omegaProcessed bool
-	ringRound      uint32
-}
-
-func NewPartialData[T any]() *PartialData[T] {
-	return &PartialData[T]{
-		data:           make(map[string]T),
-		taskFragments:  make(map[model.TaskFragmentIdentifier]struct{}),
-		omegaProcessed: false,
-		ringRound:      0,
+func NewPartialData[T proto.Message]() *common.PartialData[T] {
+	return &common.PartialData[T]{
+		Data:           make(map[string]T),
+		TaskFragments:  make(map[model.TaskFragmentIdentifier]common.FragmentStatus),
+		OmegaProcessed: false,
+		RingRound:      0,
+		IsReady:        false,
 	}
 }
 
@@ -33,6 +28,9 @@ type Action interface {
 	// It returns a map of tasks for the next stages.
 	// It returns an error if the action fails.
 	Execute(task *protocol.Task) (common.Tasks, error)
+	SaveData(task *protocol.Task) error
+	LoadData(dirBase string) error
+	DeleteData(task *protocol.Task) error
 }
 
 // NewAction creates a new action based on the worker type.
@@ -163,68 +161,16 @@ func AddResultsToStateful[T any](
 	}
 }
 
-// func AddResults[T any](
-// 	tasks common.Tasks,
-// 	results []T,
-// 	nextStageData common.NextStageData,
-// 	clientId string,
-// 	creatorId string,
-// 	taskNumber int,
-// 	itemHashFunc func(workersCount int, item string) string,
-// 	identifierFunc func(input T) string,
-// 	taskDataCreator func(stage string, data []T, clientId string, taskIdentifier *protocol.TaskIdentifier) *protocol.Task,
-// ) {
-// 	if _, ok := tasks[nextStageData.Exchange]; !ok {
-// 		tasks[nextStageData.Exchange] = make(map[string][]*protocol.Task)
-// 	}
-
-// 	dataByNode := make(map[string][]T)
-
-// 	for _, data := range results {
-// 		nodeId := itemHashFunc(nextStageData.WorkerCount, identifierFunc(data))
-// 		dataByNode[nodeId] = append(dataByNode[nodeId], data)
-// 	}
-
-// 	destinationNodes := utils.MapKeys(dataByNode)
-
-// 	// Esto sirve para el filter
-// 	if len(destinationNodes) == 0 && creatorId == clientId {
-// 		destinationNodes = append(destinationNodes, nextStageData.RoutingKey)
-// 	}
-
-// 	slices.Sort(destinationNodes)
-
-// 	createTaskIdentifier := func(_ string, index int) *protocol.TaskIdentifier {
-// 		return &protocol.TaskIdentifier{
-// 			CreatorId:          creatorId,
-// 			TaskNumber:         uint32(taskNumber),
-// 			TaskFragmentNumber: uint32(index),
-// 			LastFragment:       index == len(destinationNodes)-1,
-// 		}
-// 	}
-
-// 	for index, nodeId := range destinationNodes {
-// 		taskIdentifier := createTaskIdentifier(nodeId, index)
-// 		task := taskDataCreator(
-// 			nextStageData.Stage,
-// 			dataByNode[nodeId],
-// 			clientId,
-// 			taskIdentifier,
-// 		)
-// 		if _, ok := tasks[nextStageData.Exchange][nodeId]; !ok {
-// 			tasks[nextStageData.Exchange][nodeId] = []*protocol.Task{}
-// 		}
-// 		tasks[nextStageData.Exchange][nodeId] = append(tasks[nextStageData.Exchange][nodeId], task)
-// 	}
-// }
-
-func ProcessStage[T any](
-	partial *PartialData[T],
+func ProcessStage[T proto.Message](
+	partial *common.PartialData[T],
 	newItems []T,
 	clientID string,
 	taskIdentifier *protocol.TaskIdentifier,
 	merge func(T, T),
 	keySelector func(T) string,
+	infraConfig *model.InfraConfig,
+	stage string,
+
 ) {
 
 	taskID := model.TaskFragmentIdentifier{
@@ -234,15 +180,25 @@ func ProcessStage[T any](
 		LastFragment:       taskIdentifier.GetLastFragment(),
 	}
 
-	if _, processed := partial.taskFragments[taskID]; processed {
+	if partial == nil {
+		log.Debugf("Partial data is nil, creating new partial data for task %s",
+			taskID)
+		partial = NewPartialData[T]()
+	}
+	if partial.IsReady {
+		log.Debugf("Partial data is ready, skipping task %s", taskID)
+		return
+	}
+
+	if _, processed := partial.TaskFragments[taskID]; processed {
 		// Task already handled
 		log.Debugf("Task %s already processed, skipping", taskID)
 		return
 	}
 
 	// Mark task as processed
-	partial.taskFragments[taskID] = struct{}{}
+	partial.TaskFragments[taskID] = common.FragmentStatus{Logged: false}
 
 	// Aggregate data
-	utils.MergeIntoMap(partial.data, newItems, keySelector, merge)
+	utils.MergeIntoMap(partial.Data, newItems, keySelector, merge)
 }

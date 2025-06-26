@@ -33,12 +33,42 @@ const NU_STAGE_3 string = "nu_3"
 
 // EOF
 const RING_STAGE string = "ringEOF"
+const OMEGA_STAGE string = "omegaEOF"
 
 // Consts for tests
 const TEST_WORKER_COUNT int = 1
 const TEST_WORKER_ID string = "0"
 
-// Source const
-const BIG_TABLE_SOURCE string = "bigTable"
-const SMALL_TABLE_SOURCE string = "smallTable"
-const ANY_SOURCE string = ""
+// TableType const
+type TableType string
+
+const (
+	BIG_TABLE     TableType = "bigTable"
+	SMALL_TABLE   TableType = "smallTable"
+	GENERAL_TABLE TableType = "generalTable"
+	NONE          TableType = ""
+)
+
+type FileName string
+
+const (
+	MIN     FileName = "_min"
+	MAX     FileName = "_max"
+	GENERAL FileName = ""
+	// SMALL   FileName = "small"
+	// BIG     FileName = "big"
+)
+
+type FolderType string
+
+const (
+	GENERAL_FOLDER_TYPE      FolderType = ""
+	JOINER_SMALL_FOLDER_TYPE FolderType = "small"
+	JOINER_BIG_FOLDER_TYPE   FolderType = "big"
+)
+
+type DataType string
+
+// Heap const
+const TYPE_MAX = "Max"
+const TYPE_MIN = "Min"

@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 )
 
 type WorkerClusterConfig struct {
@@ -50,14 +51,16 @@ type InfraConfig struct {
 	workers       *WorkerClusterConfig
 	rabbit        *RabbitConfig
 	volumeBaseDir string
+	cleanUpTime   int64 // in seconds
 }
 
-func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig, volumeBaseDir string) *InfraConfig {
+func NewInfraConfig(idNode string, workerConfig *WorkerClusterConfig, rabbitConfig *RabbitConfig, volumeBaseDir string, cleanUpTime int64) *InfraConfig {
 	return &InfraConfig{
 		nodeID:        idNode,
 		workers:       workerConfig,
 		rabbit:        rabbitConfig,
 		volumeBaseDir: volumeBaseDir,
+		cleanUpTime:   cleanUpTime,
 	}
 }
 
@@ -205,4 +208,11 @@ func (i *InfraConfig) GetClientQueueTTL() string {
 		return "1800000" // Default to 30 minutes if not set
 	}
 	return i.rabbit.ClientQueueTTL
+}
+
+func (i *InfraConfig) GetCleanUpTime() time.Duration {
+	if i.cleanUpTime <= 0 {
+		return 60 * time.Second // Default to 60 seconds if not set
+	}
+	return time.Duration(i.cleanUpTime) * time.Second
 }
