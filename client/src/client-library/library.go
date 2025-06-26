@@ -15,8 +15,9 @@ import (
 )
 
 const SLEEP_TIME time.Duration = 5 * time.Second
+const MAX_MULTIPLIER float64 = 20.0
 const DELAY_MULTIPLIER int = 2
-const MAX_RETRIES int = 8
+const MAX_RETRIES int = 50
 
 var log = logging.MustGetLogger("log")
 
@@ -332,7 +333,7 @@ func (l *Library) fetchServerResults() (*model.Results, error) {
 			l.disconnectFromServer()
 
 			// Exponential backoff + jitter
-			sleepTime := SLEEP_TIME*(time.Duration(math.Pow(2.0, float64(l.retryNumber)))) + jitter
+			sleepTime := SLEEP_TIME*(time.Duration(math.Min(math.Pow(2.0, float64(l.retryNumber)), MAX_MULTIPLIER))) + jitter
 			l.retryNumber++
 			log.Warningf("action: waitForResultServerResponse | result: fail | retryNumber: %v | sleepTime: %v", l.retryNumber, sleepTime)
 			time.Sleep(sleepTime)
