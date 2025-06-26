@@ -1337,14 +1337,14 @@ func marshallLineToAppend(fragment model.TaskFragmentIdentifier, timestamp strin
 	return finalLine, nil
 }
 
-func StartCleanupRoutine(dir string) {
-	ticker := time.NewTicker(CLEANUP_INTERVAL)
+func StartCleanupRoutine(dir string, cleanUpTime time.Duration) {
+	ticker := time.NewTicker(cleanUpTime)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			err := cleanUpOldFiles(dir)
+			err := cleanUpOldFiles(dir, cleanUpTime)
 			if err != nil {
 				log.Errorf("Error during cleanup: %s", err)
 			}
@@ -1353,7 +1353,7 @@ func StartCleanupRoutine(dir string) {
 	}
 }
 
-func cleanUpOldFiles(dir string) error {
+func cleanUpOldFiles(dir string, cleanUpTime time.Duration) error {
 	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -1365,9 +1365,19 @@ func cleanUpOldFiles(dir string) error {
 		if err != nil {
 			return nil
 		}
-		if time.Since(info.ModTime()) >= CLEANUP_INTERVAL {
+		if time.Since(info.ModTime()) >= cleanUpTime {
 			if err := os.Remove(path); err != nil {
-				// log error si querés
+				log.Errorf("Error deleting old file %s: %v", path, err)
+			} else {
+				parentDir := filepath.Dir(path)
+				entries, err := os.ReadDir(parentDir)
+				if err == nil && len(entries) == 0 {
+					if err := os.Remove(parentDir); err != nil {
+						log.Errorf("Error deleting empty directory %s: %v", parentDir, err)
+					} else {
+						log.Debugf("[storage] Deleted empty directory: %s", parentDir)
+					}
+				}
 			}
 		}
 		return nil
@@ -1391,6 +1401,7 @@ func cleanAllTempFiles(rootDir string) error {
 		return nil
 	})
 }
+
 func getStageNameFromInterface(stage interface{}) (string, error) {
 	switch stage.(type) {
 	case *protocol.Task_Alpha:

@@ -81,7 +81,7 @@ func NewTopper(infraConfig *model.InfraConfig) *Topper {
 		eofHandler:     eofHandler,
 	}
 
-	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory(), infraConfig.GetCleanUpTime())
 
 	return topper
 }

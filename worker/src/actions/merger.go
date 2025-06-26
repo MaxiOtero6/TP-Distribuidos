@@ -51,7 +51,7 @@ func NewMerger(infraConfig *model.InfraConfig) *Merger {
 		itemHashFunc:   utils.GetWorkerIdFromHash,
 		eofHandler:     eofHandler,
 	}
-	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory(), infraConfig.GetCleanUpTime())
 	return merger
 }
 

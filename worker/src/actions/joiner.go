@@ -74,7 +74,7 @@ func NewJoiner(infraConfig *model.InfraConfig) *Joiner {
 	}
 
 	log.Infof("[Joiner] NewJoiner: inicializado con infraConfig=%#v", infraConfig)
-	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory(), infraConfig.GetCleanUpTime())
 
 	return joiner
 }

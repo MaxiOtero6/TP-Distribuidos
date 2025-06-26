@@ -32,6 +32,7 @@ func TestOverviewer(t *testing.T) {
 			BroadcastID:    "",
 		},
 		"",
+		0,
 	)
 
 	itemHash := func(workersCount int, item string) string {

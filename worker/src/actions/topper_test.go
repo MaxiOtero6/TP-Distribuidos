@@ -31,6 +31,7 @@ func TestTopperExecute(t *testing.T) {
 			TopExchange:    "topExchange",
 		},
 		tempDir,
+		0,
 	)
 
 	t.Run("Test Epsilon Stage with single task", func(t *testing.T) {
@@ -319,6 +320,7 @@ func TestResultStagesWithEmptyTasks(t *testing.T) {
 			TopExchange:    "topExchange",
 		},
 		tempDir,
+		0,
 	)
 
 	var testTopper = NewTopper(testInfraConfig)

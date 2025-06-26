@@ -116,7 +116,7 @@ func initHealthChecker(v *viper.Viper, signalChan chan os.Signal) *health_checke
 		HealthExchange:     v.GetString("consts.healthExchange"),
 	}
 
-	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "")
+	infraConfig := model.NewInfraConfig(id, clusterConfig, rabbitConfig, "", 0)
 
 	log.Debugf("InfraConfig:\n\tWorkersConfig:%v\n\tRabbitConfig:%v", infraConfig.GetWorkers(), infraConfig.GetRabbit())
 

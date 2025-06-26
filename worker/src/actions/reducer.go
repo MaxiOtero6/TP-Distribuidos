@@ -54,7 +54,7 @@ func NewReducer(infraConfig *model.InfraConfig) *Reducer {
 		eofHandler:     eofHandler,
 	}
 
-	go storage.StartCleanupRoutine(infraConfig.GetDirectory())
+	go storage.StartCleanupRoutine(infraConfig.GetDirectory(), infraConfig.GetCleanUpTime())
 
 	return reducer
 }
